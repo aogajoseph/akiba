@@ -36,11 +36,17 @@ Coded by www.creative-tim.com
 */
 
 // Material Dashboard 2 React layouts
-import Dashboard from "layouts/dashboard";
-import Profile from "layouts/profile";
-import SignIn from "pages/auth/SignIn";
-import SignUp from "layouts/authentication/sign-up";
 import Home from "pages/dashboard/Home";
+import Profile from "layouts/profile";
+import Chat from "layouts/chat";
+import Forum from "layouts/forum";
+import Account from "layouts/account";
+import Statements from "layouts/statements";
+import Members from "layouts/members";
+import SignIn from "pages/auth/SignIn";
+import SignUp from "pages/auth/SignUp";
+import Logout from "pages/auth/Logout";
+import ResetPassword from "pages/auth/ResetPassword";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -60,7 +66,16 @@ const routes = [
     key: "profile",
     icon: <Icon fontSize="small">person</Icon>,
     route: "/profile",
-    component: <Dashboard />,
+    component: <Profile />,
+  },
+  {
+    type: "collapse",
+    name: "Members",
+    key: "members",
+    icon: <Icon fontSize="small">people</Icon>,
+    route: "/members",
+    component: <Members />,
+    noDisplay: true,
   },
   {
     type: "collapse",
@@ -68,7 +83,7 @@ const routes = [
     key: "chat",
     icon: <Icon fontSize="small">chat</Icon>,
     route: "/chat",
-    component: <Dashboard />,
+    component: <Chat />,
   },
   {
     type: "collapse",
@@ -76,7 +91,7 @@ const routes = [
     key: "forum",
     icon: <Icon fontSize="small">forum</Icon>,
     route: "/forum",
-    component: <Dashboard />,
+    component: <Forum />,
   },
   {
     type: "collapse",
@@ -84,7 +99,7 @@ const routes = [
     key: "account",
     icon: <Icon fontSize="small">account_balance</Icon>,
     route: "/account",
-    component: <Dashboard />,
+    component: <Account />,
   },
   {
     type: "collapse",
@@ -92,15 +107,7 @@ const routes = [
     key: "statements",
     icon: <Icon fontSize="small">receipt_long</Icon>,
     route: "/statements",
-    component: <Dashboard />,
-  },
-  {
-    type: "collapse",
-    name: "Logout",
-    key: "logout",
-    icon: <Icon fontSize="small">logout</Icon>,
-    route: "/auth/sign-in",
-    component: <SignIn />,
+    component: <Statements />,
   },
   {
     type: "auth",
@@ -109,7 +116,33 @@ const routes = [
     icon: <Icon fontSize="small">login</Icon>,
     route: "/auth/sign-in",
     component: <SignIn />,
-    noDisplay: true, // This will hide it from the sidebar
+    noDisplay: true,
+  },
+  {
+    type: "auth",
+    name: "Sign Up",
+    key: "sign-up",
+    icon: <Icon fontSize="small">person_add</Icon>,
+    route: "/auth/sign-up",
+    component: <SignUp />,
+    noDisplay: true,
+  },
+  {
+    type: "auth",
+    name: "Reset Password",
+    key: "reset-password",
+    icon: <Icon fontSize="small">lock_reset</Icon>,
+    route: "/auth/reset-password",
+    component: <ResetPassword />,
+    noDisplay: true,
+  },
+  {
+    type: "collapse",
+    name: "Logout",
+    key: "logout",
+    icon: <Icon fontSize="small">logout</Icon>,
+    route: "/auth/sign-in",
+    component: <Logout />,
   },
 ];
 

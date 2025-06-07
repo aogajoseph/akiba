@@ -119,13 +119,13 @@ function DefaultNavbar({ transparent, light, action }) {
           <DefaultNavbarLink
             icon="account_circle"
             name="sign up"
-            route="/authentication/sign-up"
+            route="/pages/auth/sign-up"
             light={light}
           />
           <DefaultNavbarLink
             icon="key"
             name="sign in"
-            route="/authentication/sign-in"
+            route="/pages/auth/sign-in"
             light={light}
           />
         </MDBox>

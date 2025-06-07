@@ -191,6 +191,14 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
           variant="gradient"
           color={textColor}
           fullWidth
+          sx={({ palette: { gradients, white }, functions: { linearGradient } }) => ({
+            background: linearGradient(gradients[color].main, gradients[color].state),
+            color: white.main,
+            "&:hover, &:focus, &:active": {
+              background: linearGradient(gradients[color].main, gradients[color].state),
+              color: white.main,
+            }
+          })}
         >
           upgrade to pro
         </MDButton>

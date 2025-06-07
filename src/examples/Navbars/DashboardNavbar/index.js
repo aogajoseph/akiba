@@ -1,14 +1,15 @@
 /**
+
 =========================================================
-* Material Dashboard 2 React - v2.2.0
+* Akiba - v1.0.0
 =========================================================
 
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
+* Product Page: https://www.aogajoseph.github.io/akiba/
+* Copyright 2025 Joseph Onyango (https://www.aogajoseph.github.io/)
 
-Coded by www.creative-tim.com
+Coded by Joseph Onyango
 
- =========================================================
+=========================================================
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
@@ -16,7 +17,7 @@ Coded by www.creative-tim.com
 import { useState, useEffect } from "react";
 
 // react-router components
-import { useLocation, Link } from "react-router-dom";
+import { useLocation, Link, useNavigate } from "react-router-dom";
 
 // prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
@@ -27,12 +28,15 @@ import Toolbar from "@mui/material/Toolbar";
 import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import Icon from "@mui/material/Icon";
+import Tooltip from "@mui/material/Tooltip";
+import { styled } from "@mui/material/styles";
 
-// Material Dashboard 2 React components
+// Akiba React components
 import MDBox from "components/MDBox";
-import MDInput from "components/MDInput";
+import DepositModal from "components/Modals/DepositModal";
+import WithdrawModal from "components/Modals/WithdrawModal";
 
-// Material Dashboard 2 React example components
+// Akiba React example components
 import Breadcrumbs from "examples/Breadcrumbs";
 import NotificationItem from "examples/Items/NotificationItem";
 
@@ -45,20 +49,27 @@ import {
   navbarMobileMenu,
 } from "examples/Navbars/DashboardNavbar/styles";
 
-// Material Dashboard 2 React context
-import {
-  useMaterialUIController,
-  setTransparentNavbar,
-  setMiniSidenav,
-  setOpenConfigurator,
-} from "context";
+// Akiba React context
+import { useMaterialUIController, setTransparentNavbar, setMiniSidenav } from "context";
+
+// Styled IconButton with hover effect
+const StyledIconButton = styled(IconButton)(({ theme }) => ({
+  transition: "transform 0.2s ease-in-out",
+  "&:hover": {
+    transform: "scale(1.1)",
+    backgroundColor: "rgba(255, 255, 255, 0.1)",
+  },
+}));
 
 function DashboardNavbar({ absolute, light, isMini }) {
   const [navbarType, setNavbarType] = useState();
   const [controller, dispatch] = useMaterialUIController();
-  const { miniSidenav, transparentNavbar, fixedNavbar, openConfigurator, darkMode } = controller;
+  const { miniSidenav, transparentNavbar, fixedNavbar, darkMode } = controller;
   const [openMenu, setOpenMenu] = useState(false);
+  const [depositModalOpen, setDepositModalOpen] = useState(false);
+  const [withdrawModalOpen, setWithdrawModalOpen] = useState(false);
   const route = useLocation().pathname.split("/").slice(1);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // Setting the navbar type
@@ -87,9 +98,29 @@ function DashboardNavbar({ absolute, light, isMini }) {
   }, [dispatch, fixedNavbar]);
 
   const handleMiniSidenav = () => setMiniSidenav(dispatch, !miniSidenav);
-  const handleConfiguratorOpen = () => setOpenConfigurator(dispatch, !openConfigurator);
   const handleOpenMenu = (event) => setOpenMenu(event.currentTarget);
   const handleCloseMenu = () => setOpenMenu(false);
+  const handleOpenDepositModal = () => setDepositModalOpen(true);
+  const handleCloseDepositModal = () => setDepositModalOpen(false);
+  const handleOpenWithdrawModal = () => setWithdrawModalOpen(true);
+  const handleCloseWithdrawModal = () => setWithdrawModalOpen(false);
+
+  const handleMembersClick = () => {
+    navigate("/members");
+  };
+
+  // Styles for the navbar icons
+  const iconsStyle = ({ palette: { dark, white, text }, functions: { rgba } }) => ({
+    color: () => {
+      let colorValue = light || darkMode ? white.main : dark.main;
+
+      if (transparentNavbar && !light) {
+        colorValue = darkMode ? rgba(text.main, 0.6) : text.main;
+      }
+
+      return colorValue;
+    },
+  });
 
   // Render the notifications menu
   const renderMenu = () => (
@@ -110,19 +141,6 @@ function DashboardNavbar({ absolute, light, isMini }) {
     </Menu>
   );
 
-  // Styles for the navbar icons
-  const iconsStyle = ({ palette: { dark, white, text }, functions: { rgba } }) => ({
-    color: () => {
-      let colorValue = light || darkMode ? white.main : dark.main;
-
-      if (transparentNavbar && !light) {
-        colorValue = darkMode ? rgba(text.main, 0.6) : text.main;
-      }
-
-      return colorValue;
-    },
-  });
-
   return (
     <AppBar
       position={absolute ? "absolute" : navbarType}
@@ -135,52 +153,73 @@ function DashboardNavbar({ absolute, light, isMini }) {
         </MDBox>
         {isMini ? null : (
           <MDBox sx={(theme) => navbarRow(theme, { isMini })}>
-            <MDBox pr={1}>
-              <MDInput label="Search here" />
-            </MDBox>
-            <MDBox color={light ? "white" : "inherit"}>
-              <Link to="/authentication/sign-in/basic">
-                <IconButton sx={navbarIconButton} size="small" disableRipple>
-                  <Icon sx={iconsStyle}>account_circle</Icon>
+            <MDBox display="flex" alignItems="center">
+              <Tooltip title="Deposit Cash" arrow>
+                <StyledIconButton
+                  sx={navbarIconButton}
+                  size="small"
+                  disableRipple
+                  onClick={handleOpenDepositModal}
+                >
+                  <Icon sx={iconsStyle}>savings</Icon>
+                </StyledIconButton>
+              </Tooltip>
+              <Tooltip title="Withdraw/Spend" arrow>
+                <StyledIconButton
+                  size="small"
+                  disableRipple
+                  color="inherit"
+                  sx={navbarIconButton}
+                  onClick={handleOpenWithdrawModal}
+                >
+                  <Icon sx={iconsStyle}>payments</Icon>
+                </StyledIconButton>
+              </Tooltip>
+              <Tooltip title="Current Members" arrow>
+                <StyledIconButton
+                  size="small"
+                  disableRipple
+                  color="inherit"
+                  sx={navbarIconButton}
+                  onClick={handleMembersClick}
+                >
+                  <Icon sx={iconsStyle}>people</Icon>
+                </StyledIconButton>
+              </Tooltip>
+              <Tooltip title="Notifications" arrow>
+                <StyledIconButton
+                  size="small"
+                  disableRipple
+                  color="inherit"
+                  sx={navbarIconButton}
+                  aria-controls="notification-menu"
+                  aria-haspopup="true"
+                  variant="contained"
+                  onClick={handleOpenMenu}
+                >
+                  <Icon sx={iconsStyle}>notifications</Icon>
+                </StyledIconButton>
+              </Tooltip>
+              <Tooltip title="More" arrow>
+                <IconButton
+                  size="small"
+                  disableRipple
+                  color="inherit"
+                  sx={navbarMobileMenu}
+                  onClick={handleMiniSidenav}
+                >
+                  <Icon sx={iconsStyle} fontSize="medium">
+                    {miniSidenav ? "menu" : "menu_open"}
+                  </Icon>
                 </IconButton>
-              </Link>
-              <IconButton
-                size="small"
-                disableRipple
-                color="inherit"
-                sx={navbarMobileMenu}
-                onClick={handleMiniSidenav}
-              >
-                <Icon sx={iconsStyle} fontSize="medium">
-                  {miniSidenav ? "menu_open" : "menu"}
-                </Icon>
-              </IconButton>
-              <IconButton
-                size="small"
-                disableRipple
-                color="inherit"
-                sx={navbarIconButton}
-                onClick={handleConfiguratorOpen}
-              >
-                <Icon sx={iconsStyle}>settings</Icon>
-              </IconButton>
-              <IconButton
-                size="small"
-                disableRipple
-                color="inherit"
-                sx={navbarIconButton}
-                aria-controls="notification-menu"
-                aria-haspopup="true"
-                variant="contained"
-                onClick={handleOpenMenu}
-              >
-                <Icon sx={iconsStyle}>notifications</Icon>
-              </IconButton>
+              </Tooltip>
               {renderMenu()}
             </MDBox>
           </MDBox>
         )}
       </Toolbar>
+      <DepositModal open={depositModalOpen} onClose={handleCloseDepositModal} />
+      <WithdrawModal open={withdrawModalOpen} onClose={handleCloseWithdrawModal} />
     </AppBar>
   );
 }

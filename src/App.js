@@ -163,7 +163,8 @@ export default function App() {
         )}
         <Routes>
           {getRoutes(routes)}
-          <Route path="/" element={<Navigate to="/dashboard" />} />
+          <Route path="/" element={<Navigate to="/auth/sign-in" />} />
+          <Route path="/auth/*" element={<Navigate to="/auth/sign-in" />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </ThemeProvider>
@@ -187,7 +188,8 @@ export default function App() {
       )}
       <Routes>
         {getRoutes(routes)}
-        <Route path="/" element={<Navigate to="/dashboard" />} />
+        <Route path="/" element={<Navigate to="/auth/sign-in" />} />
+        <Route path="/auth/*" element={<Navigate to="/auth/sign-in" />} />
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </ThemeProvider>
