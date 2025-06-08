@@ -135,7 +135,7 @@ function DefaultNavbar({ transparent, light, action }) {
             light={light}
           />
           <DefaultNavbarLink
-            name="faqs"
+            name="FAQs"
             route="/pages/auth/sign-in"
             light={light}
           />

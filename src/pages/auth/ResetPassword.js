@@ -26,7 +26,7 @@ import MDButton from "components/MDButton";
 import CoverLayout from "layouts/authentication/components/CoverLayout";
 
 // Images
-import bgImage from "assets/images/bg-reset-cover.jpeg";
+import bgImage from "assets/images/banner.jpg";
 
 function Cover() {
   return (
@@ -46,8 +46,8 @@ function Cover() {
           <MDTypography variant="h3" fontWeight="medium" color="white" mt={1}>
             Reset Password
           </MDTypography>
-          <MDTypography display="block" variant="button" color="white" my={1}>
-            You will receive an e-mail in maximum 60 seconds
+          <MDTypography display="block" variant="button" color="white" my={1} px={2}>
+            We will send you a link within 60 seconds maximum
           </MDTypography>
         </MDBox>
         <MDBox pt={4} pb={3} px={3}>
@@ -57,7 +57,7 @@ function Cover() {
             </MDBox>
             <MDBox mt={6} mb={1}>
               <MDButton variant="gradient" color="info" fullWidth>
-                reset
+                request link
               </MDButton>
             </MDBox>
           </MDBox>

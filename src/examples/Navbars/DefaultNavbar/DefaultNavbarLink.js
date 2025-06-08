@@ -52,9 +52,11 @@ function DefaultNavbarLink({ name, route, light }) {
         sx={{ 
           width: "100%", 
           lineHeight: 0,
-          transition: "color 0.3s",
+          transition: "all 0.3s",
+          opacity: 1,
           "&:hover": {
-            color: ({ palette: { info } }) => info.main,
+            color: ({ palette: { grey } }) => light ? grey[300] : grey[700],
+            opacity: 0.8,
           }
         }}
       >
