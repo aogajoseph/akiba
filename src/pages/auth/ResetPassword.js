@@ -28,7 +28,7 @@ import CoverLayout from "layouts/authentication/components/CoverLayout";
 // Images
 import bgImage from "assets/images/banner.jpg";
 
-function Cover() {
+function ResetPassword() {
   return (
     <CoverLayout coverHeight="50vh" image={bgImage}>
       <Card>
@@ -42,6 +42,14 @@ function Cover() {
           py={2}
           mb={1}
           textAlign="center"
+          className="gradient-background"
+          sx={{
+            background: ({ functions: { linearGradient }, palette: { gradients } }) =>
+              `${linearGradient(
+                gradients.info.main,
+                gradients.info.state
+              )}`
+          }}
         >
           <MDTypography variant="h3" fontWeight="medium" color="white" mt={1}>
             Reset Password
@@ -67,4 +75,4 @@ function Cover() {
   );
 }
 
-export default Cover;
+export default ResetPassword;

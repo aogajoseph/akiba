@@ -33,43 +33,85 @@ import Footer from "layouts/authentication/components/Footer";
 function CoverLayout({ coverHeight, image, children }) {
   return (
     <PageLayout>
-      <DefaultNavbar
-        action={{
-          type: "external",
-          route: "https://creative-tim.com/product/material-dashboard-react",
-          label: "free download",
-        }}
-        transparent
-        light
-      />
       <MDBox
-        width="calc(100% - 2rem)"
-        minHeight={coverHeight}
-        borderRadius="xl"
-        mx={2}
-        my={2}
-        pt={6}
-        pb={28}
-        sx={{
-          backgroundImage: ({ functions: { linearGradient, rgba }, palette: { gradients } }) =>
-            image &&
-            `${linearGradient(
-              rgba(gradients.dark.main, 0.4),
-              rgba(gradients.dark.state, 0.4)
-            )}, url(${image})`,
-          backgroundSize: "cover",
-          backgroundPosition: "center",
-          backgroundRepeat: "no-repeat",
-        }}
-      />
-      <MDBox mt={{ xs: -20, lg: -18 }} px={1} width="calc(100% - 2rem)" mx="auto">
-        <Grid container spacing={1} justifyContent="center">
-          <Grid item xs={11} sm={9} md={5} lg={4} xl={3}>
-            {children}
-          </Grid>
-        </Grid>
+        position="relative"
+        width="100%"
+        minHeight="100vh"
+        display="flex"
+        flexDirection="column"
+      >
+        <MDBox flex={1}>
+          <DefaultNavbar
+            action={{
+              type: "external",
+              route: "https://creative-tim.com/product/material-dashboard-react",
+              label: "free download",
+            }}
+            transparent
+            light
+          />
+          <MDBox
+            width="calc(100% - 2rem)"
+            minHeight={coverHeight}
+            borderRadius="xl"
+            mx={2}
+            my={2}
+            pt={6}
+            pb={28}
+            sx={{
+              backgroundImage: ({ functions: { linearGradient, rgba }, palette: { gradients } }) =>
+                image &&
+                `${linearGradient(
+                  rgba(gradients.dark.main, 0.4),
+                  rgba(gradients.dark.state, 0.4)
+                )}, url(${image})`,
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          />
+          <MDBox mt={{ xs: -20, lg: -18 }} px={1} width="calc(100% - 2rem)" mx="auto">
+            <Grid container spacing={1} justifyContent="center">
+              <Grid item xs={11} sm={9} md={5} lg={4} xl={3}>
+                <MDBox sx={{
+                  '& .MuiCard-root': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+                    backdropFilter: 'blur(10px)',
+                  },
+                  '& .MuiInputBase-root': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.5) !important',
+                  },
+                  '& .MuiSelect-select': {
+                    backgroundColor: 'rgba(255, 255, 255, 0.5) !important',
+                  },
+                  '& .MuiStepLabel-label': {
+                    color: 'rgba(0, 0, 0, 0.87)',
+                  },
+                  '& .MuiStepIcon-root': {
+                    backgroundColor: 'transparent',
+                  },
+                  '& .gradient-background': {
+                    opacity: '0.9 !important',
+                  },
+                  '& .MuiInputBase-input::placeholder': {
+                    color: 'rgba(0, 0, 0, 0.8) !important',
+                    opacity: 1,
+                  },
+                  '& .MuiInputLabel-root': {
+                    color: 'rgba(0, 0, 0, 0.8)',
+                  },
+                  '& .MuiInputLabel-root.Mui-focused': {
+                    color: 'rgba(0, 0, 0, 0.87)',
+                  }
+                }}>
+                  {children}
+                </MDBox>
+              </Grid>
+            </Grid>
+          </MDBox>
+        </MDBox>
+        <Footer light={false} />
       </MDBox>
-      <Footer />
     </PageLayout>
   );
 }

@@ -50,13 +50,16 @@ function Footer({ light }) {
             color={light ? "white" : "text"}
             fontSize={size.xs}
             px={1.5}
+            sx={{
+              opacity: 0.9
+            }}
           >
             &copy; {new Date().getFullYear()} Akiba
           </MDBox>
            
           <MDBox
             component="ul"
-            sx={({ breakpoints }) => ({
+            sx={({ breakpoints, palette: { grey, text, info } }) => ({
               display: "flex",
               flexWrap: "wrap",
               alignItems: "center",
@@ -65,55 +68,98 @@ function Footer({ light }) {
               mt: 3,
               mb: 0,
               p: 0,
-
+              "& li": {
+                transition: "all 0.2s ease-in-out",
+                "&:hover": {
+                  "& a": {
+                    color: info.main,
+                  },
+                },
+              },
               [breakpoints.up("lg")]: {
                 mt: 0,
               },
             })}
           >
             <MDBox component="li" pr={1} lineHeight={1}>
-              <Link href="#" target="_blank">
+              <Link href="#" target="_blank" style={{ textDecoration: "none" }}>
                 <MDTypography
                   variant="button"
                   fontWeight="regular"
-                  color={light ? "white" : "dark"}
-                  fontSize={size.xs}
+                  color={light ? "white" : "text"}
+                  sx={{ 
+                    opacity: 0.9,
+                    transition: "all 0.3s ease-in-out",
+                    "&:hover": {
+                      opacity: 1,
+                      transform: "translateY(-2px)",
+                      color: "info.main",
+                      fontWeight: "medium"
+                    }
+                  }}
                 >
                   Terms
                 </MDTypography>
               </Link>
             </MDBox>
             <MDBox component="li" px={1} lineHeight={1}>
-              <Link href="#" target="_blank">
+              <Link href="#" target="_blank" style={{ textDecoration: "none" }}>
                 <MDTypography
                   variant="button"
                   fontWeight="regular"
-                  color={light ? "white" : "dark"}
-                  fontSize={size.xs}
+                  color={light ? "white" : "text"}
+                  sx={{ 
+                    opacity: 0.9,
+                    transition: "all 0.3s ease-in-out",
+                    "&:hover": {
+                      opacity: 1,
+                      transform: "translateY(-2px)",
+                      color: "info.main",
+                      fontWeight: "medium"
+                    }
+                  }}
                 >
                   Privacy
                 </MDTypography>
               </Link>
             </MDBox>
             <MDBox component="li" px={1} lineHeight={1}>
-              <Link href="#" target="_blank">
+              <Link href="#" target="_blank" style={{ textDecoration: "none" }}>
                 <MDTypography
                   variant="button"
                   fontWeight="regular"
-                  color={light ? "white" : "dark"}
-                  fontSize={size.xs}
+                  color={light ? "white" : "text"}
+                  sx={{ 
+                    opacity: 0.9,
+                    transition: "all 0.3s ease-in-out",
+                    "&:hover": {
+                      opacity: 1,
+                      transform: "translateY(-2px)",
+                      color: "info.main",
+                      fontWeight: "medium"
+                    }
+                  }}
                 >
                   Help
                 </MDTypography>
               </Link>
             </MDBox>
             <MDBox component="li" pl={1} lineHeight={1}>
-              <Link href="#" target="_blank">
+              <Link href="#" target="_blank" style={{ textDecoration: "none" }}>
                 <MDTypography
                   variant="button"
                   fontWeight="regular"
-                  color={light ? "white" : "dark"}
-                  fontSize={size.xs}
+                  color={light ? "white" : "text"}
+                  sx={{ 
+                    opacity: 0.9,
+                    transition: "all 0.3s ease-in-out",
+                    "&:hover": {
+                      opacity: 1,
+                      transform: "translateY(-2px)",
+                      color: "info.main",
+                      fontWeight: "medium"
+                    }
+                  }}
                 >
                   Contact Us
                 </MDTypography>
