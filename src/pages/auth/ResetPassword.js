@@ -42,14 +42,6 @@ function ResetPassword() {
           py={2}
           mb={1}
           textAlign="center"
-          className="gradient-background"
-          sx={{
-            background: ({ functions: { linearGradient }, palette: { gradients } }) =>
-              `${linearGradient(
-                gradients.info.main,
-                gradients.info.state
-              )}`
-          }}
         >
           <MDTypography variant="h3" fontWeight="medium" color="white" mt={1}>
             Reset Password
