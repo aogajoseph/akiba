@@ -1,54 +1,52 @@
 /**
-=========================================================
-* Material Dashboard 2 React - v2.2.0
-=========================================================
+ * Material Dashboard 2 React - v2.2.0
+ * Copyright 2023 Creative Tim (https://www.creative-tim.com)
+ */
 
-* Product Page: https://www.creative-tim.com/product/material-dashboard-react
-* Copyright 2023 Creative Tim (https://www.creative-tim.com)
-
-Coded by www.creative-tim.com
-
- =========================================================
-
-* The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-*/
-
+// React imports
 import { useState } from "react";
-
-// react-router-dom components
 import { Link } from "react-router-dom";
 
-// @mui material components
-import Card from "@mui/material/Card";
-import Switch from "@mui/material/Switch";
-import Grid from "@mui/material/Grid";
-import MuiLink from "@mui/material/Link";
+// MUI Core components
+import {
+  Card,
+  Switch,
+  Grid,
+  Link as MuiLink,
+  IconButton,
+  InputAdornment,
+} from "@mui/material";
 
-// @mui icons
-import FacebookIcon from "@mui/icons-material/Facebook";
-import GitHubIcon from "@mui/icons-material/GitHub";
-import GoogleIcon from "@mui/icons-material/Google";
+// MUI Icons
+import {
+  Facebook as FacebookIcon,
+  LinkedIn as LinkedInIcon,
+  Google as GoogleIcon,
+  Visibility as VisibilityIcon,
+  VisibilityOff as VisibilityOffIcon,
+} from "@mui/icons-material";
 
-// Material Dashboard 2 React components
+// Custom components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
-
-// Authentication layout components
 import BasicLayout from "layouts/authentication/components/BasicLayout";
 
-// Images
-import bgImage from "assets/images/bg-sign-in-basic.jpeg";
+// Assets
+import bgImage from "assets/images/bg-Img.jpg";
 
-function Basic() {
+function SignIn() {
   const [rememberMe, setRememberMe] = useState(false);
-
+  const [showPassword, setShowPassword] = useState(false);
+  
   const handleSetRememberMe = () => setRememberMe(!rememberMe);
+  const handleTogglePassword = () => setShowPassword(!showPassword);
 
   return (
     <BasicLayout image={bgImage}>
       <Card>
+        {/* Header */}
         <MDBox
           variant="gradient"
           bgColor="info"
@@ -61,34 +59,54 @@ function Basic() {
           textAlign="center"
         >
           <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
-            Sign in
+            Sign In
           </MDTypography>
+
+          {/* Social Login Buttons */}
           <Grid container spacing={3} justifyContent="center" sx={{ mt: 1, mb: 2 }}>
-            <Grid item xs={2}>
-              <MDTypography component={MuiLink} href="#" variant="body1" color="white">
-                <FacebookIcon color="inherit" />
-              </MDTypography>
-            </Grid>
-            <Grid item xs={2}>
-              <MDTypography component={MuiLink} href="#" variant="body1" color="white">
-                <GitHubIcon color="inherit" />
-              </MDTypography>
-            </Grid>
-            <Grid item xs={2}>
-              <MDTypography component={MuiLink} href="#" variant="body1" color="white">
-                <GoogleIcon color="inherit" />
-              </MDTypography>
-            </Grid>
+            {[
+              { icon: FacebookIcon, link: "#" },
+              { icon: LinkedInIcon, link: "#" },
+              { icon: GoogleIcon, link: "#" },
+            ].map((social, index) => (
+              <Grid item xs={2} key={index}>
+                <MDTypography component={MuiLink} href={social.link} variant="body1" color="white">
+                  <social.icon color="inherit" />
+                </MDTypography>
+              </Grid>
+            ))}
           </Grid>
         </MDBox>
+
+        {/* Login Form */}
         <MDBox pt={4} pb={3} px={3}>
           <MDBox component="form" role="form">
             <MDBox mb={2}>
-              <MDInput type="email" label="Email" fullWidth />
+              <MDInput type="text" label="Email/Phone/Account Number" fullWidth />
             </MDBox>
             <MDBox mb={2}>
-              <MDInput type="password" label="Password" fullWidth />
+              <MDInput
+                type={showPassword ? "text" : "password"}
+                label="Password"
+                fullWidth
+                InputProps={{
+                  endAdornment: (
+                    <InputAdornment position="end">
+                      <IconButton
+                        aria-label="toggle password visibility"
+                        onClick={handleTogglePassword}
+                        edge="end"
+                        size="small"
+                      >
+                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                      </IconButton>
+                    </InputAdornment>
+                  ),
+                }}
+              />
             </MDBox>
+
+            {/* Stay Logged In Switch */}
             <MDBox display="flex" alignItems="center" ml={-1}>
               <Switch checked={rememberMe} onChange={handleSetRememberMe} />
               <MDTypography
@@ -98,14 +116,18 @@ function Basic() {
                 onClick={handleSetRememberMe}
                 sx={{ cursor: "pointer", userSelect: "none", ml: -1 }}
               >
-                &nbsp;&nbsp;Remember me
+                &nbsp;&nbsp;Stay Logged In
               </MDTypography>
             </MDBox>
+
+            {/* Submit Button */}
             <MDBox mt={4} mb={1}>
               <MDButton variant="gradient" color="info" fullWidth>
                 sign in
               </MDButton>
             </MDBox>
+
+            {/* Forgot Password Link */}
             <MDBox mt={2} mb={1} textAlign="left">
               <MDTypography
                 component={Link}
@@ -118,6 +140,8 @@ function Basic() {
                 Forgot Password?
               </MDTypography>
             </MDBox>
+
+            {/* Sign Up Link */}
             <MDBox mt={3} mb={1} textAlign="center">
               <MDTypography variant="button" color="text">
                 Don&apos;t have an account?{" "}
@@ -140,4 +164,4 @@ function Basic() {
   );
 }
 
-export default Basic;
+export default SignIn;

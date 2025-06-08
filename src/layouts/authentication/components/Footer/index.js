@@ -32,7 +32,7 @@ function Footer({ light }) {
   const { size } = typography;
 
   return (
-    <MDBox position="absolute" width="100%" bottom={0} py={4}>
+    <MDBox position="absolute" width="100%" bottom={0} py={2} px={1}>
       <Container>
         <MDBox
           width="100%"
@@ -44,33 +44,23 @@ function Footer({ light }) {
         >
           <MDBox
             display="flex"
-            justifyContent="center"
+            justifyContent="flex-start"
             alignItems="center"
             flexWrap="wrap"
             color={light ? "white" : "text"}
-            fontSize={size.sm}
+            fontSize={size.xs}
+            px={1.5}
           >
-            &copy; {new Date().getFullYear()}, made with
-            <MDBox fontSize={size.md} color={light ? "white" : "dark"} mb={-0.5} mx={0.25}>
-              <Icon color="inherit" fontSize="inherit">
-                favorite
-              </Icon>
-            </MDBox>
-            by
-            <Link href="https://www.creative-tim.com/" target="_blank">
-              <MDTypography variant="button" fontWeight="medium" color={light ? "white" : "dark"}>
-                &nbsp;Creative Tim&nbsp;
-              </MDTypography>
-            </Link>
-            for a better web.
+            &copy; {new Date().getFullYear()} Akiba
           </MDBox>
+           
           <MDBox
             component="ul"
             sx={({ breakpoints }) => ({
               display: "flex",
               flexWrap: "wrap",
               alignItems: "center",
-              justifyContent: "center",
+              justifyContent: "flex-end",
               listStyle: "none",
               mt: 3,
               mb: 0,
@@ -81,47 +71,51 @@ function Footer({ light }) {
               },
             })}
           >
-            <MDBox component="li" pr={2} lineHeight={1}>
-              <Link href="https://www.creative-tim.com/" target="_blank">
+            <MDBox component="li" pr={1} lineHeight={1}>
+              <Link href="#" target="_blank">
                 <MDTypography
                   variant="button"
                   fontWeight="regular"
                   color={light ? "white" : "dark"}
+                  fontSize={size.xs}
                 >
-                  Creative Tim
+                  Terms
                 </MDTypography>
               </Link>
             </MDBox>
-            <MDBox component="li" px={2} lineHeight={1}>
-              <Link href="https://www.creative-tim.com/presentation" target="_blank">
+            <MDBox component="li" px={1} lineHeight={1}>
+              <Link href="#" target="_blank">
                 <MDTypography
                   variant="button"
                   fontWeight="regular"
                   color={light ? "white" : "dark"}
+                  fontSize={size.xs}
                 >
-                  About Us
+                  Privacy
                 </MDTypography>
               </Link>
             </MDBox>
-            <MDBox component="li" px={2} lineHeight={1}>
-              <Link href="https://www.creative-tim.com/blog" target="_blank">
+            <MDBox component="li" px={1} lineHeight={1}>
+              <Link href="#" target="_blank">
                 <MDTypography
                   variant="button"
                   fontWeight="regular"
                   color={light ? "white" : "dark"}
+                  fontSize={size.xs}
                 >
-                  Blog
+                  Help
                 </MDTypography>
               </Link>
             </MDBox>
-            <MDBox component="li" pl={2} lineHeight={1}>
-              <Link href="https://www.creative-tim.com/license" target="_blank">
+            <MDBox component="li" pl={1} lineHeight={1}>
+              <Link href="#" target="_blank">
                 <MDTypography
                   variant="button"
                   fontWeight="regular"
                   color={light ? "white" : "dark"}
+                  fontSize={size.xs}
                 >
-                  License
+                  Contact Us
                 </MDTypography>
               </Link>
             </MDBox>

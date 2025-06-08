@@ -26,7 +26,7 @@ import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
-function DefaultNavbarLink({ icon, name, route, light }) {
+function DefaultNavbarLink({ name, route, light }) {
   return (
     <MDBox
       component={Link}
@@ -35,24 +35,30 @@ function DefaultNavbarLink({ icon, name, route, light }) {
       p={1}
       display="flex"
       alignItems="center"
-      sx={{ cursor: "pointer", userSelect: "none" }}
+      sx={{ 
+        cursor: "pointer", 
+        userSelect: "none",
+        transition: "transform 0.3s",
+        "&:hover": {
+          transform: "scale(1.05)",
+        }
+      }}
     >
-      <Icon
-        sx={{
-          color: ({ palette: { white, secondary } }) => (light ? white.main : secondary.main),
-          verticalAlign: "middle",
-        }}
-      >
-        {icon}
-      </Icon>
       <MDTypography
         variant="button"
         fontWeight="regular"
         color={light ? "white" : "dark"}
         textTransform="capitalize"
-        sx={{ width: "100%", lineHeight: 0 }}
+        sx={{ 
+          width: "100%", 
+          lineHeight: 0,
+          transition: "color 0.3s",
+          "&:hover": {
+            color: ({ palette: { info } }) => info.main,
+          }
+        }}
       >
-        &nbsp;{name}
+        {name}
       </MDTypography>
     </MDBox>
   );
@@ -60,7 +66,6 @@ function DefaultNavbarLink({ icon, name, route, light }) {
 
 // Typechecking props for the DefaultNavbarLink
 DefaultNavbarLink.propTypes = {
-  icon: PropTypes.string.isRequired,
   name: PropTypes.string.isRequired,
   route: PropTypes.string.isRequired,
   light: PropTypes.bool.isRequired,

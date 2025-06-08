@@ -40,6 +40,9 @@ import breakpoints from "assets/theme/base/breakpoints";
 // Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
+// Import logo
+import logo from "assets/images/logo.png";
+
 function DefaultNavbar({ transparent, light, action }) {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
@@ -108,23 +111,31 @@ function DefaultNavbar({ transparent, light, action }) {
           py={transparent ? 1.5 : 0.75}
           lineHeight={1}
           pl={{ xs: 0, lg: 1 }}
+          display="flex"
+          alignItems="center"
         >
+          <MDBox
+            component="img"
+            src={logo}
+            alt="Akiba Logo"
+            width="24px"
+            height="24px"
+            mr={1}
+          />
           <MDTypography variant="button" fontWeight="bold" color={light ? "white" : "dark"}>
-            Material Dashboard 2
+            Akiba
           </MDTypography>
         </MDBox>
         <MDBox color="inherit" display={{ xs: "none", lg: "flex" }} m={0} p={0}>
-          <DefaultNavbarLink icon="donut_large" name="dashboard" route="/dashboard" light={light} />
-          <DefaultNavbarLink icon="person" name="profile" route="/profile" light={light} />
+          <DefaultNavbarLink name="about" route="/dashboard" light={light} />
+          <DefaultNavbarLink name="Getting Started" route="/profile" light={light} />
           <DefaultNavbarLink
-            icon="account_circle"
-            name="sign up"
+            name="pricing"
             route="/pages/auth/sign-up"
             light={light}
           />
           <DefaultNavbarLink
-            icon="key"
-            name="sign in"
+            name="faqs"
             route="/pages/auth/sign-in"
             light={light}
           />
@@ -138,6 +149,12 @@ function DefaultNavbar({ transparent, light, action }) {
                 variant="gradient"
                 color={action.color ? action.color : "info"}
                 size="small"
+                sx={{
+                  transition: "transform 0.3s",
+                  "&:hover": {
+                    transform: "scale(1.05)",
+                  },
+                }}
               >
                 {action.label}
               </MDButton>
@@ -152,9 +169,15 @@ function DefaultNavbar({ transparent, light, action }) {
                 variant="gradient"
                 color={action.color ? action.color : "info"}
                 size="small"
-                sx={{ mt: -0.3 }}
+                sx={{
+                  mt: -0.3,
+                  transition: "transform 0.3s",
+                  "&:hover": {
+                    transform: "scale(1.05)",
+                  },
+                }}
               >
-                {action.label}
+                Download App
               </MDButton>
             </MDBox>
           ))}
