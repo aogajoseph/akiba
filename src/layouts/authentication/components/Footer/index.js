@@ -54,7 +54,7 @@ function Footer({ light }) {
               opacity: 0.9
             }}
           >
-            &copy; {new Date().getFullYear()} Akiba
+            &copy; {new Date().getFullYear()} Akiba Technologies Ltd. All Rights Reserved.
           </MDBox>
            
           <MDBox

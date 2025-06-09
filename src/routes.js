@@ -95,19 +95,19 @@ const routes = [
   },
   {
     type: "collapse",
+    name: "Reports",
+    key: "statements",
+    icon: <Icon fontSize="small">receipt_long</Icon>,
+    route: "/statements",
+    component: <Statements />,
+  },
+  {
+    type: "collapse",
     name: "Account",
     key: "account",
     icon: <Icon fontSize="small">account_balance</Icon>,
     route: "/account",
     component: <Account />,
-  },
-  {
-    type: "collapse",
-    name: "Statements",
-    key: "statements",
-    icon: <Icon fontSize="small">receipt_long</Icon>,
-    route: "/statements",
-    component: <Statements />,
   },
   {
     type: "auth",

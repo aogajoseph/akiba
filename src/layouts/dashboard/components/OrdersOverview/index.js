@@ -24,56 +24,52 @@ import MDTypography from "components/MDTypography";
 // Material Dashboard 2 React example components
 import TimelineItem from "examples/Timeline/TimelineItem";
 
-function OrdersOverview() {
+function RecentActivities() {
   return (
     <Card sx={{ height: "100%" }}>
       <MDBox pt={3} px={3}>
         <MDTypography variant="h6" fontWeight="medium">
-          Orders overview
+          Recent Activities
         </MDTypography>
         <MDBox mt={0} mb={2}>
-          <MDTypography variant="button" color="text" fontWeight="regular">
-            <MDTypography display="inline" variant="body2" verticalAlign="middle">
-              <Icon sx={{ color: ({ palette: { success } }) => success.main }}>arrow_upward</Icon>
-            </MDTypography>
-            &nbsp;
-            <MDTypography variant="button" color="text" fontWeight="medium">
-              24%
+          <MDTypography variant="button" color="primary" fontWeight="regular" fontStyle="italic">
+            <MDTypography variant="button" color="primary" fontWeight="medium" fontStyle="italic">
+              Kes 2,500 3:43PM
             </MDTypography>{" "}
-            this month
+            , John Doe
           </MDTypography>
         </MDBox>
       </MDBox>
       <MDBox p={2}>
         <TimelineItem
           color="success"
-          icon="notifications"
-          title="$2400, Design changes"
-          dateTime="22 DEC 7:20 PM"
+          icon="payment"
+          title="Kes 2400, Benson Mutinda"
+          dateTime="09 JUN 2:20 PM"
         />
         <TimelineItem
           color="error"
-          icon="inventory_2"
-          title="New order #1832412"
-          dateTime="21 DEC 11 PM"
+          icon="payment"
+          title="Kes 1500, Ken Mwangi"
+          dateTime="09 JUN 1:16 PM"
         />
         <TimelineItem
           color="info"
-          icon="shopping_cart"
-          title="Server payments for April"
-          dateTime="21 DEC 9:34 PM"
+          icon="payment"
+          title="Kes 1000, John Doe"
+          dateTime="09 JUN 1:10 PM"
         />
         <TimelineItem
           color="warning"
           icon="payment"
-          title="New card added for order #4395133"
-          dateTime="20 DEC 2:20 AM"
+          title="Kes 500, Jane Riziki"
+          dateTime="09 JUN 10:05 AM"
         />
         <TimelineItem
           color="primary"
-          icon="vpn_key"
-          title="New card added for order #4395133"
-          dateTime="18 DEC 4:54 AM"
+          icon="payment"
+          title="Kes 200, Julius Baraza"
+          dateTime="08 JUN 10:00 PM"
           lastItem
         />
       </MDBox>
@@ -81,4 +77,4 @@ function OrdersOverview() {
   );
 }
 
-export default OrdersOverview;
+export default RecentActivities;

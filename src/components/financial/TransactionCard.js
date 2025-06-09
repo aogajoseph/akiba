@@ -15,7 +15,7 @@ function TransactionCard({ type, amount, sender, timestamp, status }) {
         <MDBox display="flex" justifyContent="space-between" alignItems="center">
           <MDBox>
             <MDTypography variant="button" fontWeight="medium" color={isDeposit ? 'success' : 'error'}>
-              {isDeposit ? '+' : '-'} KES {amount}
+              {isDeposit ? '+' : '-'} Kes {amount}
             </MDTypography>
             <MDTypography variant="caption" color="text" display="block">
               From: {sender}

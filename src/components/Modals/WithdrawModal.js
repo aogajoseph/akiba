@@ -92,7 +92,7 @@ function WithdrawModal({ open, onClose }) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               InputProps={{
-                startAdornment: <Box component="span" mr={1}>KES</Box>,
+                startAdornment: <Box component="span" mr={1}>Kes</Box>,
               }}
             />
           </MDBox>

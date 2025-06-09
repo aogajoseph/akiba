@@ -41,7 +41,7 @@ function GroupCard({ name, members, balance, accountNumber }) {
             Members: {members}
           </MDTypography>
           <MDTypography variant="body2" color="text">
-            Balance: KES {balance}
+            Balance: Kes {balance}
           </MDTypography>
           <MDTypography variant="body2" color="text">
             Account: {accountNumber}

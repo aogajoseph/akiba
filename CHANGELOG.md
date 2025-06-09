@@ -107,7 +107,7 @@
   - BarCharts
     - HorizontalBarChart
     - VerticalBarChart
-    - ReportsBarChart
+    - reportsBarChart
   - BubbleChart
   - DoughnutCharts
     - DefaultDoughnutChart
@@ -115,7 +115,7 @@
     - DefaultLineChart
     - GradientLineChart
     - ProgressLineChart
-    - ReportsLineChart
+    - statementsLineChart
   - MixedChart
   - PieChart
   - PolarChart
@@ -289,7 +289,7 @@ _Warnings might appear while doing an npm install - they do not affect the UI or
 - Deleted the copyright comments from all files, we only need to keep them inside our index.js and index.html
 - Added script that adds copyrights to the built app
 - Renamed all the files from `.jsx` to `.js`
-- Changed the `withStyles` function from Material-UI with the `makeStyles` function (integration with other frameworks should now be easy)
+- Changed the `withStyles` function from Material-UI with the `maKestyles` function (integration with other frameworks should now be easy)
 - React Hooks is now supported
 
 ### Major style changes

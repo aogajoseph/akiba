@@ -42,7 +42,7 @@ function ComplexStatisticsCard({ color, title, count, percentage, icon }) {
           height="4rem"
           mt={-3}
         >
-          <Icon fontSize="medium" color="inherit">
+          <Icon fontSize="large" color="inherit">
             {icon}
           </Icon>
         </MDBox>

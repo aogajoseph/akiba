@@ -200,7 +200,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
             }
           })}
         >
-          upgrade to pro
+          get akiba plus
         </MDButton>
       </MDBox>
     </SidenavRoot>

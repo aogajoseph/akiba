@@ -50,6 +50,9 @@ import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import Divider from "@mui/material/Divider";
 import CloseIcon from "@mui/icons-material/Close";
+import Fade from "@mui/material/Fade";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -82,6 +85,12 @@ function SignUp() {
     password: '',
     agreeToTerms: false
   });
+  const [showCopyNotification, setShowCopyNotification] = useState(false);
+  const [showSuccessCard, setShowSuccessCard] = useState(false);
+  const [accountDetails] = useState({
+    accountNumber: "AK-2024-001",
+    createdAt: new Date().toLocaleDateString(),
+  });
 
   const handleInputChange = (field) => (event) => {
     setFormData({
@@ -102,7 +111,7 @@ function SignUp() {
       return;
     }
     if (activeStep === steps.length - 1) {
-      navigate('/dashboard'); // Navigate to dashboard on finish
+      setShowSuccessCard(true);
       return;
     }
     setActiveStep((prevStep) => prevStep + 1);
@@ -110,6 +119,18 @@ function SignUp() {
 
   const handleBack = () => {
     setActiveStep((prevStep) => prevStep - 1);
+  };
+
+  const handleSkip = () => {
+    if (activeStep === steps.length - 1) {
+      setShowSuccessCard(true);
+      return;
+    }
+    setActiveStep((prevStep) => prevStep + 1);
+  };
+
+  const handleFinish = () => {
+    navigate('/dashboard');
   };
 
   const validateStep1 = () => {
@@ -177,7 +198,7 @@ function SignUp() {
   const renderProfileStep = () => (
     <MDBox>
       <MDTypography variant="h6" fontWeight="medium" mb={3}>
-        Personalize Your Profile
+        Personalize Your Profiles
       </MDTypography>
       <Grid container spacing={3}>
         <Grid item xs={12}>
@@ -206,12 +227,12 @@ function SignUp() {
           </MDBox>
         </Grid>
         <Grid item xs={12}>
-          <MDBox 
+        <MDBox
             border="2px dashed"
             borderColor="info.main"
-            borderRadius="lg"
+          borderRadius="lg"
             p={4}
-            textAlign="center"
+          textAlign="center"
             sx={{
               cursor: "pointer",
               transition: "all 0.2s",
@@ -260,7 +281,7 @@ function SignUp() {
       <Divider />
       <DialogContent>
         <MDBox py={2}>
-          <MDTypography variant="body2" color="text" mb={2}>
+          <MDTypography variant="body2" color="text" textAlign="center" mb={2}>
             Select contacts from your device to invite to Akiba
           </MDTypography>
           {/* Placeholder for contacts list */}
@@ -479,17 +500,28 @@ function SignUp() {
                     </Avatar>
                   </ListItemAvatar>
                   <ListItemText 
-                    primary="Copy Invitation Link" 
-                    secondary="Share the link through any platform"
+                    primary={
+                      <MDBox display="flex" alignItems="center" gap={1}>
+                        <MDTypography variant="button" fontWeight="medium">
+                          Copy Invitation Link
+                        </MDTypography>
+                        <Fade in={showCopyNotification} timeout={300}>
+                          <MDTypography variant="caption" color="info" fontStyle="italic">
+                            Link copied to clipboard!
+                          </MDTypography>
+                        </Fade>
+                      </MDBox>
+                    }
+                    secondary="Share your link anywhere"
                   />
                   <MDButton 
                     variant="outlined" 
                     color="info" 
                     size="small"
                     onClick={() => {
-                      // Simulate copy to clipboard
-                      navigator.clipboard.writeText('https://akiba.app/invite/your-unique-code');
+                      handleCopyLink();
                     }}
+                    startIcon={<ContentCopyIcon />}
                   >
                     Copy
                   </MDButton>
@@ -539,6 +571,71 @@ function SignUp() {
     </MDBox>
   );
 
+  const renderSuccessCard = () => (
+    <Dialog
+      open={showSuccessCard}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogContent>
+        <MDBox textAlign="center" py={3}>
+          <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
+          <MDTypography variant="h4" fontWeight="medium" mb={2}>
+            Your account was created successfully!
+          </MDTypography>
+          
+          <MDBox bgcolor="grey.100" borderRadius="lg" p={3} mb={3}>
+            <Grid container spacing={2}>
+              <Grid item xs={12}>
+                <MDBox display="flex" justifyContent="space-between" mb={1}>
+                  <MDTypography variant="button" color="text">Account Name:</MDTypography>
+                  <MDTypography variant="button" fontWeight="medium">{formData.accountName}</MDTypography>
+                </MDBox>
+              </Grid>
+              <Grid item xs={12}>
+                <MDBox display="flex" justifyContent="space-between" mb={1}>
+                  <MDTypography variant="button" color="text">Account Number:</MDTypography>
+                  <MDTypography variant="button" fontWeight="medium">{accountDetails.accountNumber}</MDTypography>
+                </MDBox>
+              </Grid>
+              <Grid item xs={12}>
+                <MDBox display="flex" justifyContent="space-between" mb={1}>
+                  <MDTypography variant="button" color="text">Account Type:</MDTypography>
+                  <MDTypography variant="button" fontWeight="medium" textTransform="capitalize">{accountType}</MDTypography>
+                </MDBox>
+              </Grid>
+              <Grid item xs={12}>
+                <MDBox display="flex" justifyContent="space-between">
+                  <MDTypography variant="button" color="text">Created On:</MDTypography>
+                  <MDTypography variant="button" fontWeight="medium">{accountDetails.createdAt}</MDTypography>
+                </MDBox>
+              </Grid>
+            </Grid>
+          </MDBox>
+
+          <MDTypography variant="body2" color="text" mb={3}>
+            We've sent these details to your email ({formData.email}) and phone ({formData.phone}) for your records.
+          </MDTypography>
+
+          <MDButton
+            variant="gradient"
+            color="info"
+            onClick={handleFinish}
+            fullWidth
+          >
+            Proceed to Dashboard
+          </MDButton>
+        </MDBox>
+      </DialogContent>
+    </Dialog>
+  );
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText('https://akiba.app/invite/your-unique-code');
+    setShowCopyNotification(true);
+    setTimeout(() => setShowCopyNotification(false), 3000);
+  };
+
   const renderStepContent = () => {
     switch (activeStep) {
       case 0:
@@ -583,7 +680,7 @@ function SignUp() {
             {/* Main Admin Details Section */}
             <MDBox mb={4}>
               <MDTypography variant="h6" fontWeight="medium" mb={3}>
-                Main Admin (Account Creator) Details
+              Account Creator (Main Admin) Details
               </MDTypography>
               <Grid container spacing={4}>
                 <Grid item xs={12} md={6}>
@@ -645,24 +742,24 @@ function SignUp() {
                   checked={formData.agreeToTerms}
                   onChange={handleCheckboxChange}
                 />
-                <MDTypography
-                  variant="button"
-                  fontWeight="regular"
-                  color="text"
-                  sx={{ cursor: "pointer", userSelect: "none", ml: -1 }}
-                >
+              <MDTypography
+                variant="button"
+                fontWeight="regular"
+                color="text"
+                sx={{ cursor: "pointer", userSelect: "none", ml: -1 }}
+              >
                   &nbsp;&nbsp;I agree to Akiba's&nbsp;
-                </MDTypography>
-                <MDTypography
-                  component="a"
-                  href="#"
-                  variant="button"
-                  fontWeight="bold"
-                  color="info"
-                  textGradient
-                >
+              </MDTypography>
+              <MDTypography
+                component="a"
+                href="#"
+                variant="button"
+                fontWeight="bold"
+                color="info"
+                textGradient
+              >
                   Terms and Privacy Policy
-                </MDTypography>
+              </MDTypography>
               </MDBox>
             </MDBox>
           </>
@@ -742,6 +839,11 @@ function SignUp() {
                     Back
                   </MDButton>
                 )}
+                {(activeStep === 2 || activeStep === 3) && (
+                  <MDButton variant="text" color="info" onClick={handleSkip}>
+                    Skip
+                  </MDButton>
+                )}
                 <MDButton 
                   variant="gradient" 
                   color="info" 
@@ -751,28 +853,31 @@ function SignUp() {
                   {activeStep === steps.length - 1 ? "Finish" : "Next"}
                 </MDButton>
               </MDBox>
+
+              {/* Render Success Card */}
+              {renderSuccessCard()}
             </MDBox>
 
             {/* Sign In Link */}
             {activeStep === 0 && (
-              <MDBox mt={3} mb={1} textAlign="center">
-                <MDTypography variant="button" color="text">
-                  Already have an account?{" "}
-                  <MDTypography
-                    component={Link}
+            <MDBox mt={3} mb={1} textAlign="center">
+              <MDTypography variant="button" color="text">
+                Already have an account?{" "}
+                <MDTypography
+                  component={Link}
                     to="/auth/sign-in"
-                    variant="button"
-                    color="info"
-                    fontWeight="medium"
-                    textGradient
-                  >
-                    Sign In
-                  </MDTypography>
+                  variant="button"
+                  color="info"
+                  fontWeight="medium"
+                  textGradient
+                >
+                  Sign In
                 </MDTypography>
-              </MDBox>
+              </MDTypography>
+            </MDBox>
             )}
-          </MDBox>
-        </Card>
+        </MDBox>
+      </Card>
       </Box>
       <MDBox mb={8}></MDBox>
     </CoverLayout>

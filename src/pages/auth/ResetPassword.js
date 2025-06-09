@@ -13,6 +13,9 @@ Coded by www.creative-tim.com
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
+// React imports
+import { Link } from "react-router-dom";
+
 // @mui material components
 import Card from "@mui/material/Card";
 
@@ -59,6 +62,19 @@ function ResetPassword() {
               <MDButton variant="gradient" color="info" fullWidth>
                 request link
               </MDButton>
+            </MDBox>
+            {/* Sign Up Link */}
+            <MDBox mt={1} mb={1} textAlign="center">
+              <MDTypography
+                component={Link}
+                to="/auth/sign-in"
+                variant="button"
+                color="info"
+                fontWeight="medium"
+                textGradient
+              >
+                Back to Sign In
+              </MDTypography>
             </MDBox>
           </MDBox>
         </MDBox>

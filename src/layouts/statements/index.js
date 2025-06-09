@@ -26,7 +26,6 @@ import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Transactions from "layouts/statements/data/transactions";
-import Footer from "examples/Footer";
 
 // Data
 import fullStatementsData from "layouts/statements/data/fullStatementsData";
