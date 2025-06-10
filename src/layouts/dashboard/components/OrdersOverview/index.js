@@ -32,8 +32,8 @@ function RecentActivities() {
           Recent Activities
         </MDTypography>
         <MDBox mt={0} mb={2}>
-          <MDTypography variant="button" color="primary" fontWeight="regular" fontStyle="italic">
-            <MDTypography variant="button" color="primary" fontWeight="medium" fontStyle="italic">
+          <MDTypography variant="button" color="info" fontWeight="regular" fontStyle="italic">
+            <MDTypography variant="button" color="info" fontWeight="medium" fontStyle="italic">
               Kes 2,500 3:43PM
             </MDTypography>{" "}
             , John Doe

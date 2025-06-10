@@ -21,7 +21,6 @@ import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 // @mui material components
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
-import Icon from "@mui/material/Icon";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -29,6 +28,7 @@ import MDBox from "components/MDBox";
 // Material Dashboard 2 React example components
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
+import FloatingButtons from "examples/Configurator/FloatingButtons";
 
 // Material Dashboard 2 React themes
 import theme from "assets/theme";
@@ -106,6 +106,17 @@ export default function App() {
     document.scrollingElement.scrollTop = 0;
   }, [pathname]);
 
+  // Add event listener for help dialog
+  useEffect(() => {
+    const handleHelpDialog = () => {
+      const helpDialogEvent = new CustomEvent("openHelpDialog");
+      window.dispatchEvent(helpDialogEvent);
+    };
+
+    window.addEventListener("openHelpDialog", handleHelpDialog);
+    return () => window.removeEventListener("openHelpDialog", handleHelpDialog);
+  }, []);
+
   const getRoutes = (allRoutes) =>
     allRoutes.map((route) => {
       if (route.collapse) {
@@ -118,30 +129,6 @@ export default function App() {
 
       return null;
     });
-
-  const configsButton = (
-    <MDBox
-      display="flex"
-      justifyContent="center"
-      alignItems="center"
-      width="3.25rem"
-      height="3.25rem"
-      bgColor="white"
-      shadow="sm"
-      borderRadius="50%"
-      position="fixed"
-      right="2rem"
-      bottom="2rem"
-      zIndex={99}
-      color="dark"
-      sx={{ cursor: "pointer" }}
-      onClick={() => setOpenConfigurator(dispatch, !openConfigurator)}
-    >
-      <Icon fontSize="small" color="inherit">
-        help_outline
-      </Icon>
-    </MDBox>
-  );
 
   return direction === "rtl" ? (
     <CacheProvider value={rtlCache}>
@@ -158,7 +145,7 @@ export default function App() {
               onMouseLeave={handleOnMouseLeave}
             />
             <Configurator />
-            {configsButton}
+            <FloatingButtons />
           </>
         )}
         <Routes>
@@ -183,7 +170,7 @@ export default function App() {
             onMouseLeave={handleOnMouseLeave}
           />
           <Configurator />
-          {configsButton}
+          <FloatingButtons />
         </>
       )}
       <Routes>

@@ -15,9 +15,6 @@ Coded by www.creative-tim.com
 
 import { useState, useEffect } from "react";
 
-// react-github-btn
-import GitHubButton from "react-github-btn";
-
 // @mui material components
 import Divider from "@mui/material/Divider";
 import Switch from "@mui/material/Switch";
@@ -26,8 +23,17 @@ import Link from "@mui/material/Link";
 import Icon from "@mui/material/Icon";
 
 // @mui icons
-import TwitterIcon from "@mui/icons-material/Twitter";
 import FacebookIcon from "@mui/icons-material/Facebook";
+import XIcon from "@mui/icons-material/X"; 
+import LinkedInIcon from "@mui/icons-material/LinkedIn";
+import { FaWhatsapp } from "react-icons/fa";
+import SettingsIcon from "@mui/icons-material/Settings";
+import HeadsetMicIcon from "@mui/icons-material/HeadsetMic";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import TextField from "@mui/material/TextField";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -59,8 +65,19 @@ function Configurator() {
     darkMode,
   } = controller;
   const [disabled, setDisabled] = useState(false);
+  const [helpDialogOpen, setHelpDialogOpen] = useState(false);
   const sidenavColors = ["primary", "dark", "info", "success", "warning", "error"];
 
+  const appUrl = encodeURIComponent("https://akiba.app");
+  const message = encodeURIComponent("Join me on Akiba - The smart way to save together with family and friends!");
+
+  const shareLinks = {
+    whatsapp: `https://wa.me/?text=${message}%20${appUrl}`,
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${appUrl}`,
+    x: `https://twitter.com/intent/tweet?text=${message}&url=${appUrl}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${appUrl}`,
+  };
+  
   // Use the useEffect hook to change the button state for the sidenav type based on window size.
   useEffect(() => {
     // A function that sets the disabled state of the buttons for the sidenav type.
@@ -93,6 +110,14 @@ function Configurator() {
   };
   const handleFixedNavbar = () => setFixedNavbar(dispatch, !fixedNavbar);
   const handleDarkMode = () => setDarkMode(dispatch, !darkMode);
+
+  const handleHelpDialogOpen = () => {
+    setHelpDialogOpen(true);
+  };
+
+  const handleHelpDialogClose = () => {
+    setHelpDialogOpen(false);
+  };
 
   // sidenav type buttons styles
   const sidenavTypeButtonsStyles = ({
@@ -127,6 +152,14 @@ function Configurator() {
     },
   });
 
+  const socialIconStyle = {
+    fontSize: "1.25rem",
+    transition: "transform 0.2s ease-in-out",
+    "&:hover": {
+      transform: "scale(1.1)",
+    },
+  };
+
   return (
     <ConfiguratorRoot variant="permanent" ownerState={{ openConfigurator }}>
       <MDBox
@@ -138,10 +171,7 @@ function Configurator() {
         px={3}
       >
         <MDBox>
-          <MDTypography variant="h5">Material UI Configurator</MDTypography>
-          <MDTypography variant="body2" color="text">
-            See our dashboard options.
-          </MDTypography>
+          <MDTypography variant="h5">Dashboard Settings</MDTypography>
         </MDBox>
 
         <Icon
@@ -162,8 +192,91 @@ function Configurator() {
       <Divider />
 
       <MDBox pt={0.5} pb={3} px={3}>
+        <MDBox display="flex" justifyContent="space-between" alignItems="center" lineHeight={1}>
+          <MDTypography variant="h6">Dark Mode</MDTypography>
+          <Switch checked={darkMode} onChange={handleDarkMode} />
+        </MDBox>
+
+        <Divider />
+
+        <MDBox
+          display="flex"
+          justifyContent="space-between"
+          alignItems="center"
+          mt={3}
+          lineHeight={1}
+        >
+          <MDTypography variant="h6">Fixed Navbar</MDTypography>
+          <Switch checked={fixedNavbar} onChange={handleFixedNavbar} />
+        </MDBox>
+
+        <Divider />
+
+        <MDBox mt={3} lineHeight={1}>
+          <MDTypography variant="button" color="text">
+            Backgrounds
+          </MDTypography>
+
+          <MDBox
+            sx={{
+              display: "flex",
+              mt: 2,
+              mr: 1,
+            }}
+          >
+            <MDButton
+              color="dark"
+              variant="gradient"
+              onClick={handleWhiteSidenav}
+              disabled={disabled}
+              fullWidth
+              sx={
+                whiteSidenav && !transparentSidenav
+                  ? sidenavTypeActiveButtonStyles
+                  : sidenavTypeButtonsStyles
+              }
+            >
+              Light
+            </MDButton>
+            <MDBox sx={{ mx: 1, width: "6rem", minWidth: "6rem" }}>
+              <MDButton
+                color="dark"
+                variant="gradient"
+                onClick={handleTransparentSidenav}
+                disabled={disabled}
+                fullWidth
+                sx={
+                  transparentSidenav && !whiteSidenav
+                    ? sidenavTypeActiveButtonStyles
+                    : sidenavTypeButtonsStyles
+                }
+              >
+                Clear
+              </MDButton>
+            </MDBox>
+            <MDButton
+              color="dark"
+              variant="gradient"
+              onClick={handleDarkSidenav}
+              disabled={disabled}
+              fullWidth
+              sx={
+                !transparentSidenav && !whiteSidenav
+                  ? sidenavTypeActiveButtonStyles
+                  : sidenavTypeButtonsStyles
+              }
+            >
+              Dark
+            </MDButton>
+          </MDBox>
+        </MDBox>
+
+        <Divider />
+
         <MDBox>
-          <MDTypography variant="h6">Sidenav Colors</MDTypography>
+        <MDTypography variant="button" color="text">
+            Colors
+          </MDTypography>
 
           <MDBox mb={0.5}>
             {sidenavColors.map((color) => (
@@ -208,138 +321,105 @@ function Configurator() {
           </MDBox>
         </MDBox>
 
-        <MDBox mt={3} lineHeight={1}>
-          <MDTypography variant="h6">Sidenav Type</MDTypography>
-          <MDTypography variant="button" color="text">
-            Choose between different sidenav types.
-          </MDTypography>
-
-          <MDBox
-            sx={{
-              display: "flex",
-              mt: 2,
-              mr: 1,
-            }}
-          >
-            <MDButton
-              color="dark"
-              variant="gradient"
-              onClick={handleDarkSidenav}
-              disabled={disabled}
-              fullWidth
-              sx={
-                !transparentSidenav && !whiteSidenav
-                  ? sidenavTypeActiveButtonStyles
-                  : sidenavTypeButtonsStyles
-              }
-            >
-              Dark
-            </MDButton>
-            <MDBox sx={{ mx: 1, width: "8rem", minWidth: "8rem" }}>
-              <MDButton
-                color="dark"
-                variant="gradient"
-                onClick={handleTransparentSidenav}
-                disabled={disabled}
-                fullWidth
-                sx={
-                  transparentSidenav && !whiteSidenav
-                    ? sidenavTypeActiveButtonStyles
-                    : sidenavTypeButtonsStyles
-                }
-              >
-                Transparent
-              </MDButton>
-            </MDBox>
-            <MDButton
-              color="dark"
-              variant="gradient"
-              onClick={handleWhiteSidenav}
-              disabled={disabled}
-              fullWidth
-              sx={
-                whiteSidenav && !transparentSidenav
-                  ? sidenavTypeActiveButtonStyles
-                  : sidenavTypeButtonsStyles
-              }
-            >
-              White
-            </MDButton>
-          </MDBox>
-        </MDBox>
-        <MDBox
-          display="flex"
-          justifyContent="space-between"
-          alignItems="center"
-          mt={3}
-          lineHeight={1}
-        >
-          <MDTypography variant="h6">Navbar Fixed</MDTypography>
-
-          <Switch checked={fixedNavbar} onChange={handleFixedNavbar} />
-        </MDBox>
         <Divider />
-        <MDBox display="flex" justifyContent="space-between" alignItems="center" lineHeight={1}>
-          <MDTypography variant="h6">Light / Dark</MDTypography>
 
-          <Switch checked={darkMode} onChange={handleDarkMode} />
-        </MDBox>
-        <Divider />
-        <MDBox mt={3} mb={2}>
-          <MDButton
-            component={Link}
-            href="https://www.creative-tim.com/learning-lab/react/quick-start/material-dashboard/"
-            target="_blank"
-            rel="noreferrer"
-            color={darkMode ? "light" : "dark"}
-            variant="outlined"
-            fullWidth
-          >
-            view documentation
-          </MDButton>
-        </MDBox>
-        <MDBox display="flex" justifyContent="center">
-          <GitHubButton
-            href="https://github.com/creativetimofficial/material-dashboard-react"
-            data-icon="octicon-star"
-            data-size="large"
-            data-show-count="true"
-            aria-label="Star creativetimofficial/material-dashboard-react on GitHub"
-          >
-            Star
-          </GitHubButton>
-        </MDBox>
         <MDBox mt={2} textAlign="center">
           <MDBox mb={0.5}>
-            <MDTypography variant="h6">Thank you for sharing!</MDTypography>
+            <MDTypography variant="h6">Spread the word about Akiba!</MDTypography>
+            <MDTypography variant="button" color="text">
+              Help others discover the joy of saving together
+            </MDTypography>
           </MDBox>
 
-          <MDBox display="flex" justifyContent="center">
-            <MDBox mr={1.5}>
-              <MDButton
-                component={Link}
-                href="//twitter.com/intent/tweet?text=Check%20Material%20Dashboard%20React%20made%20by%20%40CreativeTim%20%23webdesign%20%23dashboard%20%23react%20%mui&url=https%3A%2F%2Fwww.creative-tim.com%2Fproduct%2Fmaterial-dashboard-react"
-                target="_blank"
-                rel="noreferrer"
-                color="dark"
-              >
-                <TwitterIcon />
-                &nbsp; Tweet
-              </MDButton>
-            </MDBox>
-            <MDButton
-              component={Link}
-              href="https://www.facebook.com/sharer/sharer.php?u=https://www.creative-tim.com/product/material-dashboard-react"
-              target="_blank"
+          <MDBox display="flex" justifyContent="center" gap={1}>
+            <IconButton 
+              component="a" 
+              href={shareLinks.whatsapp} 
+              target="_blank" 
               rel="noreferrer"
-              color="dark"
+              sx={{
+                backgroundColor: "rgba(37, 211, 102, 0.1)",
+                "&:hover": {
+                  backgroundColor: "rgba(37, 211, 102, 0.2)",
+                },
+              }}
             >
-              <FacebookIcon />
-              &nbsp; Share
-            </MDButton>
+              <FaWhatsapp style={{ ...socialIconStyle, color: "#25D366" }} />
+            </IconButton>
+            <IconButton 
+              component="a" 
+              href={shareLinks.facebook} 
+              target="_blank" 
+              rel="noreferrer"
+              sx={{
+                backgroundColor: "rgba(24, 119, 242, 0.1)",
+                "&:hover": {
+                  backgroundColor: "rgba(24, 119, 242, 0.2)",
+                },
+              }}
+            >
+              <FacebookIcon sx={{ ...socialIconStyle, color: "#1877F2" }} />
+            </IconButton>
+            <IconButton 
+              component="a" 
+              href={shareLinks.x} 
+              target="_blank" 
+              rel="noreferrer"
+              sx={{
+                backgroundColor: "rgba(0, 0, 0, 0.1)",
+                "&:hover": {
+                  backgroundColor: "rgba(0, 0, 0, 0.2)",
+                },
+              }}
+            >
+              <XIcon sx={{ ...socialIconStyle, color: "#000000" }} />
+            </IconButton>
+            <IconButton 
+              component="a" 
+              href={shareLinks.linkedin} 
+              target="_blank" 
+              rel="noreferrer"
+              sx={{
+                backgroundColor: "rgba(10, 102, 194, 0.1)",
+                "&:hover": {
+                  backgroundColor: "rgba(10, 102, 194, 0.2)",
+                },
+              }}
+            >
+              <LinkedInIcon sx={{ ...socialIconStyle, color: "#0A66C2" }} />
+            </IconButton>
           </MDBox>
         </MDBox>
       </MDBox>
+
+      {/* Help Dialog */}
+      <Dialog open={helpDialogOpen} onClose={handleHelpDialogClose} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          <MDTypography variant="h6" fontWeight="medium">
+            How can we help you?
+          </MDTypography>
+        </DialogTitle>
+        <DialogContent>
+          <MDBox mt={2}>
+            <TextField
+              autoFocus
+              multiline
+              rows={4}
+              fullWidth
+              label="Describe your issue or question"
+              variant="outlined"
+            />
+          </MDBox>
+        </DialogContent>
+        <DialogActions>
+          <MDButton onClick={handleHelpDialogClose} color="secondary">
+            Cancel
+          </MDButton>
+          <MDButton onClick={handleHelpDialogClose} color="info">
+            Send
+          </MDButton>
+        </DialogActions>
+      </Dialog>
     </ConfiguratorRoot>
   );
 }

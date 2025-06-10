@@ -40,7 +40,12 @@ import reportsLineChartData from "layouts/dashboard/data/reportsLineChartData";
 import SavingGoals from "layouts/dashboard/components/Projects";
 import RecentActivities from "layouts/dashboard/components/OrdersOverview";
 
+// Material Dashboard 2 React context
+import { useMaterialUIController } from "context";
+
 function Dashboard() {
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
   const { sales, tasks } = reportsLineChartData;
 
   return (
@@ -56,10 +61,10 @@ function Dashboard() {
                 title="Current Balance"
                 count={
                   <MDBox display="flex" justifyContent="flex-end">
-                    <MDBox mr={0.5} fontSize="1rem" mt={1}>
+                    <MDBox mr={0.5} fontSize="1rem" mt={1} color={darkMode ? "white" : "dark"}>
                       Kes
                     </MDBox>
-                    <MDBox fontSize="1rem" mt={1}>
+                    <MDBox fontSize="1rem" mt={1} color={darkMode ? "white" : "dark"}>
                       1,250,000
                     </MDBox>
                   </MDBox>
@@ -80,10 +85,10 @@ function Dashboard() {
                 title="Contributions"
                 count={
                   <MDBox display="flex" justifyContent="flex-end">
-                    <MDBox mr={0.5} fontSize="1rem" mt={1}>
+                    <MDBox mr={0.5} fontSize="1rem" mt={1} color={darkMode ? "white" : "dark"}>
                       Kes
                     </MDBox>
-                    <MDBox fontSize="1rem" mt={1}>
+                    <MDBox fontSize="1rem" mt={1} color={darkMode ? "white" : "dark"}>
                       2,500,000
                     </MDBox>
                   </MDBox>
@@ -103,7 +108,7 @@ function Dashboard() {
                 title="Total Members"
                 count={
                   <MDBox display="flex" justifyContent="flex-end">
-                    <MDBox fontSize="1rem" mt={1}>
+                    <MDBox fontSize="1rem" mt={1} color={darkMode ? "white" : "dark"}>
                       1232
                     </MDBox>
                   </MDBox>
@@ -124,7 +129,7 @@ function Dashboard() {
                 title="Completed Goals"
                 count={
                   <MDBox display="flex" justifyContent="flex-end">
-                    <MDBox fontSize="1rem" mt={1}>
+                    <MDBox fontSize="1rem" mt={1} color={darkMode ? "white" : "dark"}>
                      27/60
                     </MDBox>
                   </MDBox>

@@ -54,9 +54,8 @@ function Footer({ light }) {
               opacity: 0.9
             }}
           >
-            &copy; {new Date().getFullYear()} Akiba Technologies Ltd. All Rights Reserved.
+            &copy;{new Date().getFullYear()} Akiba Technologies Ltd. All Rights Reserved.
           </MDBox>
-           
           <MDBox
             component="ul"
             sx={({ breakpoints, palette: { grey, text, info } }) => ({
