@@ -851,7 +851,7 @@ function SignUp() {
                   onClick={handleNext}
                 >
                   {activeStep === steps.length - 1 ? "Finish" : "Next"}
-                </MDButton>
+              </MDButton>
               </MDBox>
 
               {/* Render Success Card */}

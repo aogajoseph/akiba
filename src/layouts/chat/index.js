@@ -1,9 +1,25 @@
-import React, { useState } from "react";
-import { Grid, IconButton, Drawer, useMediaQuery, useTheme } from "@mui/material";
-import GroupIcon from "@mui/icons-material/Group"; // Import the user icon
+import React, { useState, useEffect } from "react";
+import { 
+  Grid, 
+  IconButton, 
+  Drawer, 
+  useMediaQuery, 
+  useTheme, 
+  Box,
+  Fab,
+  Zoom,
+  Tooltip,
+  CircularProgress
+} from "@mui/material";
+import GroupIcon from "@mui/icons-material/Group";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import AddIcon from "@mui/icons-material/Add";
+import SearchIcon from "@mui/icons-material/Search";
+import { useNavigate } from "react-router-dom";
 
 // Akiba React components
 import MDBox from "components/MDBox";
+import MDTypography from "components/MDTypography";
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
@@ -16,20 +32,89 @@ import ChatArea from "./components/ChatArea";
 // Import data
 import { contacts } from "./data";
 
-function Profile() {
-  const [selectedContact, setSelectedContact] = useState(contacts[0]);
+function Chat() {
+  const [selectedContact, setSelectedContact] = useState(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchMode, setSearchMode] = useState(false);
   const isMobile = useMediaQuery("(max-width: 768px)");
-  const theme = useTheme(); // Access the current theme
+  const theme = useTheme();
+  const isDarkMode = theme.palette.mode === "dark";
+  const navigate = useNavigate();
+
+  // Simulate loading when changing contacts
+  useEffect(() => {
+    if (selectedContact) {
+      setIsLoading(true);
+      const timer = setTimeout(() => {
+        setIsLoading(false);
+      }, 800); // Simulate network delay
+      return () => clearTimeout(timer);
+    }
+  }, [selectedContact]);
 
   const handleSendMessage = (message) => {
-    const newMessage = { content: message, isSender: true };
-    const updatedMessages = [...selectedContact.messages, newMessage];
-    setSelectedContact({ ...selectedContact, messages: updatedMessages });
+    if (!selectedContact) return;
+    
+    const newMessage = { 
+      content: message, 
+      isSender: true,
+      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      status: "sent"
+    };
+    
+    // Create a deep copy of the selected contact to avoid direct state mutation
+    const updatedContact = JSON.parse(JSON.stringify(selectedContact));
+    updatedContact.messages = [...updatedContact.messages, newMessage];
+    updatedContact.lastMessage = "You: " + message;
+    updatedContact.lastMessageTime = newMessage.timestamp;
+    
+    // Update the contact in the contacts array
+    const updatedContacts = contacts.map(contact => 
+      contact.id === selectedContact.id ? updatedContact : contact
+    );
+    
+    // Update state
+    setSelectedContact(updatedContact);
+    
+    // Simulate message delivery status updates
+    setTimeout(() => {
+      const deliveredMessage = { ...newMessage, status: "delivered" };
+      const updatedMessages = updatedContact.messages.map((msg, idx) => 
+        idx === updatedContact.messages.length - 1 ? deliveredMessage : msg
+      );
+      
+      const deliveredContact = { ...updatedContact, messages: updatedMessages };
+      setSelectedContact(deliveredContact);
+      
+      // Simulate read status after another delay
+      setTimeout(() => {
+        const readMessage = { ...deliveredMessage, status: "read" };
+        const finalMessages = updatedMessages.map((msg, idx) => 
+          idx === updatedMessages.length - 1 ? readMessage : msg
+        );
+        
+        const readContact = { ...deliveredContact, messages: finalMessages };
+        setSelectedContact(readContact);
+      }, 3000);
+    }, 1500);
   };
 
   const toggleDrawer = () => {
     setIsDrawerOpen(!isDrawerOpen);
+  };
+
+  const handleContactSelect = (contact) => {
+    // If it's a forum notification, navigate to the forum page
+    if (contact.isForumNotification) {
+      navigate("/forum");
+      return;
+    }
+    
+    setSelectedContact(contact);
+    if (isMobile) {
+      toggleDrawer();
+    }
   };
 
   return (
@@ -43,71 +128,100 @@ function Profile() {
               textAlign: "center",
               fontSize: "13px",
               fontStyle: "italic",
-              color: "#A0A0A0",
+              color: isDarkMode ? "text.secondary" : "#A0A0A0",
               marginBottom: 1,
             }}
           >
-            One-on-One Messaging
+            Only you and your recipient can see these messages
           </MDBox>
-          <Grid container spacing={1}>
+          <Grid container spacing={1} sx={{ height: "calc(100vh - 300px)" }}>
             {isMobile ? (
               // Mobile View
               <>
-                <IconButton
-                  onClick={toggleDrawer}
-                  sx={{
-                    position: "absolute",
-                    top: 16,
-                    right: 16,
-                    color: "green",
-                  }}
-                >
-                  <GroupIcon />
-                </IconButton>
-                <Drawer
-                  anchor="right"
-                  open={isDrawerOpen}
-                  onClose={toggleDrawer}
-                  sx={{
-                    "& .MuiDrawer-paper": {
-                      backgroundColor: theme.palette.mode === "dark" ? "#fff" : "#000",
-                      color: theme.palette.mode === "dark" ? "#fff" : "#000",
-                    },
-                  }}
-                >
-                  <Sidebar
-                    contacts={contacts}
-                    activeContactId={selectedContact.id}
-                    onSelectContact={(contact) => {
-                      setSelectedContact(contact);
-                      toggleDrawer();
+                {!selectedContact ? (
+                  // Contact list view on mobile
+                  <Grid item xs={12} sx={{ height: "100%" }}>
+                    <Box 
+                      display="flex" 
+                      justifyContent="space-between" 
+                      alignItems="center" 
+                      mb={2}
+                      px={1}
+                    >
+                      <MDTypography variant="h6">Chats</MDTypography>
+                      <IconButton color="primary" onClick={() => setSearchMode(!searchMode)}>
+                        <SearchIcon />
+                      </IconButton>
+                    </Box>
+                    <Sidebar
+                      contacts={contacts}
+                      activeContactId={selectedContact?.id || 0}
+                      onSelectContact={handleContactSelect}
+                    />
+                  </Grid>
+                ) : (
+                  // Chat view on mobile
+                  <Grid item xs={12} sx={{ height: "100%" }}>
+                    <Box 
+                      display="flex" 
+                      alignItems="center" 
+                      mb={2}
+                    >
+                      <IconButton onClick={() => setSelectedContact(null)}>
+                        <ArrowBackIcon />
+                      </IconButton>
+                      <MDTypography variant="h6" ml={1}>
+                        {selectedContact.name}
+                      </MDTypography>
+                    </Box>
+                    <ChatArea
+                      selectedContact={selectedContact}
+                      onSendMessage={handleSendMessage}
+                    />
+                  </Grid>
+                )}
+                
+                {/* Floating action button for new chat */}
+                <Zoom in={!selectedContact}>
+                  <Fab 
+                    color="primary" 
+                    aria-label="new chat"
+                    sx={{
+                      position: 'fixed',
+                      bottom: 80,
+                      right: 16,
                     }}
-                  />
-                </Drawer>
-                <Grid item xs={12}>
-                  <ChatArea
-                    selectedContact={selectedContact}
-                    messages={selectedContact.messages || []}
-                    onSendMessage={handleSendMessage}
-                  />
-                </Grid>
+                  >
+                    <AddIcon />
+                  </Fab>
+                </Zoom>
               </>
             ) : (
               // Desktop View
               <>
-                <Grid item xs={12} md={3}>
+                <Grid item xs={12} md={3} sx={{ height: "100%" }}>
                   <Sidebar
                     contacts={contacts}
-                    activeContactId={selectedContact.id}
-                    onSelectContact={setSelectedContact}
+                    activeContactId={selectedContact?.id || 0}
+                    onSelectContact={handleContactSelect}
                   />
                 </Grid>
-                <Grid item xs={12} md={9}>
-                  <ChatArea
-                    selectedContact={selectedContact}
-                    messages={selectedContact.messages || []}
-                    onSendMessage={handleSendMessage}
-                  />
+                <Grid item xs={12} md={9} sx={{ height: "100%" }}>
+                  {isLoading ? (
+                    <Box 
+                      display="flex" 
+                      justifyContent="center" 
+                      alignItems="center" 
+                      height="100%"
+                    >
+                      <CircularProgress />
+                    </Box>
+                  ) : (
+                    <ChatArea
+                      selectedContact={selectedContact}
+                      onSendMessage={handleSendMessage}
+                    />
+                  )}
                 </Grid>
               </>
             )}
@@ -119,4 +233,4 @@ function Profile() {
   );
 }
 
-export default Profile;
+export default Chat;

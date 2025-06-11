@@ -59,16 +59,6 @@ function Header({ contact, children }) {
       >
         <Grid container spacing={3} alignItems="center">
           <Grid item>
-            <Badge color={contact?.online ? "success" : "default"} variant="dot" overlap="circular">
-              <MDAvatar
-                src={contact?.avatar || defaultProfileImg}
-                alt={contact?.name}
-                size="xl"
-                shadow="sm"
-              />
-            </Badge>
-          </Grid>
-          <Grid item>
             <MDBox height="100%" mt={0.5} lineHeight={1}>
               <MDTypography variant="h5" fontWeight="medium">
                 {contact?.name || "Family Forum"}
@@ -78,45 +68,9 @@ function Header({ contact, children }) {
                 color={contact?.online ? "success" : "text.secondary"}
                 fontWeight="regular"
               >
-                4 Members
+                26 Members
               </MDTypography>
             </MDBox>
-          </Grid>
-          <Grid item xs={12} md={6} lg={4} sx={{ ml: "auto" }}>
-            <AppBar position="static">
-              <Tabs orientation={tabsOrientation} value={tabValue} onChange={handleSetTabValue}>
-                <Tooltip title="About Group">
-                  <Tab
-                    label="About"
-                    icon={
-                      <Icon fontSize="small" sx={{ mt: -0.25 }}>
-                        description
-                      </Icon>
-                    }
-                  />
-                </Tooltip>
-                <Tooltip title="See Members">
-                  <Tab
-                    label="Members"
-                    icon={
-                      <Icon fontSize="small" sx={{ mt: -0.25 }}>
-                        people
-                      </Icon>
-                    }
-                  />
-                </Tooltip>
-                <Tooltip title="Find Messages">
-                  <Tab
-                    label="Search"
-                    icon={
-                      <Icon fontSize="small" sx={{ mt: -0.25 }}>
-                        search
-                      </Icon>
-                    }
-                  />
-                </Tooltip>
-              </Tabs>
-            </AppBar>
           </Grid>
         </Grid>
         {children}

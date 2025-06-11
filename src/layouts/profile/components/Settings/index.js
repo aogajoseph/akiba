@@ -227,7 +227,7 @@ const Settings = () => {
                                 </MDBox>
                                 <MDBox width="80%" ml={0.5}>
                                     <MDTypography variant="button" fontWeight="regular" color="text">
-                                        Hide Online/Offline Status
+                    Hide Online/Offline Status
                                     </MDTypography>
                                 </MDBox>
                             </MDBox>
@@ -240,7 +240,7 @@ const Settings = () => {
                                 </MDBox>
                                 <MDBox width="80%" ml={0.5}>
                                     <MDTypography variant="button" fontWeight="regular" color="text">
-                                        Enable Notifications
+                    Enable Notifications
                                     </MDTypography>
                                 </MDBox>
                             </MDBox>
