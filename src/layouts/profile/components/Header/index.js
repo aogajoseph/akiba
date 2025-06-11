@@ -25,11 +25,15 @@ import AppBar from "@mui/material/AppBar";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Icon from "@mui/material/Icon";
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
+import Settings from "layouts/profile/components/Settings";
 
 // Material Dashboard 2 React base styles
 import breakpoints from "assets/theme/base/breakpoints";
@@ -82,7 +86,28 @@ function Header({ children }) {
           backgroundPosition: "50%",
           overflow: "hidden",
         }}
-      />
+      >
+        <Tooltip title="Change cover photo">
+          <IconButton
+            sx={{
+              position: 'absolute',
+              top: 16,
+              left: 16,
+              backgroundColor: 'rgba(0,0,0,0.1)',
+              color: 'white',
+              boxShadow: 2,
+              '&:hover': {
+                backgroundColor: 'rgba(0,0,0,0.2)',
+              },
+              zIndex: 2,
+            }}
+            size="large"
+            onClick={() => alert('Change cover photo (coming soon!)')}
+          >
+            <CameraAltIcon fontSize="medium" />
+          </IconButton>
+        </Tooltip>
+      </MDBox>
       <Card
         sx={{
           position: "relative",
@@ -94,7 +119,43 @@ function Header({ children }) {
       >
         <Grid container spacing={3} alignItems="center">
           <Grid item>
-            <MDAvatar src={burceMars} alt="profile-image" size="xl" shadow="sm" />
+            <MDBox position="relative" display="inline-block" sx={{ cursor: 'pointer' }} className="profile-avatar-container">
+              <MDAvatar src={burceMars} alt="profile-image" size="xl" shadow="sm" />
+              <Tooltip title="Change profile photo">
+                <IconButton
+                  sx={{
+                    position: 'absolute',
+                    bottom: 8,
+                    right: 8,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    color: 'white',
+                    boxShadow: 2,
+                    opacity: 0,
+                    transition: 'opacity 0.2s',
+                    '&:hover': {
+                      backgroundColor: 'rgba(0,0,0,0.7)',
+                      color: 'white',
+                    },
+                    zIndex: 2,
+                  }}
+                  size="small"
+                  onClick={() => alert('Change profile photo (coming soon!)')}
+                  className="profile-avatar-camera"
+                  tabIndex={0}
+                >
+                  <CameraAltIcon fontSize="small" />
+                </IconButton>
+              </Tooltip>
+              <style>{`
+                .profile-avatar-camera {
+                  pointer-events: auto;
+                }
+                .profile-avatar-container:hover .profile-avatar-camera,
+                .profile-avatar-container:focus-within .profile-avatar-camera {
+                  opacity: 1 !important;
+                }
+              `}</style>
+            </MDBox>
           </Grid>
           <Grid item>
             <MDBox height="100%" mt={0.5} lineHeight={1}>
@@ -110,26 +171,18 @@ function Header({ children }) {
             <AppBar position="static">
               <Tabs orientation={tabsOrientation} value={tabValue} onChange={handleSetTabValue}>
                 <Tab
-                  label="App"
+                  label="Profile"
                   icon={
                     <Icon fontSize="small" sx={{ mt: -0.25 }}>
-                      home
+                      person
                     </Icon>
                   }
                 />
                 <Tab
-                  label="Message"
+                  label="Edit"
                   icon={
                     <Icon fontSize="small" sx={{ mt: -0.25 }}>
-                      email
-                    </Icon>
-                  }
-                />
-                <Tab
-                  label="Settings"
-                  icon={
-                    <Icon fontSize="small" sx={{ mt: -0.25 }}>
-                      settings
+                      edit
                     </Icon>
                   }
                 />
@@ -137,7 +190,8 @@ function Header({ children }) {
             </AppBar>
           </Grid>
         </Grid>
-        {children}
+        {tabValue === 0 && children}
+        {tabValue === 1 && <Settings />}
       </Card>
     </MDBox>
   );

@@ -90,11 +90,13 @@ function ProfileInfoCard({ title, description, info, social, action, shadow }) {
         <MDTypography variant="h6" fontWeight="medium" textTransform="capitalize">
           {title}
         </MDTypography>
-        <MDTypography component={Link} to={action.route} variant="body2" color="secondary">
-          <Tooltip title={action.tooltip} placement="top">
-            <Icon>edit</Icon>
-          </Tooltip>
-        </MDTypography>
+        {action && action.route && action.tooltip && (
+          <MDTypography component={Link} to={action.route} variant="body2" color="secondary">
+            <Tooltip title={action.tooltip} placement="top">
+              <Icon>edit</Icon>
+            </Tooltip>
+          </MDTypography>
+        )}
       </MDBox>
       <MDBox p={2}>
         <MDBox mb={2} lineHeight={1}>

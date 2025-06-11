@@ -191,7 +191,7 @@ function FloatingButtons() {
   return (
     <>
       <FloatingButtonsRoot ownerState={{ darkMode }}>
-        <Tooltip title="Dashboard Settings" placement="left">
+        <Tooltip title="Customize Dashboard" placement="left">
           <Fab
             onClick={handleConfiguratorToggle}
             aria-label="settings"
@@ -201,7 +201,7 @@ function FloatingButtons() {
           </Fab>
         </Tooltip>
         <MDBox position="relative">
-          <Tooltip title="Ask for Help" placement="left">
+          <Tooltip title="Get Help" placement="left">
             <Fab
               onClick={handleHelpClick}
               aria-label="help"

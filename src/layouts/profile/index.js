@@ -31,29 +31,33 @@ import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import ProfileInfoCard from "examples/Cards/InfoCards/ProfileInfoCard";
-import ProfilesList from "examples/Lists/ProfilesList";
+import ConnectedAccounts from "examples/Lists/ProfilesList";
 import DefaultProjectCard from "examples/Cards/ProjectCards/DefaultProjectCard";
 
 // Overview page components
 import Header from "layouts/profile/components/Header";
-import PlatformSettings from "layouts/profile/components/PlatformSettings";
+import ProfileSettings from "layouts/profile/components/ProfileSettings";
 
 // Data
 import profilesListData from "layouts/profile/data/profilesListData";
 
-function Overview() {
+function Profile() {
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox mb={2} />
       <Header>
         <MDBox mt={5} mb={3}>
-          <Grid container spacing={1}>
-            <Grid item xs={12} md={6} xl={4} sx={{ display: "flex" }}>
-              <Divider orientation="vertical" sx={{ ml: -2, mr: 1 }} />
+          <MDBox
+            display={{ xs: "block", xl: "flex" }}
+            flexDirection="row"
+            alignItems="stretch"
+            width="100%"
+          >
+            <MDBox flex={1} minWidth={0} display="flex">
               <ProfileInfoCard
                 title="Bio"
-                description="Hi, I’m Joseph Aoga, Decisions: If you can’t decide, the answer is no. If two equally difficult paths, choose the one more painful in the short term (pain avoidance is creating an illusion of equality)."
+                description={"Hi there, I'm Joseph! I'm here to save, connect and achieve shared goals with the Akiba family."}
                 info={{
                   fullName: "Joseph Aoga",
                   mobile: "(254) 722 2222 22",
@@ -77,18 +81,19 @@ function Overview() {
                     color: "instagram",
                   },
                 ]}
-                action={{ route: "", tooltip: "Edit Profile" }}
+                action={{}}
                 shadow={false}
               />
-              <Divider orientation="vertical" sx={{ mx: 0 }} />
-            </Grid>
-            <Grid item xs={12} xl={4}>
-              <ProfilesList title="Other Akiba Accounts" profiles={profilesListData} shadow={false} />
-            </Grid>
-            <Grid item xs={12} md={6} xl={4}>
-              <PlatformSettings />
-            </Grid>
-          </Grid>
+            </MDBox>
+            <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", xl: "block" }, mx: 0 }} />
+            <MDBox flex={1} minWidth={0} display="flex">
+              <ConnectedAccounts title="Connected Accounts" profiles={profilesListData} shadow={false} />
+            </MDBox>
+            <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", xl: "block" }, mx: 0 }} />
+            <MDBox flex={1} minWidth={0} display="flex">
+              <ProfileSettings />
+            </MDBox>
+          </MDBox>
         </MDBox>
       </Header>
       <Footer />
@@ -96,4 +101,4 @@ function Overview() {
   );
 }
 
-export default Overview;
+export default Profile;
