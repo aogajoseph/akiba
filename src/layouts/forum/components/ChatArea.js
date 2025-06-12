@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
-import BrushIcon from "@mui/icons-material/Brush";
+import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
 import PhoneIcon from "@mui/icons-material/Phone";
 import MicIcon from "@mui/icons-material/Mic";
 import AttachFileIcon from "@mui/icons-material/AttachFile";
@@ -137,7 +137,7 @@ const ChatArea = ({ selectedContact, onSendMessage }) => {
           }}
         />
         <Box ml={2} flex={1}>
-          <MDTypography variant="subtitle1" fontWeight="medium">
+          <MDTypography variant="subtitle1" fontWeight="medium" color="text.primary">
             {selectedContact.name}
           </MDTypography>
           <Typography variant="caption" color="text.secondary">
@@ -147,7 +147,7 @@ const ChatArea = ({ selectedContact, onSendMessage }) => {
         <Box display="flex" alignItems="center">
           <Tooltip title="Clear chat history">
             <IconButton size="small" sx={{ mx: 0.5 }} onClick={handleClearChat}>
-              <BrushIcon fontSize="small" />
+              <CleaningServicesIcon fontSize="small" sx={{ color: isDarkMode ? "#fff" : "inherit" }} />
             </IconButton>
           </Tooltip>
           <Tooltip title="Account info">

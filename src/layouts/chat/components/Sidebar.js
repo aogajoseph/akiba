@@ -288,7 +288,7 @@ const Sidebar = ({ contacts, activeContactId, onSelectContact }) => {
         borderBottom={1}
         borderColor="divider"
       >
-        <MDTypography variant="h6">Chats</MDTypography>
+        <MDTypography variant="h6" color="text.primary">Chats</MDTypography>
         <Box>
           <IconButton size="small" onClick={handleMenuClick}>
             <MoreVertIcon fontSize="small" />
@@ -321,13 +321,20 @@ const Sidebar = ({ contacts, activeContactId, onSelectContact }) => {
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
               bgcolor: isDarkMode ? "background.default" : "#fff",
+            },
+            "& .MuiInputBase-input": {
+              color: isDarkMode ? "white" : "inherit"
+            },
+            "& .MuiInputBase-input::placeholder": {
+              color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.6)",
+              opacity: 1
             }
           }}
         />
       </Box>
       
       {/* Filter Tabs */}
-      <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
+      <Box sx={{ borderBottom: 1, borderColor: 'divider', mx: 1, py: 1 }}>
         <Tabs 
           value={filterValue} 
           onChange={handleFilterChange}

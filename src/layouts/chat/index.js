@@ -1,17 +1,14 @@
 import React, { useState, useEffect } from "react";
 import { 
   Grid, 
-  IconButton, 
-  Drawer, 
+  IconButton,  
   useMediaQuery, 
   useTheme, 
   Box,
   Fab,
   Zoom,
-  Tooltip,
   CircularProgress
 } from "@mui/material";
-import GroupIcon from "@mui/icons-material/Group";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
@@ -25,7 +22,6 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 
 // Import Chat Components
-import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import ChatArea from "./components/ChatArea";
 
@@ -121,7 +117,6 @@ function Chat() {
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox mb={2} />
-      <Header>
         <MDBox mt={3} mb={3}>
           <MDBox
             sx={{
@@ -134,7 +129,7 @@ function Chat() {
           >
             Only you and your recipient can see these messages
           </MDBox>
-          <Grid container spacing={1} sx={{ height: "calc(100vh - 300px)" }}>
+          <Grid container spacing={1} sx={{ height: "calc(100vh - 220px)" }}>
             {isMobile ? (
               // Mobile View
               <>
@@ -143,7 +138,6 @@ function Chat() {
                   <Grid item xs={12} sx={{ height: "100%" }}>
                     <Box 
                       display="flex" 
-                      justifyContent="space-between" 
                       alignItems="center" 
                       mb={2}
                       px={1}
@@ -227,7 +221,6 @@ function Chat() {
             )}
           </Grid>
         </MDBox>
-      </Header>
       <Footer />
     </DashboardLayout>
   );

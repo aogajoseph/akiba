@@ -24,7 +24,6 @@ import {
 import AddIcon from "@mui/icons-material/Add";
 import SearchIcon from "@mui/icons-material/Search";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
-import MoreVertIcon from "@mui/icons-material/MoreVert";
 import ChevronLeftIcon from "@mui/icons-material/ChevronLeft";
 import ChevronRightIcon from "@mui/icons-material/ChevronRight";
 import { useNavigate } from "react-router-dom";
@@ -37,7 +36,6 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 
 // Import Chat Components
-import Header from "./components/Header";
 import ChatArea from "./components/ChatArea";
 
 // Import data
@@ -164,7 +162,7 @@ function Forum() {
         borderBottom={1}
         borderColor="divider"
       >
-        <MDTypography variant="h6">Forum</MDTypography>
+        <MDTypography variant="h6" color="text.primary">Forum</MDTypography>
         <TextField 
           fullWidth 
           size="small" 
@@ -183,6 +181,13 @@ function Forum() {
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
               bgcolor: isDarkMode ? "background.default" : "#fff",
+            },
+            "& .MuiInputBase-input": {
+              color: isDarkMode ? "white" : "inherit"
+            },
+            "& .MuiInputBase-input::placeholder": {
+              color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.6)",
+              opacity: 1
             }
           }}
         />
@@ -294,7 +299,6 @@ function Forum() {
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox mb={2} />
-      <Header>
         <MDBox mt={3} mb={3}>
           <MDBox
             sx={{
@@ -307,7 +311,7 @@ function Forum() {
           >
             Messages here are seen by everyone in the group.
           </MDBox>
-          <Grid container spacing={1} sx={{ height: "calc(100vh - 200px)" }}>
+          <Grid container spacing={1} sx={{ height: "calc(100vh - 220px)" }}>
             {isMobile ? (
               // Mobile View
               <>
@@ -328,7 +332,7 @@ function Forum() {
                         <ArrowBackIcon />
                       </IconButton>
                       <MDTypography variant="h6" ml={1}>
-                        Family Group Forum
+                        Account Forum
                       </MDTypography>
                     </Box>
                     {isLoading ? (
@@ -412,7 +416,7 @@ function Forum() {
                     </Box>
                   ) : (
                     <ChatArea
-                      selectedContact={{...selectedGroupChat, name: "Family Group Forum"}}
+                      selectedContact={{...selectedGroupChat, name: "Account Forum"}}
                       onSendMessage={handleSendMessage}
                     />
                   )}
@@ -421,7 +425,6 @@ function Forum() {
             )}
           </Grid>
         </MDBox>
-      </Header>
       <Footer />
     </DashboardLayout>
   );

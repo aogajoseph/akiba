@@ -113,6 +113,7 @@ const ChatInputArea = ({
   return (
     <Box 
       p={1.5}
+      px={10}
       display="flex"
       alignItems="center"
       bgcolor={isDarkMode ? "background.paper" : "#fff"}
@@ -170,6 +171,13 @@ const ChatInputArea = ({
             borderRadius: 2,
             fontSize: "0.875rem",
             backgroundColor: isDarkMode ? "background.default" : "grey.100",
+          },
+          "& .MuiInputBase-input": {
+            color: isDarkMode ? "white" : "inherit"
+          },
+          "& .MuiInputBase-input::placeholder": {
+            color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.6)",
+            opacity: 1
           }
         }}
       />

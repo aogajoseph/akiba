@@ -134,6 +134,7 @@ const ChatInputArea = ({ onSendMessage, onAttachMedia }) => {
         alignItems="center" 
         p={1.5} 
         gap={1}
+        px={10}
       >
         <Tooltip title="Attach files">
           <IconButton color="inherit" onClick={handleAttachClick}>

@@ -5,7 +5,6 @@ import {
   Avatar, 
   Typography, 
   IconButton, 
-  Divider, 
   Tooltip,
   Menu,
   MenuItem,
@@ -127,7 +126,7 @@ const ChatArea = ({ selectedContact, onSendMessage }) => {
           )}
         </Box>
         <Box ml={2} flex={1}>
-          <MDTypography variant="subtitle1" fontWeight="medium">
+          <MDTypography variant="subtitle1" fontWeight="medium" color="text.primary">
             {selectedContact.name}
           </MDTypography>
           <Typography variant="caption" color="text.secondary">
