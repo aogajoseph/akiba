@@ -1,114 +1,82 @@
 /**
-
 =========================================================
-* Akiba - v1.0.0
+* Material Dashboard 2 React - v2.2.0
 =========================================================
 
-* Product Page: https://www.aogajoseph.github.io/akiba/
-* Copyright 2025 Joseph Onyango (https://www.aogajoseph.github.io/)
+* Product Page: https://www.creative-tim.com/product/material-dashboard-react
+* Copyright 2023 Creative Tim (https://www.creative-tim.com)
 
-Coded by Joseph Onyango
+Coded by www.creative-tim.com
 
-=========================================================
+ =========================================================
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
 // @mui material components
-import Grid from "@mui/material/Grid";
 import Divider from "@mui/material/Divider";
-import Card from "@mui/material/Card";
 
-// Akiba React components
+// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
-import MDTypography from "components/MDTypography";
 
-// Akiba React example components
+// Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
 import DashboardNavbar from "examples/Navbars/DashboardNavbar";
-import AccountInfoCard from "layouts/account/components/InfoCard";
-import DataTable from "examples/Tables/DataTable";
-import ConnectedAccounts from "layouts/account/components/ConnectedAccounts";
-import SavingGoalsCard from "layouts/account/components/SavingGoalsCard";
 import Footer from "examples/Footer";
+import AccountInfoCard from "layouts/account/components/AccountInfoCard";
+import MembershipInfoCard from "layouts/account/components/MembershipInfoCard";
+import LeaderboardCard from "layouts/account/components/LeaderboardCard";
+import SavingGoals from "layouts/account/components/SavingGoals"
 
-// Profile page components
+// Overview page components
 import Header from "layouts/account/components/Header";
-import PlatformSettings from "layouts/account/components/Settings";
 
-// Data
-import ConnectedAccountsData from "layouts/account/data";
-import projectsTableData from "layouts/tables/data/projectsTableData";
-
-function Profile() {
-  const { columns: pColumns, rows: pRows } = projectsTableData();
-
+function Account() {
   return (
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox mb={2} />
       <Header>
-        <MDBox mt={3.5} mb={3}>
-          <Grid container spacing={1}>
-            <Grid item xs={12} md={6} xl={4} sx={{ display: "flex" }}>
-              <Divider orientation="vertical" sx={{ ml: -2, mr: 1 }} />
+        <MDBox mt={5} mb={3}>
+          <MDBox
+            display={{ xs: "block", xl: "flex" }}
+            flexDirection="row"
+            alignItems="stretch"
+            width="100%"
+          >
+            <MDBox flex={1} minWidth={0} display="flex">
               <AccountInfoCard
-                title="about"
-                description="This account belongs to Jose's family. We save together as a family to acheive shared financial goals."
+                title="Account Info"
+                description={"This account was created to manage shared goals for Joseph's Family in a transparent and organized space."}
                 info={{
-                  accountName: "Jose's Family",
-                  accountNumber: "0100 000 000",
-                  activeMembers: 4,
-                  firstAdmin: "Jose",
-                  secondAdmin: "Martha",
-                  thirdAdmin: "Don",
-                  dateCreated: "Dec 23, 2024",
+                  "Account Name": "Joseph's Family",
+                  "Account ID": "AKB-JFY-001",
+                  "Account Type": "Family",
+                  "Created By": "Joseph Onyango",
+                  "Creation Date": "June 13, 2025",
+                  "Join Link": "https://akiba/jfy001/invite",
                 }}
-                action={{ route: "", tooltip: "Edit About" }}
                 shadow={false}
               />
-              <Divider orientation="vertical" sx={{ mx: 0 }} />
-            </Grid>
-            <Grid item xs={12} md={6} xl={4}>
-              <PlatformSettings />
-            </Grid>
-            <Grid item xs={12} xl={4}>
-              <ConnectedAccounts
-                title="Connected Accounts"
-                account={ConnectedAccountsData}
-                shadow={false}
-              />
-            </Grid>
-          </Grid>
-        </MDBox>
-        <MDBox p={2}>
-          <Grid item xs={12}>
-            <Card>
-              <MDBox
-                mx={2}
-                mt={-3}
-                py={3}
-                px={2}
-                variant="gradient"
-                bgColor="info"
-                borderRadius="lg"
-                coloredShadow="info"
-              >
-                <MDTypography variant="h6" color="white">
-                  Projects Table
-                </MDTypography>
-              </MDBox>
-              <MDBox pt={3}>
-                <DataTable
-                  table={{ columns: pColumns, rows: pRows }}
-                  isSorted={false}
-                  entriesPerPage={false}
-                  showTotalEntries={false}
-                  noEndBorder
+            </MDBox>
+
+            <MDBox flex={1} minWidth={0} display="flex">
+              <MDBox flex={1} minWidth={0} display="flex">
+                <MembershipInfoCard
+                  title="Membership"
+                  shadow={false}
                 />
               </MDBox>
-            </Card>
-          </Grid>
+            </MDBox>
+            
+            <MDBox flex={1} minWidth={0} display="flex">
+              <LeaderboardCard
+                title="Leaderboard"
+                shadow={false}
+              />
+            </MDBox>
+          </MDBox>
+          <SavingGoals />
         </MDBox>
       </Header>
       <Footer />
@@ -116,4 +84,4 @@ function Profile() {
   );
 }
 
-export default Profile;
+export default Account;

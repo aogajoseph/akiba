@@ -191,7 +191,7 @@ function FloatingButtons() {
   return (
     <>
       <FloatingButtonsRoot ownerState={{ darkMode }}>
-        <Tooltip title="Customize Dashboard" placement="left">
+        <Tooltip title="Customize" placement="left">
           <Fab
             onClick={handleConfiguratorToggle}
             aria-label="settings"

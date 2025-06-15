@@ -133,7 +133,7 @@ function SummaryCard() {
                 </MDBox>
                 <MDBox>
                   <MDTypography variant="h6" color="white" fontWeight="medium">
-                    Income
+                    Raised
                   </MDTypography>
                   <MDTypography variant="h4" color="white" fontWeight="bold">
                     +49.2K
@@ -158,7 +158,7 @@ function SummaryCard() {
                 </MDBox>
                 <MDBox>
                   <MDTypography variant="h6" color="white" fontWeight="medium">
-                    Expenses
+                    Spent
                   </MDTypography>
                   <MDTypography variant="h4" color="white" fontWeight="bold">
                     -33.7K

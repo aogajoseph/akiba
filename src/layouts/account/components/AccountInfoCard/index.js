@@ -1,21 +1,17 @@
 /**
-
 =========================================================
-* Akiba - v1.0.0
+* Material Dashboard 2 React - v2.2.0
 =========================================================
 
-* Product Page: https://www.aogajoseph.github.io/akiba/
-* Copyright 2025 Joseph Onyango (https://www.aogajoseph.github.io/)
+* Product Page: https://www.creative-tim.com/product/material-dashboard-react
+* Copyright 2023 Creative Tim (https://www.creative-tim.com)
 
-Coded by Joseph Onyango
+Coded by www.creative-tim.com
 
-=========================================================
+ =========================================================
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
-
-// react-routers components
-import { Link } from "react-router-dom";
 
 // prop-types is library for typechecking of props
 import PropTypes from "prop-types";
@@ -23,23 +19,15 @@ import PropTypes from "prop-types";
 // @mui material components
 import Card from "@mui/material/Card";
 import Divider from "@mui/material/Divider";
-import Tooltip from "@mui/material/Tooltip";
-import Icon from "@mui/material/Icon";
 
-// Akiba React components
+// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
-// Akiba React base styles
-import colors from "assets/theme/base/colors";
-import typography from "assets/theme/base/typography";
-
-function AccountInfoCard({ title, description, info, action, shadow }) {
+function AccountInfoCard({ title, description, info, shadow }) {
   const labels = [];
   const values = [];
-  const { socialMediaColors } = colors;
-  const { size } = typography;
-
+  
   // Convert this form `objectKey` of the object key in to this `object key`
   Object.keys(info).forEach((el) => {
     if (el.match(/[A-Z\s]+/)) {
@@ -73,11 +61,6 @@ function AccountInfoCard({ title, description, info, action, shadow }) {
         <MDTypography variant="h6" fontWeight="medium" textTransform="capitalize">
           {title}
         </MDTypography>
-        <MDTypography component={Link} to={action.route} variant="body2" color="secondary">
-          <Tooltip title={action.tooltip} placement="top">
-            <Icon>edit</Icon>
-          </Tooltip>
-        </MDTypography>
       </MDBox>
       <MDBox p={2}>
         <MDBox mb={2} lineHeight={1}>
@@ -88,26 +71,24 @@ function AccountInfoCard({ title, description, info, action, shadow }) {
         <MDBox opacity={0.3}>
           <Divider />
         </MDBox>
-        <MDBox>{renderItems}</MDBox>
+        <MDBox>
+          {renderItems}
+        </MDBox>
       </MDBox>
     </Card>
   );
 }
 
-// Setting default props for the ProfileInfoCard
+// Setting default props for the AccountInfoCard
 AccountInfoCard.defaultProps = {
   shadow: true,
 };
 
-// Typechecking props for the ProfileInfoCard
+// Typechecking props for the AccountInfoCard
 AccountInfoCard.propTypes = {
   title: PropTypes.string.isRequired,
   description: PropTypes.string.isRequired,
   info: PropTypes.objectOf(PropTypes.string).isRequired,
-  action: PropTypes.shape({
-    route: PropTypes.string.isRequired,
-    tooltip: PropTypes.string.isRequired,
-  }).isRequired,
   shadow: PropTypes.bool,
 };
 

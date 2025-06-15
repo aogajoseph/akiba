@@ -53,6 +53,7 @@ import {
   setSidenavColor,
   setDarkMode,
 } from "context";
+import { Tooltip } from "@mui/material";
 
 function Configurator() {
   const [controller, dispatch] = useMaterialUIController();
@@ -323,71 +324,79 @@ function Configurator() {
 
         <Divider />
 
-        <MDBox mt={2} textAlign="center">
+        <MDBox mt={2} textAlign="left">
           <MDBox mb={0.5}>
-            <MDTypography variant="h6">Spread the word about Akiba!</MDTypography>
+            <MDTypography variant="h6">Share the Akiba experience!</MDTypography>
             <MDTypography variant="button" color="text">
-              Help others discover the joy of saving together
+              Help others discover the <span style={{ display: 'block' }}>joy of saving together</span>
             </MDTypography>
           </MDBox>
 
-          <MDBox display="flex" justifyContent="center" gap={1}>
-            <IconButton 
-              component="a" 
-              href={shareLinks.whatsapp} 
-              target="_blank" 
-              rel="noreferrer"
-              sx={{
-                backgroundColor: "rgba(37, 211, 102, 0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(37, 211, 102, 0.2)",
-                },
-              }}
-            >
-              <FaWhatsapp style={{ ...socialIconStyle, color: "#25D366" }} />
-            </IconButton>
-            <IconButton 
-              component="a" 
-              href={shareLinks.facebook} 
-              target="_blank" 
-              rel="noreferrer"
-              sx={{
-                backgroundColor: "rgba(24, 119, 242, 0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(24, 119, 242, 0.2)",
-                },
-              }}
-            >
-              <FacebookIcon sx={{ ...socialIconStyle, color: "#1877F2" }} />
-            </IconButton>
-            <IconButton 
-              component="a" 
-              href={shareLinks.x} 
-              target="_blank" 
-              rel="noreferrer"
-              sx={{
-                backgroundColor: "rgba(0, 0, 0, 0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(0, 0, 0, 0.2)",
-                },
-              }}
-            >
-              <XIcon sx={{ ...socialIconStyle, color: "#000000" }} />
-            </IconButton>
-            <IconButton 
-              component="a" 
-              href={shareLinks.linkedin} 
-              target="_blank" 
-              rel="noreferrer"
-              sx={{
-                backgroundColor: "rgba(10, 102, 194, 0.1)",
-                "&:hover": {
-                  backgroundColor: "rgba(10, 102, 194, 0.2)",
-                },
-              }}
-            >
-              <LinkedInIcon sx={{ ...socialIconStyle, color: "#0A66C2" }} />
-            </IconButton>
+          <MDBox display="flex" justifyContent="left" gap={1}>
+            <Tooltip title="Share on WhatsApp">
+              <IconButton 
+                component="a" 
+                href={shareLinks.whatsapp} 
+                target="_blank" 
+                rel="noreferrer"
+                sx={{
+                  backgroundColor: "rgba(37, 211, 102, 0.1)",
+                  "&:hover": {
+                    backgroundColor: "rgba(37, 211, 102, 0.2)",
+                  },
+                }}
+              >
+                <FaWhatsapp style={{ ...socialIconStyle, color: "#25D366" }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Share on Facebook">
+              <IconButton 
+                component="a" 
+                href={shareLinks.facebook} 
+                target="_blank" 
+                rel="noreferrer"
+                sx={{
+                  backgroundColor: "rgba(24, 119, 242, 0.1)",
+                  "&:hover": {
+                    backgroundColor: "rgba(24, 119, 242, 0.2)",
+                  },
+                }}
+              >
+                <FacebookIcon sx={{ ...socialIconStyle, color: "#1877F2" }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Share on X">
+              <IconButton 
+                component="a" 
+                href={shareLinks.x} 
+                target="_blank" 
+                rel="noreferrer"
+                sx={{
+                  backgroundColor: "rgba(0, 0, 0, 0.1)",
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 0, 0, 0.2)",
+                  },
+                }}
+              >
+                <XIcon sx={{ ...socialIconStyle, color: "#000000" }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Share on LinkedIn">
+              <IconButton 
+                component="a" 
+                href={shareLinks.linkedin} 
+                target="_blank" 
+                rel="noreferrer"
+                sx={{
+                  backgroundColor: "rgba(10, 102, 194, 0.1)",
+                  "&:hover": {
+                    backgroundColor: "rgba(10, 102, 194, 0.2)",
+                  },
+                }}
+              >
+                <LinkedInIcon sx={{ ...socialIconStyle, color: "#0A66C2" }} />
+              </IconButton>
+            </Tooltip>
           </MDBox>
         </MDBox>
       </MDBox>

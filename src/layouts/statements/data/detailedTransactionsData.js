@@ -105,21 +105,21 @@ export default function data() {
     <MDBox display="flex" alignItems="center">
       <Tooltip title="Download">
         <IconButton onClick={handleDownload} size="small" sx={{ 
-          color: "#9e9e9e"
+          color: "#757575"
         }}>
           <FileDownloadIcon fontSize="small" />
         </IconButton>
       </Tooltip>
       <Tooltip title="Share">
         <IconButton onClick={handleShare} size="small" sx={{ 
-          color: "#9e9e9e"
+          color: "#757575"
         }}>
           <ShareIcon fontSize="small" />
         </IconButton>
       </Tooltip>
       <Tooltip title="Print">
         <IconButton onClick={handlePrint} size="small" sx={{ 
-          color: "#9e9e9e"
+          color: "#757575"
         }}>
           <PrintIcon fontSize="small" />
         </IconButton>

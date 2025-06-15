@@ -175,7 +175,7 @@ function DashboardNavbar({ absolute, light, isMini }) {
                   <Icon sx={iconsStyle}>payments</Icon>
                 </StyledIconButton>
               </Tooltip>
-              <Tooltip title="Active Members" arrow>
+              <Tooltip title="Current Members" arrow>
                 <StyledIconButton
                   size="small"
                   disableRipple

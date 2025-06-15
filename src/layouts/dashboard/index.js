@@ -28,7 +28,7 @@ import ReportsLineChart from "examples/Charts/LineCharts/ReportsLineChart";
 import ComplexStatisticsCard from "examples/Cards/StatisticsCards/ComplexStatisticsCard";
 
 // @mui icons
-import SavingsIcon from "@mui/icons-material/Savings";
+import SavingsIcon from "@mui/icons-material/AccountBalanceWallet";
 import GroupsIcon from "@mui/icons-material/Groups";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import WalletIcon from "@mui/icons-material/Wallet";
@@ -105,7 +105,7 @@ function Dashboard() {
               <ComplexStatisticsCard
                 color="primary"
                 icon={<GroupsIcon />}
-                title="Total Members"
+                title="Members"
                 count={
                   <MDBox display="flex" justifyContent="flex-end">
                     <MDBox fontSize="1rem" mt={1} color={darkMode ? "white" : "dark"}>
@@ -126,7 +126,7 @@ function Dashboard() {
               <ComplexStatisticsCard
                 color="warning"
                 icon={<EmojiEventsIcon />}
-                title="Completed Goals"
+                title="Goals"
                 count={
                   <MDBox display="flex" justifyContent="flex-end">
                     <MDBox fontSize="1rem" mt={1} color={darkMode ? "white" : "dark"}>
@@ -164,7 +164,7 @@ function Dashboard() {
               <MDBox mb={3}>
                 <ReportsLineChart
                   color="success"
-                  title="Deposits Trend"
+                  title="Deposits"
                   description={
                     <>
                       <strong>Kes 15,000</strong> today
@@ -179,7 +179,7 @@ function Dashboard() {
               <MDBox mb={3}>
                 <ReportsLineChart
                   color="dark"
-                  title="Withdrawals Trend"
+                  title="Withdrawals"
                   description={
                     <>
                       <strong>Kes 5,000</strong> today

@@ -200,7 +200,7 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
             }
           })}
         >
-          get akiba plus
+          View Plans
         </MDButton>
       </MDBox>
     </SidenavRoot>

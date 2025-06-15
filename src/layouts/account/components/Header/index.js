@@ -1,15 +1,14 @@
 /**
-
 =========================================================
-* Akiba - v1.0.0
+* Material Dashboard 2 React - v2.2.0
 =========================================================
 
-* Product Page: https://www.aogajoseph.github.io/akiba/
-* Copyright 2025 Joseph Onyango (https://www.aogajoseph.github.io/)
+* Product Page: https://www.creative-tim.com/product/material-dashboard-react
+* Copyright 2023 Creative Tim (https://www.creative-tim.com)
 
-Coded by Joseph Onyango
+Coded by www.creative-tim.com
 
-=========================================================
+ =========================================================
 
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
@@ -26,15 +25,22 @@ import AppBar from "@mui/material/AppBar";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Icon from "@mui/material/Icon";
-import { Tooltip } from "@mui/material";
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import CameraAltIcon from '@mui/icons-material/CameraAlt';
 
-// Akiba React components
+// Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
+import AccountSettings from "layouts/account/components/AccountSettings";
 
-// Akiba React base styles
+// Material Dashboard 2 React base styles
 import breakpoints from "assets/theme/base/breakpoints";
+
+// Images
+import burceMars from "assets/images/profile.png";
+import backgroundImage from "assets/images/banner.jpg";
 
 function Header({ children }) {
   const [tabsOrientation, setTabsOrientation] = useState("horizontal");
@@ -68,9 +74,20 @@ function Header({ children }) {
         display="flex"
         alignItems="center"
         position="relative"
-        minHeight="3.5rem"
+        minHeight="18.75rem"
         borderRadius="xl"
-      />
+        sx={{
+          backgroundImage: ({ functions: { rgba, linearGradient }, palette: { gradients } }) =>
+            `${linearGradient(
+              rgba(gradients.info.main, 0.6),
+              rgba(gradients.info.state, 0.6)
+            )}, url(${backgroundImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "50%",
+          overflow: "hidden",
+        }}
+      >
+      </MDBox>
       <Card
         sx={{
           position: "relative",
@@ -82,50 +99,40 @@ function Header({ children }) {
       >
         <Grid container spacing={3} alignItems="center">
           <Grid item>
-            <MDBox height="100%" mt={1} ml={0.8} lineHeight={1}>
-              <MDTypography variant="h5" fontWeight="medium">
-                Account Information
+            <MDBox height="100%" mt={0.5} lineHeight={1}>
+              <MDTypography variant="h5" fontWeight="medium" mx={2}>
+                Joseph's Family
+              </MDTypography>
+              <MDTypography variant="button" color="text" fontWeight="regular" mx={2}>
+                Akiba Account
               </MDTypography>
             </MDBox>
           </Grid>
-          <Grid item xs={12} md={6} mt={1} lg={4} sx={{ ml: "auto" }}>
+          <Grid item xs={12} md={6} lg={4} sx={{ ml: "auto" }}>
             <AppBar position="static">
               <Tabs orientation={tabsOrientation} value={tabValue} onChange={handleSetTabValue}>
-                <Tooltip title="Edit Info">
-                  <Tab
-                    label="Edit"
-                    icon={
-                      <Icon fontSize="small" sx={{ mt: -0.25 }}>
-                        edit_note
-                      </Icon>
-                    }
-                  />
-                </Tooltip>
-                <Tooltip title="Share Info">
-                  <Tab
-                    label="Share"
-                    icon={
-                      <Icon fontSize="small" sx={{ mt: -0.25 }}>
-                        share
-                      </Icon>
-                    }
-                  />
-                </Tooltip>
-                <Tooltip title="Report Issue">
-                  <Tab
-                    label="Report"
-                    icon={
-                      <Icon fontSize="small" sx={{ mt: -0.25 }}>
-                        report
-                      </Icon>
-                    }
-                  />
-                </Tooltip>
+                <Tab
+                  label="Account"
+                  icon={
+                    <Icon fontSize="small" sx={{ mt: -0.25 }}>
+                      work
+                    </Icon>
+                  }
+                />
+                <Tab
+                  label="Settings"
+                  icon={
+                    <Icon fontSize="small" sx={{ mt: -0.25 }}>
+                      settings
+                    </Icon>
+                  }
+                />
               </Tabs>
             </AppBar>
           </Grid>
         </Grid>
-        {children}
+        {tabValue === 0 && children}
+        {tabValue === 1 && <AccountSettings />}
       </Card>
     </MDBox>
   );

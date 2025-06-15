@@ -36,7 +36,7 @@ import DefaultProjectCard from "examples/Cards/ProjectCards/DefaultProjectCard";
 
 // Overview page components
 import Header from "layouts/profile/components/Header";
-import ProfileSettings from "layouts/profile/components/ProfileSettings";
+import QuickSettings from "layouts/profile/components/QuickSettings";
 
 // Data
 import profilesListData from "layouts/profile/data/profilesListData";
@@ -91,7 +91,7 @@ function Profile() {
             </MDBox>
             <Divider orientation="vertical" flexItem sx={{ display: { xs: "none", xl: "block" }, mx: 0 }} />
             <MDBox flex={1} minWidth={0} display="flex">
-              <ProfileSettings />
+              <QuickSettings />
             </MDBox>
           </MDBox>
         </MDBox>

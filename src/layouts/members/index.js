@@ -28,10 +28,10 @@ import Footer from "examples/Footer";
 import DataTable from "examples/Tables/DataTable";
 
 // Data
-import authorsTableData from "layouts/tables/data/authorsTableData";
+import membersTableData from "layouts/members/data/membersTableData";
 
-function Tables() {
-  const { columns, rows } = authorsTableData();
+function Members() {
+  const { columns, rows } = membersTableData();
 
   return (
     <DashboardLayout>
@@ -51,7 +51,7 @@ function Tables() {
                 coloredShadow="info"
               >
                 <MDTypography variant="h6" color="white">
-                  Authors Table
+                  Current Members
                 </MDTypography>
               </MDBox>
               <MDBox pt={3}>
@@ -72,4 +72,4 @@ function Tables() {
   );
 }
 
-export default Tables;
+export default Members;

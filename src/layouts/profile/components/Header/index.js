@@ -33,7 +33,7 @@ import CameraAltIcon from '@mui/icons-material/CameraAlt';
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 import MDAvatar from "components/MDAvatar";
-import Settings from "layouts/profile/components/Settings";
+import ProfileSettings from "layouts/profile/components/ProfileSettings";
 
 // Material Dashboard 2 React base styles
 import breakpoints from "assets/theme/base/breakpoints";
@@ -191,7 +191,7 @@ function Header({ children }) {
           </Grid>
         </Grid>
         {tabValue === 0 && children}
-        {tabValue === 1 && <Settings />}
+        {tabValue === 1 && <ProfileSettings />}
       </Card>
     </MDBox>
   );
