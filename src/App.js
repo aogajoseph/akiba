@@ -29,6 +29,7 @@ import MDBox from "components/MDBox";
 import Sidenav from "examples/Sidenav";
 import Configurator from "examples/Configurator";
 import FloatingButtons from "examples/Configurator/FloatingButtons";
+import InfoPage from "layouts/info";
 
 // Material Dashboard 2 React themes
 import theme from "assets/theme";
@@ -67,7 +68,7 @@ export default function App() {
   } = controller;
   const [onMouseEnter, setOnMouseEnter] = useState(false);
   const [rtlCache, setRtlCache] = useState(null);
-  const { pathname } = useLocation();
+  const location = useLocation();
 
   // Cache for the rtl
   useMemo(() => {
@@ -104,7 +105,7 @@ export default function App() {
   useEffect(() => {
     document.documentElement.scrollTop = 0;
     document.scrollingElement.scrollTop = 0;
-  }, [pathname]);
+  }, [location.pathname]);
 
   // Add event listener for help dialog
   useEffect(() => {
@@ -134,7 +135,7 @@ export default function App() {
     <CacheProvider value={rtlCache}>
       <ThemeProvider theme={darkMode ? themeDarkRTL : themeRTL}>
         <CssBaseline />
-        {layout === "dashboard" && (
+        {layout === "dashboard" && !location.pathname.startsWith('/info') && (
           <>
             <Sidenav
               color={sidenavColor}
@@ -152,6 +153,7 @@ export default function App() {
           {getRoutes(routes)}
           <Route path="/" element={<Navigate to="/auth/sign-in" />} />
           <Route path="/auth/*" element={<Navigate to="/auth/sign-in" />} />
+          <Route path="/info/*" element={<InfoPage />} />
           <Route path="*" element={<Navigate to="/dashboard" />} />
         </Routes>
       </ThemeProvider>
@@ -159,7 +161,7 @@ export default function App() {
   ) : (
     <ThemeProvider theme={darkMode ? themeDark : theme}>
       <CssBaseline />
-      {layout === "dashboard" && (
+      {layout === "dashboard" && !location.pathname.startsWith('/info') && (
         <>
           <Sidenav
             color={sidenavColor}
@@ -177,6 +179,7 @@ export default function App() {
         {getRoutes(routes)}
         <Route path="/" element={<Navigate to="/auth/sign-in" />} />
         <Route path="/auth/*" element={<Navigate to="/auth/sign-in" />} />
+        <Route path="/info/*" element={<InfoPage />} />
         <Route path="*" element={<Navigate to="/dashboard" />} />
       </Routes>
     </ThemeProvider>

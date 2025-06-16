@@ -47,6 +47,7 @@ import SignIn from "pages/auth/SignIn";
 import SignUp from "pages/auth/SignUp";
 import Logout from "pages/auth/Logout";
 import ResetPassword from "pages/auth/ResetPassword";
+import InfoPage from "layouts/info";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -143,6 +144,14 @@ const routes = [
     icon: <Icon fontSize="small">logout</Icon>,
     route: "/auth/sign-in",
     component: <Logout />,
+  },
+  {
+    type: "info",
+    name: "Info",
+    key: "info",
+    route: "/info",
+    component: <InfoPage />,
+    noDisplay: true,
   },
 ];
 

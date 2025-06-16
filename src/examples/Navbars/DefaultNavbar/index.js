@@ -127,18 +127,10 @@ function DefaultNavbar({ transparent, light, action }) {
           </MDTypography>
         </MDBox>
         <MDBox color="inherit" display={{ xs: "none", lg: "flex" }} m={0} p={0}>
-          <DefaultNavbarLink name="about" route="/dashboard" light={light} />
-          <DefaultNavbarLink name="Getting Started" route="/profile" light={light} />
-          <DefaultNavbarLink
-            name="pricing"
-            route="/pages/auth/sign-up"
-            light={light}
-          />
-          <DefaultNavbarLink
-            name="FAQs"
-            route="/pages/auth/sign-in"
-            light={light}
-          />
+          <DefaultNavbarLink name="About" route="/info" light={light} />
+          <DefaultNavbarLink name="Getting Started" route="/info" light={light} />
+          <DefaultNavbarLink name="Pricing" route="/info" light={light} />
+          <DefaultNavbarLink name="FAQs" route="/info" light={light} />
         </MDBox>
         {action &&
           (action.type === "internal" ? (
