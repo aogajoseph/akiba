@@ -32,17 +32,7 @@ const logoStyle = {
 export default function LogoCollection() {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
-  const mode = darkMode ? 'dark' : 'light';
-  const systemMode = mode;
-  let logos;
-
-  if (mode === 'system') {
-    logos = systemMode === 'light' ? lightModeLogos : darkModeLogos;
-  } else if (mode === 'light') {
-    logos = lightModeLogos;
-  } else {
-    logos = darkModeLogos;
-  }
+  const logos = darkMode ? darkModeLogos : lightModeLogos;
 
   return (
     <Box id="logoCollection" sx={{ py: 4 }}>
@@ -50,9 +40,9 @@ export default function LogoCollection() {
         component="p"
         variant="subtitle2"
         align="center"
-        sx={{ color: 'text.secondary' }}
+        sx={{ color: darkMode ? '#ffffff' : 'text.secondary', fontWeight: 'bold' }}
       >
-        Trusted by the best companies
+        Partners in Progress
       </Typography>
       <Grid container sx={{ justifyContent: 'center', mt: 0.5, opacity: 0.6 }}>
         {logos.map((logo, index) => (

@@ -1,4 +1,4 @@
-import React from 'react';
+import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -11,53 +11,63 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import AutoAwesomeIcon from '@mui/icons-material/AutoAwesome';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
+import { useMaterialUIController } from 'context';
+import { useNavigate } from 'react-router-dom';
 
 const tiers = [
   {
-    title: 'Free',
+    title: 'Basic',
     price: '0',
     description: [
-      '10 users included',
-      '2 GB of storage',
-      'Help center access',
-      'Email support',
+      'Up to 20 members',
+      'Up to 2 Sub Admins',
+      'Group & private chat',
+      'Reports (View only)',
     ],
     buttonText: 'Sign up for free',
     buttonVariant: 'outlined',
-    buttonColor: 'primary',
+    buttonColor: 'info',
   },
   {
-    title: 'Professional',
+    title: 'For Groups',
     subheader: 'Recommended',
-    price: '15',
+    price: '500',
     description: [
-      '20 users included',
-      '10 GB of storage',
+      'Up to 100 members',
+      'Up to 5 Sub Admins',
+      'Group & private chat',
+      'Reports (Download/Share)',
       'Help center access',
-      'Priority email support',
-      'Dedicated team',
-      'Best deals',
+      'Custom reminders',
     ],
-    buttonText: 'Start now',
+    buttonText: 'Sign up for free',
     buttonVariant: 'contained',
     buttonColor: 'secondary',
   },
   {
-    title: 'Enterprise',
-    price: '30',
+    title: 'For Oganizations',
+    price: '2000',
     description: [
-      '50 users included',
-      '30 GB of storage',
-      'Help center access',
-      'Phone & email support',
+      'Unlimited members',
+      'Up to 10 Sub Admins',
+      'Branded reports (Download/Share)',
+      'Priority support (Email & phone)',
     ],
-    buttonText: 'Contact us',
+    buttonText: 'Sign up for free',
     buttonVariant: 'outlined',
-    buttonColor: 'primary',
+    buttonColor: 'info',
   },
 ];
 
 export default function Pricing() {
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
+  const navigate = useNavigate();
+
+  const handleSignUp = () => {
+    navigate('/auth/sign-up');
+  };
+
   return (
     <Container
       id="pricing"
@@ -81,15 +91,24 @@ export default function Pricing() {
           component="h2"
           variant="h4"
           gutterBottom
-          sx={{ color: 'text.primary' }}
+          sx={{ 
+            color: darkMode ? '#ffffff' : 'text.info',
+            fontWeight: 700,
+          }}
         >
-          Pricing
+          Pricing (Coming Soon)
         </Typography>
-        <Typography variant="body1" sx={{ color: 'text.secondary' }}>
-          Quickly build an effective pricing table for your potential customers with
-          this layout. <br />
-          It&apos;s built with default Material UI components with little
-          customization.
+        <Typography 
+          variant="body1" 
+          sx={{ 
+            color: darkMode ? 'grey.300' : 'text.secondary',
+            fontSize: '0.875rem',
+            lineHeight: 1.5,
+          }}
+        >
+          Akiba is currently in launch mode, so all plans are 100% free, for now. 
+          We believe in giving you the best experience during our first 6 months. 
+          After which the following plans will be enabled:
         </Typography>
       </Box>
       <Grid
@@ -112,19 +131,22 @@ export default function Pricing() {
                   display: 'flex',
                   flexDirection: 'column',
                   gap: 4,
+                  bgcolor: darkMode ? 'grey.800' : 'background.paper',
+                  transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
+                  '&:hover': {
+                    transform: 'translateY(-4px)',
+                    boxShadow: darkMode
+                      ? '0 8px 16px rgba(0, 0, 0, 0.3)'
+                      : '0 8px 16px rgba(0, 0, 0, 0.1)',
+                  },
                 },
-                tier.title === 'Professional' &&
-                  ((theme) => ({
-                    border: 'none',
-                    background:
-                      'radial-gradient(circle at 50% 0%, hsl(220, 20%, 35%), hsl(220, 30%, 6%))',
-                    boxShadow: `0 8px 12px hsla(220, 20%, 42%, 0.2)`,
-                    ...theme.applyStyles('dark', {
-                      background:
-                        'radial-gradient(circle at 50% 0%, hsl(220, 20%, 20%), hsl(220, 30%, 16%))',
-                      boxShadow: `0 8px 12px hsla(0, 0%, 0%, 0.8)`,
-                    }),
-                  })),
+                tier.title === 'For Groups' && {
+                  border: 'none',
+                  bgcolor: darkMode ? 'grey.700' : 'grey.100',
+                  boxShadow: darkMode
+                    ? '0 8px 12px rgba(0, 0, 0, 0.3)'
+                    : '0 8px 12px rgba(0, 0, 0, 0.1)',
+                },
               ]}
             >
               <CardContent>
@@ -136,17 +158,26 @@ export default function Pricing() {
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       gap: 2,
+                      color: darkMode ? '#ffffff' : 'text.info',
                     },
-                    tier.title === 'Professional'
-                      ? { color: 'grey.100' }
-                      : {},
                   ]}
                 >
-                  <Typography component="h3" variant="h6">
+                  <Typography 
+                    component="h3" 
+                    variant="h6"
+                    sx={{ fontWeight: 600 }}
+                  >
                     {tier.title}
                   </Typography>
-                  {tier.title === 'Professional' && (
-                    <Chip icon={<AutoAwesomeIcon />} label={tier.subheader} />
+                  {tier.title === 'For Groups' && (
+                    <Chip 
+                      icon={<AutoAwesomeIcon />} 
+                      label={tier.subheader}
+                      sx={{
+                        bgcolor: darkMode ? 'info.dark' : 'info.light',
+                        color: darkMode ? '#ffffff' : 'info.contrastText',
+                      }}
+                    />
                   )}
                 </Box>
                 <Box
@@ -154,16 +185,22 @@ export default function Pricing() {
                     {
                       display: 'flex',
                       alignItems: 'baseline',
+                      color: darkMode ? '#ffffff' : 'text.info',
                     },
-                    tier.title === 'Professional'
-                      ? { color: 'grey.50' }
-                      : {},
                   ]}
                 >
-                  <Typography component="h3" variant="h2">
-                    ${tier.price}
+                  <Typography 
+                    component="h3" 
+                    variant="h2"
+                    sx={{ fontWeight: 700 }}
+                  >
+                    Ksh. {tier.price}
                   </Typography>
-                  <Typography component="h3" variant="h6">
+                  <Typography 
+                    component="h3" 
+                    variant="h6"
+                    sx={{ color: darkMode ? 'grey.300' : 'text.secondary' }}
+                  >
                     &nbsp; per month
                   </Typography>
                 </Box>
@@ -176,19 +213,18 @@ export default function Pricing() {
                     <CheckCircleRoundedIcon
                       sx={[
                         { width: 20 },
-                        tier.title === 'Professional'
-                          ? { color: 'primary.light' }
-                          : { color: 'primary.main' },
+                        tier.title === 'For Groups'
+                          ? { color: darkMode ? 'info.light' : 'info.main' }
+                          : { color: darkMode ? 'info.light' : 'info.main' },
                       ]}
                     />
                     <Typography
                       variant="subtitle2"
                       component="span"
-                      sx={[
-                        tier.title === 'Professional'
-                          ? { color: 'grey.50' }
-                          : {},
-                      ]}
+                      sx={{ 
+                        color: darkMode ? 'grey.300' : 'text.secondary',
+                        fontSize: '0.875rem',
+                      }}
                     >
                       {line}
                     </Typography>
@@ -200,6 +236,16 @@ export default function Pricing() {
                   fullWidth
                   variant={tier.buttonVariant}
                   color={tier.buttonColor}
+                  onClick={handleSignUp}
+                  sx={{
+                    py: 1.5,
+                    fontWeight: 600,
+                    color: darkMode ? '#ffffff' : tier.buttonVariant === 'contained' ? '#ffffff' : 'info.main',
+                    borderColor: !darkMode && tier.buttonVariant === 'outlined' ? 'info.main' : undefined,
+                    '&:hover': {
+                      borderColor: !darkMode && tier.buttonVariant === 'outlined' ? 'info.dark' : undefined,
+                    }
+                  }}
                 >
                   {tier.buttonText}
                 </Button>
@@ -208,6 +254,51 @@ export default function Pricing() {
           </Grid>
         ))}
       </Grid>
+
+      {/* Footnotes */}
+      <Box
+        sx={{
+          width: '100%',
+          maxWidth: '800px',
+          mt: 4,
+          px: 2,
+        }}
+      >
+        <Typography
+          variant="h6"
+          sx={{
+            color: darkMode ? '#ffffff' : 'text.info',
+            fontWeight: 600,
+            mb: 2,
+          }}
+        >
+          Additional Information
+        </Typography>
+        <Box
+          component="ul"
+          sx={{
+            listStyle: 'none',
+            pl: 0,
+            '& li': {
+              display: 'flex',
+              alignItems: 'flex-start',
+              gap: 1,
+              mb: 1.5,
+              color: darkMode ? 'grey.300' : 'text.secondary',
+              fontSize: '0.875rem',
+              '&::before': {
+                content: '"•"',
+                color: darkMode ? 'info.light' : 'info.main',
+                fontSize: '1.2rem',
+                lineHeight: 1,
+              }
+            }
+          }}
+        >
+          <li>Transparent transaction fees will apply for transfers, withdrawals and payments.</li>
+          <li>Optional add-ons: Admin badges, SMS reminders, custom branding and connected accounts.</li>
+        </Box>
+      </Box>
     </Container>
   );
 }

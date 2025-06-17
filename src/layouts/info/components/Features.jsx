@@ -6,33 +6,34 @@ import MuiChip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import { styled } from '@mui/material/styles';
+import { useMaterialUIController } from 'context';
 
-import DevicesRoundedIcon from '@mui/icons-material/DevicesRounded';
-import EdgesensorHighRoundedIcon from '@mui/icons-material/EdgesensorHighRounded';
-import ViewQuiltRoundedIcon from '@mui/icons-material/ViewQuiltRounded';
+import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceWalletRounded';
+import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
+import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded';
 
 const items = [
   {
-    icon: <ViewQuiltRoundedIcon />,
-    title: 'Dashboard',
+    icon: <AccountBalanceWalletRoundedIcon />,
+    title: 'Flexible Accounts',
     description:
-      'This item could provide a snapshot of the most important metrics or data points related to the product.',
+      "Akiba adapts to your group’s unique needs. Members can create multiple saving accounts, assign roles and join or leave groups freely, while maintaining the account's structure with a role-based governance system.",
     imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-light.png")`,
     imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-dark.png")`,
   },
   {
-    icon: <EdgesensorHighRoundedIcon />,
-    title: 'Mobile integration',
+    icon: <SecurityRoundedIcon />,
+    title: 'Secure Financial Management',
     description:
-      'This item could provide information about the mobile app version of the product.',
+      "Akiba ensures your group’s funds are safe and transparent. Enjoy hassle-free contributions, multi-admin withdrawals and real-time tracking, with clear reports that keep everyone informed and accountable.",
     imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-light.png")`,
     imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-dark.png")`,
   },
   {
-    icon: <DevicesRoundedIcon />,
-    title: 'Available on all platforms',
+    icon: <GroupsRoundedIcon />,
+    title: 'Group Engagement',
     description:
-      'This item could let users know the product is available on all platforms, such as web, mobile, and desktop.',
+      "Keep your team connected with built-in private messaging, group chat and instant notifications. Akiba makes communication easy, helping members stay aligned and engaged at every step.",
     imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-light.png")`,
     imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-dark.png")`,
   },
@@ -40,21 +41,20 @@ const items = [
 
 const Chip = styled(MuiChip)(({ theme, selected }) => ({
   ...(selected && {
-    background:
-      'linear-gradient(to bottom right, hsl(210, 98%, 48%), hsl(210, 98%, 35%))',
+    background: theme.palette.mode === 'dark' 
+      ? 'linear-gradient(to bottom right, hsl(210, 98%, 35%), hsl(210, 98%, 25%))'
+      : 'linear-gradient(to bottom right, hsl(210, 98%, 48%), hsl(210, 98%, 35%))',
     color: 'hsl(0, 0%, 100%)',
-    borderColor: (theme.vars || theme).palette.primary.light,
+    borderColor: theme.palette.mode === 'dark' 
+      ? theme.palette.primary.dark 
+      : theme.palette.primary.light,
     '& .MuiChip-label': {
       color: 'hsl(0, 0%, 100%)',
     },
-    ...(theme.applyStyles &&
-      theme.applyStyles('dark', {
-        borderColor: (theme.vars || theme).palette.primary.dark,
-      })),
   }),
 }));
 
-function MobileLayout({ selectedItemIndex, handleItemClick, selectedFeature }) {
+function MobileLayout({ selectedItemIndex, handleItemClick, selectedFeature, darkMode }) {
   if (!items[selectedItemIndex]) {
     return null;
   }
@@ -78,36 +78,43 @@ function MobileLayout({ selectedItemIndex, handleItemClick, selectedFeature }) {
           />
         ))}
       </Box>
-      <Card variant="outlined">
+      <Card 
+        variant="outlined"
+        sx={{
+          bgcolor: darkMode ? 'grey.800' : 'background.paper',
+          borderColor: darkMode ? 'grey.700' : 'divider',
+        }}
+      >
         <Box
-          sx={(theme) => ({
+          sx={{
             mb: 2,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
             minHeight: 280,
-            backgroundImage: 'var(--items-imageLight)',
-            ...(theme.applyStyles &&
-              theme.applyStyles('dark', {
-                backgroundImage: 'var(--items-imageDark)',
-              })),
-          })}
-          style={
-            items[selectedItemIndex]
-              ? {
-                  '--items-imageLight': items[selectedItemIndex].imageLight,
-                  '--items-imageDark': items[selectedItemIndex].imageDark,
-                }
-              : {}
-          }
+            backgroundImage: darkMode ? selectedFeature.imageDark : selectedFeature.imageLight,
+          }}
         />
         <Box sx={{ px: 2, pb: 2 }}>
           <Typography
             gutterBottom
-            sx={{ color: 'text.primary', fontWeight: 'medium' }}
+            sx={{ 
+              color: darkMode ? '#ffffff' : 'text.primary',
+              fontWeight: 'medium',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+            }}
           >
+            {selectedFeature.icon}
             {selectedFeature.title}
           </Typography>
-          <Typography variant="body2" sx={{ color: 'text.secondary', mb: 1.5 }}>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              color: darkMode ? 'grey.300' : 'text.secondary',
+              mb: 1.5 
+            }}
+          >
             {selectedFeature.description}
           </Typography>
         </Box>
@@ -117,6 +124,8 @@ function MobileLayout({ selectedItemIndex, handleItemClick, selectedFeature }) {
 }
 
 export default function Features() {
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
   const [selectedItemIndex, setSelectedItemIndex] = React.useState(0);
 
   const handleItemClick = (index) => {
@@ -132,17 +141,19 @@ export default function Features() {
           component="h2"
           variant="h4"
           gutterBottom
-          sx={{ color: 'text.primary' }}
+          sx={{ color: darkMode ? '#ffffff' : 'text.primary' }}
         >
-          Product features
+          Product Features
         </Typography>
         <Typography
-          variant="body1"
-          sx={{ color: 'text.secondary', mb: { xs: 2, sm: 4 } }}
+          variant="body2"
+          sx={{ 
+            color: darkMode ? 'grey.300' : 'text.secondary',
+            mb: { xs: 2, sm: 4 },
+            width: { sm: '100%', md: '70%' }
+          }}
         >
-          Provide a brief overview of the key features of the product. For example,
-          you could list the number of features, their types or benefits, and
-          add-ons.
+          Discover how Akiba empowers your group to achieve shared financial goals using innovative tools designed for security, collaboration and flexibility.
         </Typography>
       </Box>
       <Box
@@ -167,16 +178,16 @@ export default function Features() {
                 component={Button}
                 onClick={() => handleItemClick(index)}
                 sx={[
-                  (theme) => ({
+                  {
                     p: 2,
                     height: '100%',
                     width: '100%',
                     '&:hover': {
-                      backgroundColor: (theme.vars || theme).palette.action.hover,
+                      backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'action.hover',
                     },
-                  }),
+                  },
                   selectedItemIndex === index && {
-                    backgroundColor: 'action.selected',
+                    backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.12)' : 'action.selected',
                   },
                 ]}
               >
@@ -190,10 +201,10 @@ export default function Features() {
                       gap: 1,
                       textAlign: 'left',
                       textTransform: 'none',
-                      color: 'text.secondary',
+                      color: darkMode ? 'grey.300' : 'text.secondary',
                     },
                     selectedItemIndex === index && {
-                      color: 'text.primary',
+                      color: darkMode ? '#ffffff' : 'text.primary',
                     },
                   ]}
                 >
@@ -208,6 +219,7 @@ export default function Features() {
             selectedItemIndex={selectedItemIndex}
             handleItemClick={handleItemClick}
             selectedFeature={selectedFeature}
+            darkMode={darkMode}
           />
         </div>
         <Box
@@ -224,28 +236,18 @@ export default function Features() {
               width: '100%',
               display: { xs: 'none', sm: 'flex' },
               pointerEvents: 'none',
+              bgcolor: darkMode ? 'grey.800' : 'background.paper',
+              borderColor: darkMode ? 'grey.700' : 'divider',
             }}
           >
             <Box
-              sx={(theme) => ({
+              sx={{
                 m: 'auto',
                 width: 420,
                 height: 500,
                 backgroundSize: 'contain',
-                backgroundImage: 'var(--items-imageLight)',
-                ...(theme.applyStyles &&
-                  theme.applyStyles('dark', {
-                    backgroundImage: 'var(--items-imageDark)',
-                  })),
-              })}
-              style={
-                items[selectedItemIndex]
-                  ? {
-                      '--items-imageLight': items[selectedItemIndex].imageLight,
-                      '--items-imageDark': items[selectedItemIndex].imageDark,
-                    }
-                  : {}
-              }
+                backgroundImage: darkMode ? selectedFeature.imageDark : selectedFeature.imageLight,
+              }}
             />
           </Card>
         </Box>

@@ -7,9 +7,12 @@ import Container from '@mui/material/Container';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import { useMaterialUIController } from 'context';
 
 export default function FAQ() {
   const [expanded, setExpanded] = React.useState([]);
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
 
   const handleChange = (panel) => (event, isExpanded) => {
     setExpanded(
@@ -36,9 +39,10 @@ export default function FAQ() {
         component="h2"
         variant="h4"
         sx={{
-          color: 'text.primary',
+          color: darkMode ? '#ffffff' : 'text.primary',
           width: { sm: '100%', md: '60%' },
           textAlign: { sm: 'left', md: 'center' },
+          fontWeight: 700,
         }}
       >
         Frequently asked questions
@@ -47,14 +51,23 @@ export default function FAQ() {
         <Accordion
           expanded={expanded.includes('panel1')}
           onChange={handleChange('panel1')}
+          sx={{
+            bgcolor: darkMode ? 'grey.800' : 'background.paper',
+            '& .MuiAccordionSummary-root': {
+              color: darkMode ? '#ffffff' : 'text.primary',
+            },
+            '& .MuiAccordionDetails-root': {
+              color: darkMode ? 'grey.300' : 'text.secondary',
+            },
+          }}
         >
           <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
+            expandIcon={<ExpandMoreIcon sx={{ color: darkMode ? '#ffffff' : 'text.primary' }} />}
             aria-controls="panel1d-content"
             id="panel1d-header"
           >
             <Typography component="span" variant="subtitle2">
-              How do I contact customer support if I have a question or issue?
+            What is Akiba, and how does it work?
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -63,24 +76,30 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              You can reach our customer support team by emailing&nbsp;
-              <Link href="mailto:support@email.com">support@email.com</Link>
-              &nbsp;or calling our toll-free number. We&apos;re here to assist you
-              promptly.
+              Akiba is a group savings platform that helps friends, families and teams save together toward shared goals. One person (the main admin) creates a savings account, sets up a goal, invites members, and manages contributions with the help of sub admins. Members can track progress, engage in group discussions, and view reports — all in one place!
             </Typography>
           </AccordionDetails>
         </Accordion>
         <Accordion
           expanded={expanded.includes('panel2')}
           onChange={handleChange('panel2')}
+          sx={{
+            bgcolor: darkMode ? 'grey.800' : 'background.paper',
+            '& .MuiAccordionSummary-root': {
+              color: darkMode ? '#ffffff' : 'text.primary',
+            },
+            '& .MuiAccordionDetails-root': {
+              color: darkMode ? 'grey.300' : 'text.secondary',
+            },
+          }}
         >
           <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
+            expandIcon={<ExpandMoreIcon sx={{ color: darkMode ? '#ffffff' : 'text.primary' }} />}
             aria-controls="panel2d-content"
             id="panel2d-header"
           >
             <Typography component="span" variant="subtitle2">
-              Can I return the product if it doesn&apos;t meet my expectations?
+            Who can create a savings goal, and how do contributors join?
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -89,23 +108,30 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Absolutely! We offer a hassle-free return policy. If you&apos;re not
-              completely satisfied, you can return the product within [number of
-              days] days for a full refund or exchange.
+              Only the account creator (main admin) can create a savings goal that everyone contributes toward as long as it is acceptable to the group. Once a goal is set, members can be invited by anyone in the group, but the main admin must approve the invitations. This keeps the group safe and organized.
             </Typography>
           </AccordionDetails>
         </Accordion>
         <Accordion
           expanded={expanded.includes('panel3')}
           onChange={handleChange('panel3')}
+          sx={{
+            bgcolor: darkMode ? 'grey.800' : 'background.paper',
+            '& .MuiAccordionSummary-root': {
+              color: darkMode ? '#ffffff' : 'text.primary',
+            },
+            '& .MuiAccordionDetails-root': {
+              color: darkMode ? 'grey.300' : 'text.secondary',
+            },
+          }}
         >
           <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
+            expandIcon={<ExpandMoreIcon sx={{ color: darkMode ? '#ffffff' : 'text.primary' }} />}
             aria-controls="panel3d-content"
             id="panel3d-header"
           >
             <Typography component="span" variant="subtitle2">
-              What makes your product stand out from others in the market?
+            How do members communicate and stay updated?
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -114,23 +140,30 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Our product distinguishes itself through its adaptability, durability,
-              and innovative features. We prioritize user satisfaction and
-              continually strive to exceed expectations in every aspect.
+              Akiba includes both a forum and private chat features. Members can post messages in the group forum visible to all, or send private chats to one another. Everyone can stay engaged, ask questions, and share updates — keeping teamwork strong.
             </Typography>
           </AccordionDetails>
         </Accordion>
         <Accordion
           expanded={expanded.includes('panel4')}
           onChange={handleChange('panel4')}
+          sx={{
+            bgcolor: darkMode ? 'grey.800' : 'background.paper',
+            '& .MuiAccordionSummary-root': {
+              color: darkMode ? '#ffffff' : 'text.primary',
+            },
+            '& .MuiAccordionDetails-root': {
+              color: darkMode ? 'grey.300' : 'text.secondary',
+            },
+          }}
         >
           <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
+            expandIcon={<ExpandMoreIcon sx={{ color: darkMode ? '#ffffff' : 'text.primary' }} />}
             aria-controls="panel4d-content"
             id="panel4d-header"
           >
             <Typography component="span" variant="subtitle2">
-              Is there a warranty on the product, and what does it cover?
+            Can I track contributions and download reports?
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -139,10 +172,71 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Yes, our product comes with a [length of warranty] warranty. It covers
-              defects in materials and workmanship. If you encounter any issues
-              covered by the warranty, please contact our customer support for
-              assistance.
+              Yes! Akiba provides a clear dashboard overview and detailed reports. Any member can view, download, or share statements showing contributions, withdrawals, and goal progress. Transparency is at the heart of Akiba’s design, so everyone stays informed.
+            </Typography>
+          </AccordionDetails>
+        </Accordion>
+        <Accordion
+          expanded={expanded.includes('panel5')}
+          onChange={handleChange('panel5')}
+          sx={{
+            bgcolor: darkMode ? 'grey.800' : 'background.paper',
+            '& .MuiAccordionSummary-root': {
+              color: darkMode ? '#ffffff' : 'text.primary',
+            },
+            '& .MuiAccordionDetails-root': {
+              color: darkMode ? 'grey.300' : 'text.secondary',
+            },
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon sx={{ color: darkMode ? '#ffffff' : 'text.primary' }} />}
+            aria-controls="panel5d-content"
+            id="panel5d-header"
+          >
+            <Typography component="span" variant="subtitle2">
+              How do I create an account or leave a group?
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography
+              variant="body2"
+              gutterBottom
+              sx={{ maxWidth: { sm: '100%', md: '70%' } }}
+            >
+              Account creation happens in 4 quick steps — just sign up with your email or phone number, and you’re ready to start saving. If you wish to leave a savings group, you can do so anytime, by visiting your profile settings and you will be guided based on your role in the group. The rest of the members will receive a notification of your departure for transparency and the group's activities wont be affected.
+            </Typography>
+          </AccordionDetails>
+        </Accordion>
+        <Accordion
+          expanded={expanded.includes('panel6')}
+          onChange={handleChange('panel6')}
+          sx={{
+            bgcolor: darkMode ? 'grey.800' : 'background.paper',
+            '& .MuiAccordionSummary-root': {
+              color: darkMode ? '#ffffff' : 'text.primary',
+            },
+            '& .MuiAccordionDetails-root': {
+              color: darkMode ? 'grey.300' : 'text.secondary',
+            },
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon sx={{ color: darkMode ? '#ffffff' : 'text.primary' }} />}
+            aria-controls="panel6d-content"
+            id="panel6d-header"
+          >
+            <Typography component="span" variant="subtitle2">
+              How do I delete my Akiba account?
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography
+              variant="body2"
+              gutterBottom
+              sx={{ maxWidth: { sm: '100%', md: '70%' } }}
+            >
+              If you decide to delete your entire Akiba account, you can do so in Account Settings on the Account page. Note that only the account creator can delete an account and all security protocals must be followed before an account is finally deleted.
             </Typography>
           </AccordionDetails>
         </Accordion>

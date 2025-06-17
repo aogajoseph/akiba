@@ -2,38 +2,31 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
-import InputLabel from '@mui/material/InputLabel';
-import Link from '@mui/material/Link';
 import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
-import visuallyHidden from '@mui/utils/visuallyHidden';
 import { styled } from '@mui/material/styles';
 import { useMaterialUIController } from 'context';
 
-const StyledBox = styled('div')(({ theme }) => ({
+const VideoContainer = styled('div')(({ theme }) => ({
   alignSelf: 'center',
   width: '100%',
-  height: 400,
+  maxWidth: '800px', 
   marginTop: theme.spacing(8),
-  borderRadius: (theme.vars || theme).shape.borderRadius,
-  outline: '6px solid',
-  outlineColor: 'hsla(220, 25%, 80%, 0.2)',
-  border: '1px solid',
-  borderColor: (theme.vars || theme).palette.grey[200],
-  boxShadow: '0 0 12px 8px hsla(220, 25%, 80%, 0.2)',
-  backgroundImage: `url(${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/screenshots/material-ui/getting-started/templates/dashboard.jpg)`,
-  backgroundSize: 'cover',
+  borderRadius: theme.shape.borderRadius * 1.5,
+  overflow: 'hidden',
+  boxShadow: '0 0 16px 10px hsla(220, 25%, 80%, 0.2)',
   [theme.breakpoints.up('sm')]: {
     marginTop: theme.spacing(10),
-    height: 700,
   },
-  ...theme.applyStyles('dark', {
-    boxShadow: '0 0 24px 12px hsla(210, 100%, 25%, 0.2)',
-    backgroundImage: `url(${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/screenshots/material-ui/getting-started/templates/dashboard-dark.jpg)`,
-    outlineColor: 'hsla(220, 20%, 42%, 0.1)',
-    borderColor: (theme.vars || theme).palette.grey[700],
+  ...theme.applyStyles?.('dark', {
+    boxShadow: '0 0 28px 14px hsla(210, 100%, 25%, 0.2)',
   }),
+  '& iframe': {
+    width: '100%',
+    aspectRatio: '16/9',
+    border: 'none',
+    maxHeight: '450px',
+  }
 }));
 
 export default function Hero() {
@@ -108,8 +101,9 @@ export default function Hero() {
             variant="caption"
             sx={{ 
               textAlign: 'center',
+              fontWeight: 'bold',
               color: darkMode ? '#ffffff' : 'text.secondary',
-              fontSize: '1rem'
+              fontSize: '0.9rem'
             }}
           >
             We make saving simple and social — helping people achieve more, together.
@@ -126,14 +120,14 @@ export default function Hero() {
           >
             <Button
               variant="outlined"
-              color="primary"
+              color="info"
               size="medium"
               sx={{ 
                 minWidth: 'fit-content',
-                color: darkMode ? '#ffffff' : 'primary.main',
-                borderColor: darkMode ? '#ffffff' : 'primary.main',
+                color: darkMode ? '#ffffff' : 'info.main',
+                borderColor: darkMode ? '#ffffff' : 'info.main',
                 '&:hover': {
-                  borderColor: darkMode ? '#ffffff' : 'primary.main',
+                  borderColor: darkMode ? '#ffffff' : 'info.main',
                   backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(25, 118, 210, 0.1)'
                 }
               }}
@@ -148,7 +142,7 @@ export default function Hero() {
                 minWidth: 'fit-content',
                 color: '#ffffff',
                 '&:hover': {
-                  backgroundColor: darkMode ? 'primary.light' : 'primary.dark'
+                  backgroundColor: darkMode ? 'info.light' : 'info.dark'
                 }
               }}
             >
@@ -156,7 +150,14 @@ export default function Hero() {
             </Button>
           </Stack>
         </Stack>
-        <StyledBox id="image" />
+        <VideoContainer>
+          <iframe
+            src="https://www.youtube.com/embed/your-video-id"
+            title="Akiba Platform Overview"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+          />
+        </VideoContainer>
       </Container>
     </Box>
   );

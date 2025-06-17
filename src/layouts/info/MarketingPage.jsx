@@ -1,10 +1,10 @@
 import React from 'react';
 import CssBaseline from '@mui/material/CssBaseline';
 import Divider from '@mui/material/Divider';
-import AppAppBar from './components/AppAppBar';
+import MainAppBar from './components/AppBar';
 import Hero from './components/Hero';
 import LogoCollection from './components/LogoCollection';
-import Highlights from './components/Highlights';
+import GettingStarted from './components/GettingStarted';
 import Pricing from './components/Pricing';
 import Features from './components/Features';
 import Testimonials from './components/Testimonials';
@@ -16,17 +16,16 @@ export default function MarketingPage(props) {
     <>
       <CssBaseline />
 
-      <AppAppBar />
+      <MainAppBar />
       <Hero />
       <div>
         <LogoCollection />
+        <GettingStarted />
         <Features />
         <Divider />
-        <Testimonials />
-        <Divider />
-        <Highlights />
-        <Divider />
         <Pricing />
+        <Divider />
+        <Testimonials />
         <Divider />
         <FAQ />
         <Divider />
