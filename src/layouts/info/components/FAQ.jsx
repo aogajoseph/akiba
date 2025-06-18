@@ -76,7 +76,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Akiba is a group savings platform that helps friends, families and teams save together toward shared goals. One person (the main admin) creates a savings account, sets up a goal, invites members, and manages contributions with the help of sub admins. Members can track progress, engage in group discussions, and view reports — all in one place!
+              Akiba is a group savings platform that helps people save together toward shared goals. One person (the main admin) creates a savings account, sets up a goal, invites members and manages contributions with the help of Sub-Admins. Members can track progress, engage in group discussions and view reports — all in one place!
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -108,7 +108,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Only the account creator (main admin) can create a savings goal that everyone contributes toward as long as it is acceptable to the group. Once a goal is set, members can be invited by anyone in the group, but the main admin must approve the invitations. This keeps the group safe and organized.
+              Only the account creator (main admin) can create a savings goal that everyone contributes toward, as long as it is acceptable to the group. Once a goal is set, members can be invited by anyone in the group, but the main admin must approve the invitations. This keeps the group safe and organized.
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -140,7 +140,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Akiba includes both a forum and private chat features. Members can post messages in the group forum visible to all, or send private chats to one another. Everyone can stay engaged, ask questions, and share updates — keeping teamwork strong.
+              Akiba includes a forum and private chat features. Members can post messages in the group forum visible to all, or send private chats to one another. Everyone can read notifications, view activity logs, stay engaged, ask questions and share updates — keeping teamwork strong.
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -172,7 +172,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Yes! Akiba provides a clear dashboard overview and detailed reports. Any member can view, download, or share statements showing contributions, withdrawals, and goal progress. Transparency is at the heart of Akiba’s design, so everyone stays informed.
+              Yes! Akiba provides a clear dashboard overview and detailed reports. Any member can view, download or share statements showing contributions, withdrawals and goal progress. Transparency and accountability are at the heart of Akiba’s design, so everyone stays informed.
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -204,7 +204,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Account creation happens in 4 quick steps — just sign up with your email or phone number, and you’re ready to start saving. If you wish to leave a savings group, you can do so anytime, by visiting your profile settings and you will be guided based on your role in the group. The rest of the members will receive a notification of your departure for transparency and the group's activities wont be affected.
+              Account creation happens in 4 quick steps using email and phone number. If you wish to leave a savings group, you can do so from Profile Settings and you will be guided based on your role in the group. The group members will be notified of your departure and the group's activities wont be affected.
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -236,7 +236,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              If you decide to delete your entire Akiba account, you can do so in Account Settings on the Account page. Note that only the account creator can delete an account and all security protocals must be followed before an account is finally deleted.
+              If you choose to delete your Akiba account, you can do so from Account Settings. Only the account creator (main admin) can delete the account and this must be done in line with the account deletion protocols.
             </Typography>
           </AccordionDetails>
         </Accordion>

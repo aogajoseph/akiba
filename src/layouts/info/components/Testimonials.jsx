@@ -15,72 +15,48 @@ const userTestimonials = [
     name: 'Mary Wambui',
     occupation: 'Chama Treasurer, Nairobi',
     testimonial:
-      '“I’m part of a local chama here in Kenya, and Akiba has completely changed how we manage everything. From contributions, withdrawals and reports to our chama discussions. Everything happens on Akiba. It’s so seamless that we no longer feel the pressure to meet in person. Everything we need is right there!”',
+      '“Akiba has completely changed how our local chama manages funds. Everything happens online and we no longer feel the pressure to meet in person.”',
   },
   {
     avatar: 'https://i.pravatar.cc/150?img=2',
     name: 'John Onsarigo',
     occupation: 'Community Member, Baringo',
     testimonial:
-      "Before Akiba, things were very difficult for our community. I didn’t even know everyone in our community welfare savings group. But with Akiba, it’s so simple — I can see when each person contributes and where the money goes. I trust the system 100% because everything is clear and easy to follow.”",
+      "Before Akiba, our welfare members didn’t even know each other. But now, everyone trusts the system 100% because our finances are managed clearly and everything is easy to follow.”",
   },
   {
     avatar: 'https://i.pravatar.cc/150?img=3',
     name: 'Saidi Ahmed',
     occupation: 'Resident, Mombasa',
     testimonial:
-      "When I lost a close relative, Akiba made it easy to create an account, invite family and friends, and with the help of sub-admins, we managed to cover all the expenses with full transparency. Everyone was satisfied and grateful for the accountability because they could see how the money was used.",
+      "When I first used Akiba, I had lost a close relative. It was very easy to use. Everyone who contributed was satisfied because they could see how the money was used.",
   },
   {
     avatar: 'https://i.pravatar.cc/150?img=1',
     name: 'Rev. Gideon Makau',
     occupation: 'Church Leader, Mlolongo',
     testimonial:
-      "When we set out to build a new gate for our church, Akiba became an unexpected blessing. I was able to rally members effortlessly, and everyone could see who contributed, how much and exactly how the funds were spent. It made the whole process transparent, accountable and brought us closer as a church family.",
+      "When we set out to build a new gate for our church, Akiba became an unexpected blessing. All our members insisted on using it to raise and manage the funds.",
   },
   {
     avatar: 'https://i.pravatar.cc/150?img=2',
     name: 'Jacob Mwai',
     occupation: 'Boda boda rider, Kiambu',
     testimonial:
-      "Before Akiba came, I used to manually collect daily contributions from our boda boda base members. Now, Akiba has made everything easy for me. I just coordinate contributions and ensure the correct receipient gets their dues. No stress, no confusion",
+      "Akiba came to save me as a boda boda chairman. Handling my colleagues' money manually, used to give me headaches. I'm truly happy this platform was created.",
   },
   {
     avatar: 'https://i.pravatar.cc/150?img=3',
     name: 'Geraldine Ouma',
     occupation: 'Consultant, Nairobi',
     testimonial:
-      "Akiba has brought us closer together as a family, even with our kids living abroad. I created an account and added my wife and first born son as sub admins. We save together for emergencies and the funds have always been useful to all of us no matter where we are.",
+      "Akiba has brought us closer together as a family, even with our kids living abroad. It feels like we are always in the same room discussing our savings.",
   },
 ];
-
-const darkModeLogos = [
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560628e8573c43893fe0ace_Sydney-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f4d520d0517ae8e8ddf13_Bern-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f46794c159024c1af6d44_Montreal-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/61f12e891fa22f89efd7477a_TerraLight.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560a09d1f6337b1dfed14ab_colorado-white.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f5caa77bf7d69fb78792e_Ankara-white.svg',
-];
-
-const lightModeLogos = [
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560628889c3bdf1129952dc_Sydney-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f4d4d8b829a89976a419c_Bern-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f467502f091ccb929529d_Montreal-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/61f12e911fa22f2203d7514c_TerraDark.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/6560a0990f3717787fd49245_colorado-black.svg',
-  'https://assets-global.website-files.com/61ed56ae9da9fd7e0ef0a967/655f5ca4e548b0deb1041c33_Ankara-black.svg',
-];
-
-const logoStyle = {
-  width: '64px',
-  opacity: 0.3,
-};
 
 export default function Testimonials() {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
-  const logos = darkMode ? darkModeLogos : lightModeLogos;
 
   return (
     <Container
@@ -117,7 +93,7 @@ export default function Testimonials() {
             lineHeight: 1.5,
           }}
         >
-          See what people love about Akiba. Real stories from groups and individuals who’ve transformed the way they save, collaborate and achieve shared financial goals.
+          See what our clients love about Akiba. Real stories of how we are reshaping the way people save and achieve shared goals through collective effort.
         </Typography>
       </Box>
       <Grid container spacing={2}>
@@ -190,11 +166,6 @@ export default function Testimonials() {
                     </Typography>
                   }
                   sx={{ p: 0 }}
-                />
-                <img
-                  src={logos[index]}
-                  alt={`Logo ${index + 1}`}
-                  style={logoStyle}
                 />
               </Box>
             </Card>

@@ -19,10 +19,10 @@ const tiers = [
     title: 'Basic',
     price: '0',
     description: [
-      'Up to 20 members',
-      'Up to 2 Sub Admins',
+      'Up to 20 Members',
+      'Up to 2 Sub-Admins',
       'Group & private chat',
-      'Reports (View only)',
+      'Reports (view only)',
     ],
     buttonText: 'Sign up for free',
     buttonVariant: 'outlined',
@@ -33,12 +33,12 @@ const tiers = [
     subheader: 'Recommended',
     price: '500',
     description: [
-      'Up to 100 members',
-      'Up to 5 Sub Admins',
+      'Up to 100 Members',
+      'Up to 5 Sub-Admins',
       'Group & private chat',
-      'Reports (Download/Share)',
+      'Reports (download/share)',
       'Help center access',
-      'Custom reminders',
+      'Personalized reminders',
     ],
     buttonText: 'Sign up for free',
     buttonVariant: 'contained',
@@ -48,10 +48,10 @@ const tiers = [
     title: 'For Oganizations',
     price: '2000',
     description: [
-      'Unlimited members',
-      'Up to 10 Sub Admins',
-      'Branded reports (Download/Share)',
-      'Priority support (Email & phone)',
+      'Unlimited Members',
+      'Up to 10 Sub-Admins',
+      'Branded reports (download/share)',
+      'Priority support (phone & email)',
     ],
     buttonText: 'Sign up for free',
     buttonVariant: 'outlined',
@@ -106,9 +106,7 @@ export default function Pricing() {
             lineHeight: 1.5,
           }}
         >
-          Akiba is currently in launch mode, so all plans are 100% free, for now. 
-          We believe in giving you the best experience during our first 6 months. 
-          After which the following plans will be enabled:
+          Akiba is currently in launch mode, so all plans are 100% free! We’re committed to giving you the best experience during our first 6 months. After this period, the following plans will be available:
         </Typography>
       </Box>
       <Grid

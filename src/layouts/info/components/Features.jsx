@@ -17,7 +17,7 @@ const items = [
     icon: <AccountBalanceWalletRoundedIcon />,
     title: 'Flexible Accounts',
     description:
-      "Akiba adapts to your group’s unique needs. Members can create multiple saving accounts, assign roles and join or leave groups freely, while maintaining the account's structure with a role-based governance system.",
+      "Akiba adapts to each group's unique needs, with flexible accounts and the freedom to join or leave freely at any time.",
     imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-light.png")`,
     imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-dark.png")`,
   },
@@ -25,7 +25,7 @@ const items = [
     icon: <SecurityRoundedIcon />,
     title: 'Secure Financial Management',
     description:
-      "Akiba ensures your group’s funds are safe and transparent. Enjoy hassle-free contributions, multi-admin withdrawals and real-time tracking, with clear reports that keep everyone informed and accountable.",
+      "We ensure transparency and accountability through open communication and a robust governance system.",
     imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-light.png")`,
     imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-dark.png")`,
   },
@@ -33,7 +33,7 @@ const items = [
     icon: <GroupsRoundedIcon />,
     title: 'Group Engagement',
     description:
-      "Keep your team connected with built-in private messaging, group chat and instant notifications. Akiba makes communication easy, helping members stay aligned and engaged at every step.",
+      "Members are connected via private messaging, group chat and real-time reporting, keeping everyone informed and engaged.",
     imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-light.png")`,
     imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-dark.png")`,
   },
@@ -67,7 +67,7 @@ function MobileLayout({ selectedItemIndex, handleItemClick, selectedFeature, dar
         gap: 2,
       }}
     >
-      <Box sx={{ display: 'flex', gap: 2, overflow: 'auto' }}>
+      <Box sx={{ display: 'flex', gap: 2, overflow: 'auto', pb: 1, pr: 1 }}>
         {items.map(({ title }, index) => (
           <Chip
             size="medium"
@@ -153,7 +153,7 @@ export default function Features() {
             width: { sm: '100%', md: '70%' }
           }}
         >
-          Discover how Akiba empowers your group to achieve shared financial goals using innovative tools designed for security, collaboration and flexibility.
+          Akiba's innovative approach empowers groups to achieve shared goals using modern, secure tools.
         </Typography>
       </Box>
       <Box

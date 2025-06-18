@@ -71,7 +71,7 @@ export default function Hero() {
               fontWeight: 'regular'
             }}
           >
-            Do&nbsp;More,&nbsp;
+            Do&nbsp;more,&nbsp;
             <Typography
               component="span"
               variant="h2"
@@ -92,21 +92,22 @@ export default function Hero() {
               textAlign: 'center',
               color: darkMode ? '#ffffff' : 'text.secondary',
               width: { sm: '100%', md: '80%' },
-              fontSize: '1.25rem'
+              fontSize: '1rem'
             }}
           >
-            Akiba is a collaborative savings platform that helps friends, families, organizations and communities save money as a team.
+            Akiba is a collaborative savings platform that helps friends, families, communities and organizations save money as a team.
           </Typography>         
           <Typography
             variant="caption"
             sx={{ 
               textAlign: 'center',
-              fontWeight: 'bold',
+              fontWeight: 'regular',
+              fontStyle: 'italic',
               color: darkMode ? '#ffffff' : 'text.secondary',
-              fontSize: '0.9rem'
+              fontSize: '0.7rem'
             }}
           >
-            We make saving simple and social — helping people achieve more, together.
+            Saving made social, achieve more, together.
           </Typography>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}
@@ -146,7 +147,7 @@ export default function Hero() {
                 }
               }}
             >
-              Sign Up Now
+              Create Account
             </Button>
           </Stack>
         </Stack>

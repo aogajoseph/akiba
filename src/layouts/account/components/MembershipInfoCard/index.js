@@ -75,10 +75,10 @@ function MembershipInfoCard({ title, shadow, data = {} }) {
           </MDBox>
         </MDBox>
 
-        {/* Sub Admins Section */}
+        {/* Sub-Admins Section */}
         <MDBox mt={1}>
           <MDTypography variant="button" fontWeight="bold" mb={1}>
-            Sub Admins ({subAdmins.length || 3})
+            Sub-Admins ({subAdmins.length || 3})
           </MDTypography>
           <Box sx={{ 
             display: 'flex', 
@@ -104,7 +104,7 @@ function MembershipInfoCard({ title, shadow, data = {} }) {
               >
                 <MDAvatar
                   src={admin.avatar || `https://i.pravatar.cc/150?img=${index + 2}`}
-                  alt={admin.name || `Sub Admin ${index + 1}`}
+                  alt={admin.name || `Sub-Admin ${index + 1}`}
                   size="sm"
                   shadow="sm"
                 />

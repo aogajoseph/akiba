@@ -16,44 +16,44 @@ import { useMaterialUIController } from 'context';
 const items = [
   {
     icon: <PersonAddRoundedIcon />,
-    title: 'Create Account',
+    title: 'Account Creation',
     description:
       'Set up your Akiba account quickly and securely in four simple steps.',
     access: 'Everyone',
   },
   {
     icon: <FlagRoundedIcon />,
-    title: 'Create Goals',
+    title: 'Goals Creation',
     description:
-      'Define shared financial goals that all contributors agree on. Only the main admin (account creator) can do this.',
-    access: 'Main Admin',
+      'Define shared financial goals that all the members agree on.',
+    access: 'Main Admin Only',
   },
   {
     icon: <GroupAddRoundedIcon />,
-    title: 'Invite Contributors',
+    title: 'Member Invitations',
     description:
-      "Invite people to join your akiba account. If the people you invite invite others you'll have to approve their joining your account",
-    access: 'Main Admin',
+      "Ask people to join your account and take control by approving those they invite.",
+    access: 'Everyone',
   },
   {
     icon: <AdminPanelSettingsRoundedIcon />,
-    title: 'Create Sub Admins',
+    title: 'Sub-Admins Selection',
     description:
-      "You'll need sub admin approval to withdraw or spend the group's money or manage group members.",
-    access: 'Main Admin',
+      "Appoint sub-admins to assist in managing finances and other group activities.",
+    access: 'Main Admin Only',
   },
   {
     icon: <ForumRoundedIcon />,
-    title: 'Engage Members',
+    title: 'Group Engagement',
     description:
-      'Encourage participation in the forum section or chat privately with everyone.',
+      'Encourage participation in the forum section or chat privately with members.',
     access: 'Everyone',
   },
   {
     icon: <BarChartRoundedIcon />,
-    title: 'Track Activities',
+    title: 'Activity Tracking',
     description:
-      'View group progress from the dashboard or reports page. All members can access, download, or share statements and reports.',
+      'View progress from dashboard overview or the Reports page. ',
     access: 'Everyone',
   },
 ];
@@ -107,7 +107,7 @@ export default function GettingStarted() {
               mx: 'auto',
             }}
           >
-            Follow these simple steps to set up and launch your Akiba account, start saving with friends, family or any group, and achieve your shared financial goals together.
+            Set up your Akiba account in just a few simple steps. Start saving with your friends, family or any group and achieve your shared financial goals as a team
           </Typography>
         </Box>
         <Grid container spacing={2}>

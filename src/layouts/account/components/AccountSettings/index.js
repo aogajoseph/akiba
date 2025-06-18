@@ -225,13 +225,13 @@ const AccountSettings = () => {
                     </Card>
                 </Grid>
 
-                {/* Sub Admins Management */}
+                {/* Sub-Admins Management */}
                 <Grid item xs={12} md={6}>
                     <Card>
                         <MDBox p={3}>
                             <MDBox display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                                 <MDTypography variant="h6" fontWeight="medium">
-                                    Manage Sub Admins
+                                    Manage Sub-Admins
                                 </MDTypography>
                                 <MDButton
                                     variant="gradient"
@@ -239,7 +239,7 @@ const AccountSettings = () => {
                                     startIcon={<AdminPanelSettingsIcon />}
                                     onClick={() => setAddSubAdminOpen(true)}
                                 >
-                                    Add Sub Admin
+                                    Add Sub-Admin
                                 </MDButton>
                             </MDBox>
                             <TableContainer 
@@ -403,7 +403,7 @@ const AccountSettings = () => {
                     </DialogActions>
                 </Dialog>
 
-                {/* Add Sub Admin Dialog */}
+                {/* Add Sub-Admin Dialog */}
                 <Dialog open={addSubAdminOpen} onClose={() => setAddSubAdminOpen(false)} maxWidth="sm" fullWidth>
                     <DialogTitle>Select Member to Promote</DialogTitle>
                     <DialogContent>

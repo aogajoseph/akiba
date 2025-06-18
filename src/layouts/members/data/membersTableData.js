@@ -116,7 +116,7 @@ export default function data() {
         ),
       },
       {
-        member: <Member image={team3} name="Michael Levi" role="Sub Admin" />,
+        member: <Member image={team3} name="Michael Levi" role="Sub-Admin" />,
         contacts: <Contacts phoneNumber="+254 711 248 476" email="michaellevi@gmail.com" />,
         status: (
           <MDBox ml={-1}>
@@ -154,7 +154,7 @@ export default function data() {
         ),
       },
       {
-        member: <Member image={team4} name="Miriam Eric" role="Sub Admin" />,
+        member: <Member image={team4} name="Miriam Eric" role="Sub-Admin" />,
         contacts: <Contacts phoneNumber="+254 715 417 485" email="miriameric@gmail.com" />,
         status: (
           <MDBox ml={-1}>

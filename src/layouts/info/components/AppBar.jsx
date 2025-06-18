@@ -232,7 +232,16 @@ export default function MainAppBar() {
           </Box>
           <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 1 }}>
             <ColorModeIconDropdown size="medium" />
-            <IconButton aria-label="Menu button" onClick={toggleDrawer(true)}>
+            <IconButton 
+              aria-label="Menu button" 
+              onClick={toggleDrawer(true)}
+              sx={{
+                color: darkMode ? '#ffffff' : '#1a1a1a',
+                '&:hover': {
+                  backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                },
+              }}
+            >
               <MenuIcon />
             </IconButton>
             <Drawer
@@ -252,7 +261,15 @@ export default function MainAppBar() {
                     justifyContent: 'flex-end',
                   }}
                 >
-                  <IconButton onClick={toggleDrawer(false)}>
+                  <IconButton 
+                    onClick={toggleDrawer(false)}
+                    sx={{
+                      color: darkMode ? '#ffffff' : '#1a1a1a',
+                      '&:hover': {
+                        backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.04)',
+                      },
+                    }}
+                  >
                     <CloseRoundedIcon />
                   </IconButton>
                 </Box>
@@ -269,6 +286,13 @@ export default function MainAppBar() {
                     variant="contained" 
                     fullWidth
                     onClick={() => handleAuthNavigation('/auth/sign-up')}
+                    sx={{
+                      color: darkMode ? '#1a1a1a' : '#ffffff',
+                      backgroundColor: darkMode ? 'info.light' : 'info.main',
+                      '&:hover': {
+                        backgroundColor: darkMode ? 'info.main' : 'info.dark',
+                      },
+                    }}
                   >
                     Sign up
                   </Button>
@@ -279,6 +303,14 @@ export default function MainAppBar() {
                     variant="outlined" 
                     fullWidth
                     onClick={() => handleAuthNavigation('/auth/sign-in')}
+                    sx={{
+                      color: darkMode ? 'info.light' : 'info.main',
+                      borderColor: darkMode ? 'info.light' : 'info.main',
+                      '&:hover': {
+                        backgroundColor: darkMode ? 'rgba(144, 202, 249, 0.08)' : 'rgba(25, 118, 210, 0.04)',
+                        borderColor: darkMode ? 'info.main' : 'info.dark',
+                      },
+                    }}
                   >
                     Sign in
                   </Button>
