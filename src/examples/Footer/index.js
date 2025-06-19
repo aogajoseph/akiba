@@ -18,7 +18,6 @@ import PropTypes from "prop-types";
 
 // @mui material components
 import Link from "@mui/material/Link";
-import Icon from "@mui/material/Icon";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -27,15 +26,14 @@ import MDTypography from "components/MDTypography";
 // Material Dashboard 2 React base styles
 import typography from "assets/theme/base/typography";
 
-function Footer({ company, links }) {
-  const { href, name } = company;
+function Footer({ links }) {
   const { size } = typography;
 
   const renderLinks = () =>
     links.map((link) => (
       <MDBox key={link.name} component="li" px={1}>
         <Link href={link.href} target="_blank">
-          <MDTypography variant="button" fontWeight="regular" color="text">
+          <MDTypography variant="caption" fontWeight="regular" color="text">
             {link.name}
           </MDTypography>
         </Link>
@@ -57,10 +55,10 @@ function Footer({ company, links }) {
         alignItems="center"
         flexWrap="wrap"
         color="text"
-        fontSize={size.sm}
+        fontSize={size.xs}
         px={1.5}
       >
-        &copy;{new Date().getFullYear()} Akiba Technologies Ltd. All Rights Reserved.
+        &copy;{new Date().getFullYear()} Akiba Ltd. All rights reserved.
       </MDBox>
       <MDBox
         component="ul"
@@ -87,11 +85,11 @@ function Footer({ company, links }) {
 
 // Setting default values for the props of Footer
 Footer.defaultProps = {
-  company: { href: "https://www.creative-tim.com/", name: "Creative Tim" },
+  company: { href: "", name: "" },
   links: [
-    { href: "https://www.creative-tim.com/", name: "Terms" },
-    { href: "https://www.creative-tim.com/presentation", name: "Privacy" },
-    { href: "https://www.creative-tim.com/blog", name: "Contact Us" }
+    { href: "", name: "Terms" },
+    { href: "", name: "Privacy" },
+    { href: "", name: "Contact Us" }
   ],
 };
 

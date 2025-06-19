@@ -97,6 +97,7 @@ function SignIn() {
                         onClick={handleTogglePassword}
                         edge="end"
                         size="small"
+                        sx={{ color:"#757575" }}
                       >
                         {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                       </IconButton>
@@ -127,20 +128,6 @@ function SignIn() {
               </MDButton>
             </MDBox>
 
-            {/* Forgot Password Link */}
-            <MDBox mt={2} mb={1} textAlign="left">
-              <MDTypography
-                component={Link}
-                to="/auth/reset-password"
-                variant="button"
-                color="info"
-                fontWeight="medium"
-                textGradient
-              >
-                Forgot Password?
-              </MDTypography>
-            </MDBox>
-
             {/* Sign Up Link */}
             <MDBox mt={1} mb={1} textAlign="center">
               <MDTypography variant="button" color="text">
@@ -157,6 +144,21 @@ function SignIn() {
                 </MDTypography>
               </MDTypography>
             </MDBox>
+
+            {/* Forgot Password Link */}
+            <MDBox mt={1} mb={1} textAlign="left">
+              <MDTypography
+                component={Link}
+                to="/auth/reset-password"
+                variant="button"
+                color="info"
+                fontWeight="regular"
+                textGradient
+              >
+                Forgot Password?
+              </MDTypography>
+            </MDBox>
+
           </MDBox>
         </MDBox>
       </Card>

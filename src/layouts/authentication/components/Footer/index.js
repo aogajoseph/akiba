@@ -19,7 +19,6 @@ import PropTypes from "prop-types";
 // @mui material components
 import Container from "@mui/material/Container";
 import Link from "@mui/material/Link";
-import Icon from "@mui/material/Icon";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -54,11 +53,11 @@ function Footer({ light }) {
               opacity: 0.9
             }}
           >
-            &copy;{new Date().getFullYear()} Akiba Technologies Ltd. All Rights Reserved.
+            &copy;{new Date().getFullYear()} Akiba Ltd. All rights reserved.
           </MDBox>
           <MDBox
             component="ul"
-            sx={({ breakpoints, palette: { grey, text, info } }) => ({
+            sx={({ breakpoints, palette: { info } }) => ({
               display: "flex",
               flexWrap: "wrap",
               alignItems: "center",
@@ -83,7 +82,7 @@ function Footer({ light }) {
             <MDBox component="li" pr={1} lineHeight={1}>
               <Link href="#" target="_blank" style={{ textDecoration: "none" }}>
                 <MDTypography
-                  variant="button"
+                  variant="caption"
                   fontWeight="regular"
                   color={light ? "white" : "text"}
                   sx={{ 
@@ -104,7 +103,7 @@ function Footer({ light }) {
             <MDBox component="li" px={1} lineHeight={1}>
               <Link href="#" target="_blank" style={{ textDecoration: "none" }}>
                 <MDTypography
-                  variant="button"
+                  variant="caption"
                   fontWeight="regular"
                   color={light ? "white" : "text"}
                   sx={{ 
@@ -125,7 +124,7 @@ function Footer({ light }) {
             <MDBox component="li" px={1} lineHeight={1}>
               <Link href="#" target="_blank" style={{ textDecoration: "none" }}>
                 <MDTypography
-                  variant="button"
+                  variant="caption"
                   fontWeight="regular"
                   color={light ? "white" : "text"}
                   sx={{ 
@@ -146,7 +145,7 @@ function Footer({ light }) {
             <MDBox component="li" pl={1} lineHeight={1}>
               <Link href="#" target="_blank" style={{ textDecoration: "none" }}>
                 <MDTypography
-                  variant="button"
+                  variant="caption"
                   fontWeight="regular"
                   color={light ? "white" : "text"}
                   sx={{ 

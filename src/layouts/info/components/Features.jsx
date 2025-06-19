@@ -12,30 +12,35 @@ import AccountBalanceWalletRoundedIcon from '@mui/icons-material/AccountBalanceW
 import SecurityRoundedIcon from '@mui/icons-material/SecurityRounded';
 import GroupsRoundedIcon from '@mui/icons-material/GroupsRounded';
 
+// Import local images
+import flexibleAccounts from '../../../assets/images/flexible-accounts.png';
+import secureFinancialManagement from '../../../assets/images/secure-financial-management.png';
+import groupEngagement from '../../../assets/images/group-engagement.png';
+
 const items = [
   {
     icon: <AccountBalanceWalletRoundedIcon />,
     title: 'Flexible Accounts',
     description:
       "Akiba adapts to each group's unique needs, with flexible accounts and the freedom to join or leave freely at any time.",
-    imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-light.png")`,
-    imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-dark.png")`,
+    imageLight: `url(${flexibleAccounts})`,
+    imageDark: `url(${flexibleAccounts})`,
   },
   {
     icon: <SecurityRoundedIcon />,
     title: 'Secure Financial Management',
     description:
       "We ensure transparency and accountability through open communication and a robust governance system.",
-    imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-light.png")`,
-    imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-dark.png")`,
+    imageLight: `url(${secureFinancialManagement})`,
+    imageDark: `url(${secureFinancialManagement})`,
   },
   {
     icon: <GroupsRoundedIcon />,
     title: 'Group Engagement',
     description:
       "Members are connected via private messaging, group chat and real-time reporting, keeping everyone informed and engaged.",
-    imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-light.png")`,
-    imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-dark.png")`,
+    imageLight: `url(${groupEngagement})`,
+    imageDark: `url(${groupEngagement})`,
   },
 ];
 
@@ -90,8 +95,10 @@ function MobileLayout({ selectedItemIndex, handleItemClick, selectedFeature, dar
             mb: 2,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
             minHeight: 280,
             backgroundImage: darkMode ? selectedFeature.imageDark : selectedFeature.imageLight,
+            filter: darkMode ? 'brightness(0.7) contrast(1.2)' : 'none',
           }}
         />
         <Box sx={{ px: 2, pb: 2 }}>
@@ -245,8 +252,11 @@ export default function Features() {
                 m: 'auto',
                 width: 420,
                 height: 500,
-                backgroundSize: 'contain',
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
+                backgroundRepeat: 'no-repeat',
                 backgroundImage: darkMode ? selectedFeature.imageDark : selectedFeature.imageLight,
+                filter: darkMode ? 'brightness(0.7) contrast(1.2)' : 'none',
               }}
             />
           </Card>
