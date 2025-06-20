@@ -22,35 +22,35 @@ const userTestimonials = [
     name: 'John Onsarigo',
     occupation: 'Community Member, Baringo',
     testimonial:
-      "Before Akiba, our welfare members didn’t even know each other. But now, everyone trusts the system 100% because our finances are managed clearly and everything is easy to follow.”",
+      '"Before Akiba, our welfare members didn’t even know each other. But now, we all trust the system because there is clarity and everything is easy to follow.”',
   },
   {
     avatar: 'https://i.pravatar.cc/150?img=3',
     name: 'Saidi Ahmed',
     occupation: 'Resident, Mombasa',
     testimonial:
-      "When I first used Akiba, I had lost a close relative. It was very easy to use. Everyone who contributed was satisfied because they could see how the money was used.",
+      '"When I first used Akiba, I had lost a close relative. It was very easy to use. Everyone who contributed was satisfied because they could see how the money was used."',
   },
   {
     avatar: 'https://i.pravatar.cc/150?img=1',
     name: 'Rev. Gideon Makau',
     occupation: 'Church Leader, Mlolongo',
     testimonial:
-      "When we set out to build a new gate for our church, Akiba became an unexpected blessing. All our members insisted on using it to raise and manage the funds.",
+      '"When we set out to build a new gate for our church, Akiba became an unexpected blessing. All our members insisted on using it to raise and manage the funds."',
   },
   {
     avatar: 'https://i.pravatar.cc/150?img=2',
     name: 'Jacob Mwai',
     occupation: 'Boda boda rider, Kiambu',
     testimonial:
-      "Akiba came to save me as a boda boda chairman. Handling my colleagues' money manually, used to give me headaches. I'm truly happy this platform was created.",
+      '"Akiba came to save me as a boda boda chairman. Handling my colleagues\' money manually, used to give me headaches. I\'m truly happy this platform was created."',
   },
   {
     avatar: 'https://i.pravatar.cc/150?img=3',
     name: 'Geraldine Ouma',
     occupation: 'Consultant, Nairobi',
     testimonial:
-      "Akiba has brought us closer together as a family, even with our kids living abroad. It feels like we are always in the same room discussing our savings.",
+      '"Akiba has brought us closer together as a family, even with our kids living abroad. It feels like we are always in the same room discussing our savings."'
   },
 ];
 

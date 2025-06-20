@@ -16,42 +16,42 @@ import { useMaterialUIController } from 'context';
 const items = [
   {
     icon: <PersonAddRoundedIcon />,
-    title: 'Account Creation',
+    title: 'Setup',
     description:
       'Set up your Akiba account quickly and securely in four simple steps.',
     access: 'Everyone',
   },
   {
     icon: <FlagRoundedIcon />,
-    title: 'Goals Creation',
+    title: 'Goals',
     description:
-      'Define shared financial goals that all the members agree on.',
+      'Create shared financial goals that all the members agree on.',
     access: 'Main Admin Only',
   },
   {
     icon: <GroupAddRoundedIcon />,
-    title: 'Member Invitations',
+    title: 'Invitations',
     description:
       "Ask people to join your account and take control by approving those they invite.",
     access: 'Everyone',
   },
   {
     icon: <AdminPanelSettingsRoundedIcon />,
-    title: 'Sub-Admins Selection',
+    title: 'Delegation',
     description:
       "Appoint sub-admins to assist in managing finances and other group activities.",
     access: 'Main Admin Only',
   },
   {
     icon: <ForumRoundedIcon />,
-    title: 'Group Engagement',
+    title: 'Engagement',
     description:
       'Encourage participation in the forum section or chat privately with members.',
     access: 'Everyone',
   },
   {
     icon: <BarChartRoundedIcon />,
-    title: 'Activity Tracking',
+    title: 'Tracking',
     description:
       'View progress from dashboard overview or the Reports page. ',
     access: 'Everyone',

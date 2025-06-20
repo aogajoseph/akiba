@@ -162,7 +162,7 @@ export default function MainAppBar() {
                 onClick={() => scrollToSection('getting-started')}
                 sx={navButtonStyle('getting-started')}
               >
-                Getting Started
+                Get Started
               </Button>
               <Button 
                 variant="text" 
@@ -274,7 +274,7 @@ export default function MainAppBar() {
                   </IconButton>
                 </Box>
                 <MenuItem onClick={() => scrollToSection('hero')}>About</MenuItem>
-                <MenuItem onClick={() => scrollToSection('getting-started')}>Getting Started</MenuItem>
+                <MenuItem onClick={() => scrollToSection('getting-started')}>Get Started</MenuItem>
                 <MenuItem onClick={() => scrollToSection('features')}>Features</MenuItem>
                 <MenuItem onClick={() => scrollToSection('pricing')}>Pricing</MenuItem>
                 <MenuItem onClick={() => scrollToSection('testimonials')}>Testimonials</MenuItem>

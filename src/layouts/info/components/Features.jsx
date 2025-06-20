@@ -30,7 +30,7 @@ const items = [
     icon: <SecurityRoundedIcon />,
     title: 'Secure Financial Management',
     description:
-      "We ensure transparency and accountability through open communication and a robust governance system.",
+      "We ensure transparency and accountability through a robust governance system and real-time reporting.",
     imageLight: `url(${secureFinancialManagement})`,
     imageDark: `url(${secureFinancialManagement})`,
   },
@@ -38,7 +38,7 @@ const items = [
     icon: <GroupsRoundedIcon />,
     title: 'Group Engagement',
     description:
-      "Members are connected via private messaging, group chat and real-time reporting, keeping everyone informed and engaged.",
+      "Members, admins and sub-admins connect in Forum or privately via Chat, keeping everyone informed and engaged.",
     imageLight: `url(${groupEngagement})`,
     imageDark: `url(${groupEngagement})`,
   },

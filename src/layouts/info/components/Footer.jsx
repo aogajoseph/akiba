@@ -168,12 +168,12 @@ export default function Footer() {
             gap: 1,
           }}
         >
-          <Typography variant="overline" sx={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : 'text.primary' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : 'text.primary' }}>
             Product
           </Typography>
           <Link 
             color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="overline" 
+            variant="subtitle2" 
             href="#"
             onClick={(e) => {
               e.preventDefault();
@@ -185,7 +185,7 @@ export default function Footer() {
           </Link>
           <Link 
             color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="overline" 
+            variant="subtitle2" 
             href="#"
             onClick={(e) => {
               e.preventDefault();
@@ -193,11 +193,11 @@ export default function Footer() {
             }}
             sx={linkStyle}
           >
-            Getting Started
+            Get Started
           </Link>
           <Link 
             color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="overline" 
+            variant="subtitle2" 
             href="#"
             onClick={(e) => {
               e.preventDefault();
@@ -209,7 +209,7 @@ export default function Footer() {
           </Link>
           <Link 
             color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="overline" 
+            variant="subtitle2" 
             href="#"
             onClick={(e) => {
               e.preventDefault();
@@ -221,7 +221,7 @@ export default function Footer() {
           </Link>
           <Link 
             color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="overline" 
+            variant="subtitle2" 
             href="#"
             onClick={(e) => {
               e.preventDefault();
@@ -233,7 +233,7 @@ export default function Footer() {
           </Link>
           <Link 
             color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="overline" 
+            variant="subtitle2" 
             href="#"
             onClick={(e) => {
               e.preventDefault();
@@ -251,16 +251,16 @@ export default function Footer() {
             gap: 1,
           }}
         >
-          <Typography variant="overline" sx={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : 'text.primary' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : 'text.primary' }}>
             Company
           </Typography>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="overline" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
             About us
           </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="overline" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
             Products
           </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="overline" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
             Blog
           </Link>
         </Box>
@@ -271,19 +271,19 @@ export default function Footer() {
             gap: 1,
           }}
         >
-          <Typography variant="overline" sx={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : 'text.primary' }}>
+          <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : 'text.primary' }}>
             Legal
           </Typography>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="overline" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
             Terms of Service
           </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="overline" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
             Privacy Policy
           </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="overline" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
             Help Center
           </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="overline" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
             Contact Us
           </Link>
         </Box>
