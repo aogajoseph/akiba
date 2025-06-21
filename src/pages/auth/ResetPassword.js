@@ -34,7 +34,7 @@ import bgImage from "assets/images/banner.jpg";
 function ResetPassword() {
   return (
     <CoverLayout coverHeight="50vh" image={bgImage}>
-      <Card>
+      <Card sx={{ mb: 4 }}>
         <MDBox
           variant="gradient"
           bgColor="info"
@@ -46,11 +46,11 @@ function ResetPassword() {
           mb={1}
           textAlign="center"
         >
-          <MDTypography variant="h3" fontWeight="medium" color="white" mt={1}>
+          <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
             Reset Password
           </MDTypography>
-          <MDTypography display="block" variant="button" color="white" my={1} px={2}>
-            We will send you a link within 60 seconds maximum
+          <MDTypography display="block" variant="subtitle2" color="white" my={1} px={2}>
+            You'll receive a link within 60 seconds
           </MDTypography>
         </MDBox>
         <MDBox pt={4} pb={3} px={3}>

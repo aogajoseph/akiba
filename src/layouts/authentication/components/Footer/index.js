@@ -31,7 +31,18 @@ function Footer({ light }) {
   const { size } = typography;
 
   return (
-    <MDBox position="absolute" width="100%" bottom={0} py={2} px={1}>
+    <MDBox 
+      width="100%" 
+      py={3} 
+      px={1}
+      sx={{
+        backgroundColor: 'transparent',
+        borderTop: light 
+          ? '1px solid rgba(255, 255, 255, 0.1)' 
+          : '1px solid rgba(0, 0, 0, 0.1)',
+        marginTop: 'auto',
+      }}
+    >
       <Container>
         <MDBox
           width="100%"
@@ -53,7 +64,7 @@ function Footer({ light }) {
               opacity: 0.9
             }}
           >
-            &copy;{new Date().getFullYear()} Akiba Ltd. All rights reserved.
+            &copy;{new Date().getFullYear()} Akiba Ltd.
           </MDBox>
           <MDBox
             component="ul"

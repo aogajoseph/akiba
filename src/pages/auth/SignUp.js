@@ -21,10 +21,6 @@ import { useState } from "react";
 import Card from "@mui/material/Card";
 import Checkbox from "@mui/material/Checkbox";
 import Grid from "@mui/material/Grid";
-import MenuItem from "@mui/material/MenuItem";
-import Select from "@mui/material/Select";
-import FormControl from "@mui/material/FormControl";
-import InputLabel from "@mui/material/InputLabel";
 import Stepper from "@mui/material/Stepper";
 import Step from "@mui/material/Step";
 import StepLabel from "@mui/material/StepLabel";
@@ -60,18 +56,22 @@ import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 
+// Material Dashboard 2 React context
+import { useMaterialUIController } from "context";
+
 // Authentication layout components
 import CoverLayout from "layouts/authentication/components/CoverLayout";
 
 // Images
 import bgImage from "assets/images/banner.jpg";
 
-const steps = ['Account Setup', 'Verification', 'Profile', 'Invitations'];
+const steps = ['Setup', 'Verification', 'Profile', 'Invitations'];
 
 function SignUp() {
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
   const navigate = useNavigate();
   const [activeStep, setActiveStep] = useState(0);
-  const [accountType, setAccountType] = useState('family');
   const [verificationCode, setVerificationCode] = useState('');
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationError, setVerificationError] = useState('');
@@ -87,6 +87,8 @@ function SignUp() {
   });
   const [showCopyNotification, setShowCopyNotification] = useState(false);
   const [showSuccessCard, setShowSuccessCard] = useState(false);
+  const [showHelpDialog, setShowHelpDialog] = useState(false);
+  const [helpMessage, setHelpMessage] = useState('');
   const [accountDetails] = useState({
     accountNumber: "AK-2024-001",
     createdAt: new Date().toLocaleDateString(),
@@ -104,6 +106,16 @@ function SignUp() {
       ...formData,
       agreeToTerms: event.target.checked
     });
+  };
+
+  const handleHelpClick = (message) => {
+    setHelpMessage(message);
+    setShowHelpDialog(true);
+  };
+
+  const handleCloseHelp = () => {
+    setShowHelpDialog(false);
+    setHelpMessage('');
   };
 
   const handleNext = () => {
@@ -144,8 +156,8 @@ function SignUp() {
         Verify Your Account
       </MDTypography>
       <MDBox mb={4}>
-        <MDTypography variant="body2" color="text" mb={2}>
-          We've sent a verification code to your email address {formData.email}
+        <MDTypography variant="caption" color="text" mb={2}>
+          Enter the code we sent to your email {formData.email}
         </MDTypography>
         <Grid container spacing={2}>
           <Grid item xs={12}>
@@ -159,7 +171,7 @@ function SignUp() {
                 error={!!verificationError}
                 fullWidth
               />
-              {renderHelperIcon("Enter the 6-digit code sent to your email")}
+              {renderHelperIcon("Enter the 6-digit code we sent to your email address")}
             </MDBox>
             {verificationError && (
               <MDTypography variant="caption" color="error" mt={1}>
@@ -168,7 +180,7 @@ function SignUp() {
             )}
           </Grid>
           <Grid item xs={12}>
-            <MDBox display="flex" justifyContent="space-between" alignItems="center">
+            <MDBox display="flex" justifyContent="flex-start" alignItems="center">
               <MDButton
                 variant="text"
                 color="info"
@@ -178,6 +190,7 @@ function SignUp() {
                   setTimeout(() => setIsVerifying(false), 2000);
                 }}
                 disabled={isVerifying}
+                sx={{ pl: 0 }}
               >
                 {isVerifying ? (
                   <CircularProgress size={20} color="inherit" />
@@ -185,9 +198,6 @@ function SignUp() {
                   "Resend Code"
                 )}
               </MDButton>
-              <MDTypography variant="caption" color="text">
-                For demo purposes, click Next to continue
-              </MDTypography>
             </MDBox>
           </Grid>
         </Grid>
@@ -281,7 +291,7 @@ function SignUp() {
       <Divider />
       <DialogContent>
         <MDBox py={2}>
-          <MDTypography variant="body2" color="text" textAlign="center" mb={2}>
+          <MDTypography variant="caption" color="text" textAlign="center" mb={2}>
             Select contacts from your device to invite to Akiba
           </MDTypography>
           {/* Placeholder for contacts list */}
@@ -415,20 +425,33 @@ function SignUp() {
                   '&:hover': {
                     bgcolor: 'grey.100',
                   },
+                  // Mobile responsive layout
+                  flexDirection: { xs: 'column', sm: 'row' },
+                  alignItems: { xs: 'flex-start', sm: 'center' },
+                  gap: { xs: 1, sm: 0 },
                 },
                 '& .MuiAvatar-root': {
                   width: 36,
                   height: 36,
+                  alignSelf: { xs: 'flex-start', sm: 'center' },
+                },
+                '& .MuiListItemText-root': {
+                  flex: { xs: '1 1 auto', sm: '1 1 auto' },
+                  minWidth: 0,
+                  width: { xs: '100%', sm: 'auto' },
                 },
                 '& .MuiListItemText-primary': {
                   fontSize: '0.875rem',
                   fontWeight: 500,
+                  mb: { xs: 0.5, sm: 0 },
                 },
                 '& .MuiListItemText-secondary': {
                   fontSize: '0.75rem',
+                  mb: { xs: 1, sm: 0 },
                 },
                 '& .MuiButton-root': {
-                  minWidth: 100,
+                  minWidth: { xs: '100%', sm: 100 },
+                  alignSelf: { xs: 'flex-start', sm: 'center' },
                 },
               }}
             >
@@ -501,13 +524,13 @@ function SignUp() {
                   </ListItemAvatar>
                   <ListItemText 
                     primary={
-                      <MDBox display="flex" alignItems="center" gap={1}>
-                        <MDTypography variant="button" fontWeight="medium">
+                      <MDBox display="flex" alignItems="center" gap={1} flexWrap="wrap">
+                        <MDTypography variant="button" fontWeight="medium" color="text.primary">
                           Copy Invitation Link
                         </MDTypography>
                         <Fade in={showCopyNotification} timeout={300}>
                           <MDTypography variant="caption" color="info" fontStyle="italic">
-                            Link copied to clipboard!
+                            Link copied!
                           </MDTypography>
                         </Fade>
                       </MDBox>
@@ -537,8 +560,10 @@ function SignUp() {
               borderRadius="lg" 
               bgcolor="grey.100"
               display="flex"
-              alignItems="center"
+              flexDirection={{ xs: 'column', sm: 'row' }}
+              alignItems={{ xs: 'flex-start', sm: 'center' }}
               justifyContent="space-between"
+              gap={{ xs: 2, sm: 0 }}
             >
               <MDBox>
                 <MDTypography variant="h6" mb={0.5}>
@@ -580,7 +605,7 @@ function SignUp() {
       <DialogContent>
         <MDBox textAlign="center" py={3}>
           <CheckCircleIcon sx={{ fontSize: 64, color: 'success.main', mb: 2 }} />
-          <MDTypography variant="h4" fontWeight="medium" mb={2}>
+          <MDTypography variant="h4" fontWeight="medium" color="text.primary" mb={2}>
             Your account was created successfully!
           </MDTypography>
           
@@ -594,27 +619,15 @@ function SignUp() {
               </Grid>
               <Grid item xs={12}>
                 <MDBox display="flex" justifyContent="space-between" mb={1}>
-                  <MDTypography variant="button" color="text">Account Number:</MDTypography>
+                  <MDTypography variant="button" color="text">Account ID:</MDTypography>
                   <MDTypography variant="button" fontWeight="medium">{accountDetails.accountNumber}</MDTypography>
-                </MDBox>
-              </Grid>
-              <Grid item xs={12}>
-                <MDBox display="flex" justifyContent="space-between" mb={1}>
-                  <MDTypography variant="button" color="text">Account Type:</MDTypography>
-                  <MDTypography variant="button" fontWeight="medium" textTransform="capitalize">{accountType}</MDTypography>
-                </MDBox>
-              </Grid>
-              <Grid item xs={12}>
-                <MDBox display="flex" justifyContent="space-between">
-                  <MDTypography variant="button" color="text">Created On:</MDTypography>
-                  <MDTypography variant="button" fontWeight="medium">{accountDetails.createdAt}</MDTypography>
                 </MDBox>
               </Grid>
             </Grid>
           </MDBox>
 
           <MDTypography variant="body2" color="text" mb={3}>
-            We've sent these details to your email ({formData.email}) and phone ({formData.phone}) for your records.
+            We've sent your account details to {formData.email} and {formData.phone} for your records.
           </MDTypography>
 
           <MDButton
@@ -627,6 +640,37 @@ function SignUp() {
           </MDButton>
         </MDBox>
       </DialogContent>
+    </Dialog>
+  );
+
+  const renderHelpDialog = () => (
+    <Dialog
+      open={showHelpDialog}
+      onClose={handleCloseHelp}
+      maxWidth="sm"
+      fullWidth
+    >
+      <DialogTitle>
+        <MDBox display="flex" alignItems="center" justifyContent="space-between">
+          <MDTypography variant="h6">Help</MDTypography>
+          <IconButton onClick={handleCloseHelp} size="small">
+            <CloseIcon />
+          </IconButton>
+        </MDBox>
+      </DialogTitle>
+      <Divider />
+      <DialogContent>
+        <MDBox py={2}>
+          <MDTypography variant="body1" color="text">
+            {helpMessage}
+          </MDTypography>
+        </MDBox>
+      </DialogContent>
+      <DialogActions>
+        <MDButton variant="gradient" color="info" onClick={handleCloseHelp}>
+          ok!
+        </MDButton>
+      </DialogActions>
     </Dialog>
   );
 
@@ -644,10 +688,10 @@ function SignUp() {
             {/* Account Information Section */}
             <MDBox mb={4}>
               <MDTypography variant="h6" fontWeight="medium" mb={3}>
-                Account Information
+                Account Details
               </MDTypography>
               <Grid container spacing={4}>
-                <Grid item xs={12} md={6}>
+                <Grid item xs={12}>
                   <MDBox display="flex" alignItems="center">
                     <MDInput
                       type="text"
@@ -657,22 +701,8 @@ function SignUp() {
                       onChange={handleInputChange('accountName')}
                       fullWidth
                     />
-                    {renderHelperIcon("Choose a name that identifies your group")}
+                    {renderHelperIcon("Use a name that best describes your group (e.g. John Smith's Family, Grace Church, etc.)")}
                   </MDBox>
-                </Grid>
-                <Grid item xs={12} md={6}>
-                  <FormControl fullWidth variant="standard">
-                    <InputLabel>Account Type</InputLabel>
-                    <Select
-                      value={accountType}
-                      onChange={(e) => setAccountType(e.target.value)}
-                      label="Account Type"
-                    >
-                      <MenuItem value="family">Family</MenuItem>
-                      <MenuItem value="group">Group</MenuItem>
-                      <MenuItem value="organization">Organization</MenuItem>
-                    </Select>
-                  </FormControl>
                 </Grid>
               </Grid>
             </MDBox>
@@ -680,7 +710,7 @@ function SignUp() {
             {/* Main Admin Details Section */}
             <MDBox mb={4}>
               <MDTypography variant="h6" fontWeight="medium" mb={3}>
-              Account Creator (Main Admin) Details
+              Your Details
               </MDTypography>
               <Grid container spacing={4}>
                 <Grid item xs={12} md={6}>
@@ -694,43 +724,34 @@ function SignUp() {
                   />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <MDBox display="flex" alignItems="center">
-                    <MDInput 
-                      type="email" 
-                      label="Email Address"
-                      variant="standard"
-                      value={formData.email}
-                      onChange={handleInputChange('email')}
-                      fullWidth 
-                    />
-                    {renderHelperIcon("You'll receive a verification code")}
-                  </MDBox>
+                  <MDInput 
+                    type="email" 
+                    label="Email Address"
+                    variant="standard"
+                    value={formData.email}
+                    onChange={handleInputChange('email')}
+                    fullWidth 
+                  />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <MDBox display="flex" alignItems="center">
-                    <MDInput 
-                      type="tel" 
-                      label="Phone Number"
-                      variant="standard"
-                      value={formData.phone}
-                      onChange={handleInputChange('phone')}
-                      fullWidth 
-                    />
-                    {renderHelperIcon("Include country code, e.g. +254")}
-                  </MDBox>
+                  <MDInput 
+                    type="tel" 
+                    label="Phone Number"
+                    variant="standard"
+                    value={formData.phone}
+                    onChange={handleInputChange('phone')}
+                    fullWidth 
+                  />
                 </Grid>
                 <Grid item xs={12} md={6}>
-                  <MDBox display="flex" alignItems="center">
-                    <MDInput 
-                      type="password" 
-                      label="Create Password"
-                      variant="standard"
-                      value={formData.password}
-                      onChange={handleInputChange('password')}
-                      fullWidth 
-                    />
-                    {renderHelperIcon("Minimum 8 characters required")}
-                  </MDBox>
+                  <MDInput 
+                    type="password" 
+                    label="Create Password"
+                    variant="standard"
+                    value={formData.password}
+                    onChange={handleInputChange('password')}
+                    fullWidth 
+                  />
                 </Grid>
               </Grid>
             </MDBox>
@@ -742,24 +763,16 @@ function SignUp() {
                   checked={formData.agreeToTerms}
                   onChange={handleCheckboxChange}
                 />
-              <MDTypography
-                variant="button"
-                fontWeight="regular"
-                color="text"
-                sx={{ cursor: "pointer", userSelect: "none", ml: -1 }}
-              >
-                  &nbsp;&nbsp;I agree to Akiba's&nbsp;
-              </MDTypography>
-              <MDTypography
-                component="a"
-                href="#"
-                variant="button"
-                fontWeight="bold"
-                color="info"
-                textGradient
-              >
-                  Terms and Privacy Policy
-              </MDTypography>
+                <MDTypography
+                  component="a"
+                  href="#"
+                  variant="button"
+                  fontWeight="bold"
+                  color="info"
+                  textGradient
+                >
+                  Terms & Conditions
+                </MDTypography>
               </MDBox>
             </MDBox>
           </>
@@ -776,25 +789,68 @@ function SignUp() {
   };
 
   const renderHelperIcon = (tooltip) => (
-    <Tooltip title={tooltip} placement="top">
-      <IconButton size="small" sx={{ ml: 1, p: 0 }}>
-        <HelpOutlineIcon fontSize="small" />
-      </IconButton>
-    </Tooltip>
+    <>
+      <Tooltip 
+        title={tooltip} 
+        placement="top"
+        PopperProps={{
+          sx: {
+            '& .MuiTooltip-tooltip': {
+              backgroundColor: darkMode ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.87)',
+              color: darkMode ? 'rgba(0, 0, 0, 0.87)' : 'white',
+              fontSize: '0.75rem',
+              padding: '8px 12px',
+              borderRadius: '4px',
+              maxWidth: '200px',
+              textAlign: 'center',
+              boxShadow: darkMode 
+                ? '0 4px 12px rgba(0, 0, 0, 0.3)' 
+                : '0 4px 12px rgba(0, 0, 0, 0.2)',
+            },
+          },
+        }}
+      >
+        <IconButton 
+          size="small" 
+          sx={{ 
+            ml: 1, 
+            p: 0.5,
+            color: darkMode ? 'info.light' : 'info.main',
+            '&:hover': {
+              backgroundColor: darkMode 
+                ? 'rgba(144, 202, 249, 0.08)' 
+                : 'rgba(25, 118, 210, 0.08)',
+              transform: 'scale(1.1)',
+            },
+            transition: 'all 0.2s ease-in-out',
+          }}
+          onClick={() => handleHelpClick(tooltip)}
+        >
+          <HelpOutlineIcon 
+            fontSize="small" 
+            sx={{
+              filter: darkMode 
+                ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.3))' 
+                : 'drop-shadow(0 1px 2px rgba(0,0,0,0.1))',
+            }}
+          />
+        </IconButton>
+      </Tooltip>
+    </>
   );
 
   return (
     <CoverLayout image={bgImage}>
       <Box sx={{ 
-        width: { md: '200%', lg: '250%' }, 
+        width: { xs: '100%', md: '200%', lg: '250%' }, 
         maxWidth: '1000px',
         position: 'relative',
-        left: '50%',
-        transform: 'translateX(-50%)'
+        left: { xs: '0%', md: '50%' },
+        transform: { xs: 'none', md: 'translateX(-50%)' }
       }}>
         <Card sx={{ 
           width: '100%', 
-          minHeight: '600px',
+          minHeight: { xs: 'auto', sm: '600px' },
           display: 'flex',
           flexDirection: 'column'
         }}>
@@ -818,8 +874,27 @@ function SignUp() {
           </MDBox>
 
           {/* Progress Stepper */}
-          <MDBox px={4} pt={3} pb={1}>
-            <Stepper activeStep={activeStep} alternativeLabel>
+          <MDBox px={{ xs: 2, sm: 4 }} pt={3} pb={1}>
+            <Stepper 
+              activeStep={activeStep} 
+              alternativeLabel
+              sx={{
+                '& .MuiStepLabel-root': {
+                  '& .MuiStepLabel-label': {
+                    fontSize: { xs: '0.7rem', sm: '0.875rem' },
+                    fontWeight: 500,
+                  },
+                  '& .MuiStepLabel-iconContainer': {
+                    '& .MuiStepIcon-root': {
+                      fontSize: { xs: '1.5rem', sm: '1.75rem' },
+                    },
+                  },
+                },
+                '& .MuiStepConnector-line': {
+                  minHeight: { xs: '2px', sm: '3px' },
+                },
+              }}
+            >
               {steps.map((label) => (
                 <Step key={label}>
                   <StepLabel>{label}</StepLabel>
@@ -828,12 +903,12 @@ function SignUp() {
             </Stepper>
           </MDBox>
 
-          <MDBox pt={3} pb={3} px={5} flex={1}>
+          <MDBox pt={3} pb={3} px={{ xs: 3, sm: 5 }} flex={1}>
             <MDBox component="form" role="form" height="100%">
               {renderStepContent()}
 
               {/* Action Buttons */}
-              <MDBox mt={4} mb={1} display="flex" gap={2}>
+              <MDBox mt={4} mb={1} display="flex" gap={2} flexDirection={{ xs: 'column', sm: 'row' }}>
                 {activeStep > 0 && (
                   <MDButton variant="outlined" color="info" onClick={handleBack}>
                     Back
@@ -880,6 +955,7 @@ function SignUp() {
       </Card>
       </Box>
       <MDBox mb={8}></MDBox>
+      {renderHelpDialog()}
     </CoverLayout>
   );
 }

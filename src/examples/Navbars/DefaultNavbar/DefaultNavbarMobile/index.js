@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import PropTypes from "prop-types";
 
 // @mui material components
@@ -11,8 +11,21 @@ import Icon from "@mui/material/Icon";
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
 
+// Material Dashboard 2 React context
+import { useMaterialUIController } from "context";
+
 function DefaultNavbarMobile({ routes, open, close }) {
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
+  const navigate = useNavigate();
   const { collapse } = routes;
+
+  const scrollToSection = (sectionId) => {
+    close();
+    // Always navigate to the info page with hash
+    // The info page will handle the scrolling
+    navigate(`/info#${sectionId}`);
+  };
 
   const renderRoutes = collapse.map(({ name, icon, route, key }) => (
     <ListItem key={key} component={Link} to={route} onClick={close}>
@@ -29,7 +42,7 @@ function DefaultNavbarMobile({ routes, open, close }) {
 
   return (
     <MDBox
-      bgColor="background.sidenav"
+      bgColor={darkMode ? "background.sidenav" : "white"}
       position="absolute"
       top="0"
       left="0"
@@ -39,35 +52,117 @@ function DefaultNavbarMobile({ routes, open, close }) {
       zIndex={99}
       height="100vh"
       maxHeight="100vh"
-      sx={{ overflowY: "auto" }}
+      sx={{ 
+        overflowY: "auto",
+        backgroundColor: darkMode ? 'rgba(33, 33, 33, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(20px)',
+      }}
     >
       <MDBox width="100%" pt={2} pb={3} px={2}>
         <MDBox display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-          <MDTypography variant="h6" fontWeight="medium" color="text">
+          <MDTypography 
+            variant="h6" 
+            fontWeight="medium" 
+            color={darkMode ? "white" : "dark"}
+          >
             Menu
           </MDTypography>
-          <Icon sx={{ cursor: "pointer" }} onClick={close}>
+          <Icon 
+            sx={{ 
+              cursor: "pointer",
+              color: darkMode ? "white" : "dark",
+            }} 
+            onClick={close}
+          >
             close
           </Icon>
         </MDBox>
         <List>
-          <ListItem component={Link} to="/info" onClick={close}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
+          <ListItem 
+            onClick={() => scrollToSection("hero")}
+            sx={{
+              cursor: "pointer",
+              borderRadius: 1,
+              mb: 0.5,
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: darkMode 
+                  ? "rgba(255, 255, 255, 0.08)" 
+                  : "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          >
+            <MDTypography 
+              variant="button" 
+              fontWeight="regular" 
+              color={darkMode ? "white" : "dark"}
+            >
               About
             </MDTypography>
           </ListItem>
-          <ListItem component={Link} to="/info" onClick={close}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
-              Getting Started
+          <ListItem 
+            onClick={() => scrollToSection("getting-started")}
+            sx={{
+              cursor: "pointer",
+              borderRadius: 1,
+              mb: 0.5,
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: darkMode 
+                  ? "rgba(255, 255, 255, 0.08)" 
+                  : "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          >
+            <MDTypography 
+              variant="button" 
+              fontWeight="regular" 
+              color={darkMode ? "white" : "dark"}
+            >
+              Get Started
             </MDTypography>
           </ListItem>
-          <ListItem component={Link} to="/info" onClick={close}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
+          <ListItem 
+            onClick={() => scrollToSection("pricing")}
+            sx={{
+              cursor: "pointer",
+              borderRadius: 1,
+              mb: 0.5,
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: darkMode 
+                  ? "rgba(255, 255, 255, 0.08)" 
+                  : "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          >
+            <MDTypography 
+              variant="button" 
+              fontWeight="regular" 
+              color={darkMode ? "white" : "dark"}
+            >
               Pricing
             </MDTypography>
           </ListItem>
-          <ListItem component={Link} to="/info" onClick={close}>
-            <MDTypography variant="button" fontWeight="regular" color="text">
+          <ListItem 
+            onClick={() => scrollToSection("faq")}
+            sx={{
+              cursor: "pointer",
+              borderRadius: 1,
+              mb: 0.5,
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: darkMode 
+                  ? "rgba(255, 255, 255, 0.08)" 
+                  : "rgba(0, 0, 0, 0.04)",
+              },
+            }}
+          >
+            <MDTypography 
+              variant="button" 
+              fontWeight="regular" 
+              color={darkMode ? "white" : "dark"}
+            >
               FAQs
             </MDTypography>
           </ListItem>

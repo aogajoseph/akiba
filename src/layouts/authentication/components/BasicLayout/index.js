@@ -44,6 +44,8 @@ function BasicLayout({ image, children }) {
         position="relative"
         width="100%"
         minHeight="100vh"
+        display="flex"
+        flexDirection="column"
         sx={{
           backgroundImage: ({ functions: { linearGradient, rgba }, palette: { gradients } }) =>
             image &&
@@ -60,10 +62,13 @@ function BasicLayout({ image, children }) {
           position="relative"
           px={1}
           width="100%"
-          height="100%"
+          flex="1"
           mx="auto"
           pt={16}
-          pb={8}
+          pb={4}
+          display="flex"
+          alignItems="center"
+          justifyContent="center"
         >
           <Grid container spacing={1} justifyContent="center">
             <Grid item xs={11} sm={9} md={5} lg={4} xl={3}>

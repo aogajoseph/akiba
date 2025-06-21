@@ -22,7 +22,7 @@ function Copyright() {
     <Typography variant="caption" sx={{ color: darkMode ? '#ffffff' : 'text.secondary', mt: 1 }}>
       {'©'}
       {new Date().getFullYear()}
-      {' | Akiba Ltd. | All rignts reserved.'}
+      {' Akiba Ltd.'}
     </Typography>
   );
 }

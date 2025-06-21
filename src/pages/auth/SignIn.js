@@ -82,7 +82,7 @@ function SignIn() {
         <MDBox pt={4} pb={3} px={3}>
           <MDBox component="form" role="form">
             <MDBox mb={2}>
-              <MDInput type="text" label="Email/Phone/Account Number" fullWidth />
+              <MDInput type="text" label="Email/Phone/Account ID" fullWidth />
             </MDBox>
             <MDBox mb={2}>
               <MDInput

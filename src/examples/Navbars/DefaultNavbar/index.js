@@ -16,7 +16,7 @@ Coded by www.creative-tim.com
 import { useState, useEffect } from "react";
 
 // react-router components
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // prop-types is a library for typechecking of props.
 import PropTypes from "prop-types";
@@ -31,8 +31,7 @@ import MDTypography from "components/MDTypography";
 import MDButton from "components/MDButton";
 
 // Material Dashboard 2 React example components
-import DefaultNavbarLink from "examples/Navbars/DefaultNavbar/DefaultNavbarLink";
-import DefaultNavbarMobile from "examples/Navbars/DefaultNavbar/DefaultNavbarMobile";
+import DefaultNavbarMobile from "examples/Navbars/DefaultNavbar/DefaultNavbarMobile.js";
 
 // Material Dashboard 2 React base styles
 import breakpoints from "assets/theme/base/breakpoints";
@@ -46,12 +45,19 @@ import logo from "assets/images/logo.png";
 function DefaultNavbar({ transparent, light, action }) {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
+  const navigate = useNavigate();
 
   const [mobileNavbar, setMobileNavbar] = useState(false);
   const [mobileView, setMobileView] = useState(false);
 
   const openMobileNavbar = ({ currentTarget }) => setMobileNavbar(currentTarget.parentNode);
   const closeMobileNavbar = () => setMobileNavbar(false);
+
+  const scrollToSection = (sectionId) => {
+    // Always navigate to the info page with hash
+    // The info page will handle the scrolling
+    navigate(`/info#${sectionId}`);
+  };
 
   useEffect(() => {
     // A function that sets the display state for the DefaultNavbarMobile.
@@ -127,10 +133,118 @@ function DefaultNavbar({ transparent, light, action }) {
           </MDTypography>
         </MDBox>
         <MDBox color="inherit" display={{ xs: "none", lg: "flex" }} m={0} p={0}>
-          <DefaultNavbarLink name="About" route="/info" light={light} />
-          <DefaultNavbarLink name="Getting Started" route="/info" light={light} />
-          <DefaultNavbarLink name="Pricing" route="/info" light={light} />
-          <DefaultNavbarLink name="FAQs" route="/info" light={light} />
+          <MDBox
+            component="button"
+            onClick={() => scrollToSection("hero")}
+            sx={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              p: 1,
+              mx: 0.5,
+              borderRadius: 1,
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: light 
+                  ? "rgba(255, 255, 255, 0.1)" 
+                  : "rgba(0, 0, 0, 0.04)",
+                transform: "translateY(-1px)",
+              },
+            }}
+          >
+            <MDTypography 
+              variant="button" 
+              fontWeight="medium" 
+              color={light ? "white" : "dark"}
+              sx={{ textTransform: "none" }}
+            >
+              About
+            </MDTypography>
+          </MDBox>
+          <MDBox
+            component="button"
+            onClick={() => scrollToSection("getting-started")}
+            sx={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              p: 1,
+              mx: 0.5,
+              borderRadius: 1,
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: light 
+                  ? "rgba(255, 255, 255, 0.1)" 
+                  : "rgba(0, 0, 0, 0.04)",
+                transform: "translateY(-1px)",
+              },
+            }}
+          >
+            <MDTypography 
+              variant="button" 
+              fontWeight="medium" 
+              color={light ? "white" : "dark"}
+              sx={{ textTransform: "none" }}
+            >
+              Get Started
+            </MDTypography>
+          </MDBox>
+          <MDBox
+            component="button"
+            onClick={() => scrollToSection("pricing")}
+            sx={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              p: 1,
+              mx: 0.5,
+              borderRadius: 1,
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: light 
+                  ? "rgba(255, 255, 255, 0.1)" 
+                  : "rgba(0, 0, 0, 0.04)",
+                transform: "translateY(-1px)",
+              },
+            }}
+          >
+            <MDTypography 
+              variant="button" 
+              fontWeight="medium" 
+              color={light ? "white" : "dark"}
+              sx={{ textTransform: "none" }}
+            >
+              Pricing
+            </MDTypography>
+          </MDBox>
+          <MDBox
+            component="button"
+            onClick={() => scrollToSection("faq")}
+            sx={{
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              p: 1,
+              mx: 0.5,
+              borderRadius: 1,
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                backgroundColor: light 
+                  ? "rgba(255, 255, 255, 0.1)" 
+                  : "rgba(0, 0, 0, 0.04)",
+                transform: "translateY(-1px)",
+              },
+            }}
+          >
+            <MDTypography 
+              variant="button" 
+              fontWeight="medium" 
+              color={light ? "white" : "dark"}
+              sx={{ textTransform: "none" }}
+            >
+              FAQs
+            </MDTypography>
+          </MDBox>
         </MDBox>
         {action &&
           (action.type === "internal" ? (
@@ -179,10 +293,44 @@ function DefaultNavbar({ transparent, light, action }) {
           py={1.5}
           pl={1.5}
           color="inherit"
-          sx={{ cursor: "pointer" }}
+          sx={{ 
+            cursor: "pointer",
+            borderRadius: 1,
+            transition: "all 0.2s ease-in-out",
+            "&:hover": {
+              backgroundColor: light 
+                ? "rgba(255, 255, 255, 0.1)" 
+                : "rgba(0, 0, 0, 0.04)",
+            },
+          }}
           onClick={openMobileNavbar}
         >
-          <Icon fontSize="default">{mobileNavbar ? "close" : "menu"}</Icon>
+          <Icon 
+            fontSize="default"
+            sx={{
+              color: light 
+                ? "white" 
+                : darkMode 
+                  ? "rgba(255, 255, 255, 0.9)" 
+                  : "rgba(0, 0, 0, 0.8)",
+              filter: darkMode 
+                ? "drop-shadow(0 1px 3px rgba(0,0,0,0.5))" 
+                : "drop-shadow(0 1px 2px rgba(0,0,0,0.1))",
+              transition: "all 0.2s ease-in-out",
+              "&:hover": {
+                color: light 
+                  ? "white" 
+                  : darkMode 
+                    ? "white" 
+                    : "rgba(0, 0, 0, 1)",
+                filter: darkMode 
+                  ? "drop-shadow(0 2px 4px rgba(0,0,0,0.7))" 
+                  : "drop-shadow(0 2px 4px rgba(0,0,0,0.2))",
+              },
+            }}
+          >
+            {mobileNavbar ? "close" : "menu"}
+          </Icon>
         </MDBox>
       </MDBox>
       {mobileView && <DefaultNavbarMobile open={mobileNavbar} close={closeMobileNavbar} />}
