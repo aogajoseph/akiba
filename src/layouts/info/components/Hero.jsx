@@ -4,6 +4,7 @@ import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { useNavigate } from 'react-router-dom';
 import { styled } from '@mui/material/styles';
 import { useMaterialUIController } from 'context';
 
@@ -32,6 +33,11 @@ const VideoContainer = styled('div')(({ theme }) => ({
 export default function Hero() {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
+  const navigate = useNavigate();
+
+  const handleAuthNavigation = (path) => {
+    navigate(path);
+  };
 
   return (
     <Box
@@ -123,6 +129,7 @@ export default function Hero() {
               variant="outlined"
               color="info"
               size="medium"
+              onClick={() => handleAuthNavigation('/auth/sign-in')}
               sx={{ 
                 minWidth: 'fit-content',
                 color: darkMode ? '#ffffff' : 'info.main',
@@ -139,6 +146,7 @@ export default function Hero() {
               variant="contained"
               color="primary"
               size="medium"
+              onClick={() => handleAuthNavigation('/auth/sign-up')}
               sx={{ 
                 minWidth: 'fit-content',
                 color: '#ffffff',
@@ -147,7 +155,7 @@ export default function Hero() {
                 }
               }}
             >
-              Create Account
+              Sign Up
             </Button>
           </Stack>
         </Stack>

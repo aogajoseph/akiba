@@ -90,7 +90,7 @@ function SignUp() {
   const [showHelpDialog, setShowHelpDialog] = useState(false);
   const [helpMessage, setHelpMessage] = useState('');
   const [accountDetails] = useState({
-    accountNumber: "AK-2024-001",
+    accountNumber: "",
     createdAt: new Date().toLocaleDateString(),
   });
 
@@ -282,7 +282,7 @@ function SignUp() {
     >
       <DialogTitle>
         <MDBox display="flex" alignItems="center" justifyContent="space-between">
-          <MDTypography variant="h6">Import Contacts</MDTypography>
+          <MDTypography variant="h6" color="text.primary">Import Contacts</MDTypography>
           <IconButton onClick={handleCloseModal} size="small">
             <CloseIcon />
           </IconButton>
@@ -291,12 +291,12 @@ function SignUp() {
       <Divider />
       <DialogContent>
         <MDBox py={2}>
-          <MDTypography variant="caption" color="text" textAlign="center" mb={2}>
+          <MDTypography variant="body2" color="text.primary" textAlign="center" mb={2}>
             Select contacts from your device to invite to Akiba
           </MDTypography>
           {/* Placeholder for contacts list */}
           <MDBox bgcolor="grey.100" borderRadius="lg" p={2}>
-            <MDTypography variant="body2" color="text" textAlign="center">
+            <MDTypography variant="body2" color="text.primary" textAlign="center">
               Contact list will appear here
             </MDTypography>
           </MDBox>
@@ -322,7 +322,7 @@ function SignUp() {
     >
       <DialogTitle>
         <MDBox display="flex" alignItems="center" justifyContent="space-between">
-          <MDTypography variant="h6">Email Invitations</MDTypography>
+          <MDTypography variant="h6" color="text.primary">Email Invitations</MDTypography>
           <IconButton onClick={handleCloseModal} size="small">
             <CloseIcon />
           </IconButton>
@@ -330,18 +330,32 @@ function SignUp() {
       </DialogTitle>
       <Divider />
       <DialogContent>
-        <MDBox py={2}>
-          <MDInput
-            multiline
-            rows={4}
-            fullWidth
-            label="Enter email addresses"
-            placeholder="Enter multiple email addresses separated by commas"
-          />
-          <MDTypography variant="caption" color="text" mt={1} display="block">
-            Example: john@example.com, jane@example.com
-          </MDTypography>
-        </MDBox>
+      <MDBox py={2}>
+        <MDInput
+          multiline
+          rows={4}
+          fullWidth
+          label="Enter email addresses"
+          placeholder="Enter multiple email addresses separated by commas"
+          InputLabelProps={{
+            sx: {
+              color: (theme) => theme.palette.mode === 'dark' ? '#cccccc' : '#666666',
+            },
+          }}
+          InputProps={{
+            sx: {
+              color: (theme) => theme.palette.mode === 'dark' ? '#ffffff' : '#000000',
+              '&::placeholder': {
+                color: (theme) => theme.palette.mode === 'dark' ? '#aaaaaa' : '#999999',
+                opacity: 1,
+              },
+            },
+          }}
+        />
+        <MDTypography variant="caption" color="text.primary" mt={1} display="block">
+          Example: john@example.com, jane@example.com
+        </MDTypography>
+      </MDBox>
       </DialogContent>
       <DialogActions>
         <MDButton variant="text" color="dark" onClick={handleCloseModal}>
@@ -363,7 +377,7 @@ function SignUp() {
     >
       <DialogTitle>
         <MDBox display="flex" alignItems="center" justifyContent="space-between">
-          <MDTypography variant="h6">Share via WhatsApp</MDTypography>
+          <MDTypography variant="h6" color="text.primary">Share via WhatsApp</MDTypography>
           <IconButton onClick={handleCloseModal} size="small">
             <CloseIcon />
           </IconButton>
@@ -372,7 +386,7 @@ function SignUp() {
       <Divider />
       <DialogContent>
         <MDBox py={2} textAlign="center">
-          <MDTypography variant="body2" color="text" mb={3}>
+          <MDTypography variant="body2" color="text.primary" mb={3}>
             Share your Akiba group invitation link via WhatsApp
           </MDTypography>
           <MDBox 
@@ -381,7 +395,7 @@ function SignUp() {
             borderRadius="lg"
             mb={2}
           >
-            <MDTypography variant="body2" color="text">
+            <MDTypography variant="body2" color="text.primary">
               https://akiba.app/invite/your-unique-code
             </MDTypography>
           </MDBox>
@@ -613,20 +627,20 @@ function SignUp() {
             <Grid container spacing={2}>
               <Grid item xs={12}>
                 <MDBox display="flex" justifyContent="space-between" mb={1}>
-                  <MDTypography variant="button" color="text">Account Name:</MDTypography>
+                  <MDTypography variant="button" color="text.primary">Account Name:</MDTypography>
                   <MDTypography variant="button" fontWeight="medium">{formData.accountName}</MDTypography>
                 </MDBox>
               </Grid>
               <Grid item xs={12}>
                 <MDBox display="flex" justifyContent="space-between" mb={1}>
-                  <MDTypography variant="button" color="text">Account ID:</MDTypography>
+                  <MDTypography variant="button" color="text.primary">Account ID:</MDTypography>
                   <MDTypography variant="button" fontWeight="medium">{accountDetails.accountNumber}</MDTypography>
                 </MDBox>
               </Grid>
             </Grid>
           </MDBox>
 
-          <MDTypography variant="body2" color="text" mb={3}>
+          <MDTypography variant="body2" color="text.primary" mb={3}>
             We've sent your account details to {formData.email} and {formData.phone} for your records.
           </MDTypography>
 
@@ -652,7 +666,7 @@ function SignUp() {
     >
       <DialogTitle>
         <MDBox display="flex" alignItems="center" justifyContent="space-between">
-          <MDTypography variant="h6">Help</MDTypography>
+          <MDTypography variant="h6" color="text.primary">Help</MDTypography>
           <IconButton onClick={handleCloseHelp} size="small">
             <CloseIcon />
           </IconButton>
@@ -661,7 +675,7 @@ function SignUp() {
       <Divider />
       <DialogContent>
         <MDBox py={2}>
-          <MDTypography variant="body1" color="text">
+          <MDTypography variant="body1" color="text.primary">
             {helpMessage}
           </MDTypography>
         </MDBox>

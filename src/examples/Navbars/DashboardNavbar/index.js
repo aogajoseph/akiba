@@ -154,6 +154,19 @@ function DashboardNavbar({ absolute, light, isMini }) {
         {isMini ? null : (
           <MDBox sx={(theme) => navbarRow(theme, { isMini })}>
             <MDBox display="flex" alignItems="center">
+              <Tooltip title="More" arrow>
+                <IconButton
+                  size="small"
+                  disableRipple
+                  color="inherit"
+                  sx={navbarMobileMenu}
+                  onClick={handleMiniSidenav}
+                >
+                  <Icon sx={iconsStyle} fontSize="medium">
+                    {miniSidenav ? "menu" : "menu_open"}
+                  </Icon>
+                </IconButton>
+              </Tooltip>
               <Tooltip title="Deposit Cash" arrow>
                 <StyledIconButton
                   sx={navbarIconButton}
@@ -199,19 +212,6 @@ function DashboardNavbar({ absolute, light, isMini }) {
                 >
                   <Icon sx={iconsStyle}>notifications</Icon>
                 </StyledIconButton>
-              </Tooltip>
-              <Tooltip title="More" arrow>
-                <IconButton
-                  size="small"
-                  disableRipple
-                  color="inherit"
-                  sx={navbarMobileMenu}
-                  onClick={handleMiniSidenav}
-                >
-                  <Icon sx={iconsStyle} fontSize="medium">
-                    {miniSidenav ? "menu" : "menu_open"}
-                  </Icon>
-                </IconButton>
               </Tooltip>
               {renderMenu()}
             </MDBox>

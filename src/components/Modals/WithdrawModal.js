@@ -21,7 +21,13 @@ import MDBox from "components/MDBox";
 import MDButton from "components/MDButton";
 import MDTypography from "components/MDTypography";
 
+// Material Dashboard 2 React context
+import { useMaterialUIController } from "context";
+
 function WithdrawModal({ open, onClose }) {
+  const [controller] = useMaterialUIController();
+  const { darkMode } = controller;
+
   const [withdrawalType, setWithdrawalType] = useState("");
   const [amount, setAmount] = useState("");
   const [recipientDetails, setRecipientDetails] = useState({
@@ -32,23 +38,27 @@ function WithdrawModal({ open, onClose }) {
   const [reason, setReason] = useState("");
 
   const handleSubmit = () => {
-    // TODO: Implement withdrawal/transfer logic
     console.log("Withdrawal:", { withdrawalType, amount, recipientDetails, reason });
     onClose();
   };
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        <MDTypography variant="h6" fontWeight="medium">
+      <DialogTitle sx={{ backgroundColor: darkMode ? "#1a1a1a" : "#fff" }}>
+        <MDTypography variant="h6" fontWeight="medium" color={darkMode ? "white" : "dark"}>
           Withdraw / Transfer Money
         </MDTypography>
       </DialogTitle>
-      <DialogContent>
+      <DialogContent sx={{ backgroundColor: darkMode ? "#1a1a1a" : "#fff" }}>
         <MDBox component="form" role="form" mt={2}>
           <MDBox mb={4}>
             <FormControl fullWidth size="large">
-              <InputLabel id="withdrawal-type-label">Transfer Type</InputLabel>
+              <InputLabel
+                id="withdrawal-type-label"
+                sx={{ color: darkMode ? "#ccc" : undefined }}
+              >
+                Transfer Type
+              </InputLabel>
               <Select
                 labelId="withdrawal-type-label"
                 value={withdrawalType}
@@ -56,30 +66,49 @@ function WithdrawModal({ open, onClose }) {
                 onChange={(e) => setWithdrawalType(e.target.value)}
                 sx={{
                   height: "45px",
-                  "& .MuiSelect-select": {
-                    paddingTop: "10px",
-                    paddingBottom: "10px",
+                  backgroundColor: darkMode ? "#2a2a2a" : "#fafafa",
+                  color: darkMode ? "#fff" : "#000",
+                  "& .MuiSelect-icon": {
+                    color: darkMode ? "#fff" : "#000",
+                  },
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    sx: {
+                      backgroundColor: darkMode ? "#2a2a2a" : "#fff",
+                      color: darkMode ? "#fff" : "#000",
+                    },
                   },
                 }}
               >
-                <MenuItem value="mpesa" sx={{ py: 1.5 }}>
-                  <MDBox display="flex" alignItems="center">
-                    <Icon sx={{ mr: 1 }}>phone_android</Icon>
-                    M-Pesa Transfer
-                  </MDBox>
-                </MenuItem>
-                <MenuItem value="bank" sx={{ py: 1.5 }}>
-                  <MDBox display="flex" alignItems="center">
-                    <Icon sx={{ mr: 1 }}>account_balance</Icon>
-                    Bank Transfer
-                  </MDBox>
-                </MenuItem>
-                <MenuItem value="akiba" sx={{ py: 1.5 }}>
-                  <MDBox display="flex" alignItems="center">
-                    <Icon sx={{ mr: 1 }}>swap_horiz</Icon>
-                    Akiba Transfer
-                  </MDBox>
-                </MenuItem>
+                {[
+                  { value: "mpesa", icon: "phone_android", label: "M-Pesa Transfer" },
+                  { value: "bank", icon: "account_balance", label: "Bank Transfer" },
+                  { value: "akiba", icon: "swap_horiz", label: "Akiba Transfer" },
+                ].map((option) => (
+                  <MenuItem
+                    key={option.value}
+                    value={option.value}
+                    sx={{
+                      color: darkMode ? "#fff" : "#000",
+                      "&:hover": {
+                        backgroundColor: darkMode ? "#333" : "#f5f5f5",
+                      },
+                      "&.Mui-selected": {
+                        backgroundColor: darkMode ? "#1976d2" : "#e3f2fd",
+                        color: "#fff",
+                        "&:hover": {
+                          backgroundColor: darkMode ? "#1565c0" : "#bbdefb",
+                        },
+                      },
+                    }}
+                  >
+                    <MDBox display="flex" alignItems="center" sx={{ color: "inherit" }}>
+                      <Icon sx={{ mr: 1, color: "inherit" }}>{option.icon}</Icon>
+                      {option.label}
+                    </MDBox>
+                  </MenuItem>
+                ))}
               </Select>
             </FormControl>
           </MDBox>
@@ -92,11 +121,20 @@ function WithdrawModal({ open, onClose }) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               InputProps={{
-                startAdornment: <Box component="span" mr={1}>Kes</Box>,
+                startAdornment: (
+                  <Box
+                    component="span"
+                    mr={1}
+                    sx={{ color: darkMode ? "#fff" : "#000", fontWeight: 500 }}
+                  >
+                    Kes
+                  </Box>
+                ),
               }}
             />
           </MDBox>
 
+          {/* Conditional Fields */}
           {withdrawalType === "mpesa" && (
             <MDBox mb={3}>
               <TextField
@@ -111,7 +149,9 @@ function WithdrawModal({ open, onClose }) {
                 label="M-Pesa Number"
                 placeholder="254700000000"
                 value={recipientDetails.contact}
-                onChange={(e) => setRecipientDetails({ ...recipientDetails, contact: e.target.value })}
+                onChange={(e) =>
+                  setRecipientDetails({ ...recipientDetails, contact: e.target.value })
+                }
               />
             </MDBox>
           )}
@@ -129,7 +169,9 @@ function WithdrawModal({ open, onClose }) {
                 fullWidth
                 label="Bank Account Number"
                 value={recipientDetails.accountNumber}
-                onChange={(e) => setRecipientDetails({ ...recipientDetails, accountNumber: e.target.value })}
+                onChange={(e) =>
+                  setRecipientDetails({ ...recipientDetails, accountNumber: e.target.value })
+                }
               />
             </MDBox>
           )}
@@ -147,7 +189,9 @@ function WithdrawModal({ open, onClose }) {
                 fullWidth
                 label="Akiba Account Number"
                 value={recipientDetails.accountNumber}
-                onChange={(e) => setRecipientDetails({ ...recipientDetails, accountNumber: e.target.value })}
+                onChange={(e) =>
+                  setRecipientDetails({ ...recipientDetails, accountNumber: e.target.value })
+                }
               />
             </MDBox>
           )}
@@ -167,7 +211,7 @@ function WithdrawModal({ open, onClose }) {
           )}
         </MDBox>
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ backgroundColor: darkMode ? "#1a1a1a" : "#fff" }}>
         <MDButton onClick={onClose} color="secondary">
           Cancel
         </MDButton>
@@ -179,10 +223,9 @@ function WithdrawModal({ open, onClose }) {
   );
 }
 
-// Typechecking props for the WithdrawModal
 WithdrawModal.propTypes = {
   open: PropTypes.bool.isRequired,
   onClose: PropTypes.func.isRequired,
 };
 
-export default WithdrawModal; 
+export default WithdrawModal;

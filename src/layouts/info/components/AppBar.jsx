@@ -226,7 +226,7 @@ export default function MainAppBar() {
                 color: darkMode ? '#1a1a1a' : '#1a1a1a'
               }}
             >
-              Create Account
+              Sign Up
             </Button>
             <ColorModeIconDropdown />
           </Box>
@@ -286,8 +286,7 @@ export default function MainAppBar() {
                     variant="contained" 
                     fullWidth
                     onClick={() => handleAuthNavigation('/auth/sign-up')}
-                    sx={{
-                      color: darkMode ? '#1a1a1a' : '#ffffff',
+                    sx={{color: darkMode ? '#1a1a1a' : '#ffffff',
                       backgroundColor: darkMode ? 'info.light' : 'info.main',
                       '&:hover': {
                         backgroundColor: darkMode ? 'info.main' : 'info.dark',
