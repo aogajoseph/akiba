@@ -47,7 +47,7 @@ function LeaderboardCard({ title, shadow, data = {} }) {
 
   return (
     <Card sx={{ height: "100%", boxShadow: !shadow && "none" }}>
-      <MDBox display="flex" justifyContent="space-between" alignItems="center" pt={2} px={2}>
+      <MDBox display="flex" justifyContent="space-between" alignItems="center" pt={2} px={2} mb={-1}>
         <MDTypography variant="h6" fontWeight="medium" textTransform="capitalize">
           {title}
         </MDTypography>
@@ -55,7 +55,7 @@ function LeaderboardCard({ title, shadow, data = {} }) {
       <MDBox opacity={0.9}>
         <Divider />
       </MDBox>
-      <MDBox px={2}>  
+      <MDBox px={2} mt={-2}>  
         {/* Top Contributors Section */}
         <MDBox mt={0.5}>
           <MDTypography variant="button" fontWeight="bold" mb={1}>

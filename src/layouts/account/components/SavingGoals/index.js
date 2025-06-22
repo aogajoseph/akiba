@@ -183,12 +183,14 @@ function SavingGoalsTable({ data = {} }) {
               borderRadius="lg"
               coloredShadow="info"
               display="flex"
-              justifyContent="space-between"
+              justifyContent={{ xs: 'center', md: 'space-between' }}
               alignItems="center"
+              flexWrap="wrap"
+              gap={2}
             >
-              <Box>
+              <Box textAlign={{ xs: 'center', md: 'left' }}>
                 <MDTypography variant="h6" color="white">
-                  Current Saving Goals
+                  Saving Goals
                 </MDTypography>
                 <MDTypography variant="caption" color="white" sx={{ opacity: 0.8 }}>
                   Available Balance: ${currentBalance.toLocaleString()}

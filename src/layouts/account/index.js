@@ -54,19 +54,17 @@ function Account() {
                   "Account Type": "Family",
                   "Created By": "Joseph Onyango",
                   "Creation Date": "June 13, 2025",
-                  "Join Link": "https://akiba/jfy001/invite",
+                  "Link": "https://akiba/jfy001/invite",
                 }}
                 shadow={false}
               />
             </MDBox>
 
             <MDBox flex={1} minWidth={0} display="flex">
-              <MDBox flex={1} minWidth={0} display="flex">
-                <MembershipInfoCard
-                  title="Membership"
-                  shadow={false}
-                />
-              </MDBox>
+              <MembershipInfoCard
+                title="Membership"
+                shadow={false}
+              />
             </MDBox>
             
             <MDBox flex={1} minWidth={0} display="flex">
