@@ -223,34 +223,49 @@ const ChatInputArea = ({
         }}
       >
         <MenuItem onClick={() => handleAttachOption("image")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <ImageIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Image</ListItemText>
+          <ListItemText 
+            primary="Image"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
         <MenuItem onClick={() => handleAttachOption("video")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <VideocamIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Video</ListItemText>
+          <ListItemText 
+            primary="Video"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
         <MenuItem onClick={() => handleAttachOption("document")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <DescriptionIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Document</ListItemText>
+          <ListItemText 
+            primary="Document"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
         <MenuItem onClick={() => handleAttachOption("pdf")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <PictureAsPdfIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>PDF</ListItemText>
+          <ListItemText 
+            primary="PDF"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
         <MenuItem onClick={() => handleAttachOption("file")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <InsertDriveFileIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Other File</ListItemText>
+          <ListItemText 
+            primary="Other File"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
       </Menu>
       

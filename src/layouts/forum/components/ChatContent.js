@@ -94,7 +94,12 @@ const ChatContent = ({ messages, contact, isGroupChat = false }) => {
           overflow="auto"
           display="flex"
           flexDirection="column"
-          maxHeight="400px"
+          sx={{
+            maxHeight: {
+              xs: "400px",
+              sm: "220px",
+            },
+          }}
         >
           {messages.map((message, index) => {
             const prevMessage = index > 0 ? messages[index - 1] : null;

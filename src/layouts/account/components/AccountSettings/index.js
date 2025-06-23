@@ -168,7 +168,7 @@ const AccountSettings = () => {
                                     startIcon={<PersonAddIcon />}
                                     onClick={() => setInviteMemberOpen(true)}
                                 >
-                                    Invite Member
+                                    Add
                                 </MDButton>
                             </MDBox>
                             <TableContainer 
@@ -239,7 +239,7 @@ const AccountSettings = () => {
                                     startIcon={<AdminPanelSettingsIcon />}
                                     onClick={() => setAddSubAdminOpen(true)}
                                 >
-                                    Add Sub-Admin
+                                    Add
                                 </MDButton>
                             </MDBox>
                             <TableContainer 
@@ -332,7 +332,7 @@ const AccountSettings = () => {
                             <Grid container spacing={2}>
                                 <Grid item xs={12} md={4}>
                                     <MDButton variant="outlined" color="info" fullWidth>
-                                        Create New Akiba Account
+                                        Create New Account
                                     </MDButton>
                                 </Grid>
                                 <Grid item xs={12} md={4}>
@@ -370,7 +370,7 @@ const AccountSettings = () => {
 
                 {/* Invite Member Dialog */}
                 <Dialog open={inviteMemberOpen} onClose={() => setInviteMemberOpen(false)} maxWidth="sm" fullWidth>
-                    <DialogTitle>Invite New Member</DialogTitle>
+                    <DialogTitle sx={{ color: 'text.primary' }}>Invite New Members</DialogTitle>
                     <DialogContent>
                         <Box sx={{ mt: 2 }}>
                             <MDInput
@@ -381,6 +381,12 @@ const AccountSettings = () => {
                                 onChange={(e) => setNewMemberEmail(e.target.value)}
                                 placeholder="Enter member's email..."
                                 variant="outlined"
+                                sx={{
+                                    '& .MuiInputLabel-root': {
+                                      color: (theme) => theme.palette.mode === 'dark' ? '#cccccc' : 'grey',
+                                    },
+                                  }
+                                }
                             />
                         </Box>
                         <Box sx={{ mt: 3, display: 'flex', gap: 2, justifyContent: 'center' }}>
@@ -405,7 +411,7 @@ const AccountSettings = () => {
 
                 {/* Add Sub-Admin Dialog */}
                 <Dialog open={addSubAdminOpen} onClose={() => setAddSubAdminOpen(false)} maxWidth="sm" fullWidth>
-                    <DialogTitle>Select Member to Promote</DialogTitle>
+                    <DialogTitle sx={{ color: 'text.primary' }}>Select Member to Promote</DialogTitle>
                     <DialogContent>
                         <List sx={{ width: '100%', maxHeight: 400, overflow: 'auto' }}>
                             {members.map((member) => (
@@ -414,7 +420,7 @@ const AccountSettings = () => {
                                         <ListItemAvatar>
                                             <Avatar src={member.avatar} alt={member.name} />
                                         </ListItemAvatar>
-                                        <ListItemText primary={member.name} secondary={member.email} />
+                                        <ListItemText primary={member.name} secondary={member.email} primaryTypographyProps={{ color: 'text.secondary' }} />
                                         <IconButton color="primary">
                                             <PersonAddIcon />
                                         </IconButton>

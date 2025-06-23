@@ -278,7 +278,7 @@ const ProfileSettings = () => {
 
                 {/* Invite Member Dialog */}
                 <Dialog open={inviteDialogOpen} onClose={() => setInviteDialogOpen(false)} maxWidth="sm" fullWidth>
-                    <DialogTitle>Invite New Member</DialogTitle>
+                    <DialogTitle sx={{ color: "text.primary" }}>Invite New Members</DialogTitle>
                     <DialogContent>
                         <Box sx={{ mt: 2 }}>
                             <MDInput
@@ -289,6 +289,12 @@ const ProfileSettings = () => {
                                 onChange={(e) => setNewMemberEmail(e.target.value)}
                                 placeholder="Enter member's email..."
                                 variant="outlined"
+                                sx={{
+                                    '& .MuiInputLabel-root': {
+                                      color: (theme) => theme.palette.mode === 'dark' ? '#cccccc' : 'grey',
+                                    },
+                                  }
+                                }
                             />
                         </Box>
                     </DialogContent>
@@ -310,7 +316,7 @@ const ProfileSettings = () => {
                             <Grid container spacing={2}>
                                 <Grid item xs={12} md={4}>
                                     <MDButton variant="outlined" color="info" fullWidth>
-                                        Create New Akiba Account
+                                        Create New Account
                                     </MDButton>
                                 </Grid>
                                 <Grid item xs={12} md={4} display="flex" flexDirection="row">

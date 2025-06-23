@@ -230,34 +230,49 @@ const ChatInputArea = ({ onSendMessage, onAttachMedia }) => {
         }}
       >
         <MenuItem onClick={() => handleFileSelect("image")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <ImageIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Photo</ListItemText>
+          <ListItemText 
+            primary="Photo"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
         <MenuItem onClick={() => handleFileSelect("video")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <VideocamIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Video</ListItemText>
+          <ListItemText 
+            primary="Video"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
         <MenuItem onClick={() => handleFileSelect("file")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <InsertDriveFileIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Document</ListItemText>
+          <ListItemText 
+            primary="Document"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
         <MenuItem onClick={() => handleFileSelect("location")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <LocationOnIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Location</ListItemText>
+          <ListItemText 
+            primary="Location"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
         <MenuItem onClick={() => handleFileSelect("contact")}>
-          <ListItemIcon>
+          <ListItemIcon sx={{ color: "#757575" }}>
             <ContactsIcon fontSize="small" />
           </ListItemIcon>
-          <ListItemText>Contact</ListItemText>
+          <ListItemText 
+            primary="Contact"
+            primaryTypographyProps={{ fontSize: '0.9rem' }} 
+          />
         </MenuItem>
       </Menu>
       
