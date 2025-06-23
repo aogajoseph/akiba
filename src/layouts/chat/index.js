@@ -117,7 +117,7 @@ function Chat() {
     <DashboardLayout>
       <DashboardNavbar />
       <MDBox mb={2} />
-        <MDBox mt={3} mb={3}>
+        <MDBox mt={3} mb={3} sx={{ pb: { xs: 10, sm: 3 } }}>
           <MDBox
             sx={{
               textAlign: "center",
@@ -182,8 +182,9 @@ function Chat() {
                     aria-label="new chat"
                     sx={{
                       position: 'fixed',
-                      bottom: 80,
-                      right: 16,
+                      bottom: { xs: 120, sm: 80 },
+                      right: { xs: 24, sm: 16 },
+                      zIndex: 1201,
                     }}
                   >
                     <AddIcon />

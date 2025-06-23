@@ -129,11 +129,27 @@ const ChatArea = ({ selectedContact, onSendMessage }) => {
           <MDTypography variant="subtitle1" fontWeight="medium" color="text.primary">
             {selectedContact.name}
           </MDTypography>
-          <Typography variant="caption" color="text.secondary">
-            {selectedContact.online ? 
-              (selectedContact.typing ? "Typing..." : "Online") : 
-              selectedContact.lastSeen || "Offline"}
-          </Typography>
+          <Box display="flex" alignItems="center" mt={0.5}>
+            <Box
+              sx={{
+                bgcolor: 'grey.200',
+                color: 'text.secondary',
+                borderRadius: 2,
+                px: 1.5,
+                py: 0.2,
+                fontSize: '0.75rem',
+                mx: 'auto',
+                display: 'inline-block',
+                minWidth: 80,
+                textAlign: 'center',
+                ...(isDarkMode && { bgcolor: 'grey.800', color: 'grey.300' })
+              }}
+            >
+              {selectedContact.online
+                ? (selectedContact.typing ? "Typing..." : "Online")
+                : selectedContact.lastSeen || "Offline"}
+            </Box>
+          </Box>
         </Box>
         <Box display="flex" alignItems="center">
           <Tooltip title={isMuted ? "Unmute notifications" : "Mute notifications"}>
@@ -183,6 +199,7 @@ const ChatArea = ({ selectedContact, onSendMessage }) => {
             "linear-gradient(rgba(0, 0, 0, 0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 0, 0, 0.02) 1px, transparent 1px)",
           backgroundSize: "20px 20px",
           p: 1,
+          pb: { xs: 8, sm: 2 },
         }}
       >
         <ChatContent 

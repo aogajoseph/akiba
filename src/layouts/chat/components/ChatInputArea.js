@@ -132,9 +132,12 @@ const ChatInputArea = ({ onSendMessage, onAttachMedia }) => {
       <Box 
         display="flex" 
         alignItems="center" 
-        p={1.5} 
+        p={1.5}
         gap={1}
-        px={10}
+        px={{ xs: 1, sm: 4, md: 10 }}
+        width="100%"
+        maxWidth={{ xs: '100%', sm: '100%', md: 900 }}
+        mx="auto"
       >
         <Tooltip title="Attach files">
           <IconButton color="inherit" onClick={handleAttachClick}>
@@ -150,6 +153,7 @@ const ChatInputArea = ({ onSendMessage, onAttachMedia }) => {
           pl={2}
           display="flex"
           alignItems="center"
+          minWidth={0}
         >
           <TextField
             fullWidth

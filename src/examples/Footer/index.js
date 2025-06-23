@@ -58,7 +58,7 @@ function Footer({ links }) {
         fontSize={size.xs}
         px={1.5}
       >
-        &copy;{new Date().getFullYear()} Akiba Ltd. All rights reserved.
+        &copy;{new Date().getFullYear()} Akiba Ltd.
       </MDBox>
       <MDBox
         component="ul"
