@@ -35,13 +35,13 @@ const ChatContent = ({ messages, contact, isGroupChat = false }) => {
 
   return (
     <Box
-      flex="1"
-      overflow="auto"
-      p={1.5}
-      bgcolor={isDarkMode ? "background.default" : "grey.100"}
       display="flex"
       flexDirection="column"
+      flex={1}
+      minHeight={0}
+      bgcolor={isDarkMode ? "background.default" : "grey.100"}
       borderRadius="1px"
+      p={1.5}
     >
       {/* Welcome message for empty chats */}
       {messages.length === 0 && (
@@ -86,85 +86,94 @@ const ChatContent = ({ messages, contact, isGroupChat = false }) => {
         </Box>
       )}
 
-      {/* Message history */}
-      {messages.map((message, index) => {
-        const prevMessage = index > 0 ? messages[index - 1] : null;
-        const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
-        const showDateDivider = shouldShowDateDivider(prevMessage, message);
-        const isGroupedWithPrevious = !showDateDivider && shouldGroupMessages(prevMessage, message);
-        const isGroupedWithNext = shouldGroupMessages(message, nextMessage);
-        
-        return (
-          <React.Fragment key={index}>
-            {/* Date divider */}
-            {showDateDivider && (
-              <Box 
-                display="flex" 
-                alignItems="center" 
-                justifyContent="center" 
-                my={1.5}
-              >
-                <Divider sx={{ flex: 1, borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }} />
-                <Typography 
-                  variant="caption" 
-                  color="text.secondary" 
-                  sx={{ 
-                    px: 2, 
-                    py: 0.5, 
-                    bgcolor: isDarkMode ? "grey.900" : "grey.200",
-                    borderRadius: 10,
-                    fontSize: "0.7rem",
-                  }}
-                >
-                  {formatDate(message.timestamp)}
-                </Typography>
-                <Divider sx={{ flex: 1, borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }} />
-              </Box>
-            )}
-            
-            {/* System messages (like "User joined the chat") */}
-            {message.type === "system" ? (
-              <Box 
-                display="flex" 
-                justifyContent="center" 
-                my={1}
-              >
-                <Typography 
-                  variant="caption" 
-                  color="text.secondary"
-                  sx={{ 
-                    px: 2, 
-                    py: 0.5, 
-                    bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
-                    borderRadius: 10,
-                    fontSize: "0.75rem",
-                  }}
-                >
-                  {message.content}
-                </Typography>
-              </Box>
-            ) : (
-              /* Regular message bubble */
-              <Box 
-                mb={isGroupedWithNext ? 0.5 : 1.5}
-                mt={isGroupedWithPrevious ? 0.5 : 1}
-                mx={0.5}
-              >
-                <MessageBubble
-                  content={message.content}
-                  sender={message.sender}
-                  timestamp={message.timestamp.split(',').length > 1 ? message.timestamp.split(',')[1].trim() : message.timestamp}
-                  isSender={message.isSender}
-                  reactions={message.reactions}
-                  attachmentType={message.attachmentType}
-                  attachmentUrl={message.attachmentUrl}
-                />
-              </Box>
-            )}
-          </React.Fragment>
-        );
-      })}
-      
+      {/* Scrollable message history */}
+      {messages.length > 0 && (
+        <Box
+          flexGrow={1}
+          minHeight={0}
+          overflow="auto"
+          display="flex"
+          flexDirection="column"
+          maxHeight="400px"
+        >
+          {messages.map((message, index) => {
+            const prevMessage = index > 0 ? messages[index - 1] : null;
+            const nextMessage = index < messages.length - 1 ? messages[index + 1] : null;
+            const showDateDivider = shouldShowDateDivider(prevMessage, message);
+            const isGroupedWithPrevious = !showDateDivider && shouldGroupMessages(prevMessage, message);
+            const isGroupedWithNext = shouldGroupMessages(message, nextMessage);
+            return (
+              <React.Fragment key={index}>
+                {/* Date divider */}
+                {showDateDivider && (
+                  <Box 
+                    display="flex" 
+                    alignItems="center" 
+                    justifyContent="center" 
+                    my={1.5}
+                  >
+                    <Divider sx={{ flex: 1, borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }} />
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary" 
+                      sx={{ 
+                        px: 2, 
+                        py: 0.5, 
+                        bgcolor: isDarkMode ? "grey.900" : "grey.200",
+                        borderRadius: 10,
+                        fontSize: "0.7rem",
+                      }}
+                    >
+                      {formatDate(message.timestamp)}
+                    </Typography>
+                    <Divider sx={{ flex: 1, borderColor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }} />
+                  </Box>
+                )}
+                {/* System messages (like "User joined the chat") */}
+                {message.type === "system" ? (
+                  <Box 
+                    display="flex" 
+                    justifyContent="center" 
+                    my={1}
+                  >
+                    <Typography 
+                      variant="caption" 
+                      color="text.secondary"
+                      sx={{ 
+                        px: 2, 
+                        py: 0.5, 
+                        bgcolor: isDarkMode ? "rgba(255,255,255,0.05)" : "rgba(0,0,0,0.05)",
+                        borderRadius: 10,
+                        fontSize: "0.75rem",
+                      }}
+                    >
+                      {message.content}
+                    </Typography>
+                  </Box>
+                ) : (
+                  /* Regular message bubble */
+                  <Box 
+                    mb={isGroupedWithNext ? 0.5 : 1.5}
+                    mt={isGroupedWithPrevious ? 0.5 : 1}
+                    mx={0.5}
+                  >
+                    <MessageBubble
+                      content={message.content}
+                      sender={message.sender}
+                      timestamp={message.timestamp.split(',').length > 1 ? message.timestamp.split(',')[1].trim() : message.timestamp}
+                      isSender={message.isSender}
+                      reactions={message.reactions}
+                      attachmentType={message.attachmentType}
+                      attachmentUrl={message.attachmentUrl}
+                    />
+                  </Box>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </Box>
+      )}
+
       {/* Typing indicator */}
       {contact?.typing && (
         <Box 

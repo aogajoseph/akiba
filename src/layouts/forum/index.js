@@ -298,134 +298,138 @@ function Forum() {
   return (
     <DashboardLayout>
       <DashboardNavbar />
-      <MDBox mb={2} />
-        <MDBox mt={3} mb={3}>
-          <MDBox
-            sx={{
-              textAlign: "center",
-              fontSize: "13px",
-              fontStyle: "italic",
-              color: isDarkMode ? "text.secondary" : "#A0A0A0",
-              marginBottom: 1,
-            }}
-          >
-            Messages here are seen by everyone in the group.
-          </MDBox>
-          <Grid container spacing={1} sx={{ height: "calc(100vh - 220px)" }}>
-            {isMobile ? (
-              // Mobile View
-              <>
-                {!selectedGroupChat ? (
-                  // Group list view on mobile
-                  <Grid item xs={12} sx={{ height: "100%" }}>
-                    {renderMembersList()}
-                  </Grid>
-                ) : (
-                  // Chat view on mobile
-                  <Grid item xs={12} sx={{ height: "100%" }}>
-                    <Box 
-                      display="flex" 
-                      alignItems="center" 
-                      mb={2}
+      <Box display="flex" flexDirection="column" minHeight="100vh">
+        <MDBox mb={2} />
+        <Box flexGrow={1} display="flex" flexDirection="column">
+          <MDBox mt={3} mb={3} flexGrow={1} display="flex" flexDirection="column">
+            <MDBox
+              sx={{
+                textAlign: "center",
+                fontSize: "13px",
+                fontStyle: "italic",
+                color: isDarkMode ? "text.secondary" : "#A0A0A0",
+                marginBottom: 1,
+              }}
+            >
+              Everyone in the group can see these messages.
+            </MDBox>
+            <Grid container spacing={1} sx={{ height: "calc(100vh - 220px)" }}>
+              {isMobile ? (
+                // Mobile View
+                <>
+                  {!selectedGroupChat ? (
+                    // Group list view on mobile
+                    <Grid item xs={12} sx={{ height: "100%" }}>
+                      {renderMembersList()}
+                    </Grid>
+                  ) : (
+                    // Chat view on mobile
+                    <Grid item xs={12} sx={{ height: "100%" }}>
+                      <Box 
+                        display="flex" 
+                        alignItems="center" 
+                        mb={2}
+                      >
+                        <IconButton onClick={() => setSelectedGroupChat(null)}>
+                          <ArrowBackIcon />
+                        </IconButton>
+                        <MDTypography variant="h6" ml={1}>
+                          Account Forum
+                        </MDTypography>
+                      </Box>
+                      {isLoading ? (
+                        <Box 
+                          display="flex" 
+                          justifyContent="center" 
+                          alignItems="center" 
+                          height="calc(100% - 40px)"
+                        >
+                          <CircularProgress />
+                        </Box>
+                      ) : (
+                        <ChatArea
+                          selectedContact={selectedGroupChat}
+                          onSendMessage={handleSendMessage}
+                        />
+                      )}
+                    </Grid>
+                  )}
+                  
+                  {/* Floating action button for new group */}
+                  <Zoom in={!selectedGroupChat}>
+                    <Fab 
+                      color="primary" 
+                      aria-label="new group"
+                      sx={{
+                        position: 'fixed',
+                        bottom: 80,
+                        right: 16,
+                      }}
                     >
-                      <IconButton onClick={() => setSelectedGroupChat(null)}>
-                        <ArrowBackIcon />
+                      <AddIcon />
+                    </Fab>
+                  </Zoom>
+                </>
+              ) : (
+                // Desktop View
+                <>
+                  {!sidebarCollapsed && (
+                    <Grid item xs={12} md={4} sx={{ height: "100%" }}>
+                      {renderMembersList()}
+                    </Grid>
+                  )}
+                  <Grid 
+                    item 
+                    xs={12} 
+                    md={sidebarCollapsed ? 12 : 8} 
+                    sx={{ 
+                      height: "100%",
+                      position: "relative",
+                      transition: "all 0.3s ease"
+                    }}
+                  >
+                    {sidebarCollapsed && (
+                      <IconButton
+                        onClick={toggleSidebar}
+                        sx={{
+                          position: "absolute",
+                          left: 16,
+                          top: 16,
+                          bgcolor: isDarkMode ? "background.paper" : "#fff",
+                          boxShadow: 2,
+                          zIndex: 10,
+                          "&:hover": {
+                            bgcolor: isDarkMode ? "background.default" : "#f5f5f5",
+                          },
+                        }}
+                        size="small"
+                      >
+                        <ChevronRightIcon fontSize="small" />
                       </IconButton>
-                      <MDTypography variant="h6" ml={1}>
-                        Account Forum
-                      </MDTypography>
-                    </Box>
+                    )}
                     {isLoading ? (
                       <Box 
                         display="flex" 
                         justifyContent="center" 
                         alignItems="center" 
-                        height="calc(100% - 40px)"
+                        height="100%"
                       >
                         <CircularProgress />
                       </Box>
                     ) : (
                       <ChatArea
-                        selectedContact={selectedGroupChat}
+                        selectedContact={{...selectedGroupChat, name: "Account Forum"}}
                         onSendMessage={handleSendMessage}
                       />
                     )}
                   </Grid>
-                )}
-                
-                {/* Floating action button for new group */}
-                <Zoom in={!selectedGroupChat}>
-                  <Fab 
-                    color="primary" 
-                    aria-label="new group"
-                    sx={{
-                      position: 'fixed',
-                      bottom: 80,
-                      right: 16,
-                    }}
-                  >
-                    <AddIcon />
-                  </Fab>
-                </Zoom>
-              </>
-            ) : (
-              // Desktop View
-              <>
-                {!sidebarCollapsed && (
-                  <Grid item xs={12} md={4} sx={{ height: "100%" }}>
-                    {renderMembersList()}
-                  </Grid>
-                )}
-                <Grid 
-                  item 
-                  xs={12} 
-                  md={sidebarCollapsed ? 12 : 8} 
-                  sx={{ 
-                    height: "100%",
-                    position: "relative",
-                    transition: "all 0.3s ease"
-                  }}
-                >
-                  {sidebarCollapsed && (
-                    <IconButton
-                      onClick={toggleSidebar}
-                      sx={{
-                        position: "absolute",
-                        left: 16,
-                        top: 16,
-                        bgcolor: isDarkMode ? "background.paper" : "#fff",
-                        boxShadow: 2,
-                        zIndex: 10,
-                        "&:hover": {
-                          bgcolor: isDarkMode ? "background.default" : "#f5f5f5",
-                        },
-                      }}
-                      size="small"
-                    >
-                      <ChevronRightIcon fontSize="small" />
-                    </IconButton>
-                  )}
-                  {isLoading ? (
-                    <Box 
-                      display="flex" 
-                      justifyContent="center" 
-                      alignItems="center" 
-                      height="100%"
-                    >
-                      <CircularProgress />
-                    </Box>
-                  ) : (
-                    <ChatArea
-                      selectedContact={{...selectedGroupChat, name: "Account Forum"}}
-                      onSendMessage={handleSendMessage}
-                    />
-                  )}
-                </Grid>
-              </>
-            )}
-          </Grid>
-        </MDBox>
-      <Footer />
+                </>
+              )}
+            </Grid>
+          </MDBox>
+        </Box>
+        <Footer />
+      </Box>
     </DashboardLayout>
   );
 }

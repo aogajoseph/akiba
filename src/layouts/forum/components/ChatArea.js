@@ -114,8 +114,8 @@ const ChatArea = ({ selectedContact, onSendMessage }) => {
     <Box 
       display="flex" 
       flexDirection="column" 
-      flex="1" 
-      height="100%" 
+      flex={1}
+      minHeight={0}
       bgcolor={isDarkMode ? "background.paper" : "#fff"}
       borderRadius={1}
       overflow="hidden"
@@ -141,7 +141,9 @@ const ChatArea = ({ selectedContact, onSendMessage }) => {
             {selectedContact.name}
           </MDTypography>
           <Typography variant="caption" color="text.secondary">
-            {selectedContact.members ? `${selectedContact.members.length} members` : "Group chat"}
+            {selectedContact.members
+              ? `${selectedContact.members.filter(m => m.online).length} online`
+              : "Group chat"}
           </Typography>
         </Box>
         <Box display="flex" alignItems="center">

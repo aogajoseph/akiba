@@ -112,88 +112,102 @@ const ChatInputArea = ({
 
   return (
     <Box 
-      p={1.5}
-      px={10}
       display="flex"
-      alignItems="center"
-      bgcolor={isDarkMode ? "background.paper" : "#fff"}
-      borderTop={1}
-      borderColor="divider"
+      flexDirection="column"
+      bgcolor={isDarkMode ? "background.paper" : "white"}
+      borderTop={`1px solid ${isDarkMode ? "rgba(255, 255, 255, 0.1)" : "#ddd"}`}
+      width="100%"
+      maxWidth={{ xs: '100%', sm: '100%', md: 900 }}
+      mx="auto"
+      px={{ xs: 1, sm: 4, md: 10 }}
+      p={1.5}
     >
-      {/* Attachment button */}
-      {showAttachments && (
-        <Tooltip title="Attach file">
-          <IconButton onClick={handleAttachClick} size="small">
-            <AttachFileIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
-      
-      {/* Emoji picker button */}
-      {showEmojiPicker && (
-        <Tooltip title="Add emoji">
-          <IconButton onClick={handleEmojiClick} size="small">
-            <EmojiEmotionsIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
-      
-      {/* Call button */}
-      {showCallButton && (
-        <Tooltip title="Voice call">
-          <IconButton onClick={handleCallClick} size="small">
-            <PhoneIcon fontSize="small" />
-          </IconButton>
-        </Tooltip>
-      )}
-      
-      {/* Voice recording button */}
-      <Tooltip title="Voice message">
-        <IconButton onClick={onStartRecording} size="small">
-          <MicIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-      
-      {/* Message input */}
-      <TextField
-        fullWidth
-        placeholder={isGroupChat ? "Type a message to the group..." : "Type a message..."}
-        multiline
-        maxRows={4}
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        onKeyPress={handleKeyPress}
-        variant="outlined"
-        size="small"
-        sx={{
-          mx: 1,
-          "& .MuiOutlinedInput-root": {
-            borderRadius: 2,
-            fontSize: "0.875rem",
-            backgroundColor: isDarkMode ? "background.default" : "grey.100",
-          },
-          "& .MuiInputBase-input": {
-            color: isDarkMode ? "white" : "inherit"
-          },
-          "& .MuiInputBase-input::placeholder": {
-            color: isDarkMode ? "rgba(255, 255, 255, 0.7)" : "rgba(0, 0, 0, 0.6)",
-            opacity: 1
-          }
-        }}
-      />
-      
-      {/* Send button */}
-      <Tooltip title="Send message">
-        <IconButton 
-          color="primary" 
-          onClick={handleSend} 
-          disabled={!message.trim()}
-          size="small"
+      <Box 
+        display="flex" 
+        alignItems="center" 
+        gap={1}
+        width="100%"
+      >
+        {/* Attachment button */}
+        {showAttachments && (
+          <Tooltip title="Attach file">
+            <IconButton onClick={handleAttachClick} size="medium">
+              <AttachFileIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {/* Input background */}
+        <Box 
+          flex={1} 
+          bgcolor={isDarkMode ? "background.default" : "grey.100"} 
+          borderRadius={4}
+          p={0.5}
+          pl={2}
+          display="flex"
+          alignItems="center"
+          minWidth={0}
         >
-          <SendIcon fontSize="small" />
-        </IconButton>
-      </Tooltip>
-      
+          <TextField
+            fullWidth
+            placeholder={isGroupChat ? "Talk to the group..." : "Type a message..."}
+            multiline
+            maxRows={4}
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
+            onKeyPress={handleKeyPress}
+            variant="standard"
+            size="small"
+            InputProps={{
+              disableUnderline: true,
+            }}
+            sx={{
+              '& .MuiInputBase-root': {
+                fontSize: '0.9rem',
+              },
+              '& .MuiInputBase-input': {
+                color: isDarkMode ? 'white' : 'inherit',
+              },
+              '& .MuiInputBase-input::placeholder': {
+                color: isDarkMode ? 'rgba(255, 255, 255, 0.7)' : 'rgba(0, 0, 0, 0.6)',
+                opacity: 1,
+              },
+            }}
+          />
+          {/* Emoji picker button */}
+          {showEmojiPicker && (
+            <Tooltip title="Add emoji">
+              <IconButton onClick={handleEmojiClick} size="small">
+                <EmojiEmotionsIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+          )}
+        </Box>
+        {/* Voice recording button */}
+        <Tooltip title="Voice message">
+          <IconButton onClick={onStartRecording} size="medium">
+            <MicIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        {/* Call button */}
+        {showCallButton && (
+          <Tooltip title="Voice call">
+            <IconButton onClick={handleCallClick} size="medium">
+              <PhoneIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        )}
+        {/* Send button */}
+        <Tooltip title="Send message">
+          <IconButton 
+            color="primary" 
+            onClick={handleSend} 
+            disabled={!message.trim()}
+            size="medium"
+          >
+            <SendIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </Box>
       {/* Attachment menu */}
       <Menu
         anchorEl={attachMenuAnchor}
