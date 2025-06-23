@@ -182,12 +182,15 @@ function Sidenav({ color, brand, brandName, routes, ...rest }) {
         }
       />
       <List>{renderRoutes}</List>
-      <MDBox p={2} mt="auto">
+      <MDBox p={2} mt="auto" sx={{
+        pb: { xs: 1, sm: 2 },
+        minHeight: { xs: 0, sm: 'auto' },
+        maxHeight: { xs: '90vh', sm: 'none' },
+        overflowY: { xs: 'auto', sm: 'visible' },
+      }}>
         <MDButton
           component="a"
-          href="https://www.creative-tim.com/product/material-dashboard-pro-react"
-          target="_blank"
-          rel="noreferrer"
+          href="/info#pricing"
           variant="gradient"
           color={textColor}
           fullWidth

@@ -75,10 +75,11 @@ function Statements() {
                 borderRadius="lg"
                 coloredShadow="info"
                 display="flex"
+                flexDirection={{ xs: 'column', sm: 'row' }}
                 justifyContent="space-between"
-                alignItems="center"
+                alignItems={{ xs: 'flex-start', sm: 'center' }}
               >
-                <MDBox>
+                <MDBox mb={{ xs: 2, sm: 0 }}>
                   <MDTypography variant="h6" color="white">
                     Full Statement - January 2025
                   </MDTypography>
@@ -86,7 +87,7 @@ function Statements() {
                     Detailed transaction history for the period
                   </MDTypography>
                 </MDBox>
-                <MDBox display="flex">
+                <MDBox display="flex" justifyContent={{ xs: 'center', sm: 'flex-start' }} width={{ xs: '100%', sm: 'auto' }}>
                   <Tooltip title="Download Statement">
                     <IconButton onClick={handleDownload} sx={{ color: "#fff" }}>
                       <FileDownloadIcon />

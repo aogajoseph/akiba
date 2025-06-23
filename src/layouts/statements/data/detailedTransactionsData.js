@@ -133,10 +133,9 @@ export default function data() {
       { Header: "Transaction ID", accessor: "transactionNumber", width: "12%", align: "left" },
       { Header: "Type", accessor: "transactionType", width: "12%", align: "left" },
       { Header: "Details", accessor: "transactionDetails", width: "30%", align: "left" },
-      { Header: "Timestamp", accessor: "timestamp", width: "15%", align: "center" },
+      { Header: "Timestamp", accessor: "timestamp", width: "15%", align: "left" },
       { Header: "Amount(KES)", accessor: "amount", width: "10%", align: "right" },
       { Header: "Balance(KES)", accessor: "balance", width: "10%", align: "right" },
-      { Header: "Actions", accessor: "actions", width: "8%", align: "center" },
     ],
 
     rows: [
@@ -160,7 +159,6 @@ export default function data() {
             10,000.00
           </MDTypography>
         ),
-        actions: <ActionButtons />,
       },
       {
         entryNumber: <EntryNumber number="2" />,
@@ -182,7 +180,6 @@ export default function data() {
             8,000.00
           </MDTypography>
         ),
-        actions: <ActionButtons />,
       },
       {
         entryNumber: <EntryNumber number="3" />,
@@ -204,7 +201,6 @@ export default function data() {
             6,500.00
           </MDTypography>
         ),
-        actions: <ActionButtons />,
       },
       {
         entryNumber: <EntryNumber number="4" />,
@@ -226,7 +222,6 @@ export default function data() {
             41,500.00
           </MDTypography>
         ),
-        actions: <ActionButtons />,
       },
       {
         entryNumber: <EntryNumber number="5" />,
@@ -248,7 +243,6 @@ export default function data() {
             36,300.00
           </MDTypography>
         ),
-        actions: <ActionButtons />,
       },
       {
         entryNumber: <EntryNumber number="6" />,
@@ -270,7 +264,6 @@ export default function data() {
             39,300.00
           </MDTypography>
         ),
-        actions: <ActionButtons />,
       },
       {
         entryNumber: <EntryNumber number="7" />,
@@ -292,7 +285,6 @@ export default function data() {
             24,300.00
           </MDTypography>
         ),
-        actions: <ActionButtons />,
       },
       {
         entryNumber: <EntryNumber number="8" />,
@@ -314,7 +306,6 @@ export default function data() {
             25,500.00
           </MDTypography>
         ),
-        actions: <ActionButtons />,
       },
     ],
   };

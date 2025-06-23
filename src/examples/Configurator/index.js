@@ -332,7 +332,7 @@ function Configurator() {
             </MDTypography>
           </MDBox>
 
-          <MDBox display="flex" justifyContent="left" gap={1}>
+          <MDBox display="flex" justifyContent="left" gap={1} mt={2}>
             <Tooltip title="Share on WhatsApp">
               <IconButton 
                 component="a" 

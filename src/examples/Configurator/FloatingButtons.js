@@ -20,7 +20,7 @@ import MDTypography from "components/MDTypography";
 
 // Material Dashboard 2 React context
 import { useMaterialUIController, setOpenConfigurator } from "context";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 
 const ChatWindow = styled(Paper)(({ theme, darkMode }) => ({
   position: 'absolute',
@@ -133,6 +133,56 @@ function FloatingButtons() {
     { text: "Hi! How can I help you today?", isUser: false }
   ]);
 
+  // Draggable state
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [dragging, setDragging] = useState(false);
+  const dragStart = useRef({ x: 0, y: 0 });
+  const btnStart = useRef({ x: 0, y: 0 });
+
+  // Mouse/touch event handlers
+  const handleDragStart = (e) => {
+    setDragging(true);
+    const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
+    dragStart.current = { x: clientX, y: clientY };
+    btnStart.current = { ...position };
+    document.body.style.userSelect = 'none';
+  };
+
+  const handleDrag = (e) => {
+    if (!dragging) return;
+    const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
+    const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
+    const dx = clientX - dragStart.current.x;
+    const dy = clientY - dragStart.current.y;
+    setPosition({ x: btnStart.current.x + dx, y: btnStart.current.y + dy });
+  };
+
+  const handleDragEnd = () => {
+    setDragging(false);
+    document.body.style.userSelect = '';
+  };
+
+  useEffect(() => {
+    if (dragging) {
+      window.addEventListener('mousemove', handleDrag);
+      window.addEventListener('mouseup', handleDragEnd);
+      window.addEventListener('touchmove', handleDrag);
+      window.addEventListener('touchend', handleDragEnd);
+    } else {
+      window.removeEventListener('mousemove', handleDrag);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleDrag);
+      window.removeEventListener('touchend', handleDragEnd);
+    }
+    return () => {
+      window.removeEventListener('mousemove', handleDrag);
+      window.removeEventListener('mouseup', handleDragEnd);
+      window.removeEventListener('touchmove', handleDrag);
+      window.removeEventListener('touchend', handleDragEnd);
+    };
+  }, [dragging]);
+
   // Handle configurator state
   const handleConfiguratorToggle = () => {
     if (showChat) setShowChat(false);
@@ -190,7 +240,17 @@ function FloatingButtons() {
 
   return (
     <>
-      <FloatingButtonsRoot ownerState={{ darkMode }}>
+      <FloatingButtonsRoot
+        ownerState={{ darkMode }}
+        style={{
+          right: `calc(2rem - ${position.x}px)`,
+          bottom: `calc(3rem - ${position.y}px)`,
+          touchAction: 'none',
+          cursor: dragging ? 'grabbing' : 'grab',
+        }}
+        onMouseDown={handleDragStart}
+        onTouchStart={handleDragStart}
+      >
         <Tooltip title="Customize" placement="left">
           <Fab
             onClick={handleConfiguratorToggle}
