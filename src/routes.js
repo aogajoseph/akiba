@@ -48,6 +48,10 @@ import SignUp from "pages/auth/SignUp";
 import Logout from "pages/auth/Logout";
 import ResetPassword from "pages/auth/ResetPassword";
 import InfoPage from "layouts/info";
+import AccountSetup from "pages/onboarding/AccountSetup";
+import ProfileSetup from "pages/onboarding/ProfileSetup";
+import Success from "pages/onboarding/Success";
+import ProtectedRoute from "components/common/ProtectedRoute";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -151,6 +155,30 @@ const routes = [
     key: "info",
     route: "/info",
     component: <InfoPage />,
+    noDisplay: true,
+  },
+  {
+    type: "onboarding",
+    name: "Account Setup",
+    key: "account-setup",
+    route: "/onboarding/account-setup",
+    component: <ProtectedRoute requireVerified={true}><AccountSetup /></ProtectedRoute>,
+    noDisplay: true,
+  },
+  {
+    type: "onboarding",
+    name: "Profile Setup",
+    key: "profile-setup",
+    route: "/onboarding/profile-setup",
+    component: <ProtectedRoute requireVerified={true}><ProfileSetup /></ProtectedRoute>,
+    noDisplay: true,
+  },
+  {
+    type: "onboarding",
+    name: "Success",
+    key: "onboarding-success",
+    route: "/onboarding/success",
+    component: <ProtectedRoute requireVerified={true}><Success /></ProtectedRoute>,
     noDisplay: true,
   },
 ];
