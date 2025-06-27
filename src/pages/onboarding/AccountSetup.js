@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, TextField, Button, Tooltip, IconButton, Box, Typography, Stepper, Step, StepLabel, Avatar, CircularProgress, InputAdornment } from "@mui/material";
 import { PhotoCamera, Clear, InfoOutlined, ContentCopy, WhatsApp, Email, GroupAdd } from "@mui/icons-material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { getAuth } from "firebase/auth";
+import { getAuth, applyActionCode } from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { storage } from "../../firebase";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
@@ -16,9 +16,27 @@ const AccountSetup = () => {
   const [coverPreview, setCoverPreview] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [inviteLink] = useState(window.location.origin + "/invite/" + Math.random().toString(36).substring(2, 10));
-  const navigate = useNavigate();
+  const [verificationMessage, setVerificationMessage] = useState("");
+  const [verificationError, setVerificationError] = useState("");
+  const location = useLocation();
   const auth = getAuth();
   const db = getFirestore();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const mode = params.get("mode");
+    const oobCode = params.get("oobCode");
+    if (mode === "verifyEmail" && oobCode) {
+      applyActionCode(auth, oobCode)
+        .then(() => {
+          setVerificationMessage("Your account was created successfully, You can now setup your account.");
+        })
+        .catch(() => {
+          setVerificationError("There was a problem verifying your email. Please try again or contact support.");
+        });
+    }
+  }, [location, auth]);
 
   const formik = useFormik({
     initialValues: {
@@ -75,6 +93,20 @@ const AccountSetup = () => {
   return (
     <Box display="flex" justifyContent="center" alignItems="center" minHeight="100vh" bgcolor="background.default">
       <Card sx={{ width: 370, p: 2 }}>
+        {verificationMessage && (
+          <Box mb={2}>
+            <Typography variant="h6" color="success.main" align="center">
+              {verificationMessage}
+            </Typography>
+          </Box>
+        )}
+        {verificationError && (
+          <Box mb={2}>
+            <Typography variant="h6" color="error" align="center">
+              {verificationError}
+            </Typography>
+          </Box>
+        )}
         <CardHeader
           title={<Stepper activeStep={0} alternativeLabel>
             {steps.map((label) => (

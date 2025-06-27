@@ -88,7 +88,7 @@ function SignUp() {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
       const actionCodeSettings = {
         // Redirect to Account Setup after email verification
-        url: "https://truevoice.app/onboarding/account-setup",
+        url: "https://akiba-a87e1.web.app/onboarding/account-setup",
         handleCodeInApp: false,
       };
       await sendEmailVerification(userCredential.user, actionCodeSettings);
