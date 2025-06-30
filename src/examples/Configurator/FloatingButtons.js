@@ -20,7 +20,7 @@ import MDTypography from "components/MDTypography";
 
 // Material Dashboard 2 React context
 import { useMaterialUIController, setOpenConfigurator } from "context";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 const ChatWindow = styled(Paper)(({ theme, darkMode }) => ({
   position: 'absolute',
@@ -75,7 +75,7 @@ const Message = styled(MDBox)(({ theme, isUser, darkMode }) => ({
 }));
 
 const FloatingButtonsRoot = styled(MDBox)(({ theme, ownerState }) => {
-  const { palette, borders, transitions } = theme;
+  const { borders, transitions } = theme;
   const { darkMode } = ownerState;
 
   return {
@@ -140,28 +140,28 @@ function FloatingButtons() {
   const btnStart = useRef({ x: 0, y: 0 });
 
   // Mouse/touch event handlers
-  const handleDragStart = (e) => {
+  const handleDragStart = useCallback((e) => {
     setDragging(true);
     const clientX = e.type === 'touchstart' ? e.touches[0].clientX : e.clientX;
     const clientY = e.type === 'touchstart' ? e.touches[0].clientY : e.clientY;
     dragStart.current = { x: clientX, y: clientY };
     btnStart.current = { ...position };
     document.body.style.userSelect = 'none';
-  };
+  }, [position]);
 
-  const handleDrag = (e) => {
+  const handleDrag = useCallback((e) => {
     if (!dragging) return;
     const clientX = e.type === 'touchmove' ? e.touches[0].clientX : e.clientX;
     const clientY = e.type === 'touchmove' ? e.touches[0].clientY : e.clientY;
     const dx = clientX - dragStart.current.x;
     const dy = clientY - dragStart.current.y;
     setPosition({ x: btnStart.current.x + dx, y: btnStart.current.y + dy });
-  };
+  }, [dragging]);
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setDragging(false);
     document.body.style.userSelect = '';
-  };
+  }, []);
 
   useEffect(() => {
     if (dragging) {
@@ -181,7 +181,7 @@ function FloatingButtons() {
       window.removeEventListener('touchmove', handleDrag);
       window.removeEventListener('touchend', handleDragEnd);
     };
-  }, [dragging]);
+  }, [dragging, handleDrag, handleDragEnd, handleDragStart]);
 
   // Handle configurator state
   const handleConfiguratorToggle = () => {

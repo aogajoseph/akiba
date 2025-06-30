@@ -19,7 +19,6 @@ import { useState, useEffect } from "react";
 import Divider from "@mui/material/Divider";
 import Switch from "@mui/material/Switch";
 import IconButton from "@mui/material/IconButton";
-import Link from "@mui/material/Link";
 import Icon from "@mui/material/Icon";
 
 // @mui icons
@@ -27,8 +26,6 @@ import FacebookIcon from "@mui/icons-material/Facebook";
 import XIcon from "@mui/icons-material/X"; 
 import LinkedInIcon from "@mui/icons-material/LinkedIn";
 import { FaWhatsapp } from "react-icons/fa";
-import SettingsIcon from "@mui/icons-material/Settings";
-import HeadsetMicIcon from "@mui/icons-material/HeadsetMic";
 import Dialog from "@mui/material/Dialog";
 import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
@@ -111,10 +108,6 @@ function Configurator() {
   };
   const handleFixedNavbar = () => setFixedNavbar(dispatch, !fixedNavbar);
   const handleDarkMode = () => setDarkMode(dispatch, !darkMode);
-
-  const handleHelpDialogOpen = () => {
-    setHelpDialogOpen(true);
-  };
 
   const handleHelpDialogClose = () => {
     setHelpDialogOpen(false);

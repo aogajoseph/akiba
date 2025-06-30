@@ -13,28 +13,10 @@ Coded by www.creative-tim.com
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-import { useEffect } from "react";
-
-// react-router-dom components
-import { useLocation } from "react-router-dom";
-
-// prop-types is a library for typechecking of props.
+import MDBox from "components/MDBox";
 import PropTypes from "prop-types";
 
-// Material Dashboard 2 React components
-import MDBox from "components/MDBox";
-
-// Material Dashboard 2 React context
-import { useMaterialUIController, setLayout } from "context";
-
 function PageLayout({ background, children }) {
-  const [, dispatch] = useMaterialUIController();
-  const { pathname } = useLocation();
-
-  useEffect(() => {
-    setLayout(dispatch, "page");
-  }, [pathname]);
-
   return (
     <MDBox
       width="100%"

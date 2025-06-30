@@ -65,11 +65,6 @@ function Chat() {
     updatedContact.lastMessage = "You: " + message;
     updatedContact.lastMessageTime = newMessage.timestamp;
     
-    // Update the contact in the contacts array
-    const updatedContacts = contacts.map(contact => 
-      contact.id === selectedContact.id ? updatedContact : contact
-    );
-    
     // Update state
     setSelectedContact(updatedContact);
     

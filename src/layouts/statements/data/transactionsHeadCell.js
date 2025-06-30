@@ -18,7 +18,6 @@ Coded by Joseph Onyango
 import PropTypes from "prop-types";
 
 // @mui material components
-import Icon from "@mui/material/Icon";
 
 // Akiba React components
 import MDBox from "components/MDBox";

@@ -116,7 +116,7 @@ function DefaultLineChart({ icon, title, description, height, chart }) {
             <Line data={data} options={options} redraw />
           </MDBox>
         ),
-        [chart, height]
+        [height, data, options]
       )}
     </MDBox>
   );

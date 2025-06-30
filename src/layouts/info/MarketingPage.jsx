@@ -3,7 +3,6 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Divider from '@mui/material/Divider';
 import MainAppBar from './components/AppBar';
 import Hero from './components/Hero';
-import LogoCollection from './components/LogoCollection';
 import GettingStarted from './components/GettingStarted';
 import Pricing from './components/Pricing';
 import Features from './components/Features';

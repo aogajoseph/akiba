@@ -24,8 +24,6 @@ import MenuItem from "@mui/material/MenuItem";
 import InputLabel from "@mui/material/InputLabel";
 import FormControl from "@mui/material/FormControl";
 import Button from "@mui/material/Button";
-import IconButton from "@mui/material/IconButton";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import Stack from "@mui/material/Stack";
 import Tooltip from "@mui/material/Tooltip";
 
@@ -45,18 +43,10 @@ import DataTable from "examples/Tables/DataTable";
 import membersTableData from "layouts/members/data/membersTableData";
 
 import { useState, useMemo } from "react";
+import FilterListIcon from "@mui/icons-material/FilterList";
 
 function Members() {
-  const { columns, rows } = membersTableData();
-  // Extract raw data for filtering
-  const rawRows = [
-    { name: "John Michael", role: "Main Admin", email: "johnmichael@gmail.com", phone: "+254 721 465 221", status: "online", dateJoined: "Apr 23, 2018" },
-    { name: "Alexa Liras", role: "Member", email: "alexaliras@gmail.com", phone: "+263 726 857 5124", status: "offline", dateJoined: "Jan 11, 2019" },
-    { name: "Laurent Perrier", role: "Member", email: "laurentperrier@gmail.com", phone: "+1 258 456 8745", status: "online", dateJoined: "Sep 19, 2019" },
-    { name: "Michael Levi", role: "Sub-Admin", email: "michaellevi@gmail.com", phone: "+254 711 248 476", status: "online", dateJoined: "Dec 24, 2008" },
-    { name: "Richard Gran", role: "Member", email: "richardgran@gmail.com", phone: "+254 112 875 631", status: "offline", dateJoined: "Apr 10, 2010" },
-    { name: "Miriam Eric", role: "Sub-Admin", email: "miriameric@gmail.com", phone: "+254 715 417 485", status: "offline", dateJoined: "Sep 14, 2020" },
-  ];
+  const { columns } = membersTableData();
 
   const [filterOpen, setFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
@@ -69,7 +59,15 @@ function Members() {
   });
 
   // Filtering logic
-  const filteredRows = useMemo(() => {
+  const processedRows = useMemo(() => {
+    const rawRows = [
+      { name: "John Michael", role: "Main Admin", email: "johnmichael@gmail.com", phone: "+254 721 465 221", status: "online", dateJoined: "Apr 23, 2018" },
+      { name: "Alexa Liras", role: "Member", email: "alexaliras@gmail.com", phone: "+263 726 857 5124", status: "offline", dateJoined: "Jan 11, 2019" },
+      { name: "Laurent Perrier", role: "Member", email: "laurentperrier@gmail.com", phone: "+1 258 456 8745", status: "online", dateJoined: "Sep 19, 2019" },
+      { name: "Michael Levi", role: "Sub-Admin", email: "michaellevi@gmail.com", phone: "+254 711 248 476", status: "online", dateJoined: "Dec 24, 2008" },
+      { name: "Richard Gran", role: "Member", email: "richardgran@gmail.com", phone: "+254 112 875 631", status: "offline", dateJoined: "Apr 10, 2010" },
+      { name: "Miriam Eric", role: "Sub-Admin", email: "miriameric@gmail.com", phone: "+254 715 417 485", status: "offline", dateJoined: "Sep 14, 2020" },
+    ];
     return rawRows.filter(row => {
       return (
         (!filters.name || row.name.toLowerCase().includes(filters.name.toLowerCase())) &&
@@ -113,7 +111,7 @@ function Members() {
       require("assets/images/team-3.jpg"),
       require("assets/images/team-4.jpg"),
     ];
-    return filteredRows.map((row, i) => ({
+    return processedRows.map((row, i) => ({
       member: <Member image={images[i % images.length]} name={row.name} role={row.role} />,
       contacts: <Contacts phoneNumber={row.phone} email={row.email} />,
       status: (

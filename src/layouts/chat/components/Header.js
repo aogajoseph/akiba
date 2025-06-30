@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import PropTypes from "prop-types";
-import { Card, Grid, AppBar, Tabs, Tab, Icon, Tooltip, Badge } from "@mui/material";
+import { Card, Grid } from "@mui/material";
 
 // Akiba React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import MDAvatar from "components/MDAvatar";
 
 // Akiba React base styles
 import breakpoints from "assets/theme/base/breakpoints";
@@ -15,7 +14,6 @@ import defaultProfileImg from "assets/images/profile.png";
 
 function Header({ contact, children }) {
   const [tabsOrientation, setTabsOrientation] = useState("horizontal");
-  const [tabValue, setTabValue] = useState(0);
 
   useEffect(() => {
     // A function that sets the orientation state of the tabs.
@@ -36,8 +34,6 @@ function Header({ contact, children }) {
     // Remove event listener on cleanup
     return () => window.removeEventListener("resize", handleTabsOrientation);
   }, [tabsOrientation]);
-
-  const handleSetTabValue = (event, newValue) => setTabValue(newValue);
 
   return (
     <MDBox position="relative" mb={5}>

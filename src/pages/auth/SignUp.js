@@ -49,6 +49,7 @@ function SignUp() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
 
   const handleInputChange = (field) => (event) => {
     setFormData({
@@ -72,6 +73,10 @@ function SignUp() {
     }
     if (formData.password !== formData.repeatPassword) {
       setError("Passwords do not match.");
+      return false;
+    }
+    if (!acceptTerms) {
+      setError("You must accept the terms and conditions.");
       return false;
     }
     setError("");
@@ -156,6 +161,16 @@ function SignUp() {
                     onChange={handleInputChange('repeatPassword')}
                     fullWidth
                   />
+                </Grid>
+                <Grid item xs={12}>
+                  <Checkbox
+                    checked={acceptTerms}
+                    onChange={e => setAcceptTerms(e.target.checked)}
+                    color="primary"
+                  />
+                  <MDTypography variant="button" color="text">
+                    Accept Terms
+                  </MDTypography>
                 </Grid>
                 {error && (
                   <Grid item xs={12}>

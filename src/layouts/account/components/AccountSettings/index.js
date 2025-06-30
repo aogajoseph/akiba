@@ -22,8 +22,6 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
-import TableHead from "@mui/material/TableHead";
-import TableRow from "@mui/material/TableRow";
 import IconButton from "@mui/material/IconButton";
 import DeleteIcon from "@mui/icons-material/Delete";
 import PersonAddIcon from "@mui/icons-material/PersonAdd";
@@ -42,9 +40,8 @@ import ListItemButton from "@mui/material/ListItemButton";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import ContactsIcon from "@mui/icons-material/Contacts";
-import EmailIcon from "@mui/icons-material/Email";
-import AddIcon from "@mui/icons-material/Add";
-import { Box, Divider, TextField, LinearProgress } from "@mui/material";
+import { Box } from "@mui/material";
+import TableRow from "@mui/material/TableRow";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -59,7 +56,6 @@ const AccountSettings = () => {
     const [inviteMemberOpen, setInviteMemberOpen] = useState(false);
     const [addSubAdminOpen, setAddSubAdminOpen] = useState(false);
     const [newMemberEmail, setNewMemberEmail] = useState("");
-    const [inviteMethod, setInviteMethod] = useState("email"); // email, whatsapp, contacts, link
 
     // Mock data - Replace with actual data from your backend
     const [members, setMembers] = useState([

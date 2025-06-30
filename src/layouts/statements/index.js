@@ -17,7 +17,6 @@ Coded by Joseph Onyango
 // @mui material components
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
-import Icon from "@mui/material/Icon";
 import Tooltip from "@mui/material/Tooltip";
 import IconButton from "@mui/material/IconButton";
 import FileDownloadIcon from "@mui/icons-material/FileDownload";
@@ -27,7 +26,6 @@ import PrintIcon from "@mui/icons-material/Print";
 // Akiba React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import MDButton from "components/MDButton";
 
 // Akiba React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";

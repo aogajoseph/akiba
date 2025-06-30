@@ -13,9 +13,6 @@ Coded by www.creative-tim.com
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-// @mui material components
-import Divider from "@mui/material/Divider";
-
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 

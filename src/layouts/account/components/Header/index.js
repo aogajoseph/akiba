@@ -25,21 +25,16 @@ import AppBar from "@mui/material/AppBar";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import Icon from "@mui/material/Icon";
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import CameraAltIcon from '@mui/icons-material/CameraAlt';
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import MDAvatar from "components/MDAvatar";
 import AccountSettings from "layouts/account/components/AccountSettings";
 
 // Material Dashboard 2 React base styles
 import breakpoints from "assets/theme/base/breakpoints";
 
 // Images
-import burceMars from "assets/images/profile.png";
 import backgroundImage from "assets/images/banner.jpg";
 
 function Header({ children }) {
@@ -64,7 +59,7 @@ function Header({ children }) {
 
     // Remove event listener on cleanup
     return () => window.removeEventListener("resize", handleTabsOrientation);
-  }, [tabsOrientation]);
+  }, []);
 
   const handleSetTabValue = (event, newValue) => setTabValue(newValue);
 

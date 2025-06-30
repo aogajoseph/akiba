@@ -4,7 +4,6 @@ import PropTypes from "prop-types";
 // @mui material components
 import List from "@mui/material/List";
 import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
 import Icon from "@mui/material/Icon";
 
 // Material Dashboard 2 React components
@@ -14,7 +13,7 @@ import MDTypography from "components/MDTypography";
 // Material Dashboard 2 React context
 import { useMaterialUIController } from "context";
 
-function DefaultNavbarMobile({ routes, open, close }) {
+function DefaultNavbarMobile({ routes, close }) {
   const [controller] = useMaterialUIController();
   const { darkMode } = controller;
   const navigate = useNavigate();

@@ -5,7 +5,6 @@ import {
   Typography, 
   IconButton, 
   Tooltip, 
-  Chip, 
   useTheme 
 } from "@mui/material";
 import DoneIcon from "@mui/icons-material/Done";

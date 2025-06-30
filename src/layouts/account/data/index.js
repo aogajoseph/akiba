@@ -14,7 +14,7 @@ Coded by Joseph Onyango
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-export default [
+const accountData = [
   {
     account: "My Friends",
     description: "My friends Akiba account.",
@@ -66,3 +66,5 @@ export default [
     },
   },
 ];
+
+export default accountData;

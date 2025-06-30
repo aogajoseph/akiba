@@ -19,8 +19,6 @@ Coded by Joseph Onyango
 import React from "react";
 
 // @mui material components
-import Menu from "@mui/material/Menu";
-import MenuItem from "@mui/material/MenuItem";
 import IconButton from "@mui/material/IconButton";
 import Icon from "@mui/material/Icon";
 import Tooltip from "@mui/material/Tooltip";
@@ -31,7 +29,6 @@ import PrintIcon from "@mui/icons-material/Print";
 // Akiba React components
 import MDBox from "components/MDBox";
 import MDTypography from "components/MDTypography";
-import MDButton from "components/MDButton";
 
 const EntryNumber = ({ number }) => (
   <MDTypography display="block" variant="caption" color="text" fontWeight="medium">

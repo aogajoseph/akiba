@@ -1,5 +1,3 @@
-import { alpha } from '@mui/material/styles';
-
 export const brand = {
   50: '#F0F7FF',
   100: '#C6E3FF',

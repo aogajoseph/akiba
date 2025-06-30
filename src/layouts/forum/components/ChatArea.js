@@ -5,22 +5,16 @@ import {
   Avatar, 
   Typography, 
   IconButton, 
-  Divider, 
   Tooltip,
   Menu,
   MenuItem,
-  Badge,
-  AvatarGroup,
   useTheme,
-  Chip,
   Button
 } from "@mui/material";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import HelpOutlineIcon from "@mui/icons-material/HelpOutline";
 import CleaningServicesIcon from "@mui/icons-material/CleaningServices";
-import PhoneIcon from "@mui/icons-material/Phone";
 import MicIcon from "@mui/icons-material/Mic";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
 import { Link } from "react-router-dom";
 import ChatContent from "./ChatContent";
 import ChatInputArea from "./ChatInputArea";

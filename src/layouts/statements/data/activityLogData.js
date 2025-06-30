@@ -13,7 +13,7 @@ Coded by Joseph Onyango
 * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 */
 
-export default [
+const activityLogData = [
   {
     icon: "account_balance_wallet",
     color: "success",
@@ -63,4 +63,6 @@ export default [
     description: "Changed notification preferences and security settings",
     time: "1 week ago",
   },
-]; 
+];
+
+export default activityLogData; 

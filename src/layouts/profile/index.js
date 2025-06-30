@@ -14,7 +14,6 @@ Coded by www.creative-tim.com
 */
 
 // @mui material components
-import Grid from "@mui/material/Grid";
 import Divider from "@mui/material/Divider";
 
 // @mui icons
@@ -24,7 +23,6 @@ import InstagramIcon from "@mui/icons-material/Instagram";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
-import MDTypography from "components/MDTypography";
 
 // Material Dashboard 2 React example components
 import DashboardLayout from "examples/LayoutContainers/DashboardLayout";
@@ -32,11 +30,10 @@ import DashboardNavbar from "examples/Navbars/DashboardNavbar";
 import Footer from "examples/Footer";
 import ProfileInfoCard from "examples/Cards/InfoCards/ProfileInfoCard";
 import ConnectedAccounts from "examples/Lists/ProfilesList";
-import DefaultProjectCard from "examples/Cards/ProjectCards/DefaultProjectCard";
+import QuickSettings from "layouts/profile/components/QuickSettings";
 
 // Overview page components
 import Header from "layouts/profile/components/Header";
-import QuickSettings from "layouts/profile/components/QuickSettings";
 
 // Data
 import profilesListData from "layouts/profile/data/profilesListData";

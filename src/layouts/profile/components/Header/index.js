@@ -64,7 +64,7 @@ function Header({ children }) {
 
     // Remove event listener on cleanup
     return () => window.removeEventListener("resize", handleTabsOrientation);
-  }, [tabsOrientation]);
+  }, []);
 
   const handleSetTabValue = (event, newValue) => setTabValue(newValue);
 

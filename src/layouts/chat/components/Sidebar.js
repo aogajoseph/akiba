@@ -20,7 +20,6 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
-import FilterListIcon from "@mui/icons-material/FilterList";
 import ForumIcon from "@mui/icons-material/Forum";
 import MDTypography from "components/MDTypography";
 

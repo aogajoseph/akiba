@@ -39,7 +39,7 @@ import Footer from "examples/Footer";
 import ChatArea from "./components/ChatArea";
 
 // Import data
-import { groupChat, otherGroups } from "./data";
+import { groupChat } from "./data";
 
 function Forum() {
   const [selectedGroupChat, setSelectedGroupChat] = useState(groupChat);

@@ -4,7 +4,6 @@ import AccordionDetails from '@mui/material/AccordionDetails';
 import AccordionSummary from '@mui/material/AccordionSummary';
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
-import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { useMaterialUIController } from 'context';
@@ -172,7 +171,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Yes! Akiba provides a clear dashboard overview and detailed reports. Any member can view, download or share statements showing contributions, withdrawals and goal progress. Transparency and accountability are at the heart of Akiba’s design, so everyone stays informed.
+              Yes! Akiba provides a clear dashboard overview and detailed reports. Any member can view, download or share statements showing contributions, withdrawals and goal progress. Transparency and accountability are at the heart of Akiba's design, so everyone stays informed.
             </Typography>
           </AccordionDetails>
         </Accordion>
