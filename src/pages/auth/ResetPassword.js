@@ -14,10 +14,12 @@ Coded by www.creative-tim.com
 */
 
 // React imports
+import { useState } from "react";
 import { Link } from "react-router-dom";
 
 // @mui material components
 import Card from "@mui/material/Card";
+import Alert from "@mui/material/Alert";
 
 // Material Dashboard 2 React components
 import MDBox from "components/MDBox";
@@ -31,7 +33,42 @@ import CoverLayout from "layouts/authentication/components/CoverLayout";
 // Images
 import bgImage from "assets/images/banner.jpg";
 
+// Firebase imports
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
+import app from "../../firebase";
+
 function ResetPassword() {
+  const [email, setEmail] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setSuccess("");
+    setLoading(true);
+    try {
+      const auth = getAuth(app);
+      await sendPasswordResetEmail(auth, email);
+      setSuccess("Password reset email sent! Please check your inbox.");
+    } catch (err) {
+      let msg = "An error occurred. Please try again.";
+      if (err.code === "auth/user-not-found") {
+        msg = "No user found with this email.";
+      } else if (err.code === "auth/network-request-failed") {
+        msg = "No internet connection. Please check your network.";
+      } else if (err.code === "auth/invalid-email") {
+        msg = "Invalid email address.";
+      } else if (err.message) {
+        msg = err.message;
+      }
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <CoverLayout coverHeight="50vh" image={bgImage}>
       <Card sx={{ mb: 4 }}>
@@ -54,13 +91,31 @@ function ResetPassword() {
           </MDTypography>
         </MDBox>
         <MDBox pt={4} pb={3} px={3}>
-          <MDBox component="form" role="form">
+          <MDBox component="form" role="form" onSubmit={handleSubmit}>
             <MDBox mb={4}>
-              <MDInput type="email" label="Email" variant="standard" fullWidth />
+              <MDInput
+                type="email"
+                label="Email"
+                variant="standard"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                fullWidth
+                required
+              />
             </MDBox>
+            {error && (
+              <MDBox mb={2}>
+                <Alert severity="error">{error}</Alert>
+              </MDBox>
+            )}
+            {success && (
+              <MDBox mb={2}>
+                <Alert severity="success">{success}</Alert>
+              </MDBox>
+            )}
             <MDBox mt={6} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth>
-                request link
+              <MDButton variant="gradient" color="info" fullWidth type="submit" disabled={loading}>
+                {loading ? "Sending..." : "Request Link"}
               </MDButton>
             </MDBox>
             {/* Sign Up Link */}

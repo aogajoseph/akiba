@@ -5,7 +5,7 @@
 
 // React imports
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 // MUI Core components
 import {
@@ -36,12 +36,54 @@ import BasicLayout from "layouts/authentication/components/BasicLayout";
 // Assets
 import bgImage from "assets/images/bg-Img.jpg";
 
+// Firebase imports
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import app from "../../firebase";
+
+// MUI Alert component
+import Alert from "@mui/material/Alert";
+
 function SignIn() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
   const handleSetRememberMe = () => setRememberMe(!rememberMe);
   const handleTogglePassword = () => setShowPassword(!showPassword);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const auth = getAuth(app);
+      await signInWithEmailAndPassword(auth, email, password);
+      navigate("/dashboard");
+    } catch (err) {
+      // Firebase error codes: https://firebase.google.com/docs/reference/js/auth.md#autherrorcodes
+      let msg = "An error occurred. Please try again.";
+      if (err.code === "auth/user-not-found") {
+        msg = "No user found with this email.";
+      } else if (err.code === "auth/wrong-password") {
+        msg = "Incorrect password.";
+      } else if (err.code === "auth/network-request-failed") {
+        msg = "No internet connection. Please check your network.";
+      } else if (err.code === "auth/invalid-email") {
+        msg = "Invalid email address.";
+      } else if (err.code === "auth/too-many-requests") {
+        msg = "Too many failed attempts. Please try again later.";
+      } else if (err.message) {
+        msg = err.message;
+      }
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <BasicLayout image={bgImage}>
@@ -80,15 +122,25 @@ function SignIn() {
 
         {/* Login Form */}
         <MDBox pt={4} pb={3} px={3}>
-          <MDBox component="form" role="form">
+          <MDBox component="form" role="form" onSubmit={handleSubmit}>
             <MDBox mb={2}>
-              <MDInput type="text" label="Email/Phone/Account ID" fullWidth />
+              <MDInput
+                type="email"
+                label="Email"
+                value={email}
+                onChange={e => setEmail(e.target.value)}
+                fullWidth
+                required
+              />
             </MDBox>
             <MDBox mb={2}>
               <MDInput
                 type={showPassword ? "text" : "password"}
                 label="Password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
                 fullWidth
+                required
                 InputProps={{
                   endAdornment: (
                     <InputAdornment position="end">
@@ -97,7 +149,7 @@ function SignIn() {
                         onClick={handleTogglePassword}
                         edge="end"
                         size="small"
-                        sx={{ color:"#757575" }}
+                        sx={{ color: "#757575" }}
                       >
                         {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                       </IconButton>
@@ -106,6 +158,13 @@ function SignIn() {
                 }}
               />
             </MDBox>
+
+            {/* Error Message */}
+            {error && (
+              <MDBox mb={2}>
+                <Alert severity="error">{error}</Alert>
+              </MDBox>
+            )}
 
             {/* Stay Logged In Switch */}
             <MDBox display="flex" alignItems="center" ml={-1}>
@@ -123,8 +182,8 @@ function SignIn() {
 
             {/* Submit Button */}
             <MDBox mt={4} mb={1}>
-              <MDButton variant="gradient" color="info" fullWidth>
-                sign in
+              <MDButton variant="gradient" color="info" fullWidth type="submit" disabled={loading}>
+                {loading ? "Signing In..." : "Sign In"}
               </MDButton>
             </MDBox>
 
@@ -158,7 +217,6 @@ function SignIn() {
                 Forgot Password?
               </MDTypography>
             </MDBox>
-
           </MDBox>
         </MDBox>
       </Card>
