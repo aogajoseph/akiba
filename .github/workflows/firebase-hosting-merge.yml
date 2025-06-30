@@ -17,4 +17,4 @@ jobs:
           repoToken: ${{ secrets.GITHUB_TOKEN }}
           firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_AKIBA_89B59 }}
           channelId: live
-          projectId: akiba-a87e1
+          projectId: akiba-89b59
