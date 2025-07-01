@@ -37,41 +37,52 @@ import CoverLayout from "layouts/authentication/components/CoverLayout";
 import bgImage from "assets/images/banner.jpg";
 
 // Firebase imports
-import { getAuth, createUserWithEmailAndPassword, sendEmailVerification } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword, signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
 import app from "../../firebase";
+import PhoneCodeModal from "components/common/PhoneCodeModal";
 
 function SignUp() {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    repeatPassword: ''
-  });
+  const [input, setInput] = useState(""); // email or phone
+  const [password, setPassword] = useState("");
+  const [repeatPassword, setRepeatPassword] = useState("");
+  const [acceptTerms, setAcceptTerms] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [codeError, setCodeError] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
 
-  const handleInputChange = (field) => (event) => {
-    setFormData({
-      ...formData,
-      [field]: event.target.value
-    });
+  // Helper to check if input is email or phone
+  const isEmail = (val) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val);
+  const isPhone = (val) => /^\+?[0-9]{7,15}$/.test(val);
+
+  // Setup reCAPTCHA only once
+  const setupRecaptcha = (auth) => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        'recaptcha-container-signup',
+        { size: 'invisible' },
+        auth
+      );
+    }
   };
 
   const validate = () => {
-    if (!formData.email) {
-      setError("Email is required.");
+    if (!input) {
+      setError("Email or phone number is required.");
       return false;
     }
-    if (!formData.password) {
+    if (!password) {
       setError("Password is required.");
       return false;
     }
-    if (formData.password.length < 6) {
+    if (password.length < 6) {
       setError("Password must be at least 6 characters.");
       return false;
     }
-    if (formData.password !== formData.repeatPassword) {
+    if (password !== repeatPassword) {
       setError("Passwords do not match.");
       return false;
     }
@@ -88,18 +99,61 @@ function SignUp() {
     if (!validate()) return;
     setLoading(true);
     setError("");
+    const auth = getAuth(app);
+    if (isEmail(input)) {
+      // Email registration
+      try {
+        await createUserWithEmailAndPassword(auth, input, password);
+        setSuccess(true);
+      } catch (err) {
+        let msg = "An error occurred. Please try again.";
+        if (err.code === "auth/email-already-in-use") {
+          msg = "Email already in use.";
+        } else if (err.code === "auth/invalid-email") {
+          msg = "Invalid email address.";
+        } else if (err.message) {
+          msg = err.message;
+        }
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    } else if (isPhone(input)) {
+      // Phone registration (first sign-in is registration)
+      try {
+        setupRecaptcha(auth);
+        const confirmation = await signInWithPhoneNumber(auth, input, window.recaptchaVerifier);
+        setConfirmationResult(confirmation);
+        setPhoneNumber(input);
+        setShowCodeModal(true);
+      } catch (err) {
+        let msg = "Failed to send verification code.";
+        if (err.code === "auth/invalid-phone-number") {
+          msg = "Invalid phone number.";
+        } else if (err.message) {
+          msg = err.message;
+        }
+        setError(msg);
+        if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setError("Please enter a valid email or phone number.");
+      setLoading(false);
+    }
+  };
+
+  // Handle code verification from modal
+  const handleCodeSubmit = async (code) => {
+    setCodeError("");
+    setLoading(true);
     try {
-      const auth = getAuth(app);
-      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
-      const actionCodeSettings = {
-        // Redirect to Account Setup after email verification
-        url: "https://akiba-a87e1.web.app/onboarding/account-setup",
-        handleCodeInApp: false,
-      };
-      await sendEmailVerification(userCredential.user, actionCodeSettings);
+      await confirmationResult.confirm(code);
+      setShowCodeModal(false);
       setSuccess(true);
     } catch (err) {
-      setError(err.message);
+      setCodeError("Invalid or expired code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -114,17 +168,17 @@ function SignUp() {
               Create Account
             </MDTypography>
             <MDTypography display="block" variant="button" color="text" my={1}>
-              Sign up with your email address
+              Sign up with email or phone number.
             </MDTypography>
           </MDBox>
           {success ? (
             <MDBox mt={4} textAlign="center">
               <MDTypography variant="h6" color="success.main" mb={2}>
                 Account created!
-      </MDTypography>
+              </MDTypography>
               <MDTypography variant="body2" color="text.secondary" mb={2}>
                 Please check your email to verify your account before logging in.
-        </MDTypography>
+              </MDTypography>
               <MDButton variant="gradient" color="info" fullWidth component={Link} to="/auth/sign-in">
                 Go to Login
               </MDButton>
@@ -133,32 +187,31 @@ function SignUp() {
             <form onSubmit={handleSubmit}>
               <Grid container spacing={3}>
                 <Grid item xs={12}>
-                  <MDInput 
-                    type="email" 
-                    label="Email Address"
-                    variant="standard"
-                    value={formData.email}
-                    onChange={handleInputChange('email')}
-                    fullWidth 
+                  <MDInput
+                    label="Email/Phone Number"
+                    placeholder="Enter email or phone number"
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    fullWidth
                   />
                 </Grid>
                 <Grid item xs={12}>
-                  <MDInput 
-                    type="password" 
+                  <MDInput
+                    type="password"
                     label="Password"
-                    variant="standard"
-                    value={formData.password}
-                    onChange={handleInputChange('password')}
-                    fullWidth 
+                    placeholder="Enter password"
+                    value={password}
+                    onChange={e => setPassword(e.target.value)}
+                    fullWidth
                   />
                 </Grid>
                 <Grid item xs={12}>
                   <MDInput
                     type="password"
                     label="Repeat Password"
-                    variant="standard"
-                    value={formData.repeatPassword}
-                    onChange={handleInputChange('repeatPassword')}
+                    placeholder="Repeat password"
+                    value={repeatPassword}
+                    onChange={e => setRepeatPassword(e.target.value)}
                     fullWidth
                   />
                 </Grid>
@@ -168,25 +221,27 @@ function SignUp() {
                     onChange={e => setAcceptTerms(e.target.checked)}
                     color="primary"
                   />
-                  <MDTypography variant="button" color="text">
-                    Accept Terms
+                  <MDTypography variant="button" color="info" fontWeight="bold">
+                    Terms & Conditions
                   </MDTypography>
                 </Grid>
                 {error && (
                   <Grid item xs={12}>
                     <Alert severity="error">{error}</Alert>
-              </Grid>
+                  </Grid>
                 )}
+                {/* reCAPTCHA container for phone registration (invisible) */}
+                <div id="recaptcha-container-signup" style={{ display: 'none' }} />
                 <Grid item xs={12}>
-                <MDButton 
-                  variant="gradient" 
-                  color="info" 
+                  <MDButton 
+                    variant="gradient" 
+                    color="info" 
                     type="submit"
-                  fullWidth 
+                    fullWidth 
                     disabled={loading}
-                >
+                  >
                     {loading ? 'Signing Up...' : 'Sign Up'}
-              </MDButton>
+                  </MDButton>
                 </Grid>
                 <Grid item xs={12}>
                   <MDTypography variant="button" color="text" textAlign="center">
@@ -206,6 +261,15 @@ function SignUp() {
               </Grid>
             </form>
             )}
+      {/* Phone code modal */}
+      <PhoneCodeModal
+        open={showCodeModal}
+        onClose={() => setShowCodeModal(false)}
+        onSubmit={handleCodeSubmit}
+        loading={loading}
+        error={codeError}
+        phoneNumber={phoneNumber}
+      />
       </Card>
       </Box>
     </CoverLayout>

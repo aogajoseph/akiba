@@ -11,17 +11,12 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Card,
   Switch,
-  Grid,
-  Link as MuiLink,
   IconButton,
   InputAdornment,
 } from "@mui/material";
 
 // MUI Icons
 import {
-  Facebook as FacebookIcon,
-  LinkedIn as LinkedInIcon,
-  Google as GoogleIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
 } from "@mui/icons-material";
@@ -32,12 +27,13 @@ import MDTypography from "components/MDTypography";
 import MDInput from "components/MDInput";
 import MDButton from "components/MDButton";
 import BasicLayout from "layouts/authentication/components/BasicLayout";
+import PhoneCodeModal from "components/common/PhoneCodeModal";
 
 // Assets
 import bgImage from "assets/images/bg-Img.jpg";
 
 // Firebase imports
-import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
+import { getAuth, signInWithEmailAndPassword, signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
 import app from "../../firebase";
 
 // MUI Alert component
@@ -46,8 +42,12 @@ import Alert from "@mui/material/Alert";
 function SignIn() {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("");
+  const [input, setInput] = useState("");
   const [password, setPassword] = useState("");
+  const [showCodeModal, setShowCodeModal] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [codeError, setCodeError] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
@@ -55,31 +55,87 @@ function SignIn() {
   const handleSetRememberMe = () => setRememberMe(!rememberMe);
   const handleTogglePassword = () => setShowPassword(!showPassword);
 
+  // Helper to check if input is email or phone
+  const isEmail = (val) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val);
+  const isPhone = (val) => /^\+?[0-9]{7,15}$/.test(val);
+
+  // Setup reCAPTCHA only once
+  const setupRecaptcha = (auth) => {
+    if (!window.recaptchaVerifier) {
+      window.recaptchaVerifier = new RecaptchaVerifier(
+        'recaptcha-container',
+        { size: 'invisible' },
+        auth
+      );
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
+    setCodeError("");
+    const auth = getAuth(app);
+    if (isEmail(input)) {
+      // Email login
+      try {
+        await signInWithEmailAndPassword(auth, input, password);
+        navigate("/dashboard");
+      } catch (err) {
+        let msg = "An error occurred. Please try again.";
+        if (err.code === "auth/user-not-found") {
+          msg = "No user found with this email.";
+        } else if (err.code === "auth/wrong-password") {
+          msg = "Incorrect password.";
+        } else if (err.code === "auth/network-request-failed") {
+          msg = "No internet connection. Please check your network.";
+        } else if (err.code === "auth/invalid-email") {
+          msg = "Invalid email address.";
+        } else if (err.code === "auth/too-many-requests") {
+          msg = "Too many failed attempts. Please try again later.";
+        } else if (err.message) {
+          msg = err.message;
+        }
+        setError(msg);
+      } finally {
+        setLoading(false);
+      }
+    } else if (isPhone(input)) {
+      // Phone login
+      try {
+        setupRecaptcha(auth);
+        const confirmation = await signInWithPhoneNumber(auth, input, window.recaptchaVerifier);
+        setConfirmationResult(confirmation);
+        setPhoneNumber(input);
+        setShowCodeModal(true);
+      } catch (err) {
+        let msg = "Failed to send verification code.";
+        if (err.code === "auth/invalid-phone-number") {
+          msg = "Invalid phone number.";
+        } else if (err.message) {
+          msg = err.message;
+        }
+        setError(msg);
+        if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
+      } finally {
+        setLoading(false);
+      }
+    } else {
+      setError("Please enter a valid email or phone number.");
+      setLoading(false);
+    }
+  };
+
+  // Handle code verification from modal
+  const handleCodeSubmit = async (code) => {
+    setCodeError("");
+    setLoading(true);
     try {
-      const auth = getAuth(app);
-      await signInWithEmailAndPassword(auth, email, password);
+      await confirmationResult.confirm(code);
+      setShowCodeModal(false);
       navigate("/dashboard");
     } catch (err) {
-      // Firebase error codes: https://firebase.google.com/docs/reference/js/auth.md#autherrorcodes
-      let msg = "An error occurred. Please try again.";
-      if (err.code === "auth/user-not-found") {
-        msg = "No user found with this email.";
-      } else if (err.code === "auth/wrong-password") {
-        msg = "Incorrect password.";
-      } else if (err.code === "auth/network-request-failed") {
-        msg = "No internet connection. Please check your network.";
-      } else if (err.code === "auth/invalid-email") {
-        msg = "Invalid email address.";
-      } else if (err.code === "auth/too-many-requests") {
-        msg = "Too many failed attempts. Please try again later.";
-      } else if (err.message) {
-        msg = err.message;
-      }
-      setError(msg);
+      setCodeError("Invalid or expired code. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -103,21 +159,9 @@ function SignIn() {
           <MDTypography variant="h4" fontWeight="medium" color="white" mt={1}>
             Sign In
           </MDTypography>
-
-          {/* Social Login Buttons */}
-          <Grid container spacing={3} justifyContent="center" sx={{ mt: 1, mb: 2 }}>
-            {[
-              { icon: FacebookIcon, link: "#" },
-              { icon: LinkedInIcon, link: "#" },
-              { icon: GoogleIcon, link: "#" },
-            ].map((social, index) => (
-              <Grid item xs={2} key={index}>
-                <MDTypography component={MuiLink} href={social.link} variant="body1" color="white">
-                  <social.icon color="inherit" />
-                </MDTypography>
-              </Grid>
-            ))}
-          </Grid>
+          <MDTypography variant="body2" color="white" mt={1}>
+            Sign in with email or phone number.
+          </MDTypography>
         </MDBox>
 
         {/* Login Form */}
@@ -125,18 +169,20 @@ function SignIn() {
           <MDBox component="form" role="form" onSubmit={handleSubmit}>
             <MDBox mb={2}>
               <MDInput
-                type="email"
-                label="Email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                label="Email or Phone Number"
+                placeholder="e.g. johndoe@email.com or +254712345678"
+                value={input}
+                onChange={e => setInput(e.target.value)}
                 fullWidth
                 required
               />
             </MDBox>
+
             <MDBox mb={2}>
               <MDInput
                 type={showPassword ? "text" : "password"}
                 label="Password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 fullWidth
@@ -217,9 +263,22 @@ function SignIn() {
                 Forgot Password?
               </MDTypography>
             </MDBox>
+
+            {/* reCAPTCHA container for phone login (invisible) */}
+            <div id="recaptcha-container" style={{ display: 'none' }} />
           </MDBox>
         </MDBox>
       </Card>
+
+      {/* Phone code modal */}
+      <PhoneCodeModal
+        open={showCodeModal}
+        onClose={() => setShowCodeModal(false)}
+        onSubmit={handleCodeSubmit}
+        loading={loading}
+        error={codeError}
+        phoneNumber={phoneNumber}
+      />
     </BasicLayout>
   );
 }
