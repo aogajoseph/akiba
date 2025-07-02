@@ -34,8 +34,8 @@ import CoverLayout from "layouts/authentication/components/CoverLayout";
 import bgImage from "assets/images/banner.jpg";
 
 // Firebase imports
-import { getAuth, sendPasswordResetEmail } from "firebase/auth";
-import app from "../../firebase";
+import firebase from "../../firebase";
+import "firebase/auth";
 
 function ResetPassword() {
   const [email, setEmail] = useState("");
@@ -49,8 +49,7 @@ function ResetPassword() {
     setSuccess("");
     setLoading(true);
     try {
-      const auth = getAuth(app);
-      await sendPasswordResetEmail(auth, email);
+      await firebase.auth().sendPasswordResetEmail(email);
       setSuccess("Password reset email sent! Please check your inbox.");
     } catch (err) {
       let msg = "An error occurred. Please try again.";

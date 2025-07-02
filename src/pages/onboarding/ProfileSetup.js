@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, TextField, Button, Tooltip, IconButton, 
 import { PhotoCamera, Clear, InfoOutlined } from "@mui/icons-material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { getAuth } from "firebase/auth";
-import { getFirestore, doc, setDoc, getDocs, collection, query, where } from "firebase/firestore";
+import firebase from "../../firebase";
+import "firebase/auth";
+import "firebase/firestore";
+import "firebase/storage";
 import { useNavigate } from "react-router-dom";
-import { storage } from "../../firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 const steps = ["Account Setup", "Profile Setup", "Finish"];
 
@@ -17,8 +17,8 @@ const ProfileSetup = () => {
   const [uploading, setUploading] = useState(false);
   const [usernameError, setUsernameError] = useState("");
   const navigate = useNavigate();
-  const auth = getAuth();
-  const db = getFirestore();
+  const auth = firebase.auth();
+  const db = firebase.firestore();
   const user = auth.currentUser;
 
   const formik = useFormik({
@@ -41,12 +41,12 @@ const ProfileSetup = () => {
       let profileUrl = null;
       try {
         if (profileImage) {
-          const profileRef = ref(storage, `users/${user.uid}/profile.jpg`);
-          await uploadBytes(profileRef, profileImage);
-          profileUrl = await getDownloadURL(profileRef);
+          const profileRef = firebase.storage().ref(`users/${user.uid}/profile.jpg`);
+          await profileRef.put(profileImage);
+          profileUrl = await profileRef.getDownloadURL();
         }
         // Save profile data
-        await setDoc(doc(db, "users", user.uid), {
+        await db.collection("users").doc(user.uid).set({
           username: values.username,
           phone: values.phone,
           profileUrl,
@@ -65,8 +65,7 @@ const ProfileSetup = () => {
   // Real-time username uniqueness check
   const checkUsername = async (username) => {
     if (!username || !/^[a-zA-Z0-9_]+$/.test(username)) return;
-    const q = query(collection(db, "users"), where("username", "==", username));
-    const snapshot = await getDocs(q);
+    const snapshot = await db.collection("users").where("username", "==", username).get();
     if (!snapshot.empty) {
       setUsernameError("Username is already taken");
     } else {

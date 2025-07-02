@@ -1,10 +1,10 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { getAuth } from "firebase/auth";
+import firebase from "../../firebase";
+import "firebase/auth";
 
 const ProtectedRoute = ({ children, requireVerified = false }) => {
-  const auth = getAuth();
-  const user = auth.currentUser;
+  const user = firebase.auth().currentUser;
 
   if (!user) {
     // Not logged in

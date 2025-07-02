@@ -37,9 +37,13 @@ import CoverLayout from "layouts/authentication/components/CoverLayout";
 import bgImage from "assets/images/banner.jpg";
 
 // Firebase imports
-import { getAuth, createUserWithEmailAndPassword, signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
-import app from "../../firebase";
+import firebase, { firebaseConfig } from "../../firebase";
+import "firebase/auth";
 import PhoneCodeModal from "components/common/PhoneCodeModal";
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
 function SignUp() {
   const [input, setInput] = useState(""); // email or phone
@@ -59,14 +63,19 @@ function SignUp() {
   const isPhone = (val) => /^\+?[0-9]{7,15}$/.test(val);
 
   // Setup reCAPTCHA only once
-  const setupRecaptcha = (auth) => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        'recaptcha-container-signup',
-        { size: 'invisible' },
-        auth
-      );
+  const setupRecaptcha = () => {
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (e) {}
+      window.recaptchaVerifier = undefined;
+      const recaptchaContainer = document.getElementById('recaptcha-container-signup');
+      if (recaptchaContainer) recaptchaContainer.innerHTML = '';
     }
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+      'recaptcha-container-signup',
+      { size: 'invisible' }
+    );
   };
 
   const validate = () => {
@@ -74,17 +83,19 @@ function SignUp() {
       setError("Email or phone number is required.");
       return false;
     }
-    if (!password) {
-      setError("Password is required.");
-      return false;
-    }
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      return false;
-    }
-    if (password !== repeatPassword) {
-      setError("Passwords do not match.");
-      return false;
+    if (isEmail(input)) {
+      if (!password) {
+        setError("Password is required.");
+        return false;
+      }
+      if (password.length < 6) {
+        setError("Password must be at least 6 characters.");
+        return false;
+      }
+      if (password !== repeatPassword) {
+        setError("Passwords do not match.");
+        return false;
+      }
     }
     if (!acceptTerms) {
       setError("You must accept the terms and conditions.");
@@ -99,11 +110,10 @@ function SignUp() {
     if (!validate()) return;
     setLoading(true);
     setError("");
-    const auth = getAuth(app);
     if (isEmail(input)) {
       // Email registration
       try {
-        await createUserWithEmailAndPassword(auth, input, password);
+        await firebase.auth().createUserWithEmailAndPassword(input, password);
         setSuccess(true);
       } catch (err) {
         let msg = "An error occurred. Please try again.";
@@ -119,13 +129,29 @@ function SignUp() {
         setLoading(false);
       }
     } else if (isPhone(input)) {
-      // Phone registration (first sign-in is registration)
+      // Phone registration (no password required)
       try {
-        setupRecaptcha(auth);
-        const confirmation = await signInWithPhoneNumber(auth, input, window.recaptchaVerifier);
-        setConfirmationResult(confirmation);
-        setPhoneNumber(input);
-        setShowCodeModal(true);
+        setTimeout(() => {
+          setupRecaptcha();
+          firebase.auth().signInWithPhoneNumber(input, window.recaptchaVerifier)
+            .then(confirmation => {
+              setConfirmationResult(confirmation);
+              setPhoneNumber(input);
+              setShowCodeModal(true);
+            })
+            .catch(err => {
+              let msg = "Failed to send verification code.";
+              if (err.code === "auth/invalid-phone-number") {
+                msg = "Invalid phone number.";
+              } else if (err.message) {
+                msg = err.message;
+              }
+              setError(msg);
+              if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
+            })
+            .finally(() => setLoading(false));
+        }, 0);
+        return;
       } catch (err) {
         let msg = "Failed to send verification code.";
         if (err.code === "auth/invalid-phone-number") {
@@ -193,28 +219,36 @@ function SignUp() {
                     value={input}
                     onChange={e => setInput(e.target.value)}
                     fullWidth
+                    required
                   />
                 </Grid>
-                <Grid item xs={12}>
-                  <MDInput
-                    type="password"
-                    label="Password"
-                    placeholder="Enter password"
-                    value={password}
-                    onChange={e => setPassword(e.target.value)}
-                    fullWidth
-                  />
-                </Grid>
-                <Grid item xs={12}>
-                  <MDInput
-                    type="password"
-                    label="Repeat Password"
-                    placeholder="Repeat password"
-                    value={repeatPassword}
-                    onChange={e => setRepeatPassword(e.target.value)}
-                    fullWidth
-                  />
-                </Grid>
+                {/* Password and repeat password fields only for email */}
+                {isEmail(input) && (
+                  <>
+                    <Grid item xs={12}>
+                      <MDInput
+                        type="password"
+                        label="Password"
+                        placeholder="Enter password"
+                        value={password}
+                        onChange={e => setPassword(e.target.value)}
+                        fullWidth
+                        required
+                      />
+                    </Grid>
+                    <Grid item xs={12}>
+                      <MDInput
+                        type="password"
+                        label="Repeat Password"
+                        placeholder="Repeat password"
+                        value={repeatPassword}
+                        onChange={e => setRepeatPassword(e.target.value)}
+                        fullWidth
+                        required
+                      />
+                    </Grid>
+                  </>
+                )}
                 <Grid item xs={12}>
                   <Checkbox
                     checked={acceptTerms}

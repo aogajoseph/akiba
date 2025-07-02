@@ -3,11 +3,10 @@ import { Card, CardContent, CardHeader, TextField, Button, Tooltip, IconButton, 
 import { PhotoCamera, Clear, InfoOutlined, ContentCopy, WhatsApp, Email, GroupAdd } from "@mui/icons-material";
 import { useFormik } from "formik";
 import * as Yup from "yup";
-import { getAuth, applyActionCode } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
 import { useNavigate, useLocation } from "react-router-dom";
-import { storage } from "../../firebase";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import firebase from "../../firebase";
+import "firebase/auth";
+import "firebase/firestore";
 
 const steps = ["Account Setup", "Profile Setup", "Finish"];
 
@@ -19,8 +18,8 @@ const AccountSetup = () => {
   const [verificationMessage, setVerificationMessage] = useState("");
   const [verificationError, setVerificationError] = useState("");
   const location = useLocation();
-  const auth = getAuth();
-  const db = getFirestore();
+  const auth = firebase.auth();
+  const db = firebase.firestore();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -28,7 +27,7 @@ const AccountSetup = () => {
     const mode = params.get("mode");
     const oobCode = params.get("oobCode");
     if (mode === "verifyEmail" && oobCode) {
-      applyActionCode(auth, oobCode)
+      auth.applyActionCode(oobCode)
         .then(() => {
           setVerificationMessage("Your account was created successfully, You can now setup your account.");
         })
@@ -55,11 +54,11 @@ const AccountSetup = () => {
         const user = auth.currentUser;
         const accountId = user.uid; // Use UID as account ID for now
         if (coverImage) {
-          const coverRef = ref(storage, `accounts/${accountId}/cover.jpg`);
-          await uploadBytes(coverRef, coverImage);
-          coverUrl = await getDownloadURL(coverRef);
+          const storageRef = firebase.storage().ref(`accounts/${accountId}/cover.jpg`);
+          await storageRef.put(coverImage);
+          coverUrl = await storageRef.getDownloadURL();
         }
-        await setDoc(doc(db, "accounts", accountId), {
+        await db.collection("accounts").doc(accountId).set({
           accountName: values.accountName,
           coverUrl,
           owner: user.uid,

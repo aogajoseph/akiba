@@ -33,8 +33,8 @@ import PhoneCodeModal from "components/common/PhoneCodeModal";
 import bgImage from "assets/images/bg-Img.jpg";
 
 // Firebase imports
-import { getAuth, signInWithEmailAndPassword, signInWithPhoneNumber, RecaptchaVerifier } from "firebase/auth";
-import app from "../../firebase";
+import firebase from "../../firebase";
+import "firebase/auth";
 
 // MUI Alert component
 import Alert from "@mui/material/Alert";
@@ -60,14 +60,19 @@ function SignIn() {
   const isPhone = (val) => /^\+?[0-9]{7,15}$/.test(val);
 
   // Setup reCAPTCHA only once
-  const setupRecaptcha = (auth) => {
-    if (!window.recaptchaVerifier) {
-      window.recaptchaVerifier = new RecaptchaVerifier(
-        'recaptcha-container',
-        { size: 'invisible' },
-        auth
-      );
+  const setupRecaptcha = () => {
+    if (window.recaptchaVerifier) {
+      try {
+        window.recaptchaVerifier.clear();
+      } catch (e) {}
+      window.recaptchaVerifier = undefined;
+      const recaptchaContainer = document.getElementById('recaptcha-container');
+      if (recaptchaContainer) recaptchaContainer.innerHTML = '';
     }
+    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+      'recaptcha-container',
+      { size: 'invisible' }
+    );
   };
 
   const handleSubmit = async (e) => {
@@ -75,11 +80,10 @@ function SignIn() {
     setError("");
     setLoading(true);
     setCodeError("");
-    const auth = getAuth(app);
     if (isEmail(input)) {
       // Email login
       try {
-        await signInWithEmailAndPassword(auth, input, password);
+        await firebase.auth().signInWithEmailAndPassword(input, password);
         navigate("/dashboard");
       } catch (err) {
         let msg = "An error occurred. Please try again.";
@@ -101,13 +105,31 @@ function SignIn() {
         setLoading(false);
       }
     } else if (isPhone(input)) {
-      // Phone login
+      // Phone login (no password required)
       try {
-        setupRecaptcha(auth);
-        const confirmation = await signInWithPhoneNumber(auth, input, window.recaptchaVerifier);
-        setConfirmationResult(confirmation);
-        setPhoneNumber(input);
-        setShowCodeModal(true);
+        console.log('About to call setupRecaptcha');
+        setTimeout(() => {
+          setupRecaptcha();
+          console.log('After setupRecaptcha');
+          firebase.auth().signInWithPhoneNumber(input, window.recaptchaVerifier)
+            .then(confirmation => {
+              setConfirmationResult(confirmation);
+              setPhoneNumber(input);
+              setShowCodeModal(true);
+            })
+            .catch(err => {
+              let msg = "Failed to send verification code.";
+              if (err.code === "auth/invalid-phone-number") {
+                msg = "Invalid phone number.";
+              } else if (err.message) {
+                msg = err.message;
+              }
+              setError(msg);
+              if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
+            })
+            .finally(() => setLoading(false));
+        }, 0);
+        return;
       } catch (err) {
         let msg = "Failed to send verification code.";
         if (err.code === "auth/invalid-phone-number") {
@@ -178,32 +200,35 @@ function SignIn() {
               />
             </MDBox>
 
-            <MDBox mb={2}>
-              <MDInput
-                type={showPassword ? "text" : "password"}
-                label="Password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                fullWidth
-                required
-                InputProps={{
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <IconButton
-                        aria-label="toggle password visibility"
-                        onClick={handleTogglePassword}
-                        edge="end"
-                        size="small"
-                        sx={{ color: "#757575" }}
-                      >
-                        {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                      </IconButton>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-            </MDBox>
+            {/* Password field only for email */}
+            {isEmail(input) && (
+              <MDBox mb={2}>
+                <MDInput
+                  type={showPassword ? "text" : "password"}
+                  label="Password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                  fullWidth
+                  required
+                  InputProps={{
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={handleTogglePassword}
+                          edge="end"
+                          size="small"
+                          sx={{ color: "#757575" }}
+                        >
+                          {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                        </IconButton>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+              </MDBox>
+            )}
 
             {/* Error Message */}
             {error && (

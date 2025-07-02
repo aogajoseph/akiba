@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { getAuth } from "firebase/auth";
-import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import SuccessCard from "components/onboarding/SuccessCard";
 import { CircularProgress, Box, Typography } from "@mui/material";
+import firebase from "../../firebase";
+import "firebase/auth";
+import "firebase/firestore";
 
 const Success = () => {
   const [accountName, setAccountName] = useState("");
@@ -11,17 +12,17 @@ const Success = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
-  const auth = getAuth();
-  const db = getFirestore();
+  const auth = firebase.auth();
+  const db = firebase.firestore();
 
   useEffect(() => {
     const fetchAccount = async () => {
       try {
         const user = auth.currentUser;
         if (!user) throw new Error("User not found");
-        const docRef = doc(db, "accounts", user.uid);
-        const docSnap = await getDoc(docRef);
-        if (docSnap.exists()) {
+        const docRef = db.collection("accounts").doc(user.uid);
+        const docSnap = await docRef.get();
+        if (docSnap.exists) {
           setAccountName(docSnap.data().accountName);
           setAccountId(user.uid);
         } else {

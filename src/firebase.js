@@ -1,6 +1,8 @@
 // Firebase core setup
-import { initializeApp } from "firebase/app";
-import { getStorage } from "firebase/storage";
+import firebase from "firebase/app";
+import "firebase/auth";
+import "firebase/firestore";
+import "firebase/storage";
 
 // Use environment variables for Firebase config
 // Add these to your .env file (do NOT commit secrets to version control):
@@ -21,9 +23,9 @@ const firebaseConfig = {
   measurementId: process.env.REACT_APP_FIREBASE_MEASUREMENT_ID,
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const storage = getStorage(app);
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
 
-export default app;
-export { storage }; 
+export { firebaseConfig };
+export default firebase; 
