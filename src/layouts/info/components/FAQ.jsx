@@ -98,7 +98,7 @@ export default function FAQ() {
             id="panel2d-header"
           >
             <Typography component="span" variant="subtitle2">
-            Who can create a savings goal, and how do contributors join?
+            Who can create a savings goal and how do contributors join?
             </Typography>
           </AccordionSummary>
           <AccordionDetails>
@@ -107,7 +107,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Only the account creator (main admin) can create a savings goal that everyone contributes toward, as long as it is acceptable to the group. Once a goal is set, members can be invited by anyone in the group, but the main admin must approve the invitations. This keeps the group safe and organized.
+              Only the account creator (main admin) can create a savings goal that everyone contributes toward, as long as it is acceptable to the group. Once a goal is set, members can be invited by anyone in the group, but the main admin approves or rejects the invitations. This keeps the group safe and organized.
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -139,7 +139,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Akiba includes a forum and private chat features. Members can post messages in the group forum visible to all, or send private chats to one another. Everyone can read notifications, view activity logs, stay engaged, ask questions and share updates — keeping teamwork strong.
+              Akiba includes a forum and private chat features. Members can post messages in the group forum visible to all, or send private messages to one another. Everyone can read notifications, view activity logs, stay engaged, ask questions and share updates — keeping teamwork strong.
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -203,7 +203,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              Account creation happens in 4 quick steps using email and phone number. If you wish to leave a savings group, you can do so from Profile Settings and you will be guided based on your role in the group. The group members will be notified of your departure and the group's activities wont be affected.
+              Account creation happens in 4 quick steps: Sign up using email or phone number, verify your identity, set up your account then set up your profile. If you wish to leave a savings group, you can do so from your Profile Settings and you will be guided based on your role in the group. Everyone will be notified of your departure and the group's activities wont be affected.
             </Typography>
           </AccordionDetails>
         </Accordion>
@@ -235,7 +235,7 @@ export default function FAQ() {
               gutterBottom
               sx={{ maxWidth: { sm: '100%', md: '70%' } }}
             >
-              If you choose to delete your Akiba account, you can do so from Account Settings. Only the account creator (main admin) can delete the account and this must be done in line with the account deletion protocols.
+              If you choose to delete your Akiba account, you can do so from the Account Settings. Only the account creator (main admin) can delete an account, and it must be done in accordance with our account deletion protocols.
             </Typography>
           </AccordionDetails>
         </Accordion>

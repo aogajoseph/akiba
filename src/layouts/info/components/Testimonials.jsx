@@ -8,45 +8,51 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Grid from '@mui/material/Grid';
 import { useMaterialUIController } from 'context';
+import testimonial1 from 'assets/images/testimonial-1.png';
+import testimonial2 from 'assets/images/testimonial-2.png';
+import testimonial3 from 'assets/images/testimonial-3.png';
+import testimonial4 from 'assets/images/testimonial-4.png';
+import testimonial5 from 'assets/images/testimonial-5.png';
+import testimonial6 from 'assets/images/testimonial-6.png';
 
 const userTestimonials = [
   {
-    avatar: 'https://i.pravatar.cc/150?img=1',
+    avatar: testimonial1,
     name: 'Mary Wambui',
     occupation: 'Chama Treasurer, Nairobi',
     testimonial:
       '“Akiba has completely changed how our local chama manages funds. Everything happens online and we no longer feel the pressure to meet in person.”',
   },
   {
-    avatar: 'https://i.pravatar.cc/150?img=2',
+    avatar: testimonial2,
     name: 'John Onsarigo',
     occupation: 'Community Member, Baringo',
     testimonial:
-      '"Before Akiba, our welfare members didn’t even know each other. But now, we all trust the system because there is clarity and everything is easy to follow.”',
+      '"Before Akiba, our welfare members didn’t even know each other. But now, we all trust the system 100% because there is clarity and everything is easy to follow.”',
   },
   {
-    avatar: 'https://i.pravatar.cc/150?img=3',
+    avatar: testimonial3,
     name: 'Saidi Ahmed',
     occupation: 'Resident, Mombasa',
     testimonial:
-      '"When I first used Akiba, I had lost a close relative. It was very easy to use. Everyone who contributed was satisfied because they could see how the money was used."',
+      '"When I first used Akiba, I had lost a close relative. Everyone who contributed was satisfied because they could see how the money was used."',
   },
   {
-    avatar: 'https://i.pravatar.cc/150?img=1',
+    avatar: testimonial4,
     name: 'Rev. Gideon Makau',
     occupation: 'Church Leader, Mlolongo',
     testimonial:
       '"When we set out to build a new gate for our church, Akiba became an unexpected blessing. All our members insisted on using it to raise and manage the funds."',
   },
   {
-    avatar: 'https://i.pravatar.cc/150?img=2',
+    avatar: testimonial5,
     name: 'Jacob Mwai',
     occupation: 'Boda boda rider, Kiambu',
     testimonial:
-      '"Akiba came to save me as a boda boda chairman. Handling my colleagues\' money manually, used to give me headaches. I\'m truly happy this platform was created."',
+      '"Akiba came to save me as a boda boda chairman. Handling my colleagues\' money manually, used to give me headaches. I\'m truly happy that this platform was created."',
   },
   {
-    avatar: 'https://i.pravatar.cc/150?img=3',
+    avatar: testimonial6,
     name: 'Geraldine Ouma',
     occupation: 'Consultant, Nairobi',
     testimonial:

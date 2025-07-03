@@ -101,7 +101,7 @@ export default function Hero() {
               fontSize: '1rem'
             }}
           >
-            Akiba is a collaborative savings platform that helps friends, families, communities and organizations save money as a team.
+            Akiba is a collaborative savings platform that helps friends, families and groups save and manage money as a team.
           </Typography>         
           <Typography
             variant="caption"
@@ -113,7 +113,7 @@ export default function Hero() {
               fontSize: '0.7rem'
             }}
           >
-            Saving made social, achieve more, together.
+            Saving made social. Achieve more, together.
           </Typography>
           <Stack
             direction={{ xs: 'column', sm: 'row' }}

@@ -66,12 +66,17 @@ function SignUp() {
   const setupRecaptcha = () => {
     if (window.recaptchaVerifier) {
       try {
-        window.recaptchaVerifier.clear();
+        if (typeof window.recaptchaVerifier.clear === 'function') {
+          window.recaptchaVerifier.clear();
+        }
+        if (typeof window.recaptchaVerifier.destroy === 'function') {
+          window.recaptchaVerifier.destroy();
+        }
       } catch (e) {}
       window.recaptchaVerifier = undefined;
-      const recaptchaContainer = document.getElementById('recaptcha-container-signup');
-      if (recaptchaContainer) recaptchaContainer.innerHTML = '';
     }
+    const recaptchaContainer = document.getElementById('recaptcha-container-signup');
+    if (recaptchaContainer) recaptchaContainer.innerHTML = '';
     window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
       'recaptcha-container-signup',
       { size: 'invisible' }

@@ -19,7 +19,7 @@ function Copyright() {
   const { darkMode } = controller;
 
   return (
-    <Typography variant="caption" sx={{ color: darkMode ? '#ffffff' : 'text.secondary', mt: 1 }}>
+    <Typography sx={{ color: darkMode ? '#ffffff' : 'text.secondary', mt: 1, fontSize: '0.9rem' }}>
       {'©'}
       {new Date().getFullYear()}
       {' Akiba Ltd.'}
@@ -172,74 +172,68 @@ export default function Footer() {
             Product
           </Typography>
           <Link 
-            color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="subtitle2" 
+            color={darkMode ? '#ffffff' : 'text.secondary'}
             href="#"
             onClick={(e) => {
               e.preventDefault();
               scrollToSection('about');
             }}
-            sx={linkStyle}
+            sx={{ ...linkStyle, fontSize: '0.9rem' }}
           >
             About
           </Link>
           <Link 
-            color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="subtitle2" 
+            color={darkMode ? '#ffffff' : 'text.secondary'}
             href="#"
             onClick={(e) => {
               e.preventDefault();
               scrollToSection('getting-started');
             }}
-            sx={linkStyle}
+            sx={{ ...linkStyle, fontSize: '0.9rem' }}
           >
             Get Started
           </Link>
           <Link 
-            color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="subtitle2" 
+            color={darkMode ? '#ffffff' : 'text.secondary'}
             href="#"
             onClick={(e) => {
               e.preventDefault();
               scrollToSection('features');
             }}
-            sx={linkStyle}
+            sx={{ ...linkStyle, fontSize: '0.9rem' }}
           >
             Features
           </Link>
           <Link 
-            color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="subtitle2" 
+            color={darkMode ? '#ffffff' : 'text.secondary'}
             href="#"
             onClick={(e) => {
               e.preventDefault();
               scrollToSection('pricing');
             }}
-            sx={linkStyle}
+            sx={{ ...linkStyle, fontSize: '0.9rem' }}
           >
             Pricing
           </Link>
           <Link 
-            color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="subtitle2" 
+            color={darkMode ? '#ffffff' : 'text.secondary'}
             href="#"
             onClick={(e) => {
               e.preventDefault();
               scrollToSection('testimonials');
             }}
-            sx={linkStyle}
+            sx={{ ...linkStyle, fontSize: '0.9rem' }}
           >
             Testimonials
           </Link>
           <Link 
-            color={darkMode ? '#ffffff' : 'text.secondary'} 
-            variant="subtitle2" 
+            color={darkMode ? '#ffffff' : 'text.secondary'}
             href="#"
             onClick={(e) => {
               e.preventDefault();
               scrollToSection('faq');
             }}
-            sx={linkStyle}
+            sx={{ ...linkStyle, fontSize: '0.9rem' }}
           >
             FAQs
           </Link>
@@ -254,14 +248,17 @@ export default function Footer() {
           <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : 'text.primary' }}>
             Company
           </Typography>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} sx={{ fontSize: '0.9rem' }} href="#">
             About us
           </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} sx={{ fontSize: '0.9rem' }} href="#">
             Products
           </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} sx={{ fontSize: '0.9rem' }} href="#">
             Blog
+          </Link>
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} sx={{ fontSize: '0.9rem' }} href="#">
+            Contact Us
           </Link>
         </Box>
         <Box
@@ -274,17 +271,14 @@ export default function Footer() {
           <Typography variant="subtitle2" sx={{ fontWeight: 'bold', color: darkMode ? '#ffffff' : 'text.primary' }}>
             Legal
           </Typography>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
-            Terms of Service
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} sx={{ fontSize: '0.9rem' }} href="#">
+            Terms of Use
           </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} sx={{ fontSize: '0.9rem' }} href="#">
             Privacy Policy
           </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
+          <Link color={darkMode ? '#ffffff' : 'text.secondary'} sx={{ fontSize: '0.9rem' }} href="#">
             Help Center
-          </Link>
-          <Link color={darkMode ? '#ffffff' : 'text.secondary'} variant="subtitle2" href="#">
-            Contact Us
           </Link>
         </Box>
       </Box>
@@ -308,7 +302,7 @@ export default function Footer() {
           sx={{ justifyContent: 'left' }}
         >
           <IconButton
-            size="small"
+            size="medium"
             href="https://wa.me/1234567890"
             aria-label="WhatsApp"
             sx={{
@@ -321,7 +315,7 @@ export default function Footer() {
             <WhatsAppIcon />
           </IconButton>
           <IconButton
-            size="small"
+            size="medium"
             href="https://www.youtube.com/akiba/"
             aria-label="YouTube"
             sx={{
@@ -333,7 +327,7 @@ export default function Footer() {
             <YouTubeIcon />
           </IconButton>
           <IconButton
-            size="small"
+            size="medium"
             href="https://www.linkedin.com/company/akiba/"
             aria-label="LinkedIn"
             sx={{
@@ -345,7 +339,7 @@ export default function Footer() {
             <LinkedInIcon />
           </IconButton>
           <IconButton
-            size="small"
+            size="medium"
             href="https://www.facebook.com/akiba/"
             aria-label="Facebook"
             sx={{
@@ -357,7 +351,7 @@ export default function Footer() {
             <FacebookIcon />
           </IconButton>
           <IconButton
-            size="small"
+            size="medium"
             href="https://twitter.com/akiba/"
             aria-label="Twitter"
             sx={{

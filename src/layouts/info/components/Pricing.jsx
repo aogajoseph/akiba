@@ -293,7 +293,7 @@ export default function Pricing() {
             }
           }}
         >
-          <li>Transparent transaction fees will apply for transfers, withdrawals and payments.</li>
+          <li>Transparent transaction fees apply for transfers, withdrawals and payments.</li>
           <li>Optional add-ons: Admin badges, SMS reminders, custom branding and connected accounts.</li>
         </Box>
       </Box>

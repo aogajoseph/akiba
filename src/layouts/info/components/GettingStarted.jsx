@@ -53,7 +53,7 @@ const items = [
     icon: <BarChartRoundedIcon />,
     title: 'Tracking',
     description:
-      'View progress from dashboard overview or the Reports page. ',
+      'View progress from the dashboard overview or the reports page. ',
     access: 'Everyone',
   },
 ];
