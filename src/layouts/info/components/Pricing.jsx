@@ -106,12 +106,12 @@ export default function Pricing() {
             lineHeight: 1.5,
           }}
         >
-          Akiba is currently in launch mode, so all plans are 100% free! We’re committed to giving you the best experience during our first 6 months. After this period, the following plans will be available:
+          Akiba is currently in launch mode, so all plans are 100% free! We're committed to giving you the best experience during our first 6 months. After this period, the following plans will be available:
         </Typography>
       </Box>
       <Grid
         container
-        spacing={3}
+        spacing={{ xs: 2, sm: 3, md: 4 }}
         sx={{ alignItems: 'center', justifyContent: 'center', width: '100%' }}
       >
         {tiers.map((tier) => (
@@ -121,14 +121,15 @@ export default function Pricing() {
             sm={tier.title === 'Enterprise' ? 12 : 6}
             md={4}
             key={tier.title}
+            sx={{ display: 'flex', justifyContent: 'center' }}
           >
             <Card
               sx={[
                 {
-                  p: 2,
+                  p: { xs: 2, sm: 3, md: 4 },
                   display: 'flex',
                   flexDirection: 'column',
-                  gap: 4,
+                  gap: { xs: 3, sm: 4 },
                   bgcolor: darkMode ? 'grey.800' : 'background.paper',
                   transition: 'transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out',
                   '&:hover': {
@@ -137,6 +138,9 @@ export default function Pricing() {
                       ? '0 8px 16px rgba(0, 0, 0, 0.3)'
                       : '0 8px 16px rgba(0, 0, 0, 0.1)',
                   },
+                  minWidth: { xs: 260, sm: 340, md: 380 },
+                  maxWidth: { xs: '100%', sm: 420, md: 480 },
+                  mx: 'auto',
                 },
                 tier.title === 'For Groups' && {
                   border: 'none',

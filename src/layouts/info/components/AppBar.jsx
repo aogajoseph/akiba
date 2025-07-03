@@ -15,6 +15,14 @@ import ColorModeIconDropdown from '../theme/ColorModeIconDropdown';
 import { useMaterialUIController } from 'context';
 import { useNavigate } from 'react-router-dom';
 import logo from '../../../assets/images/logo.png';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
+import RocketLaunchOutlinedIcon from '@mui/icons-material/RocketLaunchOutlined';
+import StarOutlineOutlinedIcon from '@mui/icons-material/StarOutlineOutlined';
+import MonetizationOnOutlinedIcon from '@mui/icons-material/MonetizationOnOutlined';
+import ThumbUpAltOutlinedIcon from '@mui/icons-material/ThumbUpAltOutlined';
+import HelpOutlineOutlinedIcon from '@mui/icons-material/HelpOutlineOutlined';
+import PersonAddAltOutlinedIcon from '@mui/icons-material/PersonAddAltOutlined';
+import LoginOutlinedIcon from '@mui/icons-material/LoginOutlined';
 
 const StyledToolbar = styled(Toolbar)(({ theme }) => ({
   display: 'flex',
@@ -145,7 +153,7 @@ export default function MainAppBar() {
             >
               Akiba
             </Box>
-            <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.25 }}>
+            <Box sx={{ display: { xs: 'none', lg: 'flex' }, gap: 0.25 }}>
               <Button 
                 variant="text" 
                 color="info" 
@@ -204,7 +212,7 @@ export default function MainAppBar() {
           </Box>
           <Box
             sx={{
-              display: { xs: 'none', md: 'flex' },
+              display: { xs: 'none', lg: 'flex' },
               gap: 0.5,
               alignItems: 'center',
             }}
@@ -230,7 +238,7 @@ export default function MainAppBar() {
             </Button>
             <ColorModeIconDropdown />
           </Box>
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 1 }}>
+          <Box sx={{ display: { xs: 'flex', lg: 'none' }, gap: 1 }}>
             <ColorModeIconDropdown size="medium" />
             <IconButton 
               aria-label="Menu button" 
@@ -251,10 +259,18 @@ export default function MainAppBar() {
               PaperProps={{
                 sx: {
                   top: 'var(--template-frame-height, 0px)',
+                  maxHeight: '420px',
+                  margin: '32px auto',
+                  borderRadius: 3,
+                  width: { xs: '95%', sm: '80%', md: '60%' },
+                  display: 'flex',
+                  flexDirection: 'column',
+                  justifyContent: 'flex-start',
+                  alignItems: 'flex-start',
                 },
               }}
             >
-              <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
+              <Box sx={{ p: 2, backgroundColor: 'background.default', width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'flex-start', justifyContent: 'flex-start', height: '100%' }}>
                 <Box
                   sx={{
                     display: 'flex',
@@ -273,14 +289,26 @@ export default function MainAppBar() {
                     <CloseRoundedIcon />
                   </IconButton>
                 </Box>
-                <MenuItem onClick={() => scrollToSection('hero')}>About</MenuItem>
-                <MenuItem onClick={() => scrollToSection('getting-started')}>Get Started</MenuItem>
-                <MenuItem onClick={() => scrollToSection('features')}>Features</MenuItem>
-                <MenuItem onClick={() => scrollToSection('pricing')}>Pricing</MenuItem>
-                <MenuItem onClick={() => scrollToSection('testimonials')}>Testimonials</MenuItem>
-                <MenuItem onClick={() => scrollToSection('faq')}>FAQs</MenuItem>
+                <MenuItem onClick={() => scrollToSection('hero')} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <InfoOutlinedIcon fontSize="small" /> About
+                </MenuItem>
+                <MenuItem onClick={() => scrollToSection('getting-started')} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <RocketLaunchOutlinedIcon fontSize="small" /> Get Started
+                </MenuItem>
+                <MenuItem onClick={() => scrollToSection('features')} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <StarOutlineOutlinedIcon fontSize="small" /> Features
+                </MenuItem>
+                <MenuItem onClick={() => scrollToSection('pricing')} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <MonetizationOnOutlinedIcon fontSize="small" /> Pricing
+                </MenuItem>
+                <MenuItem onClick={() => scrollToSection('testimonials')} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <ThumbUpAltOutlinedIcon fontSize="small" /> Testimonials
+                </MenuItem>
+                <MenuItem onClick={() => scrollToSection('faq')} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HelpOutlineOutlinedIcon fontSize="small" /> FAQs
+                </MenuItem>
                 <Divider sx={{ my: 3 }} />
-                <MenuItem>
+                <MenuItem sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Button 
                     color="primary" 
                     variant="contained" 
@@ -291,12 +319,13 @@ export default function MainAppBar() {
                       '&:hover': {
                         backgroundColor: darkMode ? 'info.main' : 'info.dark',
                       },
+                      display: 'flex', alignItems: 'center', gap: 1
                     }}
                   >
-                    Sign up
+                    <PersonAddAltOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> Sign up
                   </Button>
                 </MenuItem>
-                <MenuItem>
+                <MenuItem sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <Button 
                     color="primary" 
                     variant="outlined" 
@@ -309,9 +338,10 @@ export default function MainAppBar() {
                         backgroundColor: darkMode ? 'rgba(144, 202, 249, 0.08)' : 'rgba(25, 118, 210, 0.04)',
                         borderColor: darkMode ? 'info.main' : 'info.dark',
                       },
+                      display: 'flex', alignItems: 'center', gap: 1
                     }}
                   >
-                    Sign in
+                    <LoginOutlinedIcon fontSize="small" sx={{ mr: 1 }} /> Sign in
                   </Button>
                 </MenuItem>
               </Box>
