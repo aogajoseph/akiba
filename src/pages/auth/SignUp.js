@@ -61,31 +61,27 @@ function SignUp() {
   // Helper to check if input is email or phone
   const isEmail = (val) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val);
   const isPhone = (val) => /^\+?[0-9]{7,15}$/.test(val);
+  const isPhoneMissingCountryCode = (val) => /^[0-9]{7,15}$/.test(val);
 
   // Setup reCAPTCHA only once
   const setupRecaptcha = () => {
-    if (window.recaptchaVerifier) {
-      try {
-        if (typeof window.recaptchaVerifier.clear === 'function') {
-          window.recaptchaVerifier.clear();
-        }
-        if (typeof window.recaptchaVerifier.destroy === 'function') {
-          window.recaptchaVerifier.destroy();
-        }
-      } catch (e) {}
-      window.recaptchaVerifier = undefined;
+    if (!window.recaptchaVerifier) {
+      const recaptchaContainer = document.getElementById('recaptcha-container-signup');
+      if (recaptchaContainer) recaptchaContainer.innerHTML = '';
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+        'recaptcha-container-signup',
+        { size: 'invisible' }
+      );
     }
-    const recaptchaContainer = document.getElementById('recaptcha-container-signup');
-    if (recaptchaContainer) recaptchaContainer.innerHTML = '';
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-      'recaptcha-container-signup',
-      { size: 'invisible' }
-    );
   };
 
   const validate = () => {
     if (!input) {
       setError("Email or phone number is required.");
+      return false;
+    }
+    if (isPhoneMissingCountryCode(input)) {
+      setError("Please enter your phone number with the country code (e.g., +254...)");
       return false;
     }
     if (isEmail(input)) {
@@ -118,7 +114,11 @@ function SignUp() {
     if (isEmail(input)) {
       // Email registration
       try {
-        await firebase.auth().createUserWithEmailAndPassword(input, password);
+        const userCredential = await firebase.auth().createUserWithEmailAndPassword(input, password);
+        const user = userCredential.user;
+        if (user) {
+          await user.sendEmailVerification();
+        }
         setSuccess(true);
       } catch (err) {
         let msg = "An error occurred. Please try again.";
@@ -128,6 +128,24 @@ function SignUp() {
           msg = "Invalid email address.";
         } else if (err.message) {
           msg = err.message;
+        }
+        if (err.code === 'auth/missing-email') {
+          msg = 'Missing email address.';
+        }
+        if (err.code === 'auth/too-many-requests') {
+          msg = 'Too many requests. Please try again later.';
+        }
+        if (err.code === 'auth/user-not-found') {
+          msg = 'No user found with this email.';
+        }
+        if (err.code === 'auth/invalid-action-code') {
+          msg = 'Invalid verification link.';
+        }
+        if (err.code === 'auth/user-disabled') {
+          msg = 'This user account has been disabled.';
+        }
+        if (err.code === 'auth/email-not-verified') {
+          msg = 'Please verify your email before logging in.';
         }
         setError(msg);
       } finally {
@@ -152,7 +170,6 @@ function SignUp() {
                 msg = err.message;
               }
               setError(msg);
-              if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
             })
             .finally(() => setLoading(false));
         }, 0);
@@ -165,7 +182,6 @@ function SignUp() {
           msg = err.message;
         }
         setError(msg);
-        if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
       } finally {
         setLoading(false);
       }
@@ -208,7 +224,7 @@ function SignUp() {
                 Account created!
               </MDTypography>
               <MDTypography variant="body2" color="text.secondary" mb={2}>
-                Please check your email to verify your account before logging in.
+                Please verify your email to proceed with account setup.
               </MDTypography>
               <MDButton variant="gradient" color="info" fullWidth component={Link} to="/auth/sign-in">
                 Go to Login
@@ -282,34 +298,27 @@ function SignUp() {
                     {loading ? 'Signing Up...' : 'Sign Up'}
                   </MDButton>
                 </Grid>
-                <Grid item xs={12}>
-                  <MDTypography variant="button" color="text" textAlign="center">
+                <Grid item xs={12} textAlign="center">
+                  <MDTypography variant="button" color="text">
                     Already have an account?{' '}
-                <MDTypography
-                  component={Link}
-                    to="/auth/sign-in"
-                  variant="button"
-                  color="info"
-                      fontWeight="bold"
-                  textGradient
-                >
-                  Sign In
-                </MDTypography>
-              </MDTypography>
+                    <Link to="/auth/sign-in" style={{ color: '#1A73E8', fontWeight: 600, textDecoration: 'none' }}>
+                      Sign In
+                    </Link>
+                  </MDTypography>
                 </Grid>
               </Grid>
             </form>
-            )}
-      {/* Phone code modal */}
-      <PhoneCodeModal
-        open={showCodeModal}
-        onClose={() => setShowCodeModal(false)}
-        onSubmit={handleCodeSubmit}
-        loading={loading}
-        error={codeError}
-        phoneNumber={phoneNumber}
-      />
-      </Card>
+          )}
+          {/* Phone code modal */}
+          <PhoneCodeModal
+            open={showCodeModal}
+            onClose={() => setShowCodeModal(false)}
+            onSubmit={handleCodeSubmit}
+            loading={loading}
+            error={codeError}
+            phoneNumber={phoneNumber}
+          />
+        </Card>
       </Box>
     </CoverLayout>
   );

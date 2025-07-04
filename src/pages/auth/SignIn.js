@@ -4,7 +4,7 @@
  */
 
 // React imports
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 
 // MUI Core components
@@ -58,26 +58,18 @@ function SignIn() {
   // Helper to check if input is email or phone
   const isEmail = (val) => /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(val);
   const isPhone = (val) => /^\+?[0-9]{7,15}$/.test(val);
+  const isPhoneMissingCountryCode = (val) => /^[0-9]{7,15}$/.test(val);
 
   // Setup reCAPTCHA only once
   const setupRecaptcha = () => {
-    if (window.recaptchaVerifier) {
-      try {
-        if (typeof window.recaptchaVerifier.clear === 'function') {
-          window.recaptchaVerifier.clear();
-        }
-        if (typeof window.recaptchaVerifier.destroy === 'function') {
-          window.recaptchaVerifier.destroy();
-        }
-      } catch (e) {}
-      window.recaptchaVerifier = undefined;
+    if (!window.recaptchaVerifier) {
+      const recaptchaContainer = document.getElementById('recaptcha-container');
+      if (recaptchaContainer) recaptchaContainer.innerHTML = '';
+      window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
+        'recaptcha-container',
+        { size: 'invisible' }
+      );
     }
-    const recaptchaContainer = document.getElementById('recaptcha-container');
-    if (recaptchaContainer) recaptchaContainer.innerHTML = '';
-    window.recaptchaVerifier = new firebase.auth.RecaptchaVerifier(
-      'recaptcha-container',
-      { size: 'invisible' }
-    );
   };
 
   const handleSubmit = async (e) => {
@@ -85,11 +77,27 @@ function SignIn() {
     setError("");
     setLoading(true);
     setCodeError("");
+    if (isPhoneMissingCountryCode(input)) {
+      setError("Please enter your phone number with the country code (e.g., +254...)");
+      setLoading(false);
+      return;
+    }
     if (isEmail(input)) {
       // Email login
       try {
         await firebase.auth().signInWithEmailAndPassword(input, password);
-        navigate("/dashboard");
+        const user = firebase.auth().currentUser;
+        if (user && user.emailVerified) {
+          // Check onboarding/account setup in Firestore
+          const accountDoc = await firebase.firestore().collection('accounts').doc(user.uid).get();
+          if (!accountDoc.exists || !accountDoc.data()?.setupComplete) {
+            navigate('/onboarding/AccountSetup');
+          } else {
+            navigate('/dashboard');
+          }
+        } else {
+          setError('Please verify your email before logging in.');
+        }
       } catch (err) {
         let msg = "An error occurred. Please try again.";
         if (err.code === "auth/user-not-found") {
@@ -130,7 +138,6 @@ function SignIn() {
                 msg = err.message;
               }
               setError(msg);
-              if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
             })
             .finally(() => setLoading(false));
         }, 0);
@@ -143,7 +150,6 @@ function SignIn() {
           msg = err.message;
         }
         setError(msg);
-        if (window.recaptchaVerifier) window.recaptchaVerifier.clear();
       } finally {
         setLoading(false);
       }
@@ -167,6 +173,16 @@ function SignIn() {
       setLoading(false);
     }
   };
+
+  // Optional: cleanup recaptchaVerifier on unmount
+  useEffect(() => {
+    return () => {
+      if (window.recaptchaVerifier && typeof window.recaptchaVerifier.clear === 'function') {
+        window.recaptchaVerifier.clear();
+      }
+      window.recaptchaVerifier = undefined;
+    };
+  }, []);
 
   return (
     <BasicLayout image={bgImage}>
@@ -196,15 +212,14 @@ function SignIn() {
           <MDBox component="form" role="form" onSubmit={handleSubmit}>
             <MDBox mb={2}>
               <MDInput
-                label="Email or Phone Number"
-                placeholder="e.g. johndoe@email.com or +254712345678"
+                label="Email/Phone Number"
+                placeholder="name@email.com or +254712345678"
                 value={input}
                 onChange={e => setInput(e.target.value)}
                 fullWidth
                 required
               />
             </MDBox>
-
             {/* Password field only for email */}
             {isEmail(input) && (
               <MDBox mb={2}>

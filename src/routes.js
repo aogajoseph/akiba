@@ -52,6 +52,7 @@ import AccountSetup from "pages/onboarding/AccountSetup";
 import ProfileSetup from "pages/onboarding/ProfileSetup";
 import Success from "pages/onboarding/Success";
 import ProtectedRoute from "components/common/ProtectedRoute";
+import OnboardingGuard from "components/common/OnboardingGuard";
 
 // @mui icons
 import Icon from "@mui/material/Icon";
@@ -63,7 +64,7 @@ const routes = [
     key: "dashboard",
     icon: <Icon fontSize="small">dashboard</Icon>,
     route: "/dashboard",
-    component: <Home />,
+    component: <OnboardingGuard><Home /></OnboardingGuard>,
   },
   {
     type: "collapse",
@@ -71,7 +72,7 @@ const routes = [
     key: "account",
     icon: <Icon fontSize="small">work</Icon>,
     route: "/account",
-    component: <Account />,
+    component: <OnboardingGuard><Account /></OnboardingGuard>,
   },
   {
     type: "collapse",
@@ -79,7 +80,7 @@ const routes = [
     key: "profile",
     icon: <Icon fontSize="small">person</Icon>,
     route: "/profile",
-    component: <Profile />,
+    component: <OnboardingGuard><Profile /></OnboardingGuard>,
   },
   {
     type: "collapse",
@@ -87,7 +88,7 @@ const routes = [
     key: "members",
     icon: <Icon fontSize="small">people</Icon>,
     route: "/members",
-    component: <Members />,
+    component: <OnboardingGuard><Members /></OnboardingGuard>,
     noDisplay: true,
   },
   {
@@ -96,7 +97,7 @@ const routes = [
     key: "chat",
     icon: <Icon fontSize="small">chat</Icon>,
     route: "/chat",
-    component: <Chat />,
+    component: <OnboardingGuard><Chat /></OnboardingGuard>,
   },
   {
     type: "collapse",
@@ -104,7 +105,7 @@ const routes = [
     key: "forum",
     icon: <Icon fontSize="small">forum</Icon>,
     route: "/forum",
-    component: <Forum />,
+    component: <OnboardingGuard><Forum /></OnboardingGuard>,
   },
   {
     type: "collapse",
@@ -112,7 +113,7 @@ const routes = [
     key: "statements",
     icon: <Icon fontSize="small">receipt_long</Icon>,
     route: "/statements",
-    component: <Statements />,
+    component: <OnboardingGuard><Statements /></OnboardingGuard>,
   },
   {
     type: "auth",
