@@ -2,6 +2,10 @@ import { View, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+// Import local images
+import logoImg from '../../assets/logo.png';
+import profileImg from '../../assets/profile.png';
+
 export default function Header({ navigation, options }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const insets = useSafeAreaInsets();
@@ -9,7 +13,7 @@ export default function Header({ navigation, options }) {
   return (
     <View
       style={{
-        paddingTop: insets.top, // Safe area for top
+        paddingTop: insets.top,
         height: 56 + insets.top,
         paddingHorizontal: 12,
         flexDirection: 'row',
@@ -18,7 +22,7 @@ export default function Header({ navigation, options }) {
         backgroundColor: '#E8F3F1',
       }}
     >
-      {/* Hamburger */}
+      {/* Left: Hamburger */}
       <TouchableOpacity
         onPress={() => navigation.openDrawer()}
         accessibilityLabel="Open menu"
@@ -26,15 +30,34 @@ export default function Header({ navigation, options }) {
         <Text style={{ fontSize: 24 }}>☰</Text>
       </TouchableOpacity>
 
-      {/* Brand */}
-      <Text style={{ fontSize: 18, fontWeight: '700' }}>
-        {options?.title || 'Akiba'}
-      </Text>
+      {/* Center: Logo + Brand */}
+      <View
+        style={{
+          position: 'absolute',
+          top: insets.top,
+          left: 0,
+          right: 0,
+          height: 56,
+          flexDirection: 'row',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none', // So taps go through
+        }}
+      >
+        <Image
+          source={logoImg}
+          style={{ width: 22, height: 22, marginRight: 6 }}
+          resizeMode="contain"
+        />
+        <Text style={{ fontSize: 20, fontWeight: '700' }}>
+          {options?.title || 'Akiba'}
+        </Text>
+      </View>
 
-      {/* Avatar */}
+      {/* Right: Avatar */}
       <TouchableOpacity onPress={() => setMenuOpen(true)}>
         <Image
-          source={{ uri: 'https://i.pravatar.cc/80?img=12' }} // placeholder
+          source={profileImg}
           style={{ width: 28, height: 28, borderRadius: 14 }}
         />
       </TouchableOpacity>
@@ -94,4 +117,3 @@ export default function Header({ navigation, options }) {
     </View>
   );
 }
-2
