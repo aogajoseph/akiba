@@ -2,6 +2,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import WelcomeScreen from '../screens/onboarding/WelcomeScreen';
 import SignUpScreen from '../screens/onboarding/SignUpScreen';
 import SignInScreen from '../screens/onboarding/SignInScreen';
+import PasswordResetScreen from '../screens/onboarding/PasswordResetScreen';
 import AccountSetupScreen from '../screens/onboarding/AccountSetupScreen';
 import DrawerMenu from './DrawerMenu';
 
@@ -22,6 +23,7 @@ export default function RootNavigator() {
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="SignUp" component={SignUpScreen} />
           <Stack.Screen name="SignIn" component={SignInScreen} />
+          <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
           <Stack.Screen name="AccountSetup" component={AccountSetupScreen} />
           <Stack.Screen name="MainApp" component={DrawerMenu} />
         </>

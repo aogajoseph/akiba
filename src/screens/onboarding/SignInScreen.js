@@ -73,7 +73,6 @@ export default function SignInScreen({ navigation }) {
             borderColor: '#ddd',
             borderRadius: 10,
             width: '100%',
-            marginBottom: 14,
             paddingHorizontal: 14,
           }}
         >
@@ -91,6 +90,16 @@ export default function SignInScreen({ navigation }) {
             />
           </TouchableOpacity>
         </View>
+
+        {/* Forgot Password Link */}
+        <TouchableOpacity
+          onPress={() => navigation.navigate('PasswordReset')}
+          style={{ alignSelf: 'flex-end', marginTop: 8, marginBottom: 16 }}
+        >
+          <Text style={{ color: '#007aff', fontSize: 14 }}>
+            Forgot password?
+          </Text>
+        </TouchableOpacity>
 
         {/* Stay signed in toggle */}
         <TouchableOpacity
@@ -132,6 +141,14 @@ export default function SignInScreen({ navigation }) {
             Sign In
           </Text>
         </TouchableOpacity>
+        <View style={{ flexDirection: 'row', marginTop: 16 }}>
+          <Text style={{ fontSize: 14, color: '#555' }}>New Here? </Text>
+          <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
+            <Text style={{ fontSize: 14, fontWeight: '700', color: '#34a853' }}>
+              Create Account
+            </Text>
+          </TouchableOpacity>
+        </View>
       </View>
     </ScreenContainer>
   );
