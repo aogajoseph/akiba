@@ -39,7 +39,7 @@ export default function AccountScreen() {
       </View>
 
       {/* Account Name & Label */}
-      <Text style={styles.accountName}>John's Family</Text>
+      <Text style={styles.accountName}>John Doe's Family</Text>
       <Text style={styles.akibaLabel}>Akiba Account</Text>
 
       {/* Account Info Card */}
@@ -55,7 +55,7 @@ export default function AccountScreen() {
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Account Type:</Text>
-          <Text style={styles.infoValue}>Basic</Text>
+          <Text style={styles.infoValue}>Akiba Basic</Text>
         </View>
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Created By:</Text>
@@ -66,18 +66,18 @@ export default function AccountScreen() {
           <Text style={styles.infoValue}>June 13, 2025</Text>
         </View>
         <View style={styles.infoRow}>
-          <Text style={styles.infoLabel}>Link:</Text>
-          <Text style={[styles.infoValue, styles.link]}>https://akiba/jfy001/invite</Text>
+          <Text style={styles.infoLabel}>Invitation Link:</Text>
+          <Text style={[styles.infoValue, styles.link]}>https://akiba/jfy001/invite/</Text>
         </View>
 
         {/* New Financial Stats Section */}
         <View style={styles.statsContainer}>
           <View style={styles.statsRow}>
             <Text style={styles.statsLabel}>Current Balance:</Text>
-            <Text style={styles.statsValue}>KSh 120,000.00</Text>
+            <Text style={styles.statsValue}>KSh 124,500.00</Text>
           </View>
           <View style={styles.statsRow}>
-            <Text style={styles.statsLabel}>Savings Goals:</Text>
+            <Text style={styles.statsLabel}>Saving Goals:</Text>
             <Text style={styles.statsValue}>2/5</Text>
           </View>
           <View style={styles.statsRow}>

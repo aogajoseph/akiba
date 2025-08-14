@@ -36,7 +36,7 @@ export default function DashboardScreen({ navigation }) {
 
       {/* Account Info Card */}
       <View style={styles.accountCard}>
-        <Text style={styles.accountName}>John's Family</Text>
+        <Text style={styles.accountName}>John Doe's Family</Text>
         <Text style={styles.accountLabel}>Akiba Account</Text>
         <Text style={styles.balance}>Balance: <Text style={{ fontWeight: '700' }}>KSh 124,500.00</Text></Text>
         <Text>Contributions: 56 <Text style={{ color: '#666' }}>Since 1 Jan 2024</Text></Text>
@@ -44,13 +44,13 @@ export default function DashboardScreen({ navigation }) {
       </View>
 
       {/* Graphs Section */}
-      <GraphPlaceholder title="Daily Contribution Counts" />
+      <GraphPlaceholder title="Daily Contributions" />
       <GraphPlaceholder title="Daily Deposits" />
       <GraphPlaceholder title="Daily Withdrawals" />
 
       {/* Tables */}
       <TableSnippet
-        title="Savings Goals"
+        title="Saving Goals"
         viewAll
         data={[
           "🏆 Current Goal: Buy Land - KSh 300,000 target",
@@ -63,7 +63,7 @@ export default function DashboardScreen({ navigation }) {
         viewAll
         data={[
           "Dan deposited KSh 2,000 - 2 hrs ago",
-          "Mary withdrew KSh 1,000 - 1 day ago",
+          "Transfer to Mary for airtime  KSh 1,000 - 1 day ago",
           "Goal 'Emergency Fund' completed - 2 days ago",
           "Peter deposited KSh 3,000 - 4 days ago",
           "Admin added new member - 5 days ago",
