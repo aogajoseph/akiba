@@ -4,6 +4,7 @@ import SignUpScreen from '../screens/onboarding/SignUpScreen';
 import SignInScreen from '../screens/onboarding/SignInScreen';
 import PasswordResetScreen from '../screens/onboarding/PasswordResetScreen';
 import AccountSetupScreen from '../screens/onboarding/AccountSetupScreen';
+import ProfileSetupScreen from '../screens/onboarding/ProfileSetupScreen';
 import DrawerMenu from './DrawerMenu';
 
 const Stack = createNativeStackNavigator();
@@ -25,6 +26,7 @@ export default function RootNavigator() {
           <Stack.Screen name="SignIn" component={SignInScreen} />
           <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
           <Stack.Screen name="AccountSetup" component={AccountSetupScreen} />
+          <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
           <Stack.Screen name="MainApp" component={DrawerMenu} />
         </>
       ) : (
