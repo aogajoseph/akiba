@@ -1,8 +1,9 @@
 import { View, Text, TouchableOpacity, Image, Modal } from 'react-native';
 import { useState } from 'react';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-// Import local images
+// Local images
 import logoImg from '../../assets/logo.png';
 import profileImg from '../../assets/profile.png';
 
@@ -41,7 +42,7 @@ export default function Header({ navigation, options }) {
           flexDirection: 'row',
           alignItems: 'center',
           justifyContent: 'center',
-          pointerEvents: 'none', // So taps go through
+          pointerEvents: 'none',
         }}
       >
         <Image
@@ -73,42 +74,43 @@ export default function Header({ navigation, options }) {
           <View
             style={{
               position: 'absolute',
-              right: 10,
-              top: 56 + insets.top,
+              right: 5,
+              top: 15 + insets.top, // slightly higher than before
               backgroundColor: 'white',
               borderRadius: 8,
               padding: 12,
               elevation: 4,
               width: 220,
+              shadowColor: '#000',
+              shadowOpacity: 0.1,
+              shadowRadius: 4,
             }}
           >
+            {/* Bubble arrow */}
+            <View
+              style={{
+                position: 'absolute',
+                top: -8,
+                right: 16,
+                width: 16,
+                height: 16,
+                backgroundColor: 'white',
+                transform: [{ rotate: '45deg' }],
+                borderTopLeftRadius: 4,
+              }}
+            />
+
             <Text style={{ fontWeight: '700', marginBottom: 6 }}>Mama Jacky</Text>
             <Text style={{ color: '#666', marginBottom: 12 }}>Role: Main Admin</Text>
 
             <TouchableOpacity
-              onPress={() => {
-                setMenuOpen(false);
-                navigation.navigate('Profile');
-              }}
-            >
-              <Text style={{ paddingVertical: 8 }}>View Profile</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              onPress={() => {
-                setMenuOpen(false);
-                navigation.navigate('Settings');
-              }}
-            >
-              <Text style={{ paddingVertical: 8 }}>Profile Settings</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
+              style={{ flexDirection: 'row', alignItems: 'center' }}
               onPress={() => {
                 setMenuOpen(false);
                 // TODO logout logic
               }}
             >
+              <Ionicons name="log-out-outline" size={18} color="#c00" style={{ marginRight: 6 }} />
               <Text style={{ paddingVertical: 8, color: '#c00' }}>Logout</Text>
             </TouchableOpacity>
           </View>
