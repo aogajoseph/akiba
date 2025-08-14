@@ -5,6 +5,8 @@ import SignInScreen from '../screens/onboarding/SignInScreen';
 import PasswordResetScreen from '../screens/onboarding/PasswordResetScreen';
 import AccountSetupScreen from '../screens/onboarding/AccountSetupScreen';
 import ProfileSetupScreen from '../screens/onboarding/ProfileSetupScreen';
+import NotificationsScreen from '../screens/misc/NotificationsScreen';
+import PledgesScreen from '../screens/misc/PledgesScreen';
 import DrawerMenu from './DrawerMenu';
 
 const Stack = createNativeStackNavigator();
@@ -27,6 +29,8 @@ export default function RootNavigator() {
           <Stack.Screen name="PasswordReset" component={PasswordResetScreen} />
           <Stack.Screen name="AccountSetup" component={AccountSetupScreen} />
           <Stack.Screen name="ProfileSetup" component={ProfileSetupScreen} />
+          <Stack.Screen name="Notifications" component={NotificationsScreen} />
+          <Stack.Screen name="Pledges" component={PledgesScreen} />
           <Stack.Screen name="MainApp" component={DrawerMenu} />
         </>
       ) : (
