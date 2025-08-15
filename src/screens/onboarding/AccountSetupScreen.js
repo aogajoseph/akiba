@@ -197,7 +197,7 @@ export default function AccountSetupScreen({ navigation }) {
         </View>
       </View>
 
-      {/* Invite Members Modal */}
+      {/* Invite Participants Modal */}
       <Modal transparent visible={inviteModalVisible} animationType="slide">
         <View
           style={{

@@ -2,7 +2,7 @@ import { createDrawerNavigator, DrawerContentScrollView, DrawerItem } from '@rea
 import { View, Text, Image, StyleSheet } from 'react-native';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import AppTabs from './AppTabs';
-import MembersScreen from '../screens/misc/MembersScreen';
+import ParticipantsScreen from '../screens/misc/ParticipantsScreen';
 import ReportsScreen from '../screens/misc/ReportsScreen';
 import SettingsScreen from '../screens/misc/SettingsScreen';
 import ProfileScreen from '../screens/misc/ProfileScreen';
@@ -66,7 +66,7 @@ function CustomDrawerContent(props) {
           icon={({ color, size }) => (
             <MaterialCommunityIcons name="account-multiple-outline" size={22} color="#555" style={styles.icon} />
           )}
-          onPress={() => props.navigation.navigate('Members')}
+          onPress={() => props.navigation.navigate('Participants')}
         />
         <DrawerItem
           label="Leaderboard"
@@ -109,7 +109,7 @@ export default function DrawerMenu() {
       <Drawer.Screen name="Notifications" component={NotificationsScreen} />
       <Drawer.Screen name="Profile" component={ProfileScreen} />
       <Drawer.Screen name="SavingGoals" component={SavingGoalsScreen} />
-      <Drawer.Screen name="Members" component={MembersScreen} />
+      <Drawer.Screen name="Participants" component={ParticipantsScreen} />
       <Drawer.Screen name="Reports" component={ReportsScreen} />
       <Drawer.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Drawer.Screen name="Pledges" component={PledgesScreen} />

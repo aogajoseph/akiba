@@ -81,7 +81,7 @@ export default function AccountScreen() {
             <Text style={styles.statsValue}>2/5</Text>
           </View>
           <View style={styles.statsRow}>
-            <Text style={styles.statsLabel}>Total Members:</Text>
+            <Text style={styles.statsLabel}>Total Participants:</Text>
             <Text style={styles.statsValue}>25</Text>
           </View>
         </View>
