@@ -33,6 +33,9 @@ export default function DashboardScreen({ navigation }) {
     <ScrollView style={styles.container} contentContainerStyle={{ paddingBottom: 20 }}>
       {/* Dashboard Title */}
       <Text style={styles.pageTitle}>Dashboard</Text>
+      <Text style={styles.pageSubtitle}>
+        Monitor account activity and savings progress daily.
+      </Text>
 
       {/* Account Info Card */}
       <View style={styles.accountCard}>
@@ -82,7 +85,12 @@ const styles = StyleSheet.create({
   pageTitle: {
     fontSize: 22,
     fontWeight: '700',
-    marginBottom: 10,
+    marginBottom: 4,
+  },
+  pageSubtitle: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 16,
   },
   accountCard: {
     backgroundColor: 'white',

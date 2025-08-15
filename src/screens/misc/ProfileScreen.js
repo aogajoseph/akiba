@@ -7,28 +7,28 @@ import {
   FlatList,
   Switch,
   ScrollView,
-  SafeAreaView
+  SafeAreaView,
+  TouchableOpacity
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
+import EditProfileModal from '../../components/EditProfileModal'; // import the modal
 
-export default function ProfileScreen() {
+export default function ProfileScreen({ route }) {
   const [privacySettings, setPrivacySettings] = useState({
     hidePhone: false,
     hideEmail: false,
     hideLocation: false
   });
+  const [isModalVisible, setModalVisible] = useState(false);
+
+  // Simulate logged-in user ID and profile owner ID
+  const loggedInUserId = 'user123';
+  const profileOwnerId = route?.params?.userId || 'user123'; // default to logged-in user
+  const isOwner = loggedInUserId === profileOwnerId;
 
   const connectedAccounts = [
-    {
-      id: 'acc1',
-      name: "John Doe's Church",
-      accountId: '#AKB-JDC-425'
-    },
-    {
-      id: 'acc2',
-      name: "John Doe's Workplace",
-      accountId: '#AKB-JDW-117'
-    }
+    { id: 'acc1', name: "John Doe's Church", accountId: '#AKB-JDC-425' },
+    { id: 'acc2', name: "John Doe's Workplace", accountId: '#AKB-JDW-117' }
   ];
 
   const togglePrivacy = (key) => {
@@ -71,10 +71,21 @@ export default function ProfileScreen() {
             source={require('../../../assets/profile.png')}
             style={styles.avatar}
           />
-          <View>
+          <View style={{ flex: 1 }}>
             <Text style={styles.fullName}>John Doe</Text>
             <Text style={styles.role}>Main Admin</Text>
           </View>
+
+          {/* Edit Button for Owner Only */}
+          {isOwner && (
+            <TouchableOpacity
+              style={styles.editButton}
+              onPress={() => setModalVisible(true)}
+            >
+              <Ionicons name="create-outline" size={18} color="#fff" />
+              <Text style={styles.editButtonText}>Edit</Text>
+            </TouchableOpacity>
+          )}
         </View>
 
         {/* Bio */}
@@ -140,9 +151,22 @@ export default function ProfileScreen() {
           />
         </View>
 
-        {/* Bottom Spacer to prevent last item from hiding */}
+        {/* Bottom Spacer */}
         <View style={{ height: 40 }} />
       </ScrollView>
+
+      {/* Modal */}
+      <EditProfileModal
+        visible={isModalVisible}
+        onClose={() => setModalVisible(false)}
+        initialData={{
+          fullName: 'John Doe',
+          bio: "Hi there, I'm John Doe, I'm here to save, connect and achieve shared goals with the Akiba family.",
+          email: 'johndoe@gmail.com',
+          mobile: '0712 345 678',
+          location: 'Kenya'
+        }}
+      />
     </SafeAreaView>
   );
 }
@@ -186,6 +210,20 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 2
   },
+  editButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#007AFF',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6
+  },
+  editButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    marginLeft: 4,
+    fontWeight: '600'
+  },
   bioContainer: {
     padding: 16,
     backgroundColor: '#fff',
@@ -195,13 +233,13 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#333',
-    marginBottom: 4 // space between title and bio text
+    marginBottom: 4
   },
   bio: {
     fontSize: 14,
     color: '#444',
     lineHeight: 20
-  },  
+  },
   infoCard: {
     backgroundColor: '#fff',
     paddingVertical: 12,

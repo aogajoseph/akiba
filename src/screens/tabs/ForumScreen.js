@@ -64,10 +64,10 @@ export default function ForumScreen({ navigation }) {
         <View style={{ flex: 1 }}>
           <Text style={{ fontWeight: '700', color: '#333', fontSize: 16 }}>Account Forum</Text>
           <Text style={{ fontSize: 12, color: '#555', marginTop: 2 }}>
-            Chat openly with all participants in this account.
+            Chat openly with everyone in this account.
           </Text>
           <Text style={{ fontSize: 11, color: '#999', fontStyle: 'italic' }}>
-            All participants in this account can see these messages.
+            All participants can see these messages.
           </Text>
           {/* Online Status */}
           <Text style={styles.onlineStatus}>
@@ -136,9 +136,9 @@ const styles = StyleSheet.create({
     borderBottomColor: '#eee'
   },
   avatar: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
+    width: 68,
+    height: 68,
+    borderRadius: 34,
     marginRight: 8
   },
   chatName: {
