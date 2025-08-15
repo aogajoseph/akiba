@@ -68,7 +68,7 @@ export default function ReportsScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Reports</Text>
       <Text style={styles.subtitle}>
-        Review, share or download monthly reports.
+        Review, share or download monthly financial reports.
       </Text>
 
       {renderTable('July', julyTransactions)}

@@ -70,7 +70,7 @@ export default function PledgesScreen() {
     <View style={{ flex: 1 }}>
       <ScrollView style={styles.container}>
         <Text style={styles.title}>Pledges</Text>
-        <Text style={styles.subtitle}>View pledges made by other participants or add yours.</Text>
+        <Text style={styles.subtitle}>View pledges made by other participants or submit your own.</Text>
 
         <View style={styles.progressContainer}>
           <Text style={styles.progressLabel}>Pledges Tracking</Text>

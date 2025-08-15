@@ -84,7 +84,7 @@ export default function LeaderboardScreen() {
     <ScrollView style={styles.container}>
       <Text style={styles.title}>Leaderboard</Text>
       <Text style={styles.subtitle}>
-        Overview of how participants drive shared success through collective effort.
+        Join fellow participants in driving shared success through collective effort.
       </Text>
 
       {renderCategory('Top Contributors', leaderboardData.topContributors, renderTopContributor, COLORS.gold)}
