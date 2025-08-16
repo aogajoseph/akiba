@@ -39,7 +39,7 @@ export default function AppTabs() {
 
           return <Ionicons name={iconName} size={size} color={color} />;
         },
-        tabBarActiveTintColor: '#2b6cb0',
+        tabBarActiveTintColor: '#34a853',
         tabBarInactiveTintColor: '#777',
         // Remove custom height/padding so RN Navigation can place the bar
         // exactly on the safe-area edge. This fixes the "pushed down" look.

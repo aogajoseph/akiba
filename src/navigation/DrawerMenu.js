@@ -48,20 +48,20 @@ function CustomDrawerContent(props) {
         {/* First group */}
         <View style={styles.section}>
           <DrawerItem
-            label="Notifications"
-            labelStyle={styles.itemLabel}
-            icon={({ color, size }) => (
-              <MaterialCommunityIcons name="bell-outline" size={22} color="#555" style={styles.icon} />
-            )}
-            onPress={() => props.navigation.navigate('Notifications')}
-          />
-          <DrawerItem
             label="My Profile"
             labelStyle={styles.itemLabel}
             icon={({ color, size }) => (
               <MaterialCommunityIcons name="account-circle-outline" size={22} color="#555" style={styles.icon} />
             )}
             onPress={() => props.navigation.navigate('Profile')}
+          />
+          <DrawerItem
+            label="Notifications"
+            labelStyle={styles.itemLabel}
+            icon={({ color, size }) => (
+              <MaterialCommunityIcons name="bell-outline" size={22} color="#555" style={styles.icon} />
+            )}
+            onPress={() => props.navigation.navigate('Notifications')}
           />
         </View>
 
@@ -126,7 +126,7 @@ function CustomDrawerContent(props) {
       <View style={[styles.footer, { paddingBottom: insets.bottom || 16 }]}>
         <View style={styles.footerDivider} />
         <Text style={styles.copyright}>
-          ©{getYear()} Globe Technologies
+          ©{getYear()} Globe Technologies.
         </Text>
       </View>
 
@@ -206,7 +206,7 @@ const styles = StyleSheet.create({
   },
   itemLabel: {
     fontSize: 16,
-    padding: 10,
+    padding: 4,
     fontWeight: '500',
     color: '#555',
   },

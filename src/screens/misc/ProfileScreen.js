@@ -11,7 +11,9 @@ import {
   TouchableOpacity
 } from 'react-native';
 import Ionicons from 'react-native-vector-icons/Ionicons';
-import EditProfileModal from '../../components/EditProfileModal'; // import the modal
+import EditProfileModal from '../../components/EditProfileModal';
+import NominateSubAdminModal from '../../components/NominateSubAdminModal'; 
+import InviteMembersModal from '../../components/InviteMembersModal'; // new modal
 
 export default function ProfileScreen({ route }) {
   const [privacySettings, setPrivacySettings] = useState({
@@ -20,10 +22,11 @@ export default function ProfileScreen({ route }) {
     hideLocation: false
   });
   const [isModalVisible, setModalVisible] = useState(false);
+  const [isNominateModalVisible, setNominateModalVisible] = useState(false);
+  const [isInviteModalVisible, setInviteModalVisible] = useState(false);
 
-  // Simulate logged-in user ID and profile owner ID
   const loggedInUserId = 'user123';
-  const profileOwnerId = route?.params?.userId || 'user123'; // default to logged-in user
+  const profileOwnerId = route?.params?.userId || 'user123';
   const isOwner = loggedInUserId === profileOwnerId;
 
   const connectedAccounts = [
@@ -48,7 +51,7 @@ export default function ProfileScreen({ route }) {
       <Ionicons
         name="swap-horizontal"
         size={22}
-        color="#007AFF"
+        color="#fbbc04"
         style={{ marginRight: 4 }}
       />
     </View>
@@ -76,7 +79,6 @@ export default function ProfileScreen({ route }) {
             <Text style={styles.role}>Main Admin</Text>
           </View>
 
-          {/* Edit Button for Owner Only */}
           {isOwner && (
             <TouchableOpacity
               style={styles.editButton}
@@ -127,6 +129,31 @@ export default function ProfileScreen({ route }) {
           contentContainerStyle={{ marginBottom: 16 }}
         />
 
+        {/* Governance Actions */}
+        <Text style={styles.sectionTitle}>Group Governance</Text>
+        <View style={styles.actionContainer}>
+          <TouchableOpacity 
+            style={styles.actionButton}
+            onPress={() => setInviteModalVisible(true)}
+          >
+            <Ionicons name="person-add-outline" size={18} color="#34a853" />
+            <Text style={styles.actionText}>Invite Members</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.actionButton}
+            onPress={() => setNominateModalVisible(true)}
+          >
+            <Ionicons name="star-outline" size={18} color="#fbbc04" />
+            <Text style={styles.actionText}>Nominate Sub-Admin</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.actionButton, { borderBottomWidth: 0 }]}>
+            <Ionicons name="exit-outline" size={18} color="#ea4335" />
+            <Text style={styles.actionText}>Leave this Account</Text>
+          </TouchableOpacity>
+        </View>
+
         {/* Privacy Settings */}
         <Text style={styles.sectionTitle}>Privacy</Text>
         <View style={styles.settingItem}>
@@ -134,6 +161,8 @@ export default function ProfileScreen({ route }) {
           <Switch
             value={privacySettings.hidePhone}
             onValueChange={() => togglePrivacy('hidePhone')}
+            trackColor={{ false: '#ccc', true: '#b7eacb' }}
+            thumbColor={privacySettings.hidePhone ? '#34a853' : '#f4f3f4'}
           />
         </View>
         <View style={styles.settingItem}>
@@ -141,6 +170,8 @@ export default function ProfileScreen({ route }) {
           <Switch
             value={privacySettings.hideEmail}
             onValueChange={() => togglePrivacy('hideEmail')}
+            trackColor={{ false: '#ccc', true: '#b7eacb' }}
+            thumbColor={privacySettings.hideEmail ? '#34a853' : '#f4f3f4'}
           />
         </View>
         <View style={styles.settingItem}>
@@ -148,14 +179,15 @@ export default function ProfileScreen({ route }) {
           <Switch
             value={privacySettings.hideLocation}
             onValueChange={() => togglePrivacy('hideLocation')}
+            trackColor={{ false: '#ccc', true: '#b7eacb' }}
+            thumbColor={privacySettings.hideLocation ? '#34a853' : '#f4f3f4'}
           />
         </View>
 
-        {/* Bottom Spacer */}
         <View style={{ height: 40 }} />
       </ScrollView>
 
-      {/* Modal */}
+      {/* Edit Profile Modal */}
       <EditProfileModal
         visible={isModalVisible}
         onClose={() => setModalVisible(false)}
@@ -166,6 +198,18 @@ export default function ProfileScreen({ route }) {
           mobile: '0712 345 678',
           location: 'Kenya'
         }}
+      />
+
+      {/* Nominate Sub-Admin Modal */}
+      <NominateSubAdminModal
+        visible={isNominateModalVisible}
+        onClose={() => setNominateModalVisible(false)}
+      />
+
+      {/* Invite Members Modal */}
+      <InviteMembersModal
+        visible={isInviteModalVisible}
+        onClose={() => setInviteModalVisible(false)}
       />
     </SafeAreaView>
   );
@@ -213,7 +257,7 @@ const styles = StyleSheet.create({
   editButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#007AFF',
+    backgroundColor: '#34a853',
     paddingVertical: 6,
     paddingHorizontal: 10,
     borderRadius: 6
@@ -288,6 +332,27 @@ const styles = StyleSheet.create({
   accountId: {
     fontSize: 12,
     color: '#666'
+  },
+  actionContainer: {
+    backgroundColor: '#fff',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    marginHorizontal: 16,
+    marginBottom: 16
+  },
+  actionButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#eee'
+  },
+  actionText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
+    marginLeft: 8
   },
   settingItem: {
     flexDirection: 'row',

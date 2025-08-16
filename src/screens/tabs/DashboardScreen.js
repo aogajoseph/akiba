@@ -34,7 +34,7 @@ export default function DashboardScreen({ navigation }) {
       {/* Dashboard Title */}
       <Text style={styles.pageTitle}>Dashboard</Text>
       <Text style={styles.pageSubtitle}>
-        Monitor account activity and savings progress daily.
+        Monitor account activity and savings progress.
       </Text>
 
       {/* Account Info Card */}
@@ -104,7 +104,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   accountLabel: {
-    color: '#00A388',
+    color: '#34a853',
     marginBottom: 8,
   },
   balance: {
