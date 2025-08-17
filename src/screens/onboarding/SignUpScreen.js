@@ -5,18 +5,84 @@ import {
   TextInput,
   TouchableOpacity,
   Image,
-  Modal,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { BlurView } from 'expo-blur';
 import ScreenContainer from '../../components/ScreenContainer';
 import logoImg from '../../../assets/logo.png';
 
 export default function SignUpScreen({ navigation }) {
+  const [emailOrPhone, setEmailOrPhone] = useState('');
+  const [password, setPassword] = useState('');
   const [passwordVisible, setPasswordVisible] = useState(false);
-  const [repeatPasswordVisible, setRepeatPasswordVisible] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [modalVisible, setModalVisible] = useState(false);
+  const [passwordStrength, setPasswordStrength] = useState('');
+
+  // Validate email or phone
+  const validateEmailOrPhone = (input) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const phoneRegex = /^\+?[1-9]\d{7,14}$/; // supports country code
+    return emailRegex.test(input) || phoneRegex.test(input);
+  };
+
+  // Password strength checker
+  const checkPasswordStrength = (text) => {
+    let strength = '';
+    const strongRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&]).{8,}$/;
+    const mediumRegex =
+      /^(((?=.*[a-z])(?=.*[A-Z]))|((?=.*[A-Z])(?=.*\d))|((?=.*[a-z])(?=.*\d))).{6,}$/;
+
+    if (strongRegex.test(text)) {
+      strength = 'Strong';
+    } else if (mediumRegex.test(text)) {
+      strength = 'Fair';
+    } else {
+      strength = 'Weak';
+    }
+
+    setPasswordStrength(strength);
+  };
+
+  // Sign up handler
+  const handleSignUp = () => {
+    if (!acceptTerms) {
+      Alert.alert(
+        'Terms Required',
+        'Please accept the terms and conditions before continuing.'
+      );
+      return;
+    }
+
+    if (!emailOrPhone) {
+      Alert.alert('Missing Information', 'Please enter email or phone number.');
+      return;
+    }
+
+    if (!validateEmailOrPhone(emailOrPhone)) {
+      Alert.alert(
+        'Invalid Input',
+        'Please enter a valid email or phone number (with country code and no leading zero).'
+      );
+      return;
+    }
+
+    if (!password) {
+      Alert.alert('Missing Information', 'Please enter a password.');
+      return;
+    }
+
+    if (passwordStrength !== 'Strong') {
+      Alert.alert(
+        'Password Recommendations',
+        'Password must be at least 8 characters long, include uppercase, lowercase, number, and special character.'
+      );
+      return;
+    }
+
+    // ✅ Navigate to OTP screen if all checks pass
+    navigation.navigate('OtpVerification', { emailOrPhone });
+  };
 
   return (
     <ScreenContainer style={{ backgroundColor: '#fff' }}>
@@ -44,7 +110,7 @@ export default function SignUpScreen({ navigation }) {
             marginBottom: 6,
           }}
         >
-          Create Account
+          Sign Up
         </Text>
 
         {/* Description */}
@@ -61,8 +127,10 @@ export default function SignUpScreen({ navigation }) {
 
         {/* Email/Phone Input */}
         <TextInput
-          placeholder="Phone number or Email address"
+          placeholder="Phone number (+countrycode) or Email address"
           placeholderTextColor="#999"
+          value={emailOrPhone}
+          onChangeText={setEmailOrPhone}
           style={{
             borderWidth: 1,
             borderColor: '#ddd',
@@ -83,7 +151,7 @@ export default function SignUpScreen({ navigation }) {
             borderColor: '#ddd',
             borderRadius: 10,
             width: '100%',
-            marginBottom: 14,
+            marginBottom: 6,
             paddingHorizontal: 14,
           }}
         >
@@ -91,9 +159,16 @@ export default function SignUpScreen({ navigation }) {
             placeholder="Password"
             placeholderTextColor="#999"
             secureTextEntry={!passwordVisible}
+            value={password}
+            onChangeText={(text) => {
+              setPassword(text);
+              checkPasswordStrength(text);
+            }}
             style={{ flex: 1, fontSize: 15, paddingVertical: 12 }}
           />
-          <TouchableOpacity onPress={() => setPasswordVisible(!passwordVisible)}>
+          <TouchableOpacity
+            onPress={() => setPasswordVisible(!passwordVisible)}
+          >
             <Ionicons
               name={passwordVisible ? 'eye-off' : 'eye'}
               size={20}
@@ -102,35 +177,26 @@ export default function SignUpScreen({ navigation }) {
           </TouchableOpacity>
         </View>
 
-        {/* Repeat Password Input */}
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            borderWidth: 1,
-            borderColor: '#ddd',
-            borderRadius: 10,
-            width: '100%',
-            marginBottom: 14,
-            paddingHorizontal: 14,
-          }}
-        >
-          <TextInput
-            placeholder="Repeat Password"
-            placeholderTextColor="#999"
-            secureTextEntry={!repeatPasswordVisible}
-            style={{ flex: 1, fontSize: 15, paddingVertical: 12 }}
-          />
-          <TouchableOpacity
-            onPress={() => setRepeatPasswordVisible(!repeatPasswordVisible)}
+        {/* Strength Indicator */}
+        {password.length > 0 && (
+          <Text
+            style={{
+              alignSelf: 'flex-start',
+              marginTop: 2,
+              marginBottom: 12,
+              fontSize: 13,
+              fontWeight: '600',
+              color:
+                passwordStrength === 'Weak'
+                  ? 'red'
+                  : passwordStrength === 'Fair'
+                  ? 'orange'
+                  : 'green',
+            }}
           >
-            <Ionicons
-              name={repeatPasswordVisible ? 'eye-off' : 'eye'}
-              size={20}
-              color="#999"
-            />
-          </TouchableOpacity>
-        </View>
+            {passwordStrength} password
+          </Text>
+        )}
 
         {/* Accept Terms Checkbox */}
         <TouchableOpacity
@@ -162,7 +228,7 @@ export default function SignUpScreen({ navigation }) {
             width: '100%',
             alignItems: 'center',
           }}
-          onPress={() => setModalVisible(true)}
+          onPress={handleSignUp}
         >
           <Text
             style={{
@@ -171,9 +237,10 @@ export default function SignUpScreen({ navigation }) {
               fontWeight: '700',
             }}
           >
-            Create Account
+            Sign Up
           </Text>
         </TouchableOpacity>
+
         <View style={{ flexDirection: 'row', marginTop: 16 }}>
           <Text style={{ fontSize: 14, color: '#555' }}>
             Already have an account?{' '}
@@ -185,82 +252,6 @@ export default function SignUpScreen({ navigation }) {
           </TouchableOpacity>
         </View>
       </View>
-
-      {/* Success Modal */}
-      <Modal transparent visible={modalVisible} animationType="fade">
-        <View style={{ flex: 1 }}>
-          {/* Blur Background */}
-          <BlurView
-            intensity={80}
-            tint="light"
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }}
-          />
-
-          {/* Modal Content */}
-          <View
-            style={{
-              flex: 1,
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 24,
-            }}
-          >
-            <View
-              style={{
-                backgroundColor: 'white',
-                borderRadius: 16,
-                padding: 24,
-                alignItems: 'center',
-                width: '90%',
-              }}
-            >
-              <Ionicons
-                name="checkmark-circle"
-                size={60}
-                color="#fbbc04"
-                style={{ marginBottom: 12 }}
-              />
-              <Text
-                style={{ fontSize: 20, fontWeight: '700', marginBottom: 6 }}
-              >
-                Account Created Successfully
-              </Text>
-              <Text
-                style={{
-                  fontSize: 14,
-                  color: '#555',
-                  textAlign: 'center',
-                  marginBottom: 20,
-                }}
-              >
-                Your account details have been sent to you via email or SMS.
-              </Text>
-              <TouchableOpacity
-                style={{
-                  backgroundColor: '#34a853',
-                  paddingVertical: 12,
-                  paddingHorizontal: 24,
-                  borderRadius: 30,
-                }}
-                onPress={() => {
-                  setModalVisible(false);
-                  navigation.navigate('AccountSetup');
-                }}
-              >
-                <Text style={{ color: '#fff', fontWeight: '700' }}>
-                  Proceed to Setup
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
-      </Modal>
     </ScreenContainer>
   );
 }
