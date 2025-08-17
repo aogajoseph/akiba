@@ -6,11 +6,11 @@ import {
   TouchableOpacity,
   Image,
   Modal,
-  FlatList,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as ImagePicker from 'expo-image-picker';
 import ScreenContainer from '../../components/ScreenContainer';
+import InviteMembersModal from '../../components/InviteMembersModal'; // ✅ import modal
 import logoImg from '../../../assets/logo.png';
 
 export default function AccountSetupScreen({ navigation }) {
@@ -18,14 +18,7 @@ export default function AccountSetupScreen({ navigation }) {
   const [description, setDescription] = useState('');
   const [photo, setPhoto] = useState(null);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
-  const [selectedContacts, setSelectedContacts] = useState([]);
-
-  // Placeholder contacts (in real app, fetch from device contacts)
-  const contacts = [
-    { id: '1', name: 'John Doe', phone: '+254700000001' },
-    { id: '2', name: 'Jane Smith', phone: '+254700000002' },
-    { id: '3', name: 'Mark Lee', phone: '+254700000003' },
-  ];
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
 
   const pickImage = async () => {
     let result = await ImagePicker.launchImageLibraryAsync({
@@ -37,14 +30,6 @@ export default function AccountSetupScreen({ navigation }) {
 
     if (!result.canceled) {
       setPhoto(result.assets[0].uri);
-    }
-  };
-
-  const toggleContact = (contact) => {
-    if (selectedContacts.find((c) => c.id === contact.id)) {
-      setSelectedContacts(selectedContacts.filter((c) => c.id !== contact.id));
-    } else {
-      setSelectedContacts([...selectedContacts, contact]);
     }
   };
 
@@ -79,7 +64,7 @@ export default function AccountSetupScreen({ navigation }) {
 
           {/* Account Name */}
           <TextInput
-            placeholder="Account Name (e.g., John's Family, XYZ Club, XYZ Ltd. etc.,)"
+            placeholder="Account Name (e.g., John's Family, XYZ Club, XYZ Ltd.)"
             placeholderTextColor="#999"
             value={accountName}
             onChangeText={setAccountName}
@@ -95,7 +80,7 @@ export default function AccountSetupScreen({ navigation }) {
 
           {/* Description */}
           <TextInput
-            placeholder="e.g., This account was created to manage shared goals for John's Family in a transparent and organized space...."
+            placeholder="e.g., This account was created to manage shared financial goals for John's Family in a transparent and organized space."
             placeholderTextColor="#999"
             value={description}
             onChangeText={setDescription}
@@ -159,9 +144,17 @@ export default function AccountSetupScreen({ navigation }) {
               width: '100%',
               alignItems: 'center',
               marginBottom: 14,
+              flexDirection: 'row',
+              justifyContent: 'center',
             }}
             onPress={() => setInviteModalVisible(true)}
           >
+            <Ionicons
+              name="person-add"
+              size={20}
+              color="#34a853"
+              style={{ marginRight: 8 }}
+            />
             <Text
               style={{
                 color: '#34a853',
@@ -169,20 +162,20 @@ export default function AccountSetupScreen({ navigation }) {
                 fontWeight: '700',
               }}
             >
-              Invite Participants
+              Invite Participants (Optional)
             </Text>
           </TouchableOpacity>
 
-          {/* Setup Your Profile Button */}
+          {/* Finish Button */}
           <TouchableOpacity
             style={{
-              backgroundColor: '#fbbc04',
+              backgroundColor: '#34a853',
               paddingVertical: 14,
               borderRadius: 30,
               width: '100%',
               alignItems: 'center',
             }}
-            onPress={() => navigation.navigate('ProfileSetup')}
+            onPress={() => setSuccessModalVisible(true)} // <-- Opens success modal
           >
             <Text
               style={{
@@ -191,95 +184,94 @@ export default function AccountSetupScreen({ navigation }) {
                 fontWeight: '700',
               }}
             >
-              Setup Your Profile
+              Finish
+            </Text>
+          </TouchableOpacity>
+
+          {/* Back to Profile link */}
+          <TouchableOpacity
+            style={{ marginTop: 12, alignItems: 'center' }}
+            onPress={() => navigation.navigate('ProfileSetup')}
+          >
+            <Text style={{ color: '#fbbc04', fontSize: 14 }}>
+              Back to Profile
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      {/* Invite Participants Modal */}
-      <Modal transparent visible={inviteModalVisible} animationType="slide">
+      {/* ✅ InviteMembersModal */}
+      <InviteMembersModal
+        visible={inviteModalVisible}
+        onClose={() => setInviteModalVisible(false)}
+      />
+
+      {/* Success Modal */}
+      <Modal transparent visible={successModalVisible} animationType="slide">
         <View
           style={{
             flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'rgba(0,0,0,0.6)',
             justifyContent: 'center',
-            padding: 20,
+            alignItems: 'center',
+            padding: 24,
           }}
         >
           <View
             style={{
               backgroundColor: '#fff',
-              borderRadius: 16,
-              padding: 20,
-              maxHeight: '80%',
+              borderRadius: 20,
+              padding: 24,
+              width: '100%',
+              alignItems: 'center',
             }}
           >
+            <Ionicons name="checkmark-circle" size={64} color="#34a853" />
             <Text
               style={{
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: '700',
-                marginBottom: 12,
+                marginTop: 16,
                 color: '#333',
+                textAlign: 'center',
               }}
             >
-              Select Participants to Invite
+              Success!
             </Text>
-            <FlatList
-              data={contacts}
-              keyExtractor={(item) => item.id}
-              renderItem={({ item }) => {
-                const selected = selectedContacts.some(
-                  (c) => c.id === item.id
-                );
-                return (
-                  <TouchableOpacity
-                    onPress={() => toggleContact(item)}
-                    style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      paddingVertical: 10,
-                    }}
-                  >
-                    <Ionicons
-                      name={selected ? 'checkbox' : 'square-outline'}
-                      size={20}
-                      color={selected ? '#34a853' : '#999'}
-                      style={{ marginRight: 8 }}
-                    />
-                    <View>
-                      <Text style={{ fontSize: 15, color: '#333' }}>
-                        {item.name}
-                      </Text>
-                      <Text style={{ fontSize: 13, color: '#777' }}>
-                        {item.phone}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                );
+            <Text
+              style={{
+                marginTop: 8,
+                fontSize: 15,
+                color: '#555',
+                textAlign: 'center',
               }}
-            />
+            >
+              Your account details were sent to you via Email or SMS
+            </Text>
 
             <TouchableOpacity
               style={{
-                marginTop: 16,
-                backgroundColor: '#34a853',
-                paddingVertical: 12,
+                marginTop: 20,
+                backgroundColor: '#fbbc04',
+                paddingVertical: 14,
                 borderRadius: 30,
+                width: '80%',
                 alignItems: 'center',
               }}
-              onPress={() => setInviteModalVisible(false)}
+              onPress={() => {
+                setSuccessModalVisible(false);
+                navigation.navigate('MainApp'); // <-- Adjust this route as needed
+              }}
             >
-              <Text style={{ color: '#fff', fontWeight: '700' }}>
-                Send Invites
+              <Text
+                style={{
+                  color: '#fff',
+                  fontSize: 16,
+                  fontWeight: '700',
+                }}
+              >
+                Go to Account
               </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{ marginTop: 10, alignItems: 'center' }}
-              onPress={() => setInviteModalVisible(false)}
-            >
-              <Text style={{ color: '#999' }}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </View>
