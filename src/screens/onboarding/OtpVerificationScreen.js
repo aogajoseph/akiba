@@ -74,7 +74,7 @@ export default function OtpVerificationScreen({ navigation }) {
             alignItems: 'center',
             marginBottom: 12,
           }}
-          onPress={() => navigation.navigate('AccountSetup')}
+          onPress={() => navigation.navigate('ProfileSetup')}
         >
           <Text
             style={{
