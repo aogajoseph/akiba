@@ -16,19 +16,19 @@ const { width } = Dimensions.get('window');
 const slides = [
   {
     id: '1',
-    title: 'Achieve more, Together.',
+    title: 'Achieve more, Together',
     description: 'Akiba is a collaborative savings platform that helps friends, families, and groups save and manage money as a team.',
     image: require('../../../assets/cover.jpg'),
   },
   {
     id: '2',
-    title: 'Connect and Collaborate.',
-    description: 'Chat privately with members, discuss openly in the forum and take part in electing officials.',
+    title: 'Connect and Collaborate',
+    description: 'Chat privately with members, discuss openly in the forum and take part in selecting officials.',
     image: require('../../../assets/cover.jpg'),
   },
   {
     id: '3',
-    title: 'Transparent and Safe.',
+    title: 'Transparent and Safe',
     description: 'Your group always knows where the money is and how it’s being used.',
     image: require('../../../assets/cover.jpg'),
   },
@@ -81,7 +81,7 @@ export default function WelcomeScreen({ navigation }) {
                 key={index}
                 style={[
                   styles.dot,
-                  { backgroundColor: index === currentIndex ? '#fbbc04' : '#ccc' },
+                  { backgroundColor: index === currentIndex ? '#34a853' : '#ccc' },
                 ]}
               />
             ))}
@@ -180,12 +180,12 @@ const styles = StyleSheet.create({
   },
   skip: {
     fontSize: 16,
-    color: '#fbbc04',
+    color: '#34a853',
     fontWeight: '600',
     padding: 10,
   },
   startButton: {
-    backgroundColor: '#fbbc04',
+    backgroundColor: '#34a853',
     width: '100%',
     paddingVertical: 12,
     borderRadius: 25,

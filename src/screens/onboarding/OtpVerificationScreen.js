@@ -102,7 +102,7 @@ export default function OtpVerificationScreen({ route, navigation }) {
             marginBottom: 24,
           }}
         >
-          Enter the 6-digit code we sent via {channel} to {emailOrPhone}.
+          Enter the 6-digit code we sent{channel} to {emailOrPhone}
         </Text>
 
         <TextInput
