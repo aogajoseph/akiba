@@ -22,10 +22,16 @@ export default function SignUpScreen({ navigation }) {
   const [passwordStrength, setPasswordStrength] = useState('');
 
   const validateEmailOrPhone = (input) => {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const trimmed = input.trim();
+  
+    // simpler & more flexible email check
+    const emailRegex = /\S+@\S+\.\S+/;
+  
+    // E.164 international phone number
     const phoneRegex = /^\+?[1-9]\d{7,14}$/;
-    return emailRegex.test(input) || phoneRegex.test(input);
-  };
+  
+    return emailRegex.test(trimmed) || phoneRegex.test(trimmed);
+  };  
 
   const checkPasswordStrength = (text) => {
     let strength = '';
@@ -58,7 +64,7 @@ export default function SignUpScreen({ navigation }) {
       return;
     }
 
-    // Decide channel: if email detected, use email; else whatsapp
+    // Decide delivery channel: if email detected, use email; else WhatsApp
     const channel = emailOrPhone.includes('@') ? 'email' : 'whatsapp';
 
     try {
@@ -69,11 +75,11 @@ export default function SignUpScreen({ navigation }) {
       });
 
       if (response.status === 200) {
-        const otp = response.data.otp; // included if dev
+        const otp = response.data.otp; // backend may return OTP in dev/sandbox
         navigation.navigate('OtpVerification', { emailOrPhone, otp });
       }
     } catch (err) {
-      console.error(err);
+      console.error('Signup error:', err.response?.data || err.message);
       Alert.alert('Error', err.response?.data?.message || 'Network error.');
     }
   };
@@ -103,7 +109,16 @@ export default function SignUpScreen({ navigation }) {
           }}
         />
 
-        <View style={{ flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#ddd', borderRadius: 10, width: '100%', marginBottom: 6, paddingHorizontal: 14 }}>
+        <View style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          borderWidth: 1,
+          borderColor: '#ddd',
+          borderRadius: 10,
+          width: '100%',
+          marginBottom: 6,
+          paddingHorizontal: 14,
+        }}>
           <TextInput
             placeholder="Password"
             placeholderTextColor="#999"
@@ -127,18 +142,40 @@ export default function SignUpScreen({ navigation }) {
             marginBottom: 12,
             fontSize: 13,
             fontWeight: '600',
-            color: passwordStrength === 'Weak' ? 'red' : passwordStrength === 'Fair' ? 'orange' : 'green',
+            color:
+              passwordStrength === 'Weak'
+                ? 'red'
+                : passwordStrength === 'Fair'
+                ? 'orange'
+                : 'green',
           }}>
             {passwordStrength} password
           </Text>
         )}
 
-        <TouchableOpacity onPress={() => setAcceptTerms(!acceptTerms)} style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginBottom: 24 }}>
-          <Ionicons name={acceptTerms ? 'checkbox' : 'square-outline'} size={20} color={acceptTerms ? '#34a853' : '#999'} style={{ marginRight: 8 }} />
+        <TouchableOpacity
+          onPress={() => setAcceptTerms(!acceptTerms)}
+          style={{ flexDirection: 'row', alignItems: 'center', alignSelf: 'flex-start', marginBottom: 24 }}
+        >
+          <Ionicons
+            name={acceptTerms ? 'checkbox' : 'square-outline'}
+            size={20}
+            color={acceptTerms ? '#34a853' : '#999'}
+            style={{ marginRight: 8 }}
+          />
           <Text style={{ fontSize: 14, color: '#555' }}>I accept the terms and conditions</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleSignUp} style={{ backgroundColor: '#fbbc04', paddingVertical: 14, borderRadius: 30, width: '100%', alignItems: 'center' }}>
+        <TouchableOpacity
+          onPress={handleSignUp}
+          style={{
+            backgroundColor: '#fbbc04',
+            paddingVertical: 14,
+            borderRadius: 30,
+            width: '100%',
+            alignItems: 'center',
+          }}
+        >
           <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Sign Up</Text>
         </TouchableOpacity>
 

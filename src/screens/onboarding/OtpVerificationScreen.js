@@ -16,9 +16,9 @@ export default function OtpVerificationScreen({ route, navigation }) {
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { emailOrPhone, otp: backendOtp } = route.params || {};
+  const { emailOrPhone, otp: backendOtp, channel } = route.params || {};
 
-  // Prefill OTP if sandbox/dev
+  // Prefill OTP in dev/sandbox mode
   useEffect(() => {
     if (backendOtp) setOtp(backendOtp);
   }, [backendOtp]);
@@ -31,15 +31,20 @@ export default function OtpVerificationScreen({ route, navigation }) {
 
     try {
       setLoading(true);
-      const response = await axios.post(`${API_BASE_URL}/verify-otp`, { emailOrPhone, otp });
+      const response = await axios.post(`${API_BASE_URL}/verify-otp`, {
+        emailOrPhone,
+        otp,
+      });
 
       if (response.status === 200) {
         Alert.alert('Success', 'OTP verified successfully!');
-        navigation.navigate('ProfileSetup');
+        navigation.navigate('ProfileSetup'); // next screen
       }
     } catch (error) {
       console.error(error);
-      const message = error.response?.data?.message || 'Something went wrong. Please try again.';
+      const message =
+        error.response?.data?.message ||
+        'Something went wrong. Please try again.';
       Alert.alert('Error', message);
     } finally {
       setLoading(false);
@@ -51,7 +56,8 @@ export default function OtpVerificationScreen({ route, navigation }) {
       setLoading(true);
       const response = await axios.post(`${API_BASE_URL}/signup`, {
         emailOrPhone,
-        password: 'temporary',
+        password: 'resend-otp', // placeholder, not stored
+        channel,
       });
 
       if (response.status === 200) {
@@ -60,7 +66,8 @@ export default function OtpVerificationScreen({ route, navigation }) {
       }
     } catch (error) {
       console.error(error);
-      const message = error.response?.data?.message || 'Failed to resend OTP.';
+      const message =
+        error.response?.data?.message || 'Failed to resend OTP.';
       Alert.alert('Error', message);
     } finally {
       setLoading(false);
@@ -69,10 +76,33 @@ export default function OtpVerificationScreen({ route, navigation }) {
 
   return (
     <ScreenContainer style={{ backgroundColor: '#fff' }}>
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-        <Text style={{ fontSize: 26, fontWeight: '800', color: '#333', marginBottom: 8 }}>Verify OTP</Text>
-        <Text style={{ fontSize: 15, color: '#555', textAlign: 'center', marginBottom: 24 }}>
-          Enter the 6-digit code we sent to {emailOrPhone}.
+      <View
+        style={{
+          flex: 1,
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: 24,
+        }}
+      >
+        <Text
+          style={{
+            fontSize: 26,
+            fontWeight: '800',
+            color: '#333',
+            marginBottom: 8,
+          }}
+        >
+          Verify OTP
+        </Text>
+        <Text
+          style={{
+            fontSize: 15,
+            color: '#555',
+            textAlign: 'center',
+            marginBottom: 24,
+          }}
+        >
+          Enter the 6-digit code we sent via {channel} to {emailOrPhone}.
         </Text>
 
         <TextInput
@@ -107,13 +137,21 @@ export default function OtpVerificationScreen({ route, navigation }) {
             opacity: loading ? 0.6 : 1,
           }}
         >
-          {loading ? <ActivityIndicator color="#fff" /> :
-            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>Verify</Text>
-          }
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: '700' }}>
+              Verify
+            </Text>
+          )}
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={handleResendOtp}>
-          <Text style={{ fontSize: 14, fontWeight: '600', color: '#34a853' }}>Resend OTP</Text>
+        <TouchableOpacity onPress={handleResendOtp} disabled={loading}>
+          <Text
+            style={{ fontSize: 14, fontWeight: '600', color: '#34a853' }}
+          >
+            Resend OTP
+          </Text>
         </TouchableOpacity>
       </View>
     </ScreenContainer>
