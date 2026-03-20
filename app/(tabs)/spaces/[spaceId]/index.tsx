@@ -96,7 +96,9 @@ export default function SpaceDashboardScreen() {
               <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>Invite Members</Text>
               </Pressable>
-              <Pressable style={styles.placeholderButton}>
+              <Pressable
+                onPress={() => router.push(`/(tabs)/spaces/${space.id}/chat`)}
+                style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>Open Chat</Text>
               </Pressable>
               <Pressable style={styles.placeholderButton}>
@@ -145,17 +147,6 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: '#132238',
     fontSize: 18,
-    fontWeight: '700',
-  },
-  inlineActionButton: {
-    backgroundColor: '#edf4f2',
-    borderRadius: 999,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-  },
-  inlineActionButtonText: {
-    color: '#0f766e',
-    fontSize: 13,
     fontWeight: '700',
   },
   adminRow: {

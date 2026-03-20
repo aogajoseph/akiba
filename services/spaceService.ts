@@ -1,12 +1,15 @@
 import {
   CreateGroupRequestDto,
   CreateGroupResponseDto,
+  CreateMessageResponseDto,
+  CreateMessageRequestDto,
   DeleteGroupResponseDto,
   GetGroupResponseDto,
   LeaveGroupResponseDto,
   ListGroupMembersResponseDto,
   ListGroupSignatoriesResponseDto,
   ListGroupsResponseDto,
+  ListMessagesResponseDto,
   PromoteGroupMemberResponseDto,
   RevokeGroupMemberResponseDto,
 } from '../../shared/contracts';
@@ -32,7 +35,9 @@ export const getSpace = async (spaceId: string): Promise<GetGroupResponseDto> =>
 export const getAdmins = async (
   spaceId: string,
 ): Promise<ListGroupSignatoriesResponseDto> => {
-  const response = await api.get<{ data: ListGroupSignatoriesResponseDto }>(`/spaces/${spaceId}/admins`);
+  const response = await api.get<{ data: ListGroupSignatoriesResponseDto }>(
+    `/spaces/${spaceId}/admins`,
+  );
   return response.data.data;
 };
 
@@ -40,6 +45,25 @@ export const getMembers = async (
   spaceId: string,
 ): Promise<ListGroupMembersResponseDto> => {
   const response = await api.get<{ data: ListGroupMembersResponseDto }>(`/spaces/${spaceId}/members`);
+  return response.data.data;
+};
+
+export const getMessages = async (
+  spaceId: string,
+): Promise<ListMessagesResponseDto> => {
+  const response = await api.get<{ data: ListMessagesResponseDto }>(`/spaces/${spaceId}/messages`);
+  return response.data.data;
+};
+
+export const sendMessage = async (
+  spaceId: string,
+  text: string,
+): Promise<CreateMessageResponseDto> => {
+  const dto: CreateMessageRequestDto = { text };
+  const response = await api.post<{ data: CreateMessageResponseDto }>(
+    `/spaces/${spaceId}/messages`,
+    dto,
+  );
   return response.data.data;
 };
 
@@ -79,4 +103,3 @@ export const deleteSpace = async (
   const response = await api.delete<{ data: DeleteGroupResponseDto }>(`/spaces/${spaceId}`);
   return response.data.data;
 };
-
