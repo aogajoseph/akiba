@@ -79,3 +79,4 @@ export const deleteSpace = async (
   const response = await api.delete<{ data: DeleteGroupResponseDto }>(`/spaces/${spaceId}`);
   return response.data.data;
 };
+

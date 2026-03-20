@@ -21,7 +21,7 @@ import {
   promoteMember,
   revokeMember,
 } from '../../../../services/spaceService';
-import { getAuthSession, ApiError } from '../../../../utils/api';
+import { ApiError, getAuthSession } from '../../../../utils/api';
 
 export default function MembersScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
@@ -34,6 +34,7 @@ export default function MembersScreen() {
 
   const currentUserId = getAuthSession()?.user.id ?? null;
   const isCreator = currentUserId !== null && currentUserId === space?.createdByUserId;
+  const inviteLink = spaceId ? `akiba://spaces/${spaceId}/join` : null;
 
   const loadData = useCallback(async () => {
     if (!spaceId) {
@@ -76,6 +77,15 @@ export default function MembersScreen() {
   const adminIds = useMemo(() => new Set(admins.map((admin) => admin.userId)), [admins]);
   const adminMembers = members.filter((member) => adminIds.has(member.userId));
   const regularMembers = members.filter((member) => !adminIds.has(member.userId));
+  const isDeletingSpace = actionMemberId === 'delete-space';
+
+  const showInviteMembers = () => {
+    if (!inviteLink) {
+      return;
+    }
+
+    Alert.alert('Invite Members', `Invite link: ${inviteLink}`);
+  };
 
   const runMemberAction = async (memberId: string, action: () => Promise<void>) => {
     setActionMemberId(memberId);
@@ -132,8 +142,33 @@ export default function MembersScreen() {
     ]);
   };
 
-  const handleDeleteSpace = () => {
-    if (!spaceId || !space) {
+  const performDeleteSpace = async () => {
+    if (!spaceId) return;
+
+    setActionMemberId('delete-space');
+    setError(null);
+
+    try {
+      const response = await deleteSpace(spaceId);
+
+      if (response.success) {
+        Alert.alert('Success', 'Space deleted successfully');
+
+        // small delay so user sees the message
+        setTimeout(() => {
+          router.replace('/(tabs)/spaces');
+        }, 500);
+      }
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to delete this space.');
+    } finally {
+      setActionMemberId(null);
+    }
+  };
+
+  const confirmDeleteSpace = () => {
+    if (!spaceId || !space || isDeletingSpace) {
       return;
     }
 
@@ -142,19 +177,8 @@ export default function MembersScreen() {
       {
         text: 'Delete',
         style: 'destructive',
-        onPress: async () => {
-          setActionMemberId('delete-space');
-          setError(null);
-
-          try {
-            await deleteSpace(spaceId);
-            router.replace('/(tabs)/spaces');
-          } catch (caughtError) {
-            const apiError = caughtError as ApiError;
-            setError(apiError.error ?? 'Unable to delete this space.');
-          } finally {
-            setActionMemberId(null);
-          }
+        onPress: () => {
+          void performDeleteSpace();
         },
       },
     ]);
@@ -211,32 +235,57 @@ export default function MembersScreen() {
             <Text style={styles.title}>{space.name}</Text>
             <Text style={styles.subtitle}>Manage members and admins for this space.</Text>
 
+            {members.length === 1 ? (
+              <View style={styles.emptyStateCard}>
+                <Text style={styles.emptyStateTitle}>You're the only member in this space</Text>
+                <Text style={styles.emptyStateText}>
+                  Bring in a few more people to start saving together transparently.
+                </Text>
+                <Pressable onPress={showInviteMembers} style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonText}>Invite Members</Text>
+                </Pressable>
+              </View>
+            ) : null}
+
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Admins</Text>
-              {adminMembers.length > 0 ? adminMembers.map(renderMemberCard) : <Text style={styles.emptyText}>No admins found.</Text>}
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Admins</Text>
+              </View>
+              {adminMembers.length > 0 ? (
+                adminMembers.map(renderMemberCard)
+              ) : (
+                <Text style={styles.emptyText}>No admins found.</Text>
+              )}
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Members</Text>
-              {regularMembers.length > 0 ? regularMembers.map(renderMemberCard) : <Text style={styles.emptyText}>No regular members yet.</Text>}
+              {regularMembers.length > 0 ? (
+                regularMembers.map(renderMemberCard)
+              ) : (
+                <Text style={styles.emptyText}>No regular members yet.</Text>
+              )}
             </View>
 
             {myMembership && !isCreator ? (
               <Pressable
                 disabled={actionMemberId === myMembership.id}
                 onPress={handleLeave}
-                style={[styles.leaveButton, actionMemberId === myMembership.id ? styles.disabledButton : null]}>
+                style={[
+                  styles.leaveButton,
+                  actionMemberId === myMembership.id ? styles.disabledButton : null,
+                ]}>
                 <Text style={styles.leaveButtonText}>Leave Space</Text>
               </Pressable>
             ) : null}
 
             {isCreator ? (
               <Pressable
-                disabled={actionMemberId === 'delete-space'}
-                onPress={handleDeleteSpace}
-                style={[styles.deleteButton, actionMemberId === 'delete-space' ? styles.disabledButton : null]}>
+                disabled={isDeletingSpace}
+                onPress={confirmDeleteSpace}
+                style={[styles.deleteButton, isDeletingSpace ? styles.disabledButton : null]}>
                 <Text style={styles.deleteButtonText}>
-                  {actionMemberId === 'delete-space' ? 'Deleting...' : 'Delete Space'}
+                  {isDeletingSpace ? 'Deleting...' : 'Delete Space'}
                 </Text>
               </Pressable>
             ) : null}
@@ -266,6 +315,24 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontSize: 15,
   },
+  emptyStateCard: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e7dfd1',
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 12,
+    padding: 18,
+  },
+  emptyStateTitle: {
+    color: '#132238',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  emptyStateText: {
+    color: '#6b7280',
+    fontSize: 14,
+    lineHeight: 20,
+  },
   section: {
     backgroundColor: '#ffffff',
     borderColor: '#e7dfd1',
@@ -274,9 +341,26 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 18,
   },
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   sectionTitle: {
     color: '#132238',
     fontSize: 18,
+    fontWeight: '700',
+  },
+  inlineActionButton: {
+    backgroundColor: '#edf4f2',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  inlineActionButtonText: {
+    color: '#0f766e',
+    fontSize: 13,
     fontWeight: '700',
   },
   memberCard: {
@@ -315,6 +399,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     minHeight: 42,
+    paddingHorizontal: 16,
   },
   primaryButtonText: {
     color: '#ffffff',

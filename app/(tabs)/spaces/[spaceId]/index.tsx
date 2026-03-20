@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -21,6 +22,14 @@ export default function SpaceDashboardScreen() {
   const [remainingSlots, setRemainingSlots] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const showInviteMembers = () => {
+    if (!spaceId) {
+      return;
+    }
+
+    Alert.alert('Invite Members', `Invite link: akiba://spaces/${spaceId}/join`);
+  };
 
   useEffect(() => {
     const loadSpace = async () => {
@@ -65,7 +74,9 @@ export default function SpaceDashboardScreen() {
             <Text style={styles.subtitle}>No description yet</Text>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Admins</Text>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Admins</Text>
+              </View>
               {admins.map((admin) => (
                 <View key={admin.userId} style={styles.adminRow}>
                   <Text style={styles.adminName}>{admin.name}</Text>
@@ -82,11 +93,14 @@ export default function SpaceDashboardScreen() {
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Members</Text>
               </Pressable>
+              <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
+                <Text style={styles.placeholderButtonText}>Invite Members</Text>
+              </Pressable>
               <Pressable style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>Open Chat</Text>
               </Pressable>
               <Pressable style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>View Transactions</Text>
+                <Text style={styles.placeholderButtonText}>Transact</Text>
               </Pressable>
             </View>
           </>
@@ -122,9 +136,26 @@ const styles = StyleSheet.create({
     gap: 12,
     padding: 18,
   },
+  sectionHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
   sectionTitle: {
     color: '#132238',
     fontSize: 18,
+    fontWeight: '700',
+  },
+  inlineActionButton: {
+    backgroundColor: '#edf4f2',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+  },
+  inlineActionButtonText: {
+    color: '#0f766e',
+    fontSize: 13,
     fontWeight: '700',
   },
   adminRow: {

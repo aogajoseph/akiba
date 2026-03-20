@@ -26,7 +26,7 @@ export const clearAuthSession = (): void => {
 };
 
 export const api = axios.create({
-  baseURL: 'http://localhost:4000',
+  baseURL: 'http://192.168.0.100:4000',
   headers: {
     'Content-Type': 'application/json',
   },
