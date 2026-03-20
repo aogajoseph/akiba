@@ -5,7 +5,7 @@ import {
   RegisterRequestDto,
   RegisterResponseDto,
 } from '../../shared/contracts';
-import { api, setAuthSession } from '../utils/api';
+import { api, clearAuthSession, setAuthSession } from '../utils/api';
 
 export const register = async (
   dto: RegisterRequestDto,
@@ -24,4 +24,8 @@ export const login = async (dto: LoginRequestDto): Promise<LoginResponseDto> => 
 export const me = async (): Promise<MeResponseDto> => {
   const response = await api.get<{ data: MeResponseDto }>('/auth/me');
   return response.data.data;
+};
+
+export const logout = (): void => {
+  clearAuthSession();
 };

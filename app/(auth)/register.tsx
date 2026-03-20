@@ -40,7 +40,7 @@ export default function RegisterScreen() {
         name: form.name.trim(),
         phoneNumber: form.phoneNumber.trim(),
       });
-      router.replace('/spaces');
+      router.replace('/(tabs)/spaces');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to register right now.');
@@ -216,3 +216,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
+
