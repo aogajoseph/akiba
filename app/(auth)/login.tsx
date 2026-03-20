@@ -1,4 +1,4 @@
-import { Link, router } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import { login } from '../../services/authService';
 import { ApiError } from '../../utils/api';
 
 export default function LoginScreen() {
+  const router = useRouter();
   const [form, setForm] = useState<LoginRequestDto>({
     phoneNumber: '',
   });
@@ -31,7 +32,7 @@ export default function LoginScreen() {
       await login({
         phoneNumber: form.phoneNumber.trim(),
       });
-      router.replace('/(tabs)/spaces');
+      router.replace('/(tabs)/home');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to log in right now.');
@@ -195,4 +196,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-

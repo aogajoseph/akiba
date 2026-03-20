@@ -11,13 +11,19 @@ export const register = async (
   dto: RegisterRequestDto,
 ): Promise<RegisterResponseDto> => {
   const response = await api.post<{ data: RegisterResponseDto }>('/auth/register', dto);
-  setAuthSession(response.data.data.user, response.data.data.token);
+  setAuthSession({
+    user: response.data.data.user,
+    token: response.data.data.token,
+  });
   return response.data.data;
 };
 
 export const login = async (dto: LoginRequestDto): Promise<LoginResponseDto> => {
   const response = await api.post<{ data: LoginResponseDto }>('/auth/login', dto);
-  setAuthSession(response.data.data.user, response.data.data.token);
+  setAuthSession({
+    user: response.data.data.user,
+    token: response.data.data.token,
+  });
   return response.data.data;
 };
 

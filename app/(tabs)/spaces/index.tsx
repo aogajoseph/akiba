@@ -49,7 +49,7 @@ export default function ListSpacesScreen() {
             <Text style={styles.subtitle}>Your shared saving spaces.</Text>
           </View>
           <Pressable onPress={() => router.push('/(tabs)/spaces/create')} style={styles.createButton}>
-            <Text style={styles.createButtonText}>New Space</Text>
+            <Text style={styles.createButtonText}>Create Space</Text>
           </Pressable>
         </View>
 

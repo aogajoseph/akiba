@@ -6,32 +6,23 @@ export type ApiError = {
   error: string;
 };
 
-type AuthSession = {
-  token: string | null;
-  user: User | null;
+export type AuthSession = {
+  user: User;
+  token: string;
 };
 
-let authSession: AuthSession = {
-  token: null,
-  user: null,
+let authSession: AuthSession | null = null;
+
+export const setAuthSession = (session: AuthSession): void => {
+  authSession = session;
 };
 
-export const setAuthSession = (user: User, token: string): void => {
-  authSession = {
-    user,
-    token,
-  };
+export const getAuthSession = (): AuthSession | null => {
+  return authSession;
 };
 
 export const clearAuthSession = (): void => {
-  authSession = {
-    user: null,
-    token: null,
-  };
-};
-
-export const getAuthSession = (): AuthSession => {
-  return authSession;
+  authSession = null;
 };
 
 export const api = axios.create({
@@ -44,7 +35,7 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const session = getAuthSession();
 
-  if (session.user?.id) {
+  if (session?.user.id) {
     config.headers['x-user-id'] = session.user.id;
   }
 

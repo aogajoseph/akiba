@@ -1,4 +1,4 @@
-import { Link, router } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
   ActivityIndicator,
@@ -17,6 +17,7 @@ import { register } from '../../services/authService';
 import { ApiError } from '../../utils/api';
 
 export default function RegisterScreen() {
+  const router = useRouter();
   const [form, setForm] = useState<RegisterRequestDto>({
     name: '',
     phoneNumber: '',
@@ -40,7 +41,7 @@ export default function RegisterScreen() {
         name: form.name.trim(),
         phoneNumber: form.phoneNumber.trim(),
       });
-      router.replace('/(tabs)/spaces');
+      router.replace('/(tabs)/home');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to register right now.');
@@ -216,4 +217,3 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
 });
-
