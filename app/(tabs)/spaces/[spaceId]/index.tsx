@@ -1,4 +1,4 @@
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -77,7 +77,9 @@ export default function SpaceDashboardScreen() {
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Actions</Text>
-              <Pressable style={styles.placeholderButton}>
+              <Pressable
+                onPress={() => router.push(`/(tabs)/spaces/${space.id}/members`)}
+                style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Members</Text>
               </Pressable>
               <Pressable style={styles.placeholderButton}>
