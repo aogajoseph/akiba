@@ -397,19 +397,21 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   emptyState: {
+    flex: 1,
     alignItems: 'center',
     justifyContent: 'center',
-    paddingTop: 80,
   },
   emptyTitle: {
     color: '#132238',
     fontSize: 18,
     fontWeight: '700',
+    textAlign: 'center',
   },
   emptySubtitle: {
     color: '#6b7280',
     fontSize: 14,
     marginTop: 6,
+    textAlign: 'center',
   },
   messageRow: {
     flexDirection: 'row',
