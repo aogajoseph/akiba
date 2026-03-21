@@ -187,6 +187,29 @@ export default function SpaceChatScreen() {
       },
     ]);
   };
+
+  const showMessageActions = (message: ChatMessage) => {
+    Alert.alert('Message Options', 'Choose an action', [
+      {
+        text: 'Copy Message',
+        onPress: () => {
+          Alert.alert('Copy Message', 'Copy support can be connected next.');
+        },
+      },
+      {
+        text: 'Delete Message',
+        style: 'destructive',
+        onPress: () => {
+          Alert.alert('Delete Message', 'Delete is not wired to the backend yet.');
+        },
+      },
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+    ]);
+  };
+
   const handleSend = async () => {
     const text = draft.trim();
 
@@ -272,7 +295,8 @@ export default function SpaceChatScreen() {
                   styles.messageRow,
                   isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
                 ]}>
-                <View
+                <Pressable
+                  onLongPress={() => showMessageActions(message)}
                   style={[
                     styles.messageBubble,
                     isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble,
@@ -280,7 +304,7 @@ export default function SpaceChatScreen() {
                   <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
                   <Text style={styles.messageText}>{message.text}</Text>
                   <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
-                </View>
+                </Pressable>
               </View>
             );
           })}
