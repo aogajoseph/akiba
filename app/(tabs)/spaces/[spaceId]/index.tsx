@@ -102,7 +102,7 @@ export default function SpaceDashboardScreen() {
                 <Text style={styles.placeholderButtonText}>Open Chat</Text>
               </Pressable>
               <Pressable style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>Transact</Text>
+                <Text style={styles.placeholderButtonText}>View Transactions</Text>
               </Pressable>
             </View>
           </>

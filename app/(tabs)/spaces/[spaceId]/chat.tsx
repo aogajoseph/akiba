@@ -1,17 +1,18 @@
+import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Message, SpaceMember } from '../../../../../shared/contracts';
 import { getMembers, getMessages, sendMessage } from '../../../../services/spaceService';
@@ -21,11 +22,31 @@ type ChatMessage = Message & {
   senderName: string;
 };
 
-const formatTimestamp = (value: string): string => {
+const formatMessageTime = (value: string): string => {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
     return '';
+  }
+
+  const now = new Date();
+  const isSameDay = date.toDateString() === now.toDateString();
+  const isCurrentYear = date.getFullYear() === now.getFullYear();
+
+  if (isSameDay) {
+    return date.toLocaleTimeString([], {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
+  }
+
+  if (isCurrentYear) {
+    return date.toLocaleString([], {
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+      month: 'short',
+    });
   }
 
   return date.toLocaleString([], {
@@ -33,18 +54,28 @@ const formatTimestamp = (value: string): string => {
     hour: 'numeric',
     minute: '2-digit',
     month: 'short',
+    year: 'numeric',
   });
 };
 
 export default function SpaceChatScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
+  const scrollViewRef = useRef<ScrollView | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const currentUserId = getAuthSession()?.user.id ?? null;
+  const currentSession = getAuthSession();
+  const currentUserId = currentSession?.user.id ?? null;
+  const currentUserName = currentSession?.user.name ?? 'You';
+
+  const scrollToBottom = useCallback((animated = true) => {
+    requestAnimationFrame(() => {
+      scrollViewRef.current?.scrollToEnd({ animated });
+    });
+  }, []);
 
   const loadMessages = useCallback(async () => {
     if (!spaceId) {
@@ -91,6 +122,12 @@ export default function SpaceChatScreen() {
     }, [loadMessages]),
   );
 
+  useEffect(() => {
+    if (!loading) {
+      scrollToBottom(false);
+    }
+  }, [loading, messages, scrollToBottom]);
+
   const canSend = useMemo(() => draft.trim().length > 0 && !sending, [draft, sending]);
 
   const handleSend = async () => {
@@ -112,11 +149,12 @@ export default function SpaceChatScreen() {
           ...response.message,
           senderName:
             currentUserId !== null && response.message.senderUserId === currentUserId
-              ? getAuthSession()?.user.name ?? 'You'
+              ? currentUserName
               : 'Unknown member',
         },
       ]);
       setDraft('');
+      scrollToBottom();
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to send message.');
@@ -126,9 +164,9 @@ export default function SpaceChatScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={styles.keyboardArea}>
         <View style={styles.header}>
           <Pressable onPress={() => router.back()} style={styles.backButton}>
@@ -141,7 +179,12 @@ export default function SpaceChatScreen() {
         {loading ? <ActivityIndicator color="#0f766e" style={styles.loader} /> : null}
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <ScrollView contentContainerStyle={styles.messagesContainer} style={styles.messagesScrollView}>
+        <ScrollView
+          contentContainerStyle={styles.messagesContainer}
+          keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() => scrollToBottom(loading ? false : true)}
+          ref={scrollViewRef}
+          style={styles.messagesScrollView}>
           {!loading && messages.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No messages yet</Text>
@@ -166,7 +209,7 @@ export default function SpaceChatScreen() {
                   ]}>
                   <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
                   <Text style={styles.messageText}>{message.text}</Text>
-                  <Text style={styles.messageTime}>{formatTimestamp(message.createdAt)}</Text>
+                  <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
                 </View>
               </View>
             );
@@ -175,19 +218,22 @@ export default function SpaceChatScreen() {
 
         <View style={styles.composer}>
           <TextInput
+            multiline
             onChangeText={setDraft}
             placeholder="Type a message"
             placeholderTextColor="#94a3b8"
             style={styles.input}
+            textAlignVertical="top"
             value={draft}
           />
           <Pressable
+            accessibilityLabel="Send message"
             disabled={!canSend}
             onPress={() => {
               void handleSend();
             }}
             style={[styles.sendButton, !canSend ? styles.disabledButton : null]}>
-            <Text style={styles.sendButtonText}>{sending ? 'Sending...' : 'Send'}</Text>
+            <Ionicons color="#ffffff" name="send" size={18} />
           </Pressable>
         </View>
       </KeyboardAvoidingView>
@@ -242,9 +288,10 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContainer: {
-    gap: 12,
+    gap: 10,
     padding: 16,
-    paddingBottom: 24,
+    paddingBottom: 16,
+    flexGrow: 1,
   },
   emptyState: {
     alignItems: 'center',
@@ -292,6 +339,7 @@ const styles = StyleSheet.create({
   },
   messageText: {
     color: '#132238',
+    flexShrink: 1,
     fontSize: 15,
     lineHeight: 22,
   },
@@ -307,7 +355,8 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     flexDirection: 'row',
     gap: 12,
-    padding: 14,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
   },
   input: {
     backgroundColor: '#ffffff',
@@ -316,25 +365,22 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     color: '#132238',
     flex: 1,
+    fontSize: 15,
+    maxHeight: 120,
     minHeight: 46,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 12,
   },
   sendButton: {
     alignItems: 'center',
     backgroundColor: '#0f766e',
-    borderRadius: 24,
+    borderRadius: 23,
+    height: 46,
     justifyContent: 'center',
-    minHeight: 46,
-    minWidth: 88,
-    paddingHorizontal: 16,
-  },
-  sendButtonText: {
-    color: '#ffffff',
-    fontSize: 15,
-    fontWeight: '700',
+    width: 46,
   },
   disabledButton: {
     opacity: 0.55,
   },
 });
+
