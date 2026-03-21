@@ -188,7 +188,7 @@ export default function SpaceChatScreen() {
     ]);
   };
 
-  const showMessageActions = (message: ChatMessage) => {
+  const showMessageActions = (_message: ChatMessage) => {
     Alert.alert('Message Options', 'Choose an action', [
       {
         text: 'Copy Message',
@@ -318,15 +318,20 @@ export default function SpaceChatScreen() {
             }
           }}
           style={[styles.composer, { bottom: composerBottom }]}>
-          <TextInput
-            multiline
-            onChangeText={setDraft}
-            placeholder="Type a message"
-            placeholderTextColor="#94a3b8"
-            style={styles.input}
-            textAlignVertical="top"
-            value={draft}
-          />
+          <View style={styles.inputShell}>
+            <Pressable accessibilityLabel="Attach" hitSlop={8} style={styles.attachButton}>
+              <Ionicons color="#6b7280" name="attach" size={20} />
+            </Pressable>
+            <TextInput
+              multiline
+              onChangeText={setDraft}
+              placeholder="Type a message"
+              placeholderTextColor="#94a3b8"
+              style={styles.input}
+              textAlignVertical="top"
+              value={draft}
+            />
+          </View>
           <Pressable
             accessibilityLabel="Send message"
             disabled={!canSend}
@@ -459,18 +464,33 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
   },
-  input: {
+  inputShell: {
+    alignItems: 'flex-end',
     backgroundColor: '#ffffff',
     borderColor: '#d7dce2',
     borderRadius: 24,
     borderWidth: 1,
+    flex: 1,
+    flexDirection: 'row',
+    gap: 10,
+    minHeight: 46,
+    paddingLeft: 12,
+    paddingRight: 16,
+    paddingVertical: 8,
+  },
+  attachButton: {
+    alignItems: 'center',
+    height: 30,
+    justifyContent: 'center',
+    width: 24,
+  },
+  input: {
     color: '#132238',
     flex: 1,
     fontSize: 15,
     maxHeight: 120,
-    minHeight: 46,
-    paddingHorizontal: 16,
-    paddingVertical: 12,
+    minHeight: 30,
+    paddingVertical: 4,
   },
   sendButton: {
     alignItems: 'center',
