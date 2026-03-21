@@ -3,6 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Keyboard,
   Pressable,
   ScrollView,
@@ -162,6 +163,30 @@ export default function SpaceChatScreen() {
   const composerBottom = keyboardHeight > 0 ? keyboardHeight - insets.bottom : 0;
   const messagesBottomPadding = composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING;
 
+  const showMoreActions = () => {
+    if (!spaceId) {
+      return;
+    }
+
+    Alert.alert('Space Options', 'Choose an action', [
+      {
+        text: 'View Members',
+        onPress: () => {
+          router.push(`/(tabs)/spaces/${spaceId}/members`);
+        },
+      },
+      {
+        text: 'Space Info',
+        onPress: () => {
+          router.push(`/(tabs)/spaces/${spaceId}`);
+        },
+      },
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+    ]);
+  };
   const handleSend = async () => {
     const text = draft.trim();
 
@@ -208,7 +233,11 @@ export default function SpaceChatScreen() {
         <Text numberOfLines={1} style={styles.headerTitle}>
           {spaceName}
         </Text>
-        <Pressable accessibilityLabel="More options" hitSlop={10} style={styles.headerIconButton}>
+        <Pressable
+          accessibilityLabel="More options"
+          hitSlop={10}
+          onPress={showMoreActions}
+          style={styles.headerIconButton}>
           <Ionicons color="#132238" name="ellipsis-vertical" size={20} />
         </Pressable>
       </View>
