@@ -4,7 +4,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Keyboard,
-  Platform,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -15,7 +14,12 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Message, SpaceMember } from '../../../../../shared/contracts';
-import { getMembers, getMessages, sendMessage } from '../../../../services/spaceService';
+import {
+  getMembers,
+  getMessages,
+  getSpace,
+  sendMessage,
+} from '../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../utils/api';
 
 type ChatMessage = Message & {
@@ -71,6 +75,7 @@ export default function SpaceChatScreen() {
   const [error, setError] = useState<string | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [composerHeight, setComposerHeight] = useState(DEFAULT_COMPOSER_HEIGHT);
+  const [spaceName, setSpaceName] = useState('Space Chat');
 
   const insets = useSafeAreaInsets();
 
@@ -110,10 +115,13 @@ export default function SpaceChatScreen() {
     setError(null);
 
     try {
-      const [messagesResponse, membersResponse] = await Promise.all([
+      const [spaceResponse, messagesResponse, membersResponse] = await Promise.all([
+        getSpace(spaceId),
         getMessages(spaceId),
         getMembers(spaceId),
       ]);
+
+      setSpaceName(spaceResponse.space?.name ?? spaceResponse.group?.name ?? 'Space Chat');
 
       const memberNames = new Map<string, string>(
         membersResponse.members.map((member: SpaceMember) => [member.userId, member.name]),
@@ -190,11 +198,19 @@ export default function SpaceChatScreen() {
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.header}>
-        <Pressable onPress={() => router.back()} style={styles.backButton}>
-          <Text style={styles.backButtonText}>Back</Text>
+        <Pressable
+          accessibilityLabel="Go back"
+          hitSlop={10}
+          onPress={() => router.back()}
+          style={styles.headerIconButton}>
+          <Ionicons color="#132238" name="arrow-back" size={22} />
         </Pressable>
-        <Text style={styles.headerTitle}>Space Chat</Text>
-        <View style={styles.headerSpacer} />
+        <Text numberOfLines={1} style={styles.headerTitle}>
+          {spaceName}
+        </Text>
+        <Pressable accessibilityLabel="More options" hitSlop={10} style={styles.headerIconButton}>
+          <Ionicons color="#132238" name="ellipsis-vertical" size={20} />
+        </Pressable>
       </View>
 
       <View style={styles.chatArea}>
@@ -284,25 +300,22 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e7dfd1',
     borderBottomWidth: 1,
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
+    gap: 12,
+    paddingHorizontal: 12,
     paddingVertical: 12,
   },
-  backButton: {
-    paddingVertical: 4,
-  },
-  backButtonText: {
-    color: '#0f766e',
-    fontSize: 15,
-    fontWeight: '700',
+  headerIconButton: {
+    alignItems: 'center',
+    height: 36,
+    justifyContent: 'center',
+    width: 36,
   },
   headerTitle: {
     color: '#132238',
+    flex: 1,
     fontSize: 18,
     fontWeight: '800',
-  },
-  headerSpacer: {
-    width: 40,
+    textAlign: 'center',
   },
   chatArea: {
     flex: 1,
