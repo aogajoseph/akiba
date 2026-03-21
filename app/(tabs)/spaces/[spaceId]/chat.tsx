@@ -3,7 +3,7 @@ import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  KeyboardAvoidingView,
+  Keyboard,
   Platform,
   Pressable,
   ScrollView,
@@ -12,7 +12,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Message, SpaceMember } from '../../../../../shared/contracts';
 import { getMembers, getMessages, sendMessage } from '../../../../services/spaceService';
@@ -21,6 +21,9 @@ import { ApiError, getAuthSession } from '../../../../utils/api';
 type ChatMessage = Message & {
   senderName: string;
 };
+
+const DEFAULT_COMPOSER_HEIGHT = 74;
+const EXTRA_SCROLL_PADDING = 16;
 
 const formatMessageTime = (value: string): string => {
   const date = new Date(value);
@@ -66,6 +69,10 @@ export default function SpaceChatScreen() {
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [composerHeight, setComposerHeight] = useState(DEFAULT_COMPOSER_HEIGHT);
+
+  const insets = useSafeAreaInsets();
 
   const currentSession = getAuthSession();
   const currentUserId = currentSession?.user.id ?? null;
@@ -75,6 +82,21 @@ export default function SpaceChatScreen() {
     requestAnimationFrame(() => {
       scrollViewRef.current?.scrollToEnd({ animated });
     });
+  }, []);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener('keyboardDidShow', (event) => {
+      setKeyboardHeight(event.endCoordinates.height);
+    });
+
+    const hideSubscription = Keyboard.addListener('keyboardDidHide', () => {
+      setKeyboardHeight(0);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
   }, []);
 
   const loadMessages = useCallback(async () => {
@@ -129,6 +151,8 @@ export default function SpaceChatScreen() {
   }, [loading, messages, scrollToBottom]);
 
   const canSend = useMemo(() => draft.trim().length > 0 && !sending, [draft, sending]);
+  const composerBottom = keyboardHeight > 0 ? keyboardHeight - insets.bottom : 0;
+  const messagesBottomPadding = composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING;
 
   const handleSend = async () => {
     const text = draft.trim();
@@ -164,27 +188,28 @@ export default function SpaceChatScreen() {
   };
 
   return (
-    <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.keyboardArea}>
-        <View style={styles.header}>
-          <Pressable onPress={() => router.back()} style={styles.backButton}>
-            <Text style={styles.backButtonText}>Back</Text>
-          </Pressable>
-          <Text style={styles.headerTitle}>Space Chat</Text>
-          <View style={styles.headerSpacer} />
-        </View>
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
+      <View style={styles.header}>
+        <Pressable onPress={() => router.back()} style={styles.backButton}>
+          <Text style={styles.backButtonText}>Back</Text>
+        </Pressable>
+        <Text style={styles.headerTitle}>Space Chat</Text>
+        <View style={styles.headerSpacer} />
+      </View>
 
+      <View style={styles.chatArea}>
         {loading ? <ActivityIndicator color="#0f766e" style={styles.loader} /> : null}
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
         <ScrollView
-          contentContainerStyle={styles.messagesContainer}
-          keyboardShouldPersistTaps="handled"
-          onContentSizeChange={() => scrollToBottom(loading ? false : true)}
           ref={scrollViewRef}
-          style={styles.messagesScrollView}>
+          style={styles.messagesScrollView}
+          contentContainerStyle={[
+            styles.messagesContainer,
+            { paddingBottom: messagesBottomPadding },
+          ]}
+          keyboardShouldPersistTaps="handled"
+          onContentSizeChange={() => scrollToBottom(!loading)}>
           {!loading && messages.length === 0 ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No messages yet</Text>
@@ -216,7 +241,14 @@ export default function SpaceChatScreen() {
           })}
         </ScrollView>
 
-        <View style={styles.composer}>
+        <View
+          onLayout={(event) => {
+            const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+            if (nextHeight > 0 && nextHeight !== composerHeight) {
+              setComposerHeight(nextHeight);
+            }
+          }}
+          style={[styles.composer, { bottom: composerBottom }]}>
           <TextInput
             multiline
             onChangeText={setDraft}
@@ -236,7 +268,7 @@ export default function SpaceChatScreen() {
             <Ionicons color="#ffffff" name="send" size={18} />
           </Pressable>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </SafeAreaView>
   );
 }
@@ -245,9 +277,6 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#efeae2',
-  },
-  keyboardArea: {
-    flex: 1,
   },
   header: {
     alignItems: 'center',
@@ -275,6 +304,10 @@ const styles = StyleSheet.create({
   headerSpacer: {
     width: 40,
   },
+  chatArea: {
+    flex: 1,
+    position: 'relative',
+  },
   loader: {
     marginTop: 20,
   },
@@ -288,10 +321,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messagesContainer: {
+    flexGrow: 1,
     gap: 10,
     padding: 16,
-    paddingBottom: 16,
-    flexGrow: 1,
   },
   emptyState: {
     alignItems: 'center',
@@ -355,8 +387,11 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     flexDirection: 'row',
     gap: 12,
+    left: 0,
     paddingHorizontal: 14,
     paddingVertical: 14,
+    position: 'absolute',
+    right: 0,
   },
   input: {
     backgroundColor: '#ffffff',
@@ -383,4 +418,3 @@ const styles = StyleSheet.create({
     opacity: 0.55,
   },
 });
-
