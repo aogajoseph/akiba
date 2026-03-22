@@ -7,6 +7,7 @@ import {
   Alert,
   Animated,
   Keyboard,
+  PanResponder,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -31,9 +32,26 @@ type ChatMessage = Message & {
   senderName: string;
 };
 
+type ReplyPreview = {
+  senderName: string;
+  text: string;
+};
+
 const DEFAULT_COMPOSER_HEIGHT = 74;
 const EXTRA_SCROLL_PADDING = 16;
 const ACTION_TRAY_HEIGHT = 220;
+const MAX_SWIPE_DISTANCE = 88;
+const REPLY_SWIPE_THRESHOLD = 72;
+
+const getReplySnippet = (value: string): string => {
+  const normalized = value.replace(/\s+/g, ' ').trim();
+
+  if (normalized.length <= 90) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, 87).trimEnd()}...`;
+};
 
 const formatMessageTime = (value: string): string => {
   const date = new Date(value);
@@ -82,6 +100,106 @@ const getTemporaryMessageStatus = (
   return 'read';
 };
 
+const renderStatusIcon = (status: MessageStatus) => {
+  if (status === 'sent') {
+    return <Ionicons color="#6b7280" name="checkmark" size={14} style={styles.statusIcon} />;
+  }
+
+  if (status === 'read') {
+    return <Ionicons color="#16a34a" name="checkmark-done" size={16} style={styles.statusIcon} />;
+  }
+
+  return <Ionicons color="#6b7280" name="checkmark-done" size={16} style={styles.statusIcon} />;
+};
+
+type SwipeableMessageBubbleProps = {
+  isCurrentUser: boolean;
+  message: ChatMessage;
+  onLongPress: (message: ChatMessage) => void;
+  onReply: (message: ChatMessage) => void;
+  replyPreview: ReplyPreview | null;
+};
+
+function SwipeableMessageBubble({
+  isCurrentUser,
+  message,
+  onLongPress,
+  onReply,
+  replyPreview,
+}: SwipeableMessageBubbleProps) {
+  const translateX = useRef(new Animated.Value(0)).current;
+
+  const resetPosition = useCallback(() => {
+    Animated.spring(translateX, {
+      toValue: 0,
+      useNativeDriver: true,
+      bounciness: 0,
+      speed: 22,
+    }).start();
+  }, [translateX]);
+
+  const triggerReply = useCallback(() => {
+    onReply(message);
+    resetPosition();
+  }, [message, onReply, resetPosition]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_event, gestureState) =>
+          gestureState.dx > 12 &&
+          Math.abs(gestureState.dx) > Math.abs(gestureState.dy) * 1.2,
+        onPanResponderMove: (_event, gestureState) => {
+          translateX.setValue(Math.min(Math.max(0, gestureState.dx), MAX_SWIPE_DISTANCE));
+        },
+        onPanResponderRelease: (_event, gestureState) => {
+          if (gestureState.dx >= REPLY_SWIPE_THRESHOLD) {
+            triggerReply();
+            return;
+          }
+
+          resetPosition();
+        },
+        onPanResponderTerminate: resetPosition,
+      }),
+    [resetPosition, translateX, triggerReply],
+  );
+
+  return (
+    <Animated.View
+      {...panResponder.panHandlers}
+      style={{ transform: [{ translateX }] }}>
+      <Pressable
+        onLongPress={() => onLongPress(message)}
+        style={[
+          styles.messageBubble,
+          isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble,
+        ]}>
+        {replyPreview ? (
+          <View
+            style={[
+              styles.inlineReplyContainer,
+              isCurrentUser ? styles.inlineReplyCurrentUser : styles.inlineReplyOtherUser,
+            ]}>
+            <Text numberOfLines={1} style={styles.inlineReplySender}>
+              {replyPreview.senderName}
+            </Text>
+            <Text numberOfLines={2} style={styles.inlineReplyText}>
+              {replyPreview.text}
+            </Text>
+          </View>
+        ) : null}
+        <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
+        <Text style={styles.messageText}>{message.text}</Text>
+        <View style={styles.metaRow}>
+          <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
+          <View style={styles.statusContainer}>{renderStatusIcon(message.status)}</View>
+        </View>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 export default function SpaceChatScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const scrollViewRef = useRef<ScrollView | null>(null);
@@ -100,6 +218,7 @@ export default function SpaceChatScreen() {
   const [headerHeight, setHeaderHeight] = useState(0);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
   const [actionTrayVisible, setActionTrayVisible] = useState(false);
+  const [replyTargetMessage, setReplyTargetMessage] = useState<ChatMessage | null>(null);
 
   const insets = useSafeAreaInsets();
 
@@ -212,12 +331,40 @@ export default function SpaceChatScreen() {
   }, [loading, messages, scrollToBottom]);
 
   const canSend = useMemo(() => draft.trim().length > 0 && !sending, [draft, sending]);
+  const messageLookup = useMemo(
+    () => new Map(messages.map((message) => [message.id, message])),
+    [messages],
+  );
   const composerBottom = keyboardHeight > 0 ? keyboardHeight - insets.bottom : 0;
   const messagesBottomPadding = composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING;
   const isCreator = currentUserId !== null && currentUserId === spaceCreatorUserId;
   const currentMembership = members.find((member) => member.userId === currentUserId) ?? null;
   const canDeleteSelectedMessage =
     selectedMessage !== null && selectedMessage.senderUserId === currentUserId;
+
+  const getReplyPreview = useCallback(
+    (message: ChatMessage | null): ReplyPreview | null => {
+      if (!message?.replyToMessageId) {
+        return null;
+      }
+
+      const repliedToMessage = messageLookup.get(message.replyToMessageId);
+
+      if (!repliedToMessage) {
+        return {
+          senderName: 'Original message',
+          text: 'Message unavailable',
+        };
+      }
+
+      return {
+        senderName:
+          repliedToMessage.senderUserId === currentUserId ? 'You' : repliedToMessage.senderName,
+        text: getReplySnippet(repliedToMessage.text),
+      };
+    },
+    [currentUserId, messageLookup],
+  );
 
   const closeMenu = () => {
     setMenuVisible(false);
@@ -284,6 +431,9 @@ export default function SpaceChatScreen() {
     try {
       await deleteMessage(spaceId, selectedMessage.id);
       setMessages((prev) => prev.filter((message) => message.id !== selectedMessage.id));
+      if (replyTargetMessage?.id === selectedMessage.id) {
+        setReplyTargetMessage(null);
+      }
       closeActionTray();
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
@@ -317,19 +467,13 @@ export default function SpaceChatScreen() {
     confirmDeleteMessage();
   };
 
-  const renderStatusIcon = (status: MessageStatus) => {
-    if (status === 'sent') {
-      return <Ionicons color="#6b7280" name="checkmark" size={14} style={styles.statusIcon} />;
-    }
+  const handleReply = useCallback((message: ChatMessage) => {
+    setReplyTargetMessage(message);
+  }, []);
 
-    if (status === 'read') {
-      return (
-        <Ionicons color="#16a34a" name="checkmark-done" size={16} style={styles.statusIcon} />
-      );
-    }
-
-    return <Ionicons color="#6b7280" name="checkmark-done" size={16} style={styles.statusIcon} />;
-  };
+  const clearReply = useCallback(() => {
+    setReplyTargetMessage(null);
+  }, []);
 
   const handleSend = async () => {
     const text = draft.trim();
@@ -342,7 +486,7 @@ export default function SpaceChatScreen() {
     setError(null);
 
     try {
-      const response = await sendMessage(spaceId, text);
+      const response = await sendMessage(spaceId, text, replyTargetMessage?.id);
 
       setMessages((current) => [
         ...current,
@@ -353,6 +497,7 @@ export default function SpaceChatScreen() {
         },
       ]);
       setDraft('');
+      setReplyTargetMessage(null);
       scrollToBottom();
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
@@ -417,19 +562,13 @@ export default function SpaceChatScreen() {
                     styles.messageRow,
                     isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
                   ]}>
-                  <Pressable
-                    onLongPress={() => openActionTray(message)}
-                    style={[
-                      styles.messageBubble,
-                      isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble,
-                    ]}>
-                    <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
-                    <Text style={styles.messageText}>{message.text}</Text>
-                    <View style={styles.metaRow}>
-                      <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
-                      <View style={styles.statusContainer}>{renderStatusIcon(message.status)}</View>
-                    </View>
-                  </Pressable>
+                  <SwipeableMessageBubble
+                    isCurrentUser={isCurrentUser}
+                    message={message}
+                    onLongPress={openActionTray}
+                    onReply={handleReply}
+                    replyPreview={getReplyPreview(message)}
+                  />
                 </View>
               );
             })}
@@ -443,19 +582,43 @@ export default function SpaceChatScreen() {
               }
             }}
             style={[styles.composer, { bottom: composerBottom }]}>
-            <View style={styles.inputShell}>
-              <Pressable accessibilityLabel="Attach" hitSlop={8} style={styles.attachButton}>
-                <Ionicons color="#6b7280" name="attach" size={20} />
-              </Pressable>
-              <TextInput
-                multiline
-                onChangeText={setDraft}
-                placeholder="Type a message"
-                placeholderTextColor="#94a3b8"
-                style={styles.input}
-                textAlignVertical="top"
-                value={draft}
-              />
+            <View style={styles.composerContent}>
+              {replyTargetMessage ? (
+                <View style={styles.replyComposerPreview}>
+                  <View style={styles.replyComposerTextBlock}>
+                    <Text numberOfLines={1} style={styles.replyComposerLabel}>
+                      Replying to{' '}
+                      {replyTargetMessage.senderUserId === currentUserId
+                        ? 'yourself'
+                        : replyTargetMessage.senderName}
+                    </Text>
+                    <Text numberOfLines={2} style={styles.replyComposerText}>
+                      {getReplySnippet(replyTargetMessage.text)}
+                    </Text>
+                  </View>
+                  <Pressable
+                    accessibilityLabel="Cancel reply"
+                    hitSlop={8}
+                    onPress={clearReply}
+                    style={styles.replyComposerCloseButton}>
+                    <Ionicons color="#6b7280" name="close" size={18} />
+                  </Pressable>
+                </View>
+              ) : null}
+              <View style={styles.inputShell}>
+                <Pressable accessibilityLabel="Attach" hitSlop={8} style={styles.attachButton}>
+                  <Ionicons color="#6b7280" name="attach" size={20} />
+                </Pressable>
+                <TextInput
+                  multiline
+                  onChangeText={setDraft}
+                  placeholder="Type a message"
+                  placeholderTextColor="#94a3b8"
+                  style={styles.input}
+                  textAlignVertical="top"
+                  value={draft}
+                />
+              </View>
             </View>
             <Pressable
               accessibilityLabel="Send message"
@@ -616,6 +779,31 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  inlineReplyContainer: {
+    borderLeftWidth: 3,
+    borderRadius: 12,
+    gap: 2,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
+  },
+  inlineReplyCurrentUser: {
+    backgroundColor: 'rgba(15, 118, 110, 0.10)',
+    borderLeftColor: '#0f766e',
+  },
+  inlineReplyOtherUser: {
+    backgroundColor: '#f4f4f5',
+    borderLeftColor: '#0f766e',
+  },
+  inlineReplySender: {
+    color: '#0f766e',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  inlineReplyText: {
+    color: '#475467',
+    fontSize: 13,
+    lineHeight: 18,
+  },
   messageText: {
     color: '#132238',
     flexShrink: 1,
@@ -652,13 +840,47 @@ const styles = StyleSheet.create({
     position: 'absolute',
     right: 0,
   },
+  composerContent: {
+    flex: 1,
+    gap: 8,
+  },
+  replyComposerPreview: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderColor: '#d7dce2',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  replyComposerTextBlock: {
+    flex: 1,
+    gap: 2,
+  },
+  replyComposerLabel: {
+    color: '#0f766e',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+  replyComposerText: {
+    color: '#475467',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  replyComposerCloseButton: {
+    alignItems: 'center',
+    height: 28,
+    justifyContent: 'center',
+    width: 28,
+  },
   inputShell: {
     alignItems: 'flex-end',
     backgroundColor: '#ffffff',
     borderColor: '#d7dce2',
     borderRadius: 24,
     borderWidth: 1,
-    flex: 1,
     flexDirection: 'row',
     gap: 10,
     minHeight: 46,

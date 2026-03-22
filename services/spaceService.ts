@@ -59,8 +59,9 @@ export const getMessages = async (
 export const sendMessage = async (
   spaceId: string,
   text: string,
+  replyToMessageId?: string,
 ): Promise<CreateMessageResponseDto> => {
-  const dto: CreateMessageRequestDto = { text };
+  const dto: CreateMessageRequestDto = { text, replyToMessageId };
   const response = await api.post<{ data: CreateMessageResponseDto }>(
     `/spaces/${spaceId}/messages`,
     dto,
