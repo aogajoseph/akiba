@@ -16,8 +16,23 @@ import {
   RevokeGroupMemberResponseDto,
   ToggleMessageReactionResponseDto,
   ToggleMessageReactionRequestDto,
+  UploadMediaMessageResponseDto,
 } from '../../shared/contracts';
 import { api } from '../utils/api';
+
+export type MediaUploadAttachment = {
+  fileName: string;
+  fileSize?: number | null;
+  mimeType: string;
+  type: 'image' | 'video';
+  uri: string;
+};
+
+export type UploadMediaMessagePayload = {
+  attachment: MediaUploadAttachment;
+  replyToMessageId?: string;
+  text?: string;
+};
 
 export const listSpaces = async (): Promise<ListGroupsResponseDto> => {
   const response = await api.get<{ data: ListGroupsResponseDto }>('/spaces');
@@ -84,6 +99,39 @@ export const sendMessage = async (
     `/spaces/${spaceId}/messages`,
     dto,
   );
+  return response.data.data;
+};
+
+export const uploadMediaMessage = async (
+  spaceId: string,
+  payload: UploadMediaMessagePayload,
+): Promise<UploadMediaMessageResponseDto> => {
+  const formData = new FormData();
+
+  if (payload.text) {
+    formData.append('text', payload.text);
+  }
+
+  if (payload.replyToMessageId) {
+    formData.append('replyToMessageId', payload.replyToMessageId);
+  }
+
+  formData.append('file', {
+    uri: payload.attachment.uri,
+    name: payload.attachment.fileName,
+    type: payload.attachment.mimeType,
+  } as Blob);
+
+  const response = await api.post<{ data: UploadMediaMessageResponseDto }>(
+    `/spaces/${spaceId}/messages/media`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    },
+  );
+
   return response.data.data;
 };
 

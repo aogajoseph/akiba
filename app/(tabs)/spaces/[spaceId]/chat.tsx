@@ -1,12 +1,17 @@
 import * as Clipboard from 'expo-clipboard';
+import * as ImagePicker from 'expo-image-picker';
+import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
+import { Image as ExpoImage } from 'expo-image';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  Image as NativeImage,
   Keyboard,
+  Modal,
   PanResponder,
   Pressable,
   ScrollView,
@@ -19,6 +24,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import {
   Message,
+  MessageMedia,
   MessageStatus,
   SpaceMember,
   TypingUser,
@@ -34,6 +40,8 @@ import {
   startTyping,
   stopTyping,
   toggleReaction,
+  uploadMediaMessage,
+  type MediaUploadAttachment,
 } from '../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../utils/api';
 
@@ -46,6 +54,16 @@ type ReplyPreview = {
   text: string;
 };
 
+type MediaViewer = {
+  type: 'image' | 'video';
+  url: string;
+};
+
+type ComposerMediaAttachment = MediaUploadAttachment & {
+  height?: number;
+  width?: number;
+};
+
 const DEFAULT_COMPOSER_HEIGHT = 74;
 const EXTRA_SCROLL_PADDING = 16;
 const ACTION_TRAY_HEIGHT = 220;
@@ -54,6 +72,9 @@ const REPLY_SWIPE_THRESHOLD = 72;
 const TYPING_STOP_DELAY_MS = 900;
 const TYPING_POLL_INTERVAL_MS = 2500;
 const TYPING_INDICATOR_RESERVE = 28;
+const MAX_ATTACHMENT_SIZE_BYTES = 25 * 1024 * 1024;
+const MESSAGE_MEDIA_MAX_WIDTH = 220;
+const VIDEO_PLACEHOLDER_ASPECT_RATIO = 16 / 9;
 const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢'] as const;
 
 const getReplySnippet = (value: string): string => {
@@ -125,11 +146,80 @@ const renderStatusIcon = (status: MessageStatus) => {
   return <Ionicons color="#6b7280" name="checkmark-done" size={16} style={styles.statusIcon} />;
 };
 
+const getComposerAttachmentType = (
+  asset: ImagePicker.ImagePickerAsset,
+): ComposerMediaAttachment['type'] | null => {
+  if (asset.type === 'image' || asset.type === 'video') {
+    return asset.type;
+  }
+
+  if (asset.mimeType?.startsWith('image/')) {
+    return 'image';
+  }
+
+  if (asset.mimeType?.startsWith('video/')) {
+    return 'video';
+  }
+
+  return null;
+};
+
+function ChatMediaAttachment({
+  media,
+  onPress,
+}: {
+  media: MessageMedia;
+  onPress: (media: MessageMedia) => void;
+}) {
+  const [aspectRatio, setAspectRatio] = useState(
+    media.type === 'image' ? 1 : VIDEO_PLACEHOLDER_ASPECT_RATIO,
+  );
+
+  useEffect(() => {
+    if (media.type !== 'image') {
+      return;
+    }
+
+    NativeImage.getSize(
+      media.url,
+      (width, height) => {
+        if (width > 0 && height > 0) {
+          setAspectRatio(width / height);
+        }
+      },
+      () => {
+        setAspectRatio(1);
+      },
+    );
+  }, [media.type, media.url]);
+
+  return (
+    <Pressable onPress={() => onPress(media)} style={styles.mediaAttachmentPressable}>
+      {media.type === 'image' ? (
+        <ExpoImage
+          contentFit="cover"
+          source={{ uri: media.url }}
+          style={[
+            styles.messageMediaImage,
+            { aspectRatio },
+          ]}
+        />
+      ) : (
+        <View style={styles.messageVideoCard}>
+          <Ionicons color="#ffffff" name="play-circle" size={42} />
+          <Text style={styles.messageVideoLabel}>Video</Text>
+        </View>
+      )}
+    </Pressable>
+  );
+}
+
 type SwipeableMessageBubbleProps = {
   currentUserId: string | null;
   isCurrentUser: boolean;
   message: ChatMessage;
   onLongPress: (message: ChatMessage) => void;
+  onOpenMedia: (media: MessageMedia) => void;
   onReply: (message: ChatMessage) => void;
   replyPreview: ReplyPreview | null;
 };
@@ -139,6 +229,7 @@ function SwipeableMessageBubble({
   isCurrentUser,
   message,
   onLongPress,
+  onOpenMedia,
   onReply,
   replyPreview,
 }: SwipeableMessageBubbleProps) {
@@ -204,8 +295,19 @@ function SwipeableMessageBubble({
             </Text>
           </View>
         ) : null}
+        {message.media?.length ? (
+          <View style={styles.mediaAttachmentStack}>
+            {message.media.map((mediaItem) => (
+              <ChatMediaAttachment
+                key={`${message.id}-${mediaItem.url}`}
+                media={mediaItem}
+                onPress={onOpenMedia}
+              />
+            ))}
+          </View>
+        ) : null}
         <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
-        <Text style={styles.messageText}>{message.text}</Text>
+        {message.text ? <Text style={styles.messageText}>{message.text}</Text> : null}
         {message.reactions.length > 0 ? (
           <View style={styles.reactionsContainer}>
             {message.reactions.map((reaction) => {
@@ -252,7 +354,9 @@ export default function SpaceChatScreen() {
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
   const [actionTrayVisible, setActionTrayVisible] = useState(false);
   const [replyTargetMessage, setReplyTargetMessage] = useState<ChatMessage | null>(null);
+  const [selectedAttachment, setSelectedAttachment] = useState<ComposerMediaAttachment | null>(null);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
+  const [mediaViewer, setMediaViewer] = useState<MediaViewer | null>(null);
   const isTypingRef = useRef(false);
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -423,6 +527,7 @@ export default function SpaceChatScreen() {
         )
         .map((message) => ({
           ...message,
+          media: message.media ?? [],
           reactions: message.reactions ?? [],
           status: getTemporaryMessageStatus(message, currentUserId),
           senderName: memberNames.get(message.senderUserId) ?? 'Unknown member',
@@ -449,7 +554,10 @@ export default function SpaceChatScreen() {
     }
   }, [loading, messages, scrollToBottom]);
 
-  const canSend = useMemo(() => draft.trim().length > 0 && !sending, [draft, sending]);
+  const canSend = useMemo(
+    () => (draft.trim().length > 0 || selectedAttachment !== null) && !sending,
+    [draft, selectedAttachment, sending],
+  );
   const messageLookup = useMemo(
     () => new Map(messages.map((message) => [message.id, message])),
     [messages],
@@ -496,6 +604,7 @@ export default function SpaceChatScreen() {
             ? {
                 ...message,
                 ...updatedMessage,
+                media: updatedMessage.media ?? [],
                 reactions: updatedMessage.reactions ?? [],
                 status: nextStatus,
               }
@@ -508,6 +617,7 @@ export default function SpaceChatScreen() {
           ? {
               ...current,
               ...updatedMessage,
+              media: updatedMessage.media ?? [],
               reactions: updatedMessage.reactions ?? [],
               status: nextStatus,
             }
@@ -626,6 +736,72 @@ export default function SpaceChatScreen() {
     setReplyTargetMessage(null);
   }, []);
 
+  const handleRemoveAttachment = useCallback(() => {
+    setSelectedAttachment(null);
+  }, []);
+
+  const handlePickAttachment = useCallback(async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('Permission required', 'Please allow photo library access to attach media.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: false,
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      quality: 1,
+    });
+
+    if (result.canceled || !result.assets.length) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    const attachmentType = getComposerAttachmentType(asset);
+
+    if (!attachmentType) {
+      setError('Only image and video attachments are supported.');
+      return;
+    }
+
+    if ((asset.fileSize ?? 0) > MAX_ATTACHMENT_SIZE_BYTES) {
+      setError('Attachment is too large. Maximum size is 25MB.');
+      return;
+    }
+
+    const fallbackExtension = attachmentType === 'image' ? 'jpg' : 'mp4';
+    const fileName =
+      asset.fileName ??
+      `attachment-${Date.now()}.${fallbackExtension}`;
+    const mimeType =
+      asset.mimeType ??
+      (attachmentType === 'image' ? 'image/jpeg' : 'video/mp4');
+
+    setSelectedAttachment({
+      fileName,
+      fileSize: asset.fileSize,
+      height: asset.height,
+      mimeType,
+      type: attachmentType,
+      uri: asset.uri,
+      width: asset.width,
+    });
+  }, []);
+
+  const handleOpenMedia = useCallback(async (media: MessageMedia) => {
+    if (media.type === 'image') {
+      setMediaViewer({
+        type: media.type,
+        url: media.url,
+      });
+      return;
+    }
+
+    await WebBrowser.openBrowserAsync(media.url);
+  }, []);
+
   const handleReact = useCallback(
     async (messageId: string, emoji: string) => {
       if (!spaceId) {
@@ -670,7 +846,7 @@ export default function SpaceChatScreen() {
   const handleSend = async () => {
     const text = draft.trim();
 
-    if (!spaceId || !text) {
+    if (!spaceId || (!text && !selectedAttachment)) {
       return;
     }
 
@@ -678,17 +854,26 @@ export default function SpaceChatScreen() {
     setError(null);
 
     try {
-      const response = await sendMessage(spaceId, text, replyTargetMessage?.id);
+      const response = selectedAttachment
+        ? await uploadMediaMessage(spaceId, {
+            attachment: selectedAttachment,
+            replyToMessageId: replyTargetMessage?.id,
+            text: text || undefined,
+          })
+        : await sendMessage(spaceId, text, replyTargetMessage?.id);
 
       setMessages((current) => [
         ...current,
         {
           ...response.message,
+          media: response.message.media ?? [],
+          reactions: response.message.reactions ?? [],
           status: 'sent',
           senderName: currentUserName,
         },
       ]);
       setDraft('');
+      setSelectedAttachment(null);
       setReplyTargetMessage(null);
       void notifyStopTyping();
       scrollToBottom();
@@ -760,6 +945,7 @@ export default function SpaceChatScreen() {
                     isCurrentUser={isCurrentUser}
                     message={message}
                     onLongPress={openActionTray}
+                    onOpenMedia={handleOpenMedia}
                     onReply={handleReply}
                     replyPreview={getReplyPreview(message)}
                   />
@@ -794,6 +980,39 @@ export default function SpaceChatScreen() {
             }}
             style={[styles.composer, { bottom: composerBottom }]}>
             <View style={styles.composerContent}>
+              {selectedAttachment ? (
+                <View style={styles.attachmentPreviewCard}>
+                  {selectedAttachment.type === 'image' ? (
+                    <ExpoImage
+                      contentFit="cover"
+                      source={{ uri: selectedAttachment.uri }}
+                      style={[
+                        styles.attachmentPreviewImage,
+                        {
+                          aspectRatio:
+                            selectedAttachment.width && selectedAttachment.height
+                              ? selectedAttachment.width / selectedAttachment.height
+                              : 1,
+                        },
+                      ]}
+                    />
+                  ) : (
+                    <View style={styles.attachmentPreviewVideo}>
+                      <Ionicons color="#ffffff" name="play-circle" size={28} />
+                      <Text numberOfLines={1} style={styles.attachmentPreviewVideoText}>
+                        {selectedAttachment.fileName}
+                      </Text>
+                    </View>
+                  )}
+                  <Pressable
+                    accessibilityLabel="Remove attachment"
+                    hitSlop={8}
+                    onPress={handleRemoveAttachment}
+                    style={styles.attachmentPreviewRemoveButton}>
+                    <Ionicons color="#ffffff" name="close" size={16} />
+                  </Pressable>
+                </View>
+              ) : null}
               {replyTargetMessage ? (
                 <View style={styles.replyComposerPreview}>
                   <View style={styles.replyComposerTextBlock}>
@@ -817,7 +1036,13 @@ export default function SpaceChatScreen() {
                 </View>
               ) : null}
               <View style={styles.inputShell}>
-                <Pressable accessibilityLabel="Attach" hitSlop={8} style={styles.attachButton}>
+                <Pressable
+                  accessibilityLabel="Attach media"
+                  hitSlop={8}
+                  onPress={() => {
+                    void handlePickAttachment();
+                  }}
+                  style={styles.attachButton}>
                   <Ionicons color="#6b7280" name="attach" size={20} />
                 </Pressable>
                 <TextInput
@@ -901,6 +1126,35 @@ export default function SpaceChatScreen() {
           </View>
         ) : null}
       </View>
+
+      <Modal
+        animationType="fade"
+        onRequestClose={() => setMediaViewer(null)}
+        transparent
+        visible={mediaViewer?.type === 'image'}>
+        <View style={styles.mediaViewerOverlay}>
+          <Pressable
+            onPress={() => setMediaViewer(null)}
+            style={styles.mediaViewerBackdrop}
+          />
+          <View style={styles.mediaViewerContent}>
+            <Pressable
+              accessibilityLabel="Close media viewer"
+              hitSlop={8}
+              onPress={() => setMediaViewer(null)}
+              style={styles.mediaViewerCloseButton}>
+              <Ionicons color="#ffffff" name="close" size={22} />
+            </Pressable>
+            {mediaViewer ? (
+              <ExpoImage
+                contentFit="contain"
+                source={{ uri: mediaViewer.url }}
+                style={styles.mediaViewerImage}
+              />
+            ) : null}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -1032,6 +1286,33 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  mediaAttachmentStack: {
+    gap: 8,
+  },
+  mediaAttachmentPressable: {
+    alignSelf: 'flex-start',
+  },
+  messageMediaImage: {
+    borderRadius: 16,
+    maxWidth: MESSAGE_MEDIA_MAX_WIDTH,
+    width: MESSAGE_MEDIA_MAX_WIDTH,
+  },
+  messageVideoCard: {
+    alignItems: 'center',
+    aspectRatio: VIDEO_PLACEHOLDER_ASPECT_RATIO,
+    backgroundColor: '#132238',
+    borderRadius: 16,
+    gap: 8,
+    justifyContent: 'center',
+    maxWidth: MESSAGE_MEDIA_MAX_WIDTH,
+    paddingHorizontal: 20,
+    width: MESSAGE_MEDIA_MAX_WIDTH,
+  },
+  messageVideoLabel: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
   messageText: {
     color: '#132238',
     flexShrink: 1,
@@ -1104,6 +1385,44 @@ const styles = StyleSheet.create({
   composerContent: {
     flex: 1,
     gap: 8,
+  },
+  attachmentPreviewCard: {
+    alignSelf: 'flex-start',
+    borderRadius: 16,
+    overflow: 'hidden',
+    position: 'relative',
+  },
+  attachmentPreviewImage: {
+    borderRadius: 16,
+    maxWidth: 110,
+    width: 110,
+  },
+  attachmentPreviewVideo: {
+    alignItems: 'center',
+    aspectRatio: VIDEO_PLACEHOLDER_ASPECT_RATIO,
+    backgroundColor: '#132238',
+    borderRadius: 16,
+    gap: 6,
+    justifyContent: 'center',
+    maxWidth: 150,
+    paddingHorizontal: 14,
+    width: 150,
+  },
+  attachmentPreviewVideoText: {
+    color: '#ffffff',
+    fontSize: 12,
+    textAlign: 'center',
+  },
+  attachmentPreviewRemoveButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(15, 23, 42, 0.78)',
+    borderRadius: 12,
+    height: 24,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 8,
+    top: 8,
+    width: 24,
   },
   replyComposerPreview: {
     alignItems: 'center',
@@ -1245,5 +1564,28 @@ const styles = StyleSheet.create({
     color: '#132238',
     fontSize: 16,
     fontWeight: '600',
+  },
+  mediaViewerOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.92)',
+    justifyContent: 'center',
+  },
+  mediaViewerBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  mediaViewerContent: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    width: '100%',
+  },
+  mediaViewerCloseButton: {
+    alignSelf: 'flex-end',
+    marginBottom: 12,
+  },
+  mediaViewerImage: {
+    height: '80%',
+    width: '100%',
   },
 });
