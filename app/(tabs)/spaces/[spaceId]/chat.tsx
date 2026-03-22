@@ -1,9 +1,11 @@
+import * as Clipboard from 'expo-clipboard';
 import { Ionicons } from '@expo/vector-icons';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Animated,
   Keyboard,
   Pressable,
   ScrollView,
@@ -16,6 +18,7 @@ import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context'
 
 import { Message, SpaceMember } from '../../../../../shared/contracts';
 import {
+  deleteMessage,
   getMembers,
   getMessages,
   getSpace,
@@ -30,6 +33,7 @@ type ChatMessage = Message & {
 
 const DEFAULT_COMPOSER_HEIGHT = 74;
 const EXTRA_SCROLL_PADDING = 16;
+const ACTION_TRAY_HEIGHT = 220;
 
 const formatMessageTime = (value: string): string => {
   const date = new Date(value);
@@ -70,6 +74,7 @@ const formatMessageTime = (value: string): string => {
 export default function SpaceChatScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const scrollViewRef = useRef<ScrollView | null>(null);
+  const actionTrayTranslateY = useRef(new Animated.Value(ACTION_TRAY_HEIGHT)).current;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [members, setMembers] = useState<SpaceMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -82,6 +87,8 @@ export default function SpaceChatScreen() {
   const [spaceCreatorUserId, setSpaceCreatorUserId] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
+  const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
+  const [actionTrayVisible, setActionTrayVisible] = useState(false);
 
   const insets = useSafeAreaInsets();
 
@@ -109,6 +116,29 @@ export default function SpaceChatScreen() {
       hideSubscription.remove();
     };
   }, []);
+
+  const openActionTray = (message: ChatMessage) => {
+    setSelectedMessage(message);
+    setActionTrayVisible(true);
+    Animated.timing(actionTrayTranslateY, {
+      toValue: 0,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const closeActionTray = useCallback(() => {
+    Animated.timing(actionTrayTranslateY, {
+      toValue: ACTION_TRAY_HEIGHT,
+      duration: 160,
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) {
+        setActionTrayVisible(false);
+        setSelectedMessage(null);
+      }
+    });
+  }, [actionTrayTranslateY]);
 
   const loadMessages = useCallback(async () => {
     if (!spaceId) {
@@ -174,6 +204,8 @@ export default function SpaceChatScreen() {
   const messagesBottomPadding = composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING;
   const isCreator = currentUserId !== null && currentUserId === spaceCreatorUserId;
   const currentMembership = members.find((member) => member.userId === currentUserId) ?? null;
+  const canDeleteSelectedMessage =
+    selectedMessage !== null && selectedMessage.senderUserId === currentUserId;
 
   const closeMenu = () => {
     setMenuVisible(false);
@@ -213,26 +245,39 @@ export default function SpaceChatScreen() {
     }
   };
 
-  const showMessageActions = (_message: ChatMessage) => {
-    Alert.alert('Message Options', 'Choose an action', [
-      {
-        text: 'Copy Message',
-        onPress: () => {
-          Alert.alert('Copy Message', 'Copy support can be connected next.');
-        },
-      },
-      {
-        text: 'Delete Message',
-        style: 'destructive',
-        onPress: () => {
-          Alert.alert('Delete Message', 'Delete is not wired to the backend yet.');
-        },
-      },
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-    ]);
+  const handleCopyMessage = async () => {
+    if (!selectedMessage) {
+      return;
+    }
+
+    try {
+      await Clipboard.setStringAsync(selectedMessage.text);
+    } catch {
+      setError('Unable to copy this message.');
+    } finally {
+      closeActionTray();
+    }
+  };
+
+  const handleForwardMessage = () => {
+    closeActionTray();
+    Alert.alert('Forward', 'Forward coming soon');
+  };
+
+  const handleDeleteMessage = async () => {
+    if (!spaceId || !selectedMessage || !canDeleteSelectedMessage) {
+      return;
+    }
+
+    try {
+      await deleteMessage(spaceId, selectedMessage.id);
+      setMessages((prev) => prev.filter((message) => message.id !== selectedMessage.id));
+      closeActionTray();
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to delete this message.');
+      closeActionTray();
+    }
   };
 
   const handleSend = async () => {
@@ -273,8 +318,7 @@ export default function SpaceChatScreen() {
       <View style={styles.screen}>
         <View
           style={styles.header}
-          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
-        >
+          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <Pressable
             accessibilityLabel="Go back"
             hitSlop={10}
@@ -325,7 +369,7 @@ export default function SpaceChatScreen() {
                     isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
                   ]}>
                   <Pressable
-                    onLongPress={() => showMessageActions(message)}
+                    onLongPress={() => openActionTray(message)}
                     style={[
                       styles.messageBubble,
                       isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble,
@@ -376,7 +420,7 @@ export default function SpaceChatScreen() {
         {menuVisible ? (
           <View style={styles.menuOverlay}>
             <Pressable onPress={closeMenu} style={styles.menuBackdrop} />
-            <View style={[styles.menuTray, {top: headerHeight - 12}]}>
+            <View style={[styles.menuTray, { top: headerHeight - 12 }]}>
               <Pressable onPress={handleViewMembers} style={styles.menuItem}>
                 <Text style={styles.menuItemText}>View Members</Text>
               </Pressable>
@@ -391,6 +435,37 @@ export default function SpaceChatScreen() {
                 </Pressable>
               ) : null}
             </View>
+          </View>
+        ) : null}
+
+        {actionTrayVisible ? (
+          <View style={styles.actionTrayOverlay}>
+            <Pressable onPress={closeActionTray} style={styles.actionTrayBackdrop} />
+            <Animated.View
+              style={[
+                styles.actionTray,
+                { transform: [{ translateY: actionTrayTranslateY }] },
+              ]}>
+              <Pressable onPress={() => { void handleCopyMessage(); }} style={styles.actionRow}>
+                <Text style={styles.actionRowText}>Copy</Text>
+              </Pressable>
+              <Pressable onPress={handleForwardMessage} style={styles.actionRow}>
+                <Text style={styles.actionRowText}>Forward</Text>
+              </Pressable>
+              <Pressable
+                disabled={!canDeleteSelectedMessage}
+                onPress={() => { void handleDeleteMessage(); }}
+                style={styles.actionRow}>
+                <Text
+                  style={[
+                    styles.actionRowText,
+                    styles.destructiveMenuItemText,
+                    !canDeleteSelectedMessage ? styles.disabledActionText : null,
+                  ]}>
+                  Delete
+                </Text>
+              </Pressable>
+            </Animated.View>
           </View>
         ) : null}
       </View>
@@ -460,13 +535,13 @@ const styles = StyleSheet.create({
     color: '#132238',
     fontSize: 18,
     fontWeight: '700',
-    textAlign: 'center'
+    textAlign: 'center',
   },
   emptySubtitle: {
     color: '#6b7280',
     fontSize: 14,
     marginTop: 6,
-    textAlign: 'center'
+    textAlign: 'center',
   },
   messageRow: {
     flexDirection: 'row',
@@ -591,5 +666,37 @@ const styles = StyleSheet.create({
   },
   destructiveMenuItemText: {
     color: '#b42318',
+  },
+  actionTrayOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    justifyContent: 'flex-end',
+    zIndex: 60,
+  },
+  actionTrayBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.24)',
+  },
+  actionTray: {
+    backgroundColor: '#ffffff',
+    borderTopLeftRadius: 20,
+    borderTopRightRadius: 20,
+    elevation: 12,
+    padding: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 20,
+  },
+  actionRow: {
+    paddingHorizontal: 4,
+    paddingVertical: 14,
+  },
+  actionRowText: {
+    color: '#132238',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  disabledActionText: {
+    color: '#d1d5db',
   },
 });

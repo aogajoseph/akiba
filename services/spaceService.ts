@@ -4,6 +4,7 @@ import {
   CreateMessageResponseDto,
   CreateMessageRequestDto,
   DeleteGroupResponseDto,
+  DeleteMessageResponseDto,
   GetGroupResponseDto,
   LeaveGroupResponseDto,
   ListGroupMembersResponseDto,
@@ -63,6 +64,16 @@ export const sendMessage = async (
   const response = await api.post<{ data: CreateMessageResponseDto }>(
     `/spaces/${spaceId}/messages`,
     dto,
+  );
+  return response.data.data;
+};
+
+export const deleteMessage = async (
+  spaceId: string,
+  messageId: string,
+): Promise<DeleteMessageResponseDto> => {
+  const response = await api.delete<{ data: DeleteMessageResponseDto }>(
+    `/spaces/${spaceId}/messages/${messageId}`,
   );
   return response.data.data;
 };
