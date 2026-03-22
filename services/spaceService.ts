@@ -11,6 +11,7 @@ import {
   ListGroupSignatoriesResponseDto,
   ListGroupsResponseDto,
   ListMessagesResponseDto,
+  ListTypingUsersResponseDto,
   PromoteGroupMemberResponseDto,
   RevokeGroupMemberResponseDto,
 } from '../../shared/contracts';
@@ -53,6 +54,21 @@ export const getMessages = async (
   spaceId: string,
 ): Promise<ListMessagesResponseDto> => {
   const response = await api.get<{ data: ListMessagesResponseDto }>(`/spaces/${spaceId}/messages`);
+  return response.data.data;
+};
+
+export const startTyping = async (spaceId: string): Promise<void> => {
+  await api.post(`/spaces/${spaceId}/typing/start`);
+};
+
+export const stopTyping = async (spaceId: string): Promise<void> => {
+  await api.post(`/spaces/${spaceId}/typing/stop`);
+};
+
+export const getTypingUsers = async (
+  spaceId: string,
+): Promise<ListTypingUsersResponseDto> => {
+  const response = await api.get<{ data: ListTypingUsersResponseDto }>(`/spaces/${spaceId}/typing`);
   return response.data.data;
 };
 

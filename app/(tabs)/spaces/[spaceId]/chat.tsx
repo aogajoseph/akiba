@@ -17,14 +17,22 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Message, MessageStatus, SpaceMember } from '../../../../../shared/contracts';
+import {
+  Message,
+  MessageStatus,
+  SpaceMember,
+  TypingUser,
+} from '../../../../../shared/contracts';
 import {
   deleteMessage,
+  getTypingUsers,
   getMembers,
   getMessages,
   getSpace,
   leaveSpace,
   sendMessage,
+  startTyping,
+  stopTyping,
 } from '../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../utils/api';
 
@@ -42,6 +50,9 @@ const EXTRA_SCROLL_PADDING = 16;
 const ACTION_TRAY_HEIGHT = 220;
 const MAX_SWIPE_DISTANCE = 88;
 const REPLY_SWIPE_THRESHOLD = 72;
+const TYPING_STOP_DELAY_MS = 900;
+const TYPING_POLL_INTERVAL_MS = 2500;
+const TYPING_INDICATOR_RESERVE = 28;
 
 const getReplySnippet = (value: string): string => {
   const normalized = value.replace(/\s+/g, ' ').trim();
@@ -219,6 +230,9 @@ export default function SpaceChatScreen() {
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
   const [actionTrayVisible, setActionTrayVisible] = useState(false);
   const [replyTargetMessage, setReplyTargetMessage] = useState<ChatMessage | null>(null);
+  const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
+  const isTypingRef = useRef(false);
+  const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const insets = useSafeAreaInsets();
 
@@ -246,6 +260,88 @@ export default function SpaceChatScreen() {
       hideSubscription.remove();
     };
   }, []);
+
+  const clearTypingStopTimeout = useCallback(() => {
+    if (typingStopTimeoutRef.current) {
+      clearTimeout(typingStopTimeoutRef.current);
+      typingStopTimeoutRef.current = null;
+    }
+  }, []);
+
+  const notifyStartTyping = useCallback(async () => {
+    if (!spaceId || isTypingRef.current) {
+      return;
+    }
+
+    isTypingRef.current = true;
+
+    try {
+      await startTyping(spaceId);
+    } catch {
+      isTypingRef.current = false;
+    }
+  }, [spaceId]);
+
+  const notifyStopTyping = useCallback(async () => {
+    clearTypingStopTimeout();
+
+    if (!spaceId || !isTypingRef.current) {
+      return;
+    }
+
+    isTypingRef.current = false;
+
+    try {
+      await stopTyping(spaceId);
+    } catch {
+      // Keep this quiet for the MVP; polling will reconcile the UI state.
+    }
+  }, [clearTypingStopTimeout, spaceId]);
+
+  const scheduleTypingStop = useCallback(() => {
+    clearTypingStopTimeout();
+    typingStopTimeoutRef.current = setTimeout(() => {
+      void notifyStopTyping();
+    }, TYPING_STOP_DELAY_MS);
+  }, [clearTypingStopTimeout, notifyStopTyping]);
+
+  const loadTypingUsers = useCallback(async () => {
+    if (!spaceId) {
+      setTypingUsers([]);
+      return;
+    }
+
+    try {
+      const response = await getTypingUsers(spaceId);
+      setTypingUsers(
+        response.users.filter((user) => user.userId !== currentUserId),
+      );
+    } catch {
+      // Ignore transient polling errors.
+    }
+  }, [currentUserId, spaceId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!spaceId) {
+        setTypingUsers([]);
+        return undefined;
+      }
+
+      void loadTypingUsers();
+
+      const interval = setInterval(() => {
+        void loadTypingUsers();
+      }, TYPING_POLL_INTERVAL_MS);
+
+      return () => {
+        clearInterval(interval);
+        setTypingUsers([]);
+        clearTypingStopTimeout();
+        void notifyStopTyping();
+      };
+    }, [clearTypingStopTimeout, loadTypingUsers, notifyStopTyping, spaceId]),
+  );
 
   const openActionTray = (message: ChatMessage) => {
     setSelectedMessage(message);
@@ -336,7 +432,8 @@ export default function SpaceChatScreen() {
     [messages],
   );
   const composerBottom = keyboardHeight > 0 ? keyboardHeight - insets.bottom : 0;
-  const messagesBottomPadding = composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING;
+  const messagesBottomPadding =
+    composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING + TYPING_INDICATOR_RESERVE;
   const isCreator = currentUserId !== null && currentUserId === spaceCreatorUserId;
   const currentMembership = members.find((member) => member.userId === currentUserId) ?? null;
   const canDeleteSelectedMessage =
@@ -475,6 +572,28 @@ export default function SpaceChatScreen() {
     setReplyTargetMessage(null);
   }, []);
 
+  const handleDraftChange = useCallback(
+    (value: string) => {
+      setDraft(value);
+
+      if (!spaceId) {
+        return;
+      }
+
+      if (value.trim().length === 0) {
+        void notifyStopTyping();
+        return;
+      }
+
+      if (!isTypingRef.current) {
+        void notifyStartTyping();
+      }
+
+      scheduleTypingStop();
+    },
+    [notifyStartTyping, notifyStopTyping, scheduleTypingStop, spaceId],
+  );
+
   const handleSend = async () => {
     const text = draft.trim();
 
@@ -498,6 +617,7 @@ export default function SpaceChatScreen() {
       ]);
       setDraft('');
       setReplyTargetMessage(null);
+      void notifyStopTyping();
       scrollToBottom();
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
@@ -574,6 +694,23 @@ export default function SpaceChatScreen() {
             })}
           </ScrollView>
 
+          {typingUsers.length > 0 ? (
+            <View
+              pointerEvents="none"
+              style={[
+                styles.typingOverlay,
+                { bottom: composerBottom + composerHeight },
+              ]}>
+              <View style={styles.typingContainer}>
+                <Text style={styles.typingText}>
+                  {typingUsers.length === 1
+                    ? `${typingUsers[0].name} is typing...`
+                    : `${typingUsers.length} people are typing...`}
+                </Text>
+              </View>
+            </View>
+          ) : null}
+
           <View
             onLayout={(event) => {
               const nextHeight = Math.ceil(event.nativeEvent.layout.height);
@@ -611,7 +748,7 @@ export default function SpaceChatScreen() {
                 </Pressable>
                 <TextInput
                   multiline
-                  onChangeText={setDraft}
+                  onChangeText={handleDraftChange}
                   placeholder="Type a message"
                   placeholderTextColor="#94a3b8"
                   style={styles.input}
@@ -826,6 +963,21 @@ const styles = StyleSheet.create({
   },
   statusIcon: {
     marginLeft: 2,
+  },
+  typingOverlay: {
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    zIndex: 5,
+  },
+  typingContainer: {
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+  },
+  typingText: {
+    color: '#6b7280',
+    fontSize: 13,
+    fontStyle: 'italic',
   },
   composer: {
     alignItems: 'flex-end',
