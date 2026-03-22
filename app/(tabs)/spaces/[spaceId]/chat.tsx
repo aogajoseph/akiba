@@ -19,6 +19,7 @@ import {
   getMembers,
   getMessages,
   getSpace,
+  leaveSpace,
   sendMessage,
 } from '../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../utils/api';
@@ -70,6 +71,7 @@ export default function SpaceChatScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const scrollViewRef = useRef<ScrollView | null>(null);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [members, setMembers] = useState<SpaceMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState('');
@@ -77,6 +79,9 @@ export default function SpaceChatScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [composerHeight, setComposerHeight] = useState(DEFAULT_COMPOSER_HEIGHT);
   const [spaceName, setSpaceName] = useState('Space Chat');
+  const [spaceCreatorUserId, setSpaceCreatorUserId] = useState<string | null>(null);
+  const [menuVisible, setMenuVisible] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
 
   const insets = useSafeAreaInsets();
 
@@ -122,10 +127,15 @@ export default function SpaceChatScreen() {
         getMembers(spaceId),
       ]);
 
-      setSpaceName(spaceResponse.space?.name ?? spaceResponse.group?.name ?? 'Space Chat');
+      const space = spaceResponse.space ?? spaceResponse.group;
+      const nextMembers = membersResponse.members;
+
+      setSpaceName(space?.name ?? 'Space Chat');
+      setSpaceCreatorUserId(space?.createdByUserId ?? null);
+      setMembers(nextMembers);
 
       const memberNames = new Map<string, string>(
-        membersResponse.members.map((member: SpaceMember) => [member.userId, member.name]),
+        nextMembers.map((member: SpaceMember) => [member.userId, member.name]),
       );
 
       const nextMessages = [...messagesResponse.messages]
@@ -162,30 +172,45 @@ export default function SpaceChatScreen() {
   const canSend = useMemo(() => draft.trim().length > 0 && !sending, [draft, sending]);
   const composerBottom = keyboardHeight > 0 ? keyboardHeight - insets.bottom : 0;
   const messagesBottomPadding = composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING;
+  const isCreator = currentUserId !== null && currentUserId === spaceCreatorUserId;
+  const currentMembership = members.find((member) => member.userId === currentUserId) ?? null;
 
-  const showMoreActions = () => {
+  const closeMenu = () => {
+    setMenuVisible(false);
+  };
+
+  const handleViewMembers = () => {
     if (!spaceId) {
       return;
     }
 
-    Alert.alert('Space Options', 'Choose an action', [
-      {
-        text: 'View Members',
-        onPress: () => {
-          router.push(`/(tabs)/spaces/${spaceId}/members`);
-        },
-      },
-      {
-        text: 'Space Info',
-        onPress: () => {
-          router.push(`/(tabs)/spaces/${spaceId}`);
-        },
-      },
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-    ]);
+    closeMenu();
+    router.push(`/(tabs)/spaces/${spaceId}/members`);
+  };
+
+  const handleSpaceInfo = () => {
+    if (!spaceId) {
+      return;
+    }
+
+    closeMenu();
+    router.push(`/(tabs)/spaces/${spaceId}`);
+  };
+
+  const handleLeaveGroup = async () => {
+    if (!spaceId || !currentMembership) {
+      return;
+    }
+
+    closeMenu();
+
+    try {
+      await leaveSpace(spaceId, currentMembership.id);
+      router.replace('/(tabs)/spaces');
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to leave this space.');
+    }
   };
 
   const showMessageActions = (_message: ChatMessage) => {
@@ -245,103 +270,129 @@ export default function SpaceChatScreen() {
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
-      <View style={styles.header}>
-        <Pressable
-          accessibilityLabel="Go back"
-          hitSlop={10}
-          onPress={() => router.back()}
-          style={styles.headerIconButton}>
-          <Ionicons color="#132238" name="arrow-back" size={22} />
-        </Pressable>
-        <Text numberOfLines={1} style={styles.headerTitle}>
-          {spaceName}
-        </Text>
-        <Pressable
-          accessibilityLabel="More options"
-          hitSlop={10}
-          onPress={showMoreActions}
-          style={styles.headerIconButton}>
-          <Ionicons color="#132238" name="ellipsis-vertical" size={20} />
-        </Pressable>
-      </View>
-
-      <View style={styles.chatArea}>
-        {loading ? <ActivityIndicator color="#0f766e" style={styles.loader} /> : null}
-        {error ? <Text style={styles.errorText}>{error}</Text> : null}
-
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.messagesScrollView}
-          contentContainerStyle={[
-            styles.messagesContainer,
-            { paddingBottom: messagesBottomPadding },
-          ]}
-          keyboardShouldPersistTaps="handled"
-          onContentSizeChange={() => scrollToBottom(!loading)}>
-          {!loading && messages.length === 0 ? (
-            <View style={styles.emptyState}>
-              <Text style={styles.emptyTitle}>No messages yet</Text>
-              <Text style={styles.emptySubtitle}>Start the conversation</Text>
-            </View>
-          ) : null}
-
-          {messages.map((message) => {
-            const isCurrentUser = currentUserId === message.senderUserId;
-
-            return (
-              <View
-                key={message.id}
-                style={[
-                  styles.messageRow,
-                  isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
-                ]}>
-                <Pressable
-                  onLongPress={() => showMessageActions(message)}
-                  style={[
-                    styles.messageBubble,
-                    isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble,
-                  ]}>
-                  <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
-                  <Text style={styles.messageText}>{message.text}</Text>
-                  <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
-                </Pressable>
-              </View>
-            );
-          })}
-        </ScrollView>
-
+      <View style={styles.screen}>
         <View
-          onLayout={(event) => {
-            const nextHeight = Math.ceil(event.nativeEvent.layout.height);
-            if (nextHeight > 0 && nextHeight !== composerHeight) {
-              setComposerHeight(nextHeight);
-            }
-          }}
-          style={[styles.composer, { bottom: composerBottom }]}>
-          <View style={styles.inputShell}>
-            <Pressable accessibilityLabel="Attach" hitSlop={8} style={styles.attachButton}>
-              <Ionicons color="#6b7280" name="attach" size={20} />
-            </Pressable>
-            <TextInput
-              multiline
-              onChangeText={setDraft}
-              placeholder="Type a message"
-              placeholderTextColor="#94a3b8"
-              style={styles.input}
-              textAlignVertical="top"
-              value={draft}
-            />
-          </View>
+          style={styles.header}
+          onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}
+        >
           <Pressable
-            accessibilityLabel="Send message"
-            disabled={!canSend}
-            onPress={() => {
-              void handleSend();
-            }}
-            style={[styles.sendButton, !canSend ? styles.disabledButton : null]}>
-            <Ionicons color="#ffffff" name="send" size={18} />
+            accessibilityLabel="Go back"
+            hitSlop={10}
+            onPress={() => router.back()}
+            style={styles.headerIconButton}>
+            <Ionicons color="#132238" name="arrow-back" size={22} />
+          </Pressable>
+          <Text numberOfLines={1} style={styles.headerTitle}>
+            {spaceName}
+          </Text>
+          <Pressable
+            accessibilityLabel="More options"
+            hitSlop={10}
+            onPress={() => setMenuVisible(true)}
+            style={styles.headerIconButton}>
+            <Ionicons color="#132238" name="ellipsis-vertical" size={20} />
           </Pressable>
         </View>
+
+        <View style={styles.chatArea}>
+          {loading ? <ActivityIndicator color="#0f766e" style={styles.loader} /> : null}
+          {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <ScrollView
+            ref={scrollViewRef}
+            style={styles.messagesScrollView}
+            contentContainerStyle={[
+              styles.messagesContainer,
+              { paddingBottom: messagesBottomPadding },
+            ]}
+            keyboardShouldPersistTaps="handled"
+            onContentSizeChange={() => scrollToBottom(!loading)}>
+            {!loading && messages.length === 0 ? (
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyTitle}>No messages yet</Text>
+                <Text style={styles.emptySubtitle}>Start the conversation</Text>
+              </View>
+            ) : null}
+
+            {messages.map((message) => {
+              const isCurrentUser = currentUserId === message.senderUserId;
+
+              return (
+                <View
+                  key={message.id}
+                  style={[
+                    styles.messageRow,
+                    isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
+                  ]}>
+                  <Pressable
+                    onLongPress={() => showMessageActions(message)}
+                    style={[
+                      styles.messageBubble,
+                      isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble,
+                    ]}>
+                    <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
+                    <Text style={styles.messageText}>{message.text}</Text>
+                    <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
+                  </Pressable>
+                </View>
+              );
+            })}
+          </ScrollView>
+
+          <View
+            onLayout={(event) => {
+              const nextHeight = Math.ceil(event.nativeEvent.layout.height);
+              if (nextHeight > 0 && nextHeight !== composerHeight) {
+                setComposerHeight(nextHeight);
+              }
+            }}
+            style={[styles.composer, { bottom: composerBottom }]}>
+            <View style={styles.inputShell}>
+              <Pressable accessibilityLabel="Attach" hitSlop={8} style={styles.attachButton}>
+                <Ionicons color="#6b7280" name="attach" size={20} />
+              </Pressable>
+              <TextInput
+                multiline
+                onChangeText={setDraft}
+                placeholder="Type a message"
+                placeholderTextColor="#94a3b8"
+                style={styles.input}
+                textAlignVertical="top"
+                value={draft}
+              />
+            </View>
+            <Pressable
+              accessibilityLabel="Send message"
+              disabled={!canSend}
+              onPress={() => {
+                void handleSend();
+              }}
+              style={[styles.sendButton, !canSend ? styles.disabledButton : null]}>
+              <Ionicons color="#ffffff" name="send" size={18} />
+            </Pressable>
+          </View>
+        </View>
+
+        {menuVisible ? (
+          <View style={styles.menuOverlay}>
+            <Pressable onPress={closeMenu} style={styles.menuBackdrop} />
+            <View style={[styles.menuTray, {top: headerHeight - 12}]}>
+              <Pressable onPress={handleViewMembers} style={styles.menuItem}>
+                <Text style={styles.menuItemText}>View Members</Text>
+              </Pressable>
+              <Pressable onPress={handleSpaceInfo} style={styles.menuItem}>
+                <Text style={styles.menuItemText}>Space Info</Text>
+              </Pressable>
+              {!isCreator && currentMembership ? (
+                <Pressable onPress={() => { void handleLeaveGroup(); }} style={styles.menuItem}>
+                  <Text style={[styles.menuItemText, styles.destructiveMenuItemText]}>
+                    Leave Group
+                  </Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
       </View>
     </SafeAreaView>
   );
@@ -351,6 +402,10 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: '#efeae2',
+  },
+  screen: {
+    flex: 1,
+    position: 'relative',
   },
   header: {
     alignItems: 'center',
@@ -405,13 +460,13 @@ const styles = StyleSheet.create({
     color: '#132238',
     fontSize: 18,
     fontWeight: '700',
-    textAlign: 'center',
+    textAlign: 'center'
   },
   emptySubtitle: {
     color: '#6b7280',
     fontSize: 14,
     marginTop: 6,
-    textAlign: 'center',
+    textAlign: 'center'
   },
   messageRow: {
     flexDirection: 'row',
@@ -504,5 +559,37 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.55,
+  },
+  menuOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 50,
+  },
+  menuBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'transparent',
+  },
+  menuTray: {
+    right: 24,
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    elevation: 8,
+    minWidth: 170,
+    position: 'absolute',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.12,
+    shadowRadius: 18,
+  },
+  menuItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  menuItemText: {
+    color: '#132238',
+    fontSize: 15,
+    fontWeight: '600',
+  },
+  destructiveMenuItemText: {
+    color: '#b42318',
   },
 });
