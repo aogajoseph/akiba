@@ -14,6 +14,8 @@ import {
   ListTypingUsersResponseDto,
   PromoteGroupMemberResponseDto,
   RevokeGroupMemberResponseDto,
+  ToggleMessageReactionResponseDto,
+  ToggleMessageReactionRequestDto,
 } from '../../shared/contracts';
 import { api } from '../utils/api';
 
@@ -91,6 +93,19 @@ export const deleteMessage = async (
 ): Promise<DeleteMessageResponseDto> => {
   const response = await api.delete<{ data: DeleteMessageResponseDto }>(
     `/spaces/${spaceId}/messages/${messageId}`,
+  );
+  return response.data.data;
+};
+
+export const toggleReaction = async (
+  spaceId: string,
+  messageId: string,
+  emoji: string,
+): Promise<ToggleMessageReactionResponseDto> => {
+  const dto: ToggleMessageReactionRequestDto = { emoji };
+  const response = await api.post<{ data: ToggleMessageReactionResponseDto }>(
+    `/spaces/${spaceId}/messages/${messageId}/reactions`,
+    dto,
   );
   return response.data.data;
 };

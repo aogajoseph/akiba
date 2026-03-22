@@ -33,6 +33,7 @@ import {
   sendMessage,
   startTyping,
   stopTyping,
+  toggleReaction,
 } from '../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../utils/api';
 
@@ -53,6 +54,7 @@ const REPLY_SWIPE_THRESHOLD = 72;
 const TYPING_STOP_DELAY_MS = 900;
 const TYPING_POLL_INTERVAL_MS = 2500;
 const TYPING_INDICATOR_RESERVE = 28;
+const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢'] as const;
 
 const getReplySnippet = (value: string): string => {
   const normalized = value.replace(/\s+/g, ' ').trim();
@@ -124,6 +126,7 @@ const renderStatusIcon = (status: MessageStatus) => {
 };
 
 type SwipeableMessageBubbleProps = {
+  currentUserId: string | null;
   isCurrentUser: boolean;
   message: ChatMessage;
   onLongPress: (message: ChatMessage) => void;
@@ -132,6 +135,7 @@ type SwipeableMessageBubbleProps = {
 };
 
 function SwipeableMessageBubble({
+  currentUserId,
   isCurrentUser,
   message,
   onLongPress,
@@ -202,6 +206,24 @@ function SwipeableMessageBubble({
         ) : null}
         <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
         <Text style={styles.messageText}>{message.text}</Text>
+        {message.reactions.length > 0 ? (
+          <View style={styles.reactionsContainer}>
+            {message.reactions.map((reaction) => {
+              const reacted =
+                currentUserId !== null && reaction.userIds.includes(currentUserId);
+
+              return (
+                <View
+                  key={reaction.emoji}
+                  style={[styles.reactionChip, reacted ? styles.reactionChipActive : null]}>
+                  <Text style={styles.reactionText}>
+                    {reaction.emoji} {reaction.userIds.length}
+                  </Text>
+                </View>
+              );
+            })}
+          </View>
+        ) : null}
         <View style={styles.metaRow}>
           <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
           <View style={styles.statusContainer}>{renderStatusIcon(message.status)}</View>
@@ -401,6 +423,7 @@ export default function SpaceChatScreen() {
         )
         .map((message) => ({
           ...message,
+          reactions: message.reactions ?? [],
           status: getTemporaryMessageStatus(message, currentUserId),
           senderName: memberNames.get(message.senderUserId) ?? 'Unknown member',
         }));
@@ -461,6 +484,37 @@ export default function SpaceChatScreen() {
       };
     },
     [currentUserId, messageLookup],
+  );
+
+  const syncMessageUpdate = useCallback(
+    (updatedMessage: Message) => {
+      const nextStatus = getTemporaryMessageStatus(updatedMessage, currentUserId);
+
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === updatedMessage.id
+            ? {
+                ...message,
+                ...updatedMessage,
+                reactions: updatedMessage.reactions ?? [],
+                status: nextStatus,
+              }
+            : message,
+        ),
+      );
+
+      setSelectedMessage((current) =>
+        current && current.id === updatedMessage.id
+          ? {
+              ...current,
+              ...updatedMessage,
+              reactions: updatedMessage.reactions ?? [],
+              status: nextStatus,
+            }
+          : current,
+      );
+    },
+    [currentUserId],
   );
 
   const closeMenu = () => {
@@ -571,6 +625,25 @@ export default function SpaceChatScreen() {
   const clearReply = useCallback(() => {
     setReplyTargetMessage(null);
   }, []);
+
+  const handleReact = useCallback(
+    async (messageId: string, emoji: string) => {
+      if (!spaceId) {
+        return;
+      }
+
+      try {
+        const response = await toggleReaction(spaceId, messageId, emoji);
+        syncMessageUpdate(response.message);
+        closeActionTray();
+      } catch (caughtError) {
+        const apiError = caughtError as ApiError;
+        setError(apiError.error ?? 'Unable to react to this message.');
+        closeActionTray();
+      }
+    },
+    [closeActionTray, spaceId, syncMessageUpdate],
+  );
 
   const handleDraftChange = useCallback(
     (value: string) => {
@@ -683,6 +756,7 @@ export default function SpaceChatScreen() {
                     isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
                   ]}>
                   <SwipeableMessageBubble
+                    currentUserId={currentUserId}
                     isCurrentUser={isCurrentUser}
                     message={message}
                     onLongPress={openActionTray}
@@ -798,6 +872,20 @@ export default function SpaceChatScreen() {
                 styles.actionTray,
                 { transform: [{ translateY: actionTrayTranslateY }] },
               ]}>
+              {selectedMessage ? (
+                <View style={styles.reactionRow}>
+                  {REACTION_OPTIONS.map((emoji) => (
+                    <Pressable
+                      key={emoji}
+                      onPress={() => {
+                        void handleReact(selectedMessage.id, emoji);
+                      }}
+                      style={styles.reactionButton}>
+                      <Text style={styles.reactionEmoji}>{emoji}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              ) : null}
               <Pressable onPress={() => { void handleCopyMessage(); }} style={styles.actionRow}>
                 <Text style={styles.actionRowText}>Copy</Text>
               </Pressable>
@@ -889,6 +977,7 @@ const styles = StyleSheet.create({
   },
   messageRow: {
     flexDirection: 'row',
+    width: '100%',
   },
   currentUserRow: {
     justifyContent: 'flex-end',
@@ -906,10 +995,12 @@ const styles = StyleSheet.create({
   currentUserBubble: {
     backgroundColor: '#dcf8c6',
     borderTopRightRadius: 6,
+    alignSelf: 'flex-end',
   },
   otherUserBubble: {
     backgroundColor: '#ffffff',
     borderTopLeftRadius: 6,
+    alignSelf: 'flex-start',
   },
   senderName: {
     color: '#0f766e',
@@ -946,6 +1037,24 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 15,
     lineHeight: 22,
+  },
+  reactionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 6,
+  },
+  reactionChip: {
+    backgroundColor: '#f1f5f9',
+    borderRadius: 12,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+  },
+  reactionChipActive: {
+    backgroundColor: '#dbeafe',
+  },
+  reactionText: {
+    fontSize: 12,
   },
   metaRow: {
     flexDirection: 'row',
@@ -1116,6 +1225,17 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: -4 },
     shadowOpacity: 0.12,
     shadowRadius: 20,
+  },
+  reactionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    paddingVertical: 8,
+  },
+  reactionButton: {
+    padding: 6,
+  },
+  reactionEmoji: {
+    fontSize: 20,
   },
   actionRow: {
     paddingHorizontal: 4,
