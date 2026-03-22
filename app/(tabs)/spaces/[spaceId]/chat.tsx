@@ -16,7 +16,7 @@ import {
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { Message, SpaceMember } from '../../../../../shared/contracts';
+import { Message, MessageStatus, SpaceMember } from '../../../../../shared/contracts';
 import {
   deleteMessage,
   getMembers,
@@ -69,6 +69,17 @@ const formatMessageTime = (value: string): string => {
     month: 'short',
     year: 'numeric',
   });
+};
+
+const getTemporaryMessageStatus = (
+  message: Message,
+  currentUserId: string | null,
+): MessageStatus => {
+  if (message.senderUserId === currentUserId) {
+    return 'delivered';
+  }
+
+  return 'read';
 };
 
 export default function SpaceChatScreen() {
@@ -175,6 +186,7 @@ export default function SpaceChatScreen() {
         )
         .map((message) => ({
           ...message,
+          status: getTemporaryMessageStatus(message, currentUserId),
           senderName: memberNames.get(message.senderUserId) ?? 'Unknown member',
         }));
 
@@ -185,7 +197,7 @@ export default function SpaceChatScreen() {
     } finally {
       setLoading(false);
     }
-  }, [spaceId]);
+  }, [currentUserId, spaceId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -264,7 +276,7 @@ export default function SpaceChatScreen() {
     Alert.alert('Forward', 'Forward coming soon');
   };
 
-  const handleDeleteMessage = async () => {
+  const performDeleteMessage = async () => {
     if (!spaceId || !selectedMessage || !canDeleteSelectedMessage) {
       return;
     }
@@ -278,6 +290,45 @@ export default function SpaceChatScreen() {
       setError(apiError.error ?? 'Unable to delete this message.');
       closeActionTray();
     }
+  };
+
+  const confirmDeleteMessage = () => {
+    if (!canDeleteSelectedMessage) {
+      return;
+    }
+
+    Alert.alert(
+      'Delete message',
+      'Are you sure you want to delete this message?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void performDeleteMessage();
+          },
+        },
+      ],
+    );
+  };
+
+  const handleDeleteMessage = () => {
+    confirmDeleteMessage();
+  };
+
+  const renderStatusIcon = (status: MessageStatus) => {
+    if (status === 'sent') {
+      return <Ionicons color="#6b7280" name="checkmark" size={14} style={styles.statusIcon} />;
+    }
+
+    if (status === 'read') {
+      return (
+        <Ionicons color="#16a34a" name="checkmark-done" size={16} style={styles.statusIcon} />
+      );
+    }
+
+    return <Ionicons color="#6b7280" name="checkmark-done" size={16} style={styles.statusIcon} />;
   };
 
   const handleSend = async () => {
@@ -297,10 +348,8 @@ export default function SpaceChatScreen() {
         ...current,
         {
           ...response.message,
-          senderName:
-            currentUserId !== null && response.message.senderUserId === currentUserId
-              ? currentUserName
-              : 'Unknown member',
+          status: 'sent',
+          senderName: currentUserName,
         },
       ]);
       setDraft('');
@@ -376,7 +425,10 @@ export default function SpaceChatScreen() {
                     ]}>
                     <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
                     <Text style={styles.messageText}>{message.text}</Text>
-                    <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
+                    <View style={styles.metaRow}>
+                      <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
+                      <View style={styles.statusContainer}>{renderStatusIcon(message.status)}</View>
+                    </View>
                   </Pressable>
                 </View>
               );
@@ -452,19 +504,11 @@ export default function SpaceChatScreen() {
               <Pressable onPress={handleForwardMessage} style={styles.actionRow}>
                 <Text style={styles.actionRowText}>Forward</Text>
               </Pressable>
-              <Pressable
-                disabled={!canDeleteSelectedMessage}
-                onPress={() => { void handleDeleteMessage(); }}
-                style={styles.actionRow}>
-                <Text
-                  style={[
-                    styles.actionRowText,
-                    styles.destructiveMenuItemText,
-                    !canDeleteSelectedMessage ? styles.disabledActionText : null,
-                  ]}>
-                  Delete
-                </Text>
-              </Pressable>
+              {canDeleteSelectedMessage ? (
+                <Pressable onPress={handleDeleteMessage} style={styles.actionRow}>
+                  <Text style={[styles.actionRowText, styles.destructiveMenuItemText]}>Delete</Text>
+                </Pressable>
+              ) : null}
             </Animated.View>
           </View>
         ) : null}
@@ -578,10 +622,22 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
   },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    gap: 6,
+  },
   messageTime: {
-    alignSelf: 'flex-end',
     color: '#6b7280',
     fontSize: 11,
+  },
+  statusContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  statusIcon: {
+    marginLeft: 2,
   },
   composer: {
     alignItems: 'flex-end',
@@ -695,8 +751,5 @@ const styles = StyleSheet.create({
     color: '#132238',
     fontSize: 16,
     fontWeight: '600',
-  },
-  disabledActionText: {
-    color: '#d1d5db',
   },
 });
