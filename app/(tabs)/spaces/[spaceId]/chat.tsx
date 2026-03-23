@@ -73,7 +73,6 @@ const TYPING_STOP_DELAY_MS = 900;
 const TYPING_POLL_INTERVAL_MS = 2500;
 const TYPING_INDICATOR_RESERVE = 28;
 const MAX_ATTACHMENT_SIZE_BYTES = 25 * 1024 * 1024;
-const MESSAGE_MEDIA_MAX_WIDTH = 220;
 const VIDEO_PLACEHOLDER_ASPECT_RATIO = 16 / 9;
 const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢'] as const;
 
@@ -1245,6 +1244,7 @@ const styles = StyleSheet.create({
     maxWidth: '82%',
     paddingHorizontal: 14,
     paddingVertical: 10,
+    overflow: 'hidden',
   },
   currentUserBubble: {
     backgroundColor: '#dcf8c6',
@@ -1294,8 +1294,7 @@ const styles = StyleSheet.create({
   },
   messageMediaImage: {
     borderRadius: 16,
-    maxWidth: MESSAGE_MEDIA_MAX_WIDTH,
-    width: MESSAGE_MEDIA_MAX_WIDTH,
+    width: '100%',
   },
   messageVideoCard: {
     alignItems: 'center',
@@ -1304,9 +1303,8 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     gap: 8,
     justifyContent: 'center',
-    maxWidth: MESSAGE_MEDIA_MAX_WIDTH,
     paddingHorizontal: 20,
-    width: MESSAGE_MEDIA_MAX_WIDTH,
+    width: '100%',
   },
   messageVideoLabel: {
     color: '#ffffff',
