@@ -1,5 +1,7 @@
 import * as Clipboard from 'expo-clipboard';
+import { Directory, File, Paths } from 'expo-file-system';
 import * as ImagePicker from 'expo-image-picker';
+import * as MediaLibrary from 'expo-media-library';
 import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
@@ -166,9 +168,11 @@ const getComposerAttachmentType = (
 function ChatMediaAttachment({
   media,
   onPress,
+  onSave,
 }: {
   media: MessageMedia;
   onPress: (media: MessageMedia) => void;
+  onSave: (url: string) => Promise<void>;
 }) {
   const [aspectRatio, setAspectRatio] = useState(
     media.type === 'image' ? 1 : VIDEO_PLACEHOLDER_ASPECT_RATIO,
@@ -193,25 +197,36 @@ function ChatMediaAttachment({
   }, [media.type, media.url]);
 
   return (
-    <Pressable onPress={() => onPress(media)} style={styles.mediaAttachmentPressable}>
-      <View style={styles.mediaWrapper}>
-        {media.type === 'image' ? (
-          <ExpoImage
-            contentFit="cover"
-            source={{ uri: media.url }}
-            style={[
-              styles.messageMediaImage,
-              { aspectRatio },
-            ]}
-          />
-        ) : (
-          <View style={styles.messageVideoCard}>
-            <Ionicons color="#ffffff" name="play-circle" size={42} />
-            <Text style={styles.messageVideoLabel}>Video</Text>
-          </View>
-        )}
+    <View style={styles.mediaContainer}>
+      <View style={styles.mediaOverlay}>
+        <Pressable
+          onPress={() => {
+            void onSave(media.url);
+          }}
+          style={styles.mediaIconButton}>
+          <Ionicons color="#ffffff" name="download" size={18} />
+        </Pressable>
       </View>
-    </Pressable>
+      <Pressable onPress={() => onPress(media)} style={styles.mediaAttachmentPressable}>
+        <View style={styles.mediaWrapper}>
+          {media.type === 'image' ? (
+            <ExpoImage
+              contentFit="cover"
+              source={{ uri: media.url }}
+              style={[
+                styles.messageMediaImage,
+                { aspectRatio },
+              ]}
+            />
+          ) : (
+            <View style={styles.messageVideoCard}>
+              <Ionicons color="#ffffff" name="play-circle" size={42} />
+              <Text style={styles.messageVideoLabel}>Video</Text>
+            </View>
+          )}
+        </View>
+      </Pressable>
+    </View>
   );
 }
 
@@ -221,6 +236,7 @@ type SwipeableMessageBubbleProps = {
   message: ChatMessage;
   onLongPress: (message: ChatMessage) => void;
   onOpenMedia: (media: MessageMedia) => void;
+  onSaveMedia: (url: string) => Promise<void>;
   onReply: (message: ChatMessage) => void;
   replyPreview: ReplyPreview | null;
 };
@@ -231,6 +247,7 @@ function SwipeableMessageBubble({
   message,
   onLongPress,
   onOpenMedia,
+  onSaveMedia,
   onReply,
   replyPreview,
 }: SwipeableMessageBubbleProps) {
@@ -303,6 +320,7 @@ function SwipeableMessageBubble({
                 key={`${message.id}-${mediaItem.url}`}
                 media={mediaItem}
                 onPress={onOpenMedia}
+                onSave={onSaveMedia}
               />
             ))}
           </View>
@@ -803,6 +821,29 @@ export default function SpaceChatScreen() {
     await WebBrowser.openBrowserAsync(media.url);
   }, []);
 
+  const saveMediaToDevice = useCallback(async (url: string) => {
+    try {
+      const permission = await MediaLibrary.requestPermissionsAsync(true);
+
+      if (!permission.granted) {
+        Alert.alert('Permission required', 'Please allow media access to save attachments.');
+        return;
+      }
+
+      const downloadsDirectory = new Directory(Paths.cache, 'akiba-media');
+      downloadsDirectory.create({ idempotent: true, intermediates: true });
+      const downloadedFile = await File.downloadFileAsync(url, downloadsDirectory, {
+        idempotent: true,
+      });
+
+      await MediaLibrary.saveToLibraryAsync(downloadedFile.uri);
+      Alert.alert('Saved', 'Media has been saved to your device.');
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to save this media.');
+    }
+  }, []);
+
   const handleReact = useCallback(
     async (messageId: string, emoji: string) => {
       if (!spaceId) {
@@ -947,6 +988,7 @@ export default function SpaceChatScreen() {
                     message={message}
                     onLongPress={openActionTray}
                     onOpenMedia={handleOpenMedia}
+                    onSaveMedia={saveMediaToDevice}
                     onReply={handleReply}
                     replyPreview={getReplyPreview(message)}
                   />
@@ -1290,8 +1332,26 @@ const styles = StyleSheet.create({
   mediaAttachmentStack: {
     gap: 8,
   },
+  mediaContainer: {
+    width: '100%',
+    position: 'relative',
+  },
   mediaAttachmentPressable: {
     alignSelf: 'flex-start',
+  },
+  mediaOverlay: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    right: 8,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    zIndex: 10,
+  },
+  mediaIconButton: {
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    borderRadius: 16,
+    padding: 6,
   },
   mediaWrapper: {
     width: '100%',
