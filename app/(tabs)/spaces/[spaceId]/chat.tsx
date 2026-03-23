@@ -194,21 +194,23 @@ function ChatMediaAttachment({
 
   return (
     <Pressable onPress={() => onPress(media)} style={styles.mediaAttachmentPressable}>
-      {media.type === 'image' ? (
-        <ExpoImage
-          contentFit="cover"
-          source={{ uri: media.url }}
-          style={[
-            styles.messageMediaImage,
-            { aspectRatio },
-          ]}
-        />
-      ) : (
-        <View style={styles.messageVideoCard}>
-          <Ionicons color="#ffffff" name="play-circle" size={42} />
-          <Text style={styles.messageVideoLabel}>Video</Text>
-        </View>
-      )}
+      <View style={styles.mediaWrapper}>
+        {media.type === 'image' ? (
+          <ExpoImage
+            contentFit="cover"
+            source={{ uri: media.url }}
+            style={[
+              styles.messageMediaImage,
+              { aspectRatio },
+            ]}
+          />
+        ) : (
+          <View style={styles.messageVideoCard}>
+            <Ionicons color="#ffffff" name="play-circle" size={42} />
+            <Text style={styles.messageVideoLabel}>Video</Text>
+          </View>
+        )}
+      </View>
     </Pressable>
   );
 }
@@ -1242,8 +1244,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     gap: 6,
     maxWidth: '82%',
-    paddingHorizontal: 14,
-    paddingVertical: 10,
+    padding: 10,
     overflow: 'hidden',
   },
   currentUserBubble: {
@@ -1292,15 +1293,18 @@ const styles = StyleSheet.create({
   mediaAttachmentPressable: {
     alignSelf: 'flex-start',
   },
+  mediaWrapper: {
+    width: '100%',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
   messageMediaImage: {
-    borderRadius: 16,
     width: '100%',
   },
   messageVideoCard: {
     alignItems: 'center',
     aspectRatio: VIDEO_PLACEHOLDER_ASPECT_RATIO,
     backgroundColor: '#132238',
-    borderRadius: 16,
     gap: 8,
     justifyContent: 'center',
     paddingHorizontal: 20,
