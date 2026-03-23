@@ -166,7 +166,7 @@ const getComposerAttachmentType = (
   return null;
 };
 
-function ChatMediaAttachment({
+function MessageMediaCard({
   media,
   onPress,
   onSave,
@@ -257,6 +257,7 @@ function SwipeableMessageBubble({
   replyPreview,
 }: SwipeableMessageBubbleProps) {
   const translateX = useRef(new Animated.Value(0)).current;
+  const messageMedia = message.media?.[0] ?? null;
 
   const resetPosition = useCallback(() => {
     Animated.spring(translateX, {
@@ -320,17 +321,12 @@ function SwipeableMessageBubble({
             </Text>
           </Pressable>
         ) : null}
-        {message.media?.length ? (
-          <View style={styles.mediaAttachmentStack}>
-            {message.media.map((mediaItem) => (
-              <ChatMediaAttachment
-                key={`${message.id}-${mediaItem.url}`}
-                media={mediaItem}
-                onPress={onOpenMedia}
-                onSave={onSaveMedia}
-              />
-            ))}
-          </View>
+        {messageMedia ? (
+          <MessageMediaCard
+            media={messageMedia}
+            onPress={onOpenMedia}
+            onSave={onSaveMedia}
+          />
         ) : null}
         <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
         {message.text ? <Text style={styles.messageText}>{message.text}</Text> : null}
@@ -874,6 +870,7 @@ export default function SpaceChatScreen() {
       uri: asset.uri,
       width: asset.width,
     });
+    setError(null);
   }, []);
 
   const handleOpenMedia = useCallback(async (media: MessageMedia) => {
@@ -1424,23 +1421,20 @@ const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
-  mediaAttachmentStack: {
-    gap: 8,
-  },
   mediaContainer: {
-    width: '100%',
     position: 'relative',
+    width: '100%',
   },
   mediaAttachmentPressable: {
-    alignSelf: 'flex-start',
+    width: '100%',
   },
   mediaOverlay: {
-    position: 'absolute',
-    top: 8,
     left: 8,
-    right: 8,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
+    position: 'absolute',
+    right: 8,
+    top: 8,
     zIndex: 10,
   },
   mediaIconButton: {
@@ -1544,7 +1538,6 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   attachmentPreviewCard: {
-    alignSelf: 'flex-start',
     borderRadius: 16,
     overflow: 'hidden',
     position: 'relative',
