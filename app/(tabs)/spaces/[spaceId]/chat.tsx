@@ -76,6 +76,7 @@ const TYPING_POLL_INTERVAL_MS = 2500;
 const TYPING_INDICATOR_RESERVE = 28;
 const MAX_ATTACHMENT_SIZE_BYTES = 25 * 1024 * 1024;
 const VIDEO_PLACEHOLDER_ASPECT_RATIO = 16 / 9;
+const MESSAGE_HIGHLIGHT_DURATION_MS = 1200;
 const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢'] as const;
 
 const getReplySnippet = (value: string): string => {
@@ -232,10 +233,12 @@ function ChatMediaAttachment({
 
 type SwipeableMessageBubbleProps = {
   currentUserId: string | null;
+  isHighlighted: boolean;
   isCurrentUser: boolean;
   message: ChatMessage;
   onLongPress: (message: ChatMessage) => void;
   onOpenMedia: (media: MessageMedia) => void;
+  onReplyPress: (message: ChatMessage) => void;
   onSaveMedia: (url: string) => Promise<void>;
   onReply: (message: ChatMessage) => void;
   replyPreview: ReplyPreview | null;
@@ -243,10 +246,12 @@ type SwipeableMessageBubbleProps = {
 
 function SwipeableMessageBubble({
   currentUserId,
+  isHighlighted,
   isCurrentUser,
   message,
   onLongPress,
   onOpenMedia,
+  onReplyPress,
   onSaveMedia,
   onReply,
   replyPreview,
@@ -298,9 +303,11 @@ function SwipeableMessageBubble({
         style={[
           styles.messageBubble,
           isCurrentUser ? styles.currentUserBubble : styles.otherUserBubble,
+          isHighlighted ? styles.highlightedMessageBubble : null,
         ]}>
         {replyPreview ? (
-          <View
+          <Pressable
+            onPress={() => onReplyPress(message)}
             style={[
               styles.inlineReplyContainer,
               isCurrentUser ? styles.inlineReplyCurrentUser : styles.inlineReplyOtherUser,
@@ -311,7 +318,7 @@ function SwipeableMessageBubble({
             <Text numberOfLines={2} style={styles.inlineReplyText}>
               {replyPreview.text}
             </Text>
-          </View>
+          </Pressable>
         ) : null}
         {message.media?.length ? (
           <View style={styles.mediaAttachmentStack}>
@@ -376,8 +383,13 @@ export default function SpaceChatScreen() {
   const [selectedAttachment, setSelectedAttachment] = useState<ComposerMediaAttachment | null>(null);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [mediaViewer, setMediaViewer] = useState<MediaViewer | null>(null);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const isTypingRef = useRef(false);
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const messageLayoutsRef = useRef<Record<string, { height: number; y: number }>>({});
+  const highlightedMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scrollOffsetRef = useRef(0);
+  const viewportHeightRef = useRef(0);
 
   const insets = useSafeAreaInsets();
 
@@ -389,6 +401,19 @@ export default function SpaceChatScreen() {
     requestAnimationFrame(() => {
       scrollViewRef.current?.scrollToEnd({ animated });
     });
+  }, []);
+
+  const highlightMessage = useCallback((messageId: string) => {
+    setHighlightedMessageId(messageId);
+
+    if (highlightedMessageTimeoutRef.current) {
+      clearTimeout(highlightedMessageTimeoutRef.current);
+    }
+
+    highlightedMessageTimeoutRef.current = setTimeout(() => {
+      setHighlightedMessageId(null);
+      highlightedMessageTimeoutRef.current = null;
+    }, MESSAGE_HIGHLIGHT_DURATION_MS);
   }, []);
 
   useEffect(() => {
@@ -403,6 +428,14 @@ export default function SpaceChatScreen() {
     return () => {
       showSubscription.remove();
       hideSubscription.remove();
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (highlightedMessageTimeoutRef.current) {
+        clearTimeout(highlightedMessageTimeoutRef.current);
+      }
     };
   }, []);
 
@@ -611,6 +644,40 @@ export default function SpaceChatScreen() {
       };
     },
     [currentUserId, messageLookup],
+  );
+
+  const handleReplyPress = useCallback(
+    (message: ChatMessage) => {
+      if (!message.replyToMessageId) {
+        return;
+      }
+
+      const targetLayout = messageLayoutsRef.current[message.replyToMessageId];
+
+      if (!targetLayout) {
+        return;
+      }
+
+      const visibleTop = scrollOffsetRef.current;
+      const visibleBottom = visibleTop + viewportHeightRef.current;
+      const targetTop = targetLayout.y;
+      const targetBottom = targetLayout.y + targetLayout.height;
+
+      highlightMessage(message.replyToMessageId);
+
+      // We store each row's y-offset relative to the ScrollView content.
+      // If the full replied-to row is already inside the visible viewport,
+      // we only flash it instead of scrolling again.
+      if (targetTop >= visibleTop && targetBottom <= visibleBottom) {
+        return;
+      }
+
+      scrollViewRef.current?.scrollTo({
+        animated: true,
+        y: Math.max(targetTop - 12, 0),
+      });
+    },
+    [highlightMessage],
   );
 
   const syncMessageUpdate = useCallback(
@@ -958,13 +1025,20 @@ export default function SpaceChatScreen() {
 
           <ScrollView
             ref={scrollViewRef}
+            onLayout={(event) => {
+              viewportHeightRef.current = event.nativeEvent.layout.height;
+            }}
+            onScroll={(event) => {
+              scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+            }}
             style={styles.messagesScrollView}
             contentContainerStyle={[
               styles.messagesContainer,
               { paddingBottom: messagesBottomPadding },
             ]}
             keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() => scrollToBottom(!loading)}>
+            onContentSizeChange={() => scrollToBottom(!loading)}
+            scrollEventThrottle={16}>
             {!loading && messages.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyTitle}>No messages yet</Text>
@@ -978,16 +1052,24 @@ export default function SpaceChatScreen() {
               return (
                 <View
                   key={message.id}
+                  onLayout={(event) => {
+                    messageLayoutsRef.current[message.id] = {
+                      height: event.nativeEvent.layout.height,
+                      y: event.nativeEvent.layout.y,
+                    };
+                  }}
                   style={[
                     styles.messageRow,
                     isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
                   ]}>
                   <SwipeableMessageBubble
                     currentUserId={currentUserId}
+                    isHighlighted={highlightedMessageId === message.id}
                     isCurrentUser={isCurrentUser}
                     message={message}
                     onLongPress={openActionTray}
                     onOpenMedia={handleOpenMedia}
+                    onReplyPress={handleReplyPress}
                     onSaveMedia={saveMediaToDevice}
                     onReply={handleReply}
                     replyPreview={getReplyPreview(message)}
@@ -1288,6 +1370,19 @@ const styles = StyleSheet.create({
     maxWidth: '82%',
     padding: 10,
     overflow: 'hidden',
+  },
+  // Keep reply target highlighting purely visual so we do not change the
+  // measured message height/width and accidentally trigger a scroll jump.
+  highlightedMessageBubble: {
+    backgroundColor: '#fef3c7',
+    elevation: 3,
+    shadowColor: '#f59e0b',
+    shadowOffset: {
+      width: 0,
+      height: 0,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 10,
   },
   currentUserBubble: {
     backgroundColor: '#dcf8c6',
