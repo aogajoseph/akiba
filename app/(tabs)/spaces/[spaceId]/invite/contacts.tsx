@@ -1,12 +1,14 @@
 import * as Clipboard from 'expo-clipboard';
+import * as Contacts from 'expo-contacts';
 import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, Stack } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   Alert,
   FlatList,
   Pressable,
   SafeAreaView,
+  Share,
   StyleSheet,
   Text,
   View,
@@ -15,20 +17,44 @@ import {
 type InviteContact = {
   id: string;
   name: string;
+  phone?: string;
 };
-
-const INITIAL_CONTACTS: InviteContact[] = [
-  { id: '1', name: 'John Doe' },
-  { id: '2', name: 'Mary Wanjiku' },
-  { id: '3', name: 'Peter Otieno' },
-  { id: '4', name: 'Faith Achieng' },
-];
 
 export default function InviteFromContactsScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
-  const [contacts] = useState(INITIAL_CONTACTS);
+  const [contacts, setContacts] = useState<InviteContact[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const inviteLink = `https://akiba.app/spaces/${spaceId}/join`;
+
+  useEffect(() => {
+    const loadContacts = async () => {
+      const { status } = await Contacts.requestPermissionsAsync();
+
+      if (status !== 'granted') {
+        Alert.alert(
+          'Permission required',
+          'Please allow access to contacts to invite people.',
+        );
+        return;
+      }
+
+      const { data } = await Contacts.getContactsAsync({
+        fields: [Contacts.Fields.PhoneNumbers],
+      });
+
+      const formatted = data
+        .filter((contact) => contact.name)
+        .map((contact) => ({
+          id: contact.id,
+          name: contact.name ?? 'Unnamed',
+          phone: contact.phoneNumbers?.[0]?.number,
+        }));
+
+      setContacts(formatted);
+    };
+
+    void loadContacts();
+  }, []);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -48,12 +74,17 @@ export default function InviteFromContactsScreen() {
   };
 
   const handleSendInvites = async () => {
-    await Clipboard.setStringAsync(inviteLink);
+    if (!spaceId) {
+      return;
+    }
 
-    Alert.alert(
-      'Invite Ready',
-      `Link copied. Share it with ${selectedIds.length} contact(s).`,
-    );
+    try {
+      await Share.share({
+        message: `Join our Akiba Space:\n${inviteLink}`,
+      });
+    } catch {
+      await Clipboard.setStringAsync(inviteLink);
+    }
   };
 
   return (
@@ -84,7 +115,12 @@ export default function InviteFromContactsScreen() {
                 style={styles.contactRow}
                 onPress={() => toggleSelect(item.id)}
               >
-                <Text style={styles.contactName}>{item.name}</Text>
+                <View style={styles.contactInfo}>
+                  <Text style={styles.contactName}>{item.name}</Text>
+                  <Text style={styles.contactSub}>
+                    {item.phone ?? 'No number'}
+                  </Text>
+                </View>
 
                 <View style={[styles.checkbox, selected ? styles.checkboxSelected : null]}>
                   {selected ? (
@@ -142,13 +178,23 @@ const styles = StyleSheet.create({
   contactRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
     paddingVertical: 14,
     borderBottomWidth: 1,
     borderColor: '#eee',
   },
+  contactInfo: {
+    flex: 1,
+    paddingRight: 12,
+  },
   contactName: {
     fontSize: 16,
     color: '#132238',
+  },
+  contactSub: {
+    fontSize: 13,
+    color: '#6b7280',
+    marginTop: 4,
   },
   checkbox: {
     width: 20,
