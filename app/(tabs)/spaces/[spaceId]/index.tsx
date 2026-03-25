@@ -1,4 +1,5 @@
 import { router, useLocalSearchParams } from 'expo-router';
+import { Image as ExpoImage } from 'expo-image';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -70,8 +71,23 @@ export default function SpaceDashboardScreen() {
 
         {space && !loading ? (
           <>
+            {space.imageUrl ? (
+              <ExpoImage
+                contentFit="cover"
+                source={{ uri: space.imageUrl }}
+                style={styles.spaceImage}
+              />
+            ) : (
+              <View style={styles.placeholderAvatar}>
+                <Text style={styles.placeholderInitial}>
+                  {space.name.charAt(0).toUpperCase()}
+                </Text>
+              </View>
+            )}
             <Text style={styles.title}>{space.name}</Text>
-            <Text style={styles.subtitle}>No description yet</Text>
+            <Text style={styles.subtitle}>
+              {space.description?.trim() || 'No description yet'}
+            </Text>
 
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
@@ -84,6 +100,9 @@ export default function SpaceDashboardScreen() {
                 </View>
               ))}
               <Text style={styles.remainingText}>Remaining admin slots: {remainingSlots}</Text>
+              <Text style={styles.remainingText}>
+                Admins required to approve: {space.approvalThreshold}
+              </Text>
             </View>
 
             <View style={styles.section}>
@@ -121,14 +140,36 @@ const styles = StyleSheet.create({
     gap: 18,
     padding: 20,
   },
+  spaceImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    alignSelf: 'center',
+  },
+  placeholderAvatar: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: '#0f766e',
+    alignItems: 'center',
+    justifyContent: 'center',
+    alignSelf: 'center',
+  },
+  placeholderInitial: {
+    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: '700',
+  },
   title: {
     color: '#132238',
     fontSize: 30,
     fontWeight: '800',
+    textAlign: 'center',
   },
   subtitle: {
     color: '#6b7280',
     fontSize: 15,
+    textAlign: 'center',
   },
   section: {
     backgroundColor: '#ffffff',
