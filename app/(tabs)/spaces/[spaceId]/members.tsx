@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 
+import AkibaLink from '../../../../components/AkibaLink';
 import { Group, SpaceAdmin, SpaceMember } from '../../../../../shared/contracts';
 import {
   deleteSpace,
@@ -244,6 +245,12 @@ export default function MembersScreen() {
                 <Pressable onPress={showInviteMembers} style={styles.primaryButton}>
                   <Text style={styles.primaryButtonText}>Invite Members</Text>
                 </Pressable>
+                {inviteLink ? (
+                  <View style={styles.inviteLinkContainer}>
+                    <Text style={styles.inviteLinkLabel}>Invite link</Text>
+                    <AkibaLink url={inviteLink} />
+                  </View>
+                ) : null}
               </View>
             ) : null}
 
@@ -405,6 +412,14 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 14,
     fontWeight: '700',
+  },
+  inviteLinkContainer: {
+    alignItems: 'center',
+    gap: 6,
+  },
+  inviteLinkLabel: {
+    color: '#6b7280',
+    fontSize: 13,
   },
   secondaryButton: {
     alignItems: 'center',

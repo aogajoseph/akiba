@@ -45,6 +45,7 @@ import {
   uploadMediaMessage,
   type MediaUploadAttachment,
 } from '../../../../services/spaceService';
+import AkibaLink from '../../../../components/AkibaLink';
 import { ApiError, getAuthSession } from '../../../../utils/api';
 
 type ChatMessage = Message & {
@@ -165,6 +166,22 @@ const getComposerAttachmentType = (
   }
 
   return null;
+};
+
+const renderMessageText = (text: string) => {
+  const parts = text.split(/(akiba:\/\/spaces\/[^\s]+)/g);
+
+  return parts.map((part, index) => {
+    if (part.startsWith('akiba://spaces/')) {
+      return <AkibaLink key={`${part}-${index}`} url={part} />;
+    }
+
+    return (
+      <Text key={`${part}-${index}`} style={styles.messageText}>
+        {part}
+      </Text>
+    );
+  });
 };
 
 function MessageMediaCard({
@@ -330,7 +347,11 @@ function SwipeableMessageBubble({
           />
         ) : null}
         <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
-        {message.text ? <Text style={styles.messageText}>{message.text}</Text> : null}
+        {message.text ? (
+          <View style={styles.messageTextWrapper}>
+            {renderMessageText(message.text)}
+          </View>
+        ) : null}
         {message.reactions.length > 0 ? (
           <View style={styles.reactionsContainer}>
             {message.reactions.map((reaction) => {
@@ -1068,13 +1089,13 @@ export default function SpaceChatScreen() {
             }}
             onScroll={(event) => {
               const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+              scrollOffsetRef.current = contentOffset.y;
 
               const isNearBottom =
                 contentSize.height - (contentOffset.y + layoutMeasurement.height) < 100;
 
               setShowScrollToBottom(!isNearBottom);
             }}
-            scrollEventThrottle={16}
             style={styles.messagesScrollView}
             contentContainerStyle={[
               styles.messagesContainer,
@@ -1542,6 +1563,10 @@ const styles = StyleSheet.create({
     flexShrink: 1,
     fontSize: 15,
     lineHeight: 22,
+  },
+  messageTextWrapper: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   reactionsContainer: {
     flexDirection: 'row',
