@@ -380,6 +380,7 @@ export default function SpaceChatScreen() {
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [mediaViewer, setMediaViewer] = useState<MediaViewer | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+  const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const isTypingRef = useRef(false);
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageLayoutsRef = useRef<Record<string, { height: number; y: number }>>({});
@@ -1026,8 +1027,14 @@ export default function SpaceChatScreen() {
               viewportHeightRef.current = event.nativeEvent.layout.height;
             }}
             onScroll={(event) => {
-              scrollOffsetRef.current = event.nativeEvent.contentOffset.y;
+              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+
+              const isNearBottom =
+                contentSize.height - (contentOffset.y + layoutMeasurement.height) < 100;
+
+              setShowScrollToBottom(!isNearBottom);
             }}
+            scrollEventThrottle={16}
             style={styles.messagesScrollView}
             contentContainerStyle={[
               styles.messagesContainer,
@@ -1092,6 +1099,18 @@ export default function SpaceChatScreen() {
               </View>
             </View>
           ) : null}
+
+          {showScrollToBottom && (
+            <Pressable
+              onPress={() => scrollToBottom(true)}
+              style={[
+                styles.scrollToBottomButton,
+                { bottom: composerHeight + keyboardHeight + 20 },
+              ]}
+            >
+              <Ionicons name="chevron-down" size={22} color="#fff" />
+            </Pressable>
+          )}
 
           <View
             onLayout={(event) => {
@@ -1170,7 +1189,7 @@ export default function SpaceChatScreen() {
                 <TextInput
                   multiline
                   onChangeText={handleDraftChange}
-                  placeholder="Type a message"
+                  placeholder="Type here..."
                   placeholderTextColor="#94a3b8"
                   style={styles.input}
                   textAlignVertical="top"
@@ -1532,6 +1551,15 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     position: 'absolute',
     right: 0,
+  },
+  scrollToBottomButton: {
+    position: 'absolute',
+    right: 16,
+    backgroundColor: '#0f766e',
+    borderRadius: 24,
+    padding: 10,
+    elevation: 5,
+    zIndex: 20,
   },
   composerContent: {
     flex: 1,
