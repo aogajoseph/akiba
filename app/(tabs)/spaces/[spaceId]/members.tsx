@@ -3,6 +3,7 @@ import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -11,7 +12,6 @@ import {
   View,
 } from 'react-native';
 
-import AkibaLink from '../../../../components/AkibaLink';
 import { Group, SpaceAdmin, SpaceMember } from '../../../../../shared/contracts';
 import {
   deleteSpace,
@@ -233,8 +233,28 @@ export default function MembersScreen() {
 
         {space && !loading ? (
           <>
-            <Text style={styles.title}>{space.name}</Text>
-            <Text style={styles.subtitle}>Manage members and admins for this space.</Text>
+            <View style={styles.spaceHeader}>
+              {space.imageUrl ? (
+                <Image source={{ uri: space.imageUrl }} style={styles.spaceAvatar} />
+              ) : (
+                <View style={styles.spaceAvatarPlaceholder}>
+                  <Text style={styles.spaceAvatarInitial}>
+                    {space.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.spaceHeaderContent}>
+                <Text style={styles.title}>{space.name}</Text>
+                {space.description ? (
+                  <Text style={styles.spaceDescription}>{space.description}</Text>
+                ) : null}
+              </View>
+            </View>
+
+            {isCreator ? (
+              <Text style={styles.subtitle}>Manage members and admins for this space</Text>
+            ) : null}
 
             {members.length === 1 ? (
               <View style={styles.emptyStateCard}>
@@ -245,12 +265,6 @@ export default function MembersScreen() {
                 <Pressable onPress={showInviteMembers} style={styles.primaryButton}>
                   <Text style={styles.primaryButtonText}>Invite Members</Text>
                 </Pressable>
-                {inviteLink ? (
-                  <View style={styles.inviteLinkContainer}>
-                    <Text style={styles.inviteLinkLabel}>Invite link</Text>
-                    <AkibaLink url={inviteLink} />
-                  </View>
-                ) : null}
               </View>
             ) : null}
 
@@ -270,7 +284,7 @@ export default function MembersScreen() {
               {regularMembers.length > 0 ? (
                 regularMembers.map(renderMemberCard)
               ) : (
-                <Text style={styles.emptyText}>No regular members yet.</Text>
+                <Text style={styles.emptyText}>No members yet</Text>
               )}
             </View>
 
@@ -313,14 +327,51 @@ const styles = StyleSheet.create({
     padding: 20,
     paddingBottom: 40,
   },
+  spaceHeader: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+  },
+  spaceHeaderContent: {
+    flex: 1,
+  },
+  spaceAvatar: {
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    marginRight: 12,
+    marginTop: 2,
+  },
+  spaceAvatarPlaceholder: {
+    alignItems: 'center',
+    backgroundColor: '#0f766e',
+    borderRadius: 25,
+    height: 50,
+    justifyContent: 'center',
+    marginRight: 12,
+    marginTop: 2,
+    width: 50,
+  },
+  spaceAvatarInitial: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '800',
+  },
   title: {
     color: '#132238',
     fontSize: 30,
     fontWeight: '800',
   },
+  spaceDescription: {
+    color: '#6b7280',
+    fontSize: 15,
+    lineHeight: 20,
+    marginBottom: 12,
+    marginTop: 4,
+  },
   subtitle: {
     color: '#6b7280',
     fontSize: 15,
+    textAlign: 'center',
   },
   emptyStateCard: {
     backgroundColor: '#ffffff',
