@@ -1,9 +1,11 @@
+import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Modal,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -23,13 +25,31 @@ export default function SpaceDashboardScreen() {
   const [remainingSlots, setRemainingSlots] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
 
   const showInviteMembers = () => {
     if (!spaceId) {
       return;
     }
 
-    Alert.alert('Invite Members', `Invite link: akiba://spaces/${spaceId}/join`);
+    setInviteModalVisible(true);
+  };
+
+  const handleCopyInviteLink = async () => {
+    if (!spaceId) {
+      return;
+    }
+
+    const link = `https://akiba.app/spaces/${spaceId}/join`;
+
+    try {
+      await Clipboard.setStringAsync(link);
+      setInviteModalVisible(false);
+      Alert.alert('Success', 'Link copied to clipboard');
+    } catch {
+      setError('Unable to copy invite link.');
+      setInviteModalVisible(false);
+    }
   };
 
   useEffect(() => {
@@ -127,6 +147,45 @@ export default function SpaceDashboardScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      <Modal
+        visible={inviteModalVisible}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setInviteModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <Text style={styles.modalTitle}>Invite Members</Text>
+
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => {
+                setInviteModalVisible(false);
+                router.push(`/(tabs)/spaces/${spaceId}/invite/contacts`);
+              }}
+            >
+              <Text style={styles.modalButtonText}>From Contacts</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => {
+                void handleCopyInviteLink();
+              }}
+            >
+              <Text style={styles.modalButtonText}>Copy Invite Link</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.modalCancel}
+              onPress={() => setInviteModalVisible(false)}
+            >
+              <Text style={styles.modalCancelText}>Cancel</Text>
+            </Pressable>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
@@ -225,5 +284,43 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#b42318',
     fontSize: 14,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: '85%',
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    gap: 14,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#132238',
+    textAlign: 'center',
+  },
+  modalButton: {
+    backgroundColor: '#edf4f2',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+  },
+  modalButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#132238',
+  },
+  modalCancel: {
+    marginTop: 6,
+    alignItems: 'center',
+  },
+  modalCancelText: {
+    color: '#b42318',
+    fontWeight: '600',
   },
 });
