@@ -34,7 +34,7 @@ export default function MembersScreen() {
 
   const currentUserId = getAuthSession()?.user.id ?? null;
   const isCreator = currentUserId !== null && currentUserId === space?.createdByUserId;
-  const inviteLink = spaceId ? `akiba://spaces/${spaceId}/join` : null;
+  const inviteLink = spaceId ? `akiba://spaces/${spaceId}` : null;
 
   const loadData = useCallback(async () => {
     if (!spaceId) {
@@ -237,7 +237,7 @@ export default function MembersScreen() {
 
             {members.length === 1 ? (
               <View style={styles.emptyStateCard}>
-                <Text style={styles.emptyStateTitle}>You're the only member in this space</Text>
+                <Text style={styles.emptyStateTitle}>You&apos;re the only member in this space</Text>
                 <Text style={styles.emptyStateText}>
                   Bring in a few more people to start saving together transparently.
                 </Text>
@@ -458,4 +458,3 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
-

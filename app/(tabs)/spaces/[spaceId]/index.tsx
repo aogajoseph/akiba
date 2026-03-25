@@ -1,10 +1,9 @@
 import * as Clipboard from 'expo-clipboard';
 import { router, useLocalSearchParams } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   SafeAreaView,
@@ -18,6 +17,11 @@ import { Group, SpaceAdmin } from '../../../../../shared/contracts';
 import { getAdmins, getSpace } from '../../../../services/spaceService';
 import { ApiError } from '../../../../utils/api';
 
+type ToastMessage = {
+  id: number;
+  text: string;
+};
+
 export default function SpaceDashboardScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [space, setSpace] = useState<Group | null>(null);
@@ -26,6 +30,8 @@ export default function SpaceDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [toastMessages, setToastMessages] = useState<ToastMessage[]>([]);
+  const toastTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   const showInviteMembers = () => {
     if (!spaceId) {
@@ -35,17 +41,37 @@ export default function SpaceDashboardScreen() {
     setInviteModalVisible(true);
   };
 
+  const dismissToast = useCallback((toastId: number) => {
+    const timeout = toastTimeoutsRef.current[toastId];
+
+    if (timeout) {
+      clearTimeout(timeout);
+      delete toastTimeoutsRef.current[toastId];
+    }
+
+    setToastMessages((current) => current.filter((toast) => toast.id !== toastId));
+  }, []);
+
+  const showToast = useCallback((text: string) => {
+    const toastId = Date.now() + Math.floor(Math.random() * 1000);
+
+    setToastMessages((current) => [...current, { id: toastId, text }]);
+    toastTimeoutsRef.current[toastId] = setTimeout(() => {
+      dismissToast(toastId);
+    }, 2200);
+  }, [dismissToast]);
+
   const handleCopyInviteLink = async () => {
     if (!spaceId) {
       return;
     }
 
-    const link = `https://akiba.app/spaces/${spaceId}/join`;
+    const link = `akiba://spaces/${spaceId}`;
 
     try {
       await Clipboard.setStringAsync(link);
       setInviteModalVisible(false);
-      Alert.alert('Success', 'Link copied to clipboard');
+      showToast('Link copied to clipboard');
     } catch {
       setError('Unable to copy invite link.');
       setInviteModalVisible(false);
@@ -82,6 +108,15 @@ export default function SpaceDashboardScreen() {
 
     void loadSpace();
   }, [spaceId]);
+
+  useEffect(() => {
+    return () => {
+      Object.values(toastTimeoutsRef.current).forEach((timeout) => {
+        clearTimeout(timeout);
+      });
+      toastTimeoutsRef.current = {};
+    };
+  }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -147,6 +182,16 @@ export default function SpaceDashboardScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      {toastMessages.length > 0 ? (
+        <View pointerEvents="none" style={styles.toastStack}>
+          {toastMessages.map((toast) => (
+            <View key={toast.id} style={styles.toast}>
+              <Text style={styles.toastText}>{toast.text}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
 
       <Modal
         visible={inviteModalVisible}
@@ -284,6 +329,31 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#b42318',
     fontSize: 14,
+  },
+  toastStack: {
+    position: 'absolute',
+    bottom: 24,
+    left: 16,
+    right: 16,
+    alignItems: 'center',
+    gap: 8,
+    zIndex: 40,
+  },
+  toast: {
+    backgroundColor: 'rgba(19, 34, 56, 0.92)',
+    borderRadius: 18,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+    elevation: 6,
+  },
+  toastText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
   },
   modalOverlay: {
     flex: 1,
