@@ -7,6 +7,7 @@ import {
   Modal,
   Pressable,
   SafeAreaView,
+  Share,
   ScrollView,
   StyleSheet,
   Text,
@@ -75,6 +76,25 @@ export default function SpaceDashboardScreen() {
     } catch {
       setError('Unable to copy invite link.');
       setInviteModalVisible(false);
+    }
+  };
+
+  const handleShareSpace = async () => {
+    if (!spaceId) {
+      return;
+    }
+
+    const link = `https://akiba.app/spaces/${spaceId}/join`;
+
+    try {
+      await Share.share({
+        message: `Join our Akiba Space on:\n${link}`,
+      });
+      setInviteModalVisible(false);
+    } catch {
+      await Clipboard.setStringAsync(link);
+      setInviteModalVisible(false);
+      showToast('Link copied to clipboard');
     }
   };
 
@@ -220,6 +240,15 @@ export default function SpaceDashboardScreen() {
               }}
             >
               <Text style={styles.modalButtonText}>Copy Invite Link</Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.modalButton}
+              onPress={() => {
+                void handleShareSpace();
+              }}
+            >
+              <Text style={styles.modalButtonText}>Share Space</Text>
             </Pressable>
 
             <Pressable
