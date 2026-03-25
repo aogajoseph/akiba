@@ -1,4 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
+import { Ionicons } from '@expo/vector-icons';
 import { useLocalSearchParams, Stack } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -57,6 +58,11 @@ export default function InviteFromContactsScreen() {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <Stack.Screen
+        options={{
+          title: 'Invite from Contacts',
+        }}
+      />
       <View style={styles.container}>
         <Text style={styles.title}>Invite From Contacts</Text>
         <Text style={styles.subtitle}>Select contacts to invite to this space.</Text>
@@ -80,7 +86,11 @@ export default function InviteFromContactsScreen() {
               >
                 <Text style={styles.contactName}>{item.name}</Text>
 
-                <View style={[styles.checkbox, selected ? styles.checkboxSelected : null]} />
+                <View style={[styles.checkbox, selected ? styles.checkboxSelected : null]}>
+                  {selected ? (
+                    <Ionicons name="checkmark" size={16} color="#ffffff" />
+                  ) : null}
+                </View>
               </Pressable>
             );
           }}
@@ -146,6 +156,8 @@ const styles = StyleSheet.create({
     borderRadius: 6,
     borderWidth: 1,
     borderColor: '#ccc',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   checkboxSelected: {
     backgroundColor: '#0f766e',
