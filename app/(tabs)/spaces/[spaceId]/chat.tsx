@@ -77,6 +77,7 @@ const TYPING_INDICATOR_RESERVE = 28;
 const MAX_ATTACHMENT_SIZE_BYTES = 25 * 1024 * 1024;
 const VIDEO_PLACEHOLDER_ASPECT_RATIO = 16 / 9;
 const MESSAGE_HIGHLIGHT_DURATION_MS = 1200;
+const COPY_TOAST_DURATION_MS = 1500;
 const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢'] as const;
 
 const getReplySnippet = (value: string): string => {
@@ -381,7 +382,10 @@ export default function SpaceChatScreen() {
   const [mediaViewer, setMediaViewer] = useState<MediaViewer | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
+  const [showCopyToast, setShowCopyToast] = useState(false);
   const isTypingRef = useRef(false);
+  const copyToastOpacity = useRef(new Animated.Value(0)).current;
+  const copyToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageLayoutsRef = useRef<Record<string, { height: number; y: number }>>({});
   const highlightedMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -433,8 +437,43 @@ export default function SpaceChatScreen() {
       if (highlightedMessageTimeoutRef.current) {
         clearTimeout(highlightedMessageTimeoutRef.current);
       }
+
+      if (copyToastTimeoutRef.current) {
+        clearTimeout(copyToastTimeoutRef.current);
+      }
     };
   }, []);
+
+  const showCopyConfirmation = useCallback(() => {
+    if (copyToastTimeoutRef.current) {
+      clearTimeout(copyToastTimeoutRef.current);
+      copyToastTimeoutRef.current = null;
+    }
+
+    copyToastOpacity.stopAnimation();
+    copyToastOpacity.setValue(0);
+    setShowCopyToast(true);
+
+    Animated.timing(copyToastOpacity, {
+      toValue: 1,
+      duration: 180,
+      useNativeDriver: true,
+    }).start();
+
+    copyToastTimeoutRef.current = setTimeout(() => {
+      Animated.timing(copyToastOpacity, {
+        toValue: 0,
+        duration: 180,
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (finished) {
+          setShowCopyToast(false);
+        }
+      });
+
+      copyToastTimeoutRef.current = null;
+    }, COPY_TOAST_DURATION_MS);
+  }, [copyToastOpacity]);
 
   const clearTypingStopTimeout = useCallback(() => {
     if (typingStopTimeoutRef.current) {
@@ -755,9 +794,10 @@ export default function SpaceChatScreen() {
 
     try {
       await Clipboard.setStringAsync(selectedMessage.text);
+      closeActionTray();
+      showCopyConfirmation();
     } catch {
       setError('Unable to copy this message.');
-    } finally {
       closeActionTray();
     }
   };
@@ -1110,6 +1150,20 @@ export default function SpaceChatScreen() {
             >
               <Ionicons name="chevron-down" size={22} color="#fff" />
             </Pressable>
+          )}
+
+          {showCopyToast && (
+            <Animated.View
+              pointerEvents="none"
+              style={[
+                styles.copyToast,
+                {
+                  bottom: composerHeight + keyboardHeight + 20,
+                  opacity: copyToastOpacity,
+                },
+              ]}>
+              <Text style={styles.copyToastText}>Text copied to clipboard</Text>
+            </Animated.View>
           )}
 
           <View
@@ -1560,6 +1614,20 @@ const styles = StyleSheet.create({
     padding: 10,
     elevation: 5,
     zIndex: 20,
+  },
+  copyToast: {
+    position: 'absolute',
+    alignSelf: 'center',
+    backgroundColor: 'rgba(0,0,0,0.75)',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    zIndex: 50,
+  },
+  copyToastText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
   },
   composerContent: {
     flex: 1,
