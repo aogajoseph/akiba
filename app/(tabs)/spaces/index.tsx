@@ -4,11 +4,11 @@ import {
   ActivityIndicator,
   FlatList,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Group } from '../../../../shared/contracts';
 import { listSpaces } from '../../../services/spaceService';
@@ -41,7 +41,7 @@ export default function ListSpacesScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <View>
@@ -72,7 +72,7 @@ export default function ListSpacesScreen() {
               onPress={() => router.push(`/(tabs)/spaces/${item.id}`)}
               style={styles.card}>
               <Text style={styles.cardTitle}>{item.name}</Text>
-              <Text style={styles.cardMeta}>Approval threshold: {item.approvalThreshold}</Text>
+              <Text style={styles.cardMeta}>Admins to Approve: {item.approvalThreshold}</Text>
             </Pressable>
           )}
         />
