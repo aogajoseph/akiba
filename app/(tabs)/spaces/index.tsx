@@ -71,7 +71,7 @@ export default function ListSpacesScreen() {
             <Pressable
               onPress={() => router.push(`/(tabs)/spaces/${item.id}`)}
               style={styles.card}>
-              <Text style={styles.cardTitle}>{item.name}</Text>
+              <Text style={ styles.cardTitle}>{item.name}</Text>
               <Text style={styles.cardMeta}>Admins to Approve: {item.approvalThreshold}</Text>
             </Pressable>
           )}

@@ -392,6 +392,7 @@ export default function SpaceChatScreen() {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [composerHeight, setComposerHeight] = useState(DEFAULT_COMPOSER_HEIGHT);
   const [spaceName, setSpaceName] = useState('Space Chat');
+  const [spaceImageUrl, setSpaceImageUrl] = useState<string | null>(null);
   const [spaceCreatorUserId, setSpaceCreatorUserId] = useState<string | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
@@ -622,6 +623,7 @@ export default function SpaceChatScreen() {
       const nextMembers = membersResponse.members;
 
       setSpaceName(space?.name ?? 'Space Chat');
+      setSpaceImageUrl(space?.imageUrl ?? null);
       setSpaceCreatorUserId(space?.createdByUserId ?? null);
       setMembers(nextMembers);
 
@@ -675,6 +677,7 @@ export default function SpaceChatScreen() {
   const messagesBottomPadding =
     composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING + TYPING_INDICATOR_RESERVE;
   const isCreator = currentUserId !== null && currentUserId === spaceCreatorUserId;
+  const onlineCount = 0;
   const currentMembership = members.find((member) => member.userId === currentUserId) ?? null;
   const canDeleteSelectedMessage =
     selectedMessage !== null && selectedMessage.senderUserId === currentUserId;
@@ -1057,7 +1060,7 @@ export default function SpaceChatScreen() {
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.screen}>
         <View
-          style={styles.header}
+          style={styles.headerContainer}
           onLayout={(e) => setHeaderHeight(e.nativeEvent.layout.height)}>
           <Pressable
             accessibilityLabel="Go back"
@@ -1066,9 +1069,26 @@ export default function SpaceChatScreen() {
             style={styles.headerIconButton}>
             <Ionicons color="#132238" name="arrow-back" size={22} />
           </Pressable>
-          <Text numberOfLines={1} style={styles.headerTitle}>
-            {spaceName}
-          </Text>
+
+          {spaceImageUrl ? (
+            <NativeImage source={{ uri: spaceImageUrl }} style={styles.headerAvatar} />
+          ) : (
+            <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder]}>
+              <Text style={styles.headerAvatarInitial}>
+                {spaceName.charAt(0).toUpperCase()}
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.headerTextContainer}>
+            <Text numberOfLines={1} style={styles.headerTitle}>
+              {spaceName}
+            </Text>
+            <Text style={styles.headerSubtitle}>{onlineCount} online</Text>
+          </View>
+
+          <View style={styles.headerSpacer} />
+
           <Pressable
             accessibilityLabel="More options"
             hitSlop={10}
@@ -1384,15 +1404,31 @@ const styles = StyleSheet.create({
     flex: 1,
     position: 'relative',
   },
-  header: {
+  headerContainer: {
     alignItems: 'center',
     backgroundColor: '#fffdf9',
     borderBottomColor: '#e7dfd1',
     borderBottomWidth: 1,
     flexDirection: 'row',
     gap: 12,
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 12,
+  },
+  headerAvatar: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    marginRight: 10,
+  },
+  headerAvatarPlaceholder: {
+    alignItems: 'center',
+    backgroundColor: '#0f766e',
+    justifyContent: 'center',
+  },
+  headerAvatarInitial: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '800',
   },
   headerIconButton: {
     alignItems: 'center',
@@ -1400,12 +1436,24 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     width: 36,
   },
+  headerTextContainer: {
+    alignItems: 'flex-start',
+    flexShrink: 1,
+    justifyContent: 'center',
+  },
   headerTitle: {
-    color: '#132238',
+      color: '#132238',
+      fontSize: 17,
+      fontWeight: '700',
+      maxWidth: '100%',
+    },
+  headerSubtitle: {
+    color: '#6b7280',
+    fontSize: 12,
+    marginTop: 2,
+  },
+  headerSpacer: {
     flex: 1,
-    fontSize: 18,
-    fontWeight: '800',
-    textAlign: 'center',
   },
   chatArea: {
     flex: 1,
