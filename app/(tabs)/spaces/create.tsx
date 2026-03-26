@@ -10,6 +10,7 @@ import {
   SafeAreaView,
   ScrollView,
   StyleSheet,
+  Switch,
   Text,
   TextInput,
   View,
@@ -22,6 +23,9 @@ export default function CreateSpaceScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [approvalThreshold, setApprovalThreshold] = useState('');
+  const [hasGoal, setHasGoal] = useState(false);
+  const [targetAmount, setTargetAmount] = useState('');
+  const [deadline, setDeadline] = useState('');
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -66,12 +70,30 @@ export default function CreateSpaceScreen() {
     setError(null);
 
     try {
-      const response = await createSpace({
+      const payload: Parameters<typeof createSpace>[0] & {
+        deadline?: string;
+        targetAmount?: number;
+      } = {
         name: name.trim(),
         description: description.trim() || undefined,
         image: selectedImageUri ?? undefined,
         approvalThreshold: Number(approvalThreshold || 1),
-      });
+      };
+
+      if (hasGoal) {
+        const normalizedTargetAmount = targetAmount.replace(/,/g, '').trim();
+        const normalizedDeadline = deadline.trim();
+
+        if (normalizedTargetAmount) {
+          payload.targetAmount = Number(normalizedTargetAmount);
+        }
+
+        if (normalizedDeadline) {
+          payload.deadline = normalizedDeadline;
+        }
+      }
+
+      const response = await createSpace(payload);
 
       const nextSpace = response.space ?? response.group;
       router.replace(`/(tabs)/spaces/${nextSpace.id}`);
@@ -90,7 +112,7 @@ export default function CreateSpaceScreen() {
         keyboardShouldPersistTaps="handled"
         style={styles.container}>
         <Text style={styles.title}>Create Space</Text>
-        <Text style={styles.subtitle}>Set up a new savings space for your people.</Text>
+        <Text style={styles.subtitle}>Spaces bring people together to save for events, goals or shared needs.</Text>
 
         <View style={styles.avatarSection}>
           <Pressable onPress={() => { void handlePickAvatar(); }} style={styles.avatarButton}>
@@ -118,7 +140,7 @@ export default function CreateSpaceScreen() {
             <Text style={styles.label}>Space Name</Text>
             <TextInput
               onChangeText={setName}
-              placeholder="Weekend Chama"
+              placeholder="John’s Wedding Contribution"
               placeholderTextColor="#94a3b8"
               style={styles.input}
               value={name}
@@ -131,7 +153,7 @@ export default function CreateSpaceScreen() {
               multiline
               numberOfLines={3}
               onChangeText={setDescription}
-              placeholder="What is this space about?"
+              placeholder="Contributions towards John's wedding."
               placeholderTextColor="#94a3b8"
               style={[styles.input, styles.textArea]}
               textAlignVertical="top"
@@ -150,6 +172,51 @@ export default function CreateSpaceScreen() {
               value={approvalThreshold}
             />
           </View>
+
+          <View style={styles.fieldGroup}>
+            <View style={styles.goalToggleRow}>
+              <View style={styles.goalToggleText}>
+                <Text style={styles.label}>Set goals for this space (optional)</Text>
+                <Text style={styles.helperText}>
+                  Useful for events eg., weddings, trips, fundraisers etc.,.
+                </Text>
+              </View>
+
+              <Switch
+                onValueChange={setHasGoal}
+                thumbColor="#ffffff"
+                trackColor={{ false: '#d1d5db', true: '#0f766e' }}
+                value={hasGoal}
+              />
+            </View>
+          </View>
+
+          {hasGoal ? (
+            <>
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Target Amount</Text>
+                <TextInput
+                  keyboardType="number-pad"
+                  onChangeText={setTargetAmount}
+                  placeholder="e.g. 50,000"
+                  placeholderTextColor="#94a3b8"
+                  style={styles.input}
+                  value={targetAmount}
+                />
+              </View>
+
+              <View style={styles.fieldGroup}>
+                <Text style={styles.label}>Deadline</Text>
+                <TextInput
+                  onChangeText={setDeadline}
+                  placeholder="e.g. 30 Dec 2026"
+                  placeholderTextColor="#94a3b8"
+                  style={styles.input}
+                  value={deadline}
+                />
+              </View>
+            </>
+          ) : null}
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
@@ -234,6 +301,20 @@ const styles = StyleSheet.create({
   },
   fieldGroup: {
     gap: 8,
+  },
+  goalToggleRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  goalToggleText: {
+    flex: 1,
+    paddingRight: 12,
+  },
+  helperText: {
+    color: '#6b7280',
+    fontSize: 12,
+    marginTop: 2,
   },
   label: {
     color: '#132238',
