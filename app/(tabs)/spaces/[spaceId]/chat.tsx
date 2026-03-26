@@ -47,6 +47,7 @@ import {
   type MediaUploadAttachment,
 } from '../../../../services/spaceService';
 import AkibaLink from '../../../../components/AkibaLink';
+import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
 import { api, ApiError, getAuthSession } from '../../../../utils/api';
 
 type ChatMessage = Message & {
@@ -409,6 +410,7 @@ export default function SpaceChatScreen() {
   const [selectedAttachment, setSelectedAttachment] = useState<ComposerMediaAttachment | null>(null);
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [mediaViewer, setMediaViewer] = useState<MediaViewer | null>(null);
+  const [avatarViewerVisible, setAvatarViewerVisible] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [showCopyToast, setShowCopyToast] = useState(false);
@@ -1113,7 +1115,9 @@ export default function SpaceChatScreen() {
           </Pressable>
 
           {spaceImageUrl ? (
-            <NativeImage source={{ uri: spaceImageUrl }} style={styles.headerAvatar} />
+            <Pressable onPress={() => setAvatarViewerVisible(true)}>
+              <NativeImage source={{ uri: spaceImageUrl }} style={styles.headerAvatar} />
+            </Pressable>
           ) : (
             <View style={[styles.headerAvatar, styles.headerAvatarPlaceholder]}>
               <Text style={styles.headerAvatarInitial}>
@@ -1404,6 +1408,12 @@ export default function SpaceChatScreen() {
           </View>
         ) : null}
       </View>
+
+      <FullScreenImageViewer
+        imageUrl={spaceImageUrl}
+        onClose={() => setAvatarViewerVisible(false)}
+        visible={avatarViewerVisible}
+      />
 
       <Modal
         animationType="fade"

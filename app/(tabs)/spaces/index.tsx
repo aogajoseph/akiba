@@ -1,4 +1,5 @@
 import { router, useFocusEffect } from 'expo-router';
+import { Image as ExpoImage } from 'expo-image';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
@@ -11,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Group } from '../../../../shared/contracts';
+import FullScreenImageViewer from '../../../components/FullScreenImageViewer';
 import { listSpaces } from '../../../services/spaceService';
 import { ApiError } from '../../../utils/api';
 
@@ -18,6 +20,8 @@ export default function ListSpacesScreen() {
   const [spaces, setSpaces] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
+  const [viewerVisible, setViewerVisible] = useState(false);
 
   const loadSpaces = useCallback(async () => {
     setLoading(true);
@@ -32,6 +36,11 @@ export default function ListSpacesScreen() {
     } finally {
       setLoading(false);
     }
+  }, []);
+
+  const openViewer = useCallback((imageUrl: string) => {
+    setViewerImageUrl(imageUrl);
+    setViewerVisible(true);
   }, []);
 
   useFocusEffect(
@@ -68,13 +77,37 @@ export default function ListSpacesScreen() {
           data={spaces}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
-            <Pressable
-              onPress={() => router.push(`/(tabs)/spaces/${item.id}`)}
-              style={styles.card}>
-              <Text style={ styles.cardTitle}>{item.name}</Text>
-              <Text style={styles.cardMeta}>Admins to Approve: {item.approvalThreshold}</Text>
-            </Pressable>
+            <View style={styles.card}>
+              {item.imageUrl ? (
+                <Pressable onPress={() => openViewer(item.imageUrl)} style={styles.cardAvatarButton}>
+                  <ExpoImage
+                    contentFit="cover"
+                    source={{ uri: item.imageUrl }}
+                    style={styles.cardAvatar}
+                  />
+                </Pressable>
+              ) : (
+                <View style={styles.cardAvatarPlaceholder}>
+                  <Text style={styles.cardAvatarInitial}>
+                    {item.name.charAt(0).toUpperCase()}
+                  </Text>
+                </View>
+              )}
+
+              <Pressable
+                onPress={() => router.push(`/(tabs)/spaces/${item.id}`)}
+                style={styles.cardContent}>
+                <Text style={styles.cardTitle}>{item.name}</Text>
+                <Text style={styles.cardMeta}>Admins to Approve: {item.approvalThreshold}</Text>
+              </Pressable>
+            </View>
           )}
+        />
+
+        <FullScreenImageViewer
+          imageUrl={viewerImageUrl}
+          onClose={() => setViewerVisible(false)}
+          visible={viewerVisible}
         />
       </View>
     </SafeAreaView>
@@ -150,11 +183,38 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   card: {
+    alignItems: 'center',
     backgroundColor: '#ffffff',
     borderColor: '#e7dfd1',
     borderRadius: 18,
     borderWidth: 1,
+    flexDirection: 'row',
+    gap: 14,
     padding: 18,
+  },
+  cardAvatarButton: {
+    borderRadius: 22,
+  },
+  cardAvatar: {
+    borderRadius: 22,
+    height: 44,
+    width: 44,
+  },
+  cardAvatarPlaceholder: {
+    alignItems: 'center',
+    backgroundColor: '#0f766e',
+    borderRadius: 22,
+    height: 44,
+    justifyContent: 'center',
+    width: 44,
+  },
+  cardAvatarInitial: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  cardContent: {
+    flex: 1,
   },
   cardTitle: {
     color: '#132238',

@@ -4,7 +4,6 @@ import { Image as ExpoImage } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Modal,
   Pressable,
   SafeAreaView,
   Share,
@@ -15,6 +14,8 @@ import {
 } from 'react-native';
 
 import { Group, SpaceAdmin } from '../../../../../shared/contracts';
+import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
+import InviteMembersModal from '../../../../components/InviteMembersModal';
 import { getAdmins, getSpace } from '../../../../services/spaceService';
 import { ApiError } from '../../../../utils/api';
 
@@ -31,6 +32,7 @@ export default function SpaceDashboardScreen() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [viewerVisible, setViewerVisible] = useState(false);
   const [toastMessages, setToastMessages] = useState<ToastMessage[]>([]);
   const toastTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
@@ -138,6 +140,12 @@ export default function SpaceDashboardScreen() {
     };
   }, []);
 
+  const targetAmount = space?.targetAmount ?? 0;
+  const collectedAmount = space?.collectedAmount ?? 0;
+  const progressRatio =
+    targetAmount > 0 ? Math.min(collectedAmount / targetAmount, 1) : 0;
+  const progressPercent = Math.round(progressRatio * 100);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -147,11 +155,13 @@ export default function SpaceDashboardScreen() {
         {space && !loading ? (
           <>
             {space.imageUrl ? (
-              <ExpoImage
-                contentFit="cover"
-                source={{ uri: space.imageUrl }}
-                style={styles.spaceImage}
-              />
+              <Pressable onPress={() => setViewerVisible(true)}>
+                <ExpoImage
+                  contentFit="cover"
+                  source={{ uri: space.imageUrl }}
+                  style={styles.spaceImage}
+                />
+              </Pressable>
             ) : (
               <View style={styles.placeholderAvatar}>
                 <Text style={styles.placeholderInitial}>
@@ -164,6 +174,37 @@ export default function SpaceDashboardScreen() {
               {space.description?.trim() || 'No description yet'}
             </Text>
 
+            {space.targetAmount ? (
+              <View style={styles.progressCard}>
+                <View style={styles.progressHeader}>
+                  <Text style={styles.progressLabel}>Target Amount</Text>
+                  <Text style={styles.progressLabelRight}>
+                    KES {space.targetAmount.toLocaleString()}
+                  </Text>
+                </View>
+
+                <Text style={styles.progressMeta}>
+                  KES {collectedAmount.toLocaleString()} collected
+                </Text>
+
+                <View style={styles.progressBarContainer}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      { width: `${progressPercent}%` },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.progressPercent}>completion: {progressPercent}%</Text>
+
+                {space.deadline ? (
+                  <Text style={styles.deadlineText}>
+                    Deadline: {new Date(space.deadline).toDateString()}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
+
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Admins</Text>
@@ -174,29 +215,29 @@ export default function SpaceDashboardScreen() {
                   <Text style={styles.adminRole}>{admin.role}</Text>
                 </View>
               ))}
-              <Text style={styles.remainingText}>Remaining admin slots: {remainingSlots}</Text>
               <Text style={styles.remainingText}>
                 Admins required to approve: {space.approvalThreshold}
               </Text>
+              <Text style={styles.remainingText}>Available admin slots: {remainingSlots}</Text>
             </View>
 
             <View style={styles.section}>
               <Text style={styles.sectionTitle}>Actions</Text>
-              <Pressable
-                onPress={() => router.push(`/(tabs)/spaces/${space.id}/members`)}
-                style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>View Members</Text>
-              </Pressable>
-              <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>Invite Members</Text>
+              <Pressable style={styles.placeholderButton}>
+                <Text style={styles.placeholderButtonText}>View Transactions</Text>
               </Pressable>
               <Pressable
                 onPress={() => router.push(`/(tabs)/spaces/${space.id}/chat`)}
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>Open Chat</Text>
               </Pressable>
-              <Pressable style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>View Transactions</Text>
+              <Pressable
+                onPress={() => router.push(`/(tabs)/spaces/${space.id}/members`)}
+                style={styles.placeholderButton}>
+                <Text style={styles.placeholderButtonText}>View Members</Text>
+              </Pressable>
+              <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
+                <Text style={styles.placeholderButtonText}>Add Members</Text>
               </Pressable>
             </View>
           </>
@@ -213,53 +254,26 @@ export default function SpaceDashboardScreen() {
         </View>
       ) : null}
 
-      <Modal
+      <InviteMembersModal
+        onClose={() => setInviteModalVisible(false)}
+        onCopyLink={() => {
+          void handleCopyInviteLink();
+        }}
+        onFromContacts={() => {
+          setInviteModalVisible(false);
+          router.push(`/(tabs)/spaces/${spaceId}/invite/contacts`);
+        }}
+        onShareSpace={() => {
+          void handleShareSpace();
+        }}
         visible={inviteModalVisible}
-        transparent
-        animationType="fade"
-        onRequestClose={() => setInviteModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <Text style={styles.modalTitle}>Invite Members</Text>
+      />
 
-            <Pressable
-              style={styles.modalButton}
-              onPress={() => {
-                setInviteModalVisible(false);
-                router.push(`/(tabs)/spaces/${spaceId}/invite/contacts`);
-              }}
-            >
-              <Text style={styles.modalButtonText}>From Contacts</Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.modalButton}
-              onPress={() => {
-                void handleCopyInviteLink();
-              }}
-            >
-              <Text style={styles.modalButtonText}>Copy Invite Link</Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.modalButton}
-              onPress={() => {
-                void handleShareSpace();
-              }}
-            >
-              <Text style={styles.modalButtonText}>Share Space</Text>
-            </Pressable>
-
-            <Pressable
-              style={styles.modalCancel}
-              onPress={() => setInviteModalVisible(false)}
-            >
-              <Text style={styles.modalCancelText}>Cancel</Text>
-            </Pressable>
-          </View>
-        </View>
-      </Modal>
+      <FullScreenImageViewer
+        imageUrl={space?.imageUrl ?? null}
+        onClose={() => setViewerVisible(false)}
+        visible={viewerVisible}
+      />
     </SafeAreaView>
   );
 }
@@ -295,7 +309,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#132238',
-    fontSize: 30,
+    fontSize: 24,
     fontWeight: '800',
     textAlign: 'center',
   },
@@ -303,6 +317,55 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontSize: 15,
     textAlign: 'center',
+  },
+  progressCard: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e7dfd1',
+    borderRadius: 20,
+    borderWidth: 1,
+    gap: 12,
+    padding: 18,
+  },
+  progressHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  progressLabel: {
+    color: '#132238',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  progressLabelRight: {
+    color: '#132238',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  progressMeta: {
+    color: '#6b7280',
+    fontSize: 14,
+  },
+  progressBarContainer: {
+    backgroundColor: '#e5e7eb',
+    borderRadius: 6,
+    height: 12,
+    marginBottom: 4,
+    marginTop: 4,
+    overflow: 'hidden',
+  },
+  progressBarFill: {
+    backgroundColor: '#0f766e',
+    height: '100%',
+  },
+  progressPercent: {
+    alignSelf: 'flex-end',
+    color: '#0f766e',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  deadlineText: {
+    color: '#6b7280',
+    fontSize: 14,
+    marginTop: 6,
   },
   section: {
     backgroundColor: '#ffffff',
@@ -382,44 +445,6 @@ const styles = StyleSheet.create({
   toastText: {
     color: '#ffffff',
     fontSize: 13,
-    fontWeight: '600',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContainer: {
-    width: '85%',
-    backgroundColor: '#ffffff',
-    borderRadius: 20,
-    padding: 20,
-    gap: 14,
-  },
-  modalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#132238',
-    textAlign: 'center',
-  },
-  modalButton: {
-    backgroundColor: '#edf4f2',
-    borderRadius: 14,
-    paddingVertical: 14,
-    alignItems: 'center',
-  },
-  modalButtonText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#132238',
-  },
-  modalCancel: {
-    marginTop: 6,
-    alignItems: 'center',
-  },
-  modalCancelText: {
-    color: '#b42318',
     fontWeight: '600',
   },
 });

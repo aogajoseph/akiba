@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 
+import { CreateGroupRequestDto } from '../../../../shared/contracts';
 import { createSpace } from '../../../services/spaceService';
 import { ApiError } from '../../../utils/api';
 
@@ -79,10 +80,7 @@ export default function CreateSpaceScreen() {
     setError(null);
 
     try {
-      const payload: Parameters<typeof createSpace>[0] & {
-        deadline?: string;
-        targetAmount?: number;
-      } = {
+      const payload: CreateGroupRequestDto = {
         name: name.trim(),
         description: description.trim() || undefined,
         image: selectedImageUri ?? undefined,
@@ -120,7 +118,7 @@ export default function CreateSpaceScreen() {
         keyboardShouldPersistTaps="handled"
         style={styles.container}>
         <Text style={styles.title}>Create Space</Text>
-        <Text style={styles.subtitle}>Spaces bring people together to save for events, goals or shared needs.</Text>
+        <Text style={styles.subtitle}>Spaces bring people together to save for events and shared financial goals.</Text>
 
         <View style={styles.avatarSection}>
           <Pressable onPress={() => { void handlePickAvatar(); }} style={styles.avatarButton}>
@@ -140,7 +138,7 @@ export default function CreateSpaceScreen() {
               </View>
             )}
           </Pressable>
-          <Text style={styles.avatarHint}>Tap to add a space image</Text>
+          <Text style={styles.avatarHint}>Tap to add an image</Text>
         </View>
 
         <View style={styles.form}>
@@ -148,7 +146,7 @@ export default function CreateSpaceScreen() {
             <Text style={styles.label}>Space Name</Text>
             <TextInput
               onChangeText={setName}
-              placeholder="John’s Wedding Contribution"
+              placeholder="John’s Wedding"
               placeholderTextColor="#94a3b8"
               style={styles.input}
               value={name}
@@ -161,7 +159,7 @@ export default function CreateSpaceScreen() {
               multiline
               numberOfLines={3}
               onChangeText={setDescription}
-              placeholder="Contributions towards John's wedding."
+              placeholder="Contributions towards John's and Susan's wedding."
               placeholderTextColor="#94a3b8"
               style={[styles.input, styles.textArea]}
               textAlignVertical="top"

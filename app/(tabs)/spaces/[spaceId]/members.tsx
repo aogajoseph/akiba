@@ -1,5 +1,6 @@
+import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
@@ -7,12 +8,15 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
+  Share,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import { Group, SpaceAdmin, SpaceMember } from '../../../../../shared/contracts';
+import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
+import InviteMembersModal from '../../../../components/InviteMembersModal';
 import {
   deleteSpace,
   getAdmins,
@@ -24,6 +28,11 @@ import {
 } from '../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../utils/api';
 
+type ToastMessage = {
+  id: number;
+  text: string;
+};
+
 export default function MembersScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [space, setSpace] = useState<Group | null>(null);
@@ -32,10 +41,34 @@ export default function MembersScreen() {
   const [loading, setLoading] = useState(true);
   const [actionMemberId, setActionMemberId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [inviteModalVisible, setInviteModalVisible] = useState(false);
+  const [toastMessages, setToastMessages] = useState<ToastMessage[]>([]);
+  const [viewerVisible, setViewerVisible] = useState(false);
+  const toastTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   const currentUserId = getAuthSession()?.user.id ?? null;
   const isCreator = currentUserId !== null && currentUserId === space?.createdByUserId;
   const inviteLink = spaceId ? `akiba://spaces/${spaceId}` : null;
+
+  const dismissToast = useCallback((toastId: number) => {
+    const timeout = toastTimeoutsRef.current[toastId];
+
+    if (timeout) {
+      clearTimeout(timeout);
+      delete toastTimeoutsRef.current[toastId];
+    }
+
+    setToastMessages((current) => current.filter((toast) => toast.id !== toastId));
+  }, []);
+
+  const showToast = useCallback((text: string) => {
+    const toastId = Date.now() + Math.floor(Math.random() * 1000);
+
+    setToastMessages((current) => [...current, { id: toastId, text }]);
+    toastTimeoutsRef.current[toastId] = setTimeout(() => {
+      dismissToast(toastId);
+    }, 2200);
+  }, [dismissToast]);
 
   const loadData = useCallback(async () => {
     if (!spaceId) {
@@ -71,6 +104,15 @@ export default function MembersScreen() {
     }, [loadData]),
   );
 
+  useEffect(() => {
+    return () => {
+      Object.values(toastTimeoutsRef.current).forEach((timeout) => {
+        clearTimeout(timeout);
+      });
+      toastTimeoutsRef.current = {};
+    };
+  }, []);
+
   const myMembership = useMemo(() => {
     return members.find((member) => member.userId === currentUserId) ?? null;
   }, [currentUserId, members]);
@@ -81,11 +123,39 @@ export default function MembersScreen() {
   const isDeletingSpace = actionMemberId === 'delete-space';
 
   const showInviteMembers = () => {
+    setInviteModalVisible(true);
+  };
+
+  const handleCopyInviteLink = async () => {
     if (!inviteLink) {
       return;
     }
 
-    Alert.alert('Invite Members', `Invite link: ${inviteLink}`);
+    try {
+      await Clipboard.setStringAsync(inviteLink);
+      setInviteModalVisible(false);
+      showToast('Link copied to clipboard');
+    } catch {
+      setError('Unable to copy invite link.');
+      setInviteModalVisible(false);
+    }
+  };
+
+  const handleShareSpace = async () => {
+    if (!inviteLink) {
+      return;
+    }
+
+    try {
+      await Share.share({
+        message: `Join our Akiba Space:\n${inviteLink}`,
+      });
+      setInviteModalVisible(false);
+    } catch {
+      await Clipboard.setStringAsync(inviteLink);
+      setInviteModalVisible(false);
+      showToast('Link copied to clipboard');
+    }
   };
 
   const runMemberAction = async (memberId: string, action: () => Promise<void>) => {
@@ -235,7 +305,9 @@ export default function MembersScreen() {
           <>
             <View style={styles.spaceHeader}>
               {space.imageUrl ? (
-                <Image source={{ uri: space.imageUrl }} style={styles.spaceAvatar} />
+                <Pressable onPress={() => setViewerVisible(true)}>
+                  <Image source={{ uri: space.imageUrl }} style={styles.spaceAvatar} />
+                </Pressable>
               ) : (
                 <View style={styles.spaceAvatarPlaceholder}>
                   <Text style={styles.spaceAvatarInitial}>
@@ -253,17 +325,17 @@ export default function MembersScreen() {
             </View>
 
             {isCreator ? (
-              <Text style={styles.subtitle}>Manage members and admins for this space</Text>
+              <Text style={styles.subtitle}>Manage the people in this space</Text>
             ) : null}
 
             {members.length === 1 ? (
               <View style={styles.emptyStateCard}>
-                <Text style={styles.emptyStateTitle}>You&apos;re the only member in this space</Text>
+                <Text style={styles.emptyStateTitle}>You&apos;re the only one in this space</Text>
                 <Text style={styles.emptyStateText}>
-                  Bring in a few more people to start saving together transparently.
+                  Add members and start saving together
                 </Text>
                 <Pressable onPress={showInviteMembers} style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonText}>Invite Members</Text>
+                  <Text style={styles.primaryButtonText}>Add Members</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -313,6 +385,37 @@ export default function MembersScreen() {
           </>
         ) : null}
       </ScrollView>
+
+      {toastMessages.length > 0 ? (
+        <View pointerEvents="none" style={styles.toastStack}>
+          {toastMessages.map((toast) => (
+            <View key={toast.id} style={styles.toast}>
+              <Text style={styles.toastText}>{toast.text}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
+      <InviteMembersModal
+        onClose={() => setInviteModalVisible(false)}
+        onCopyLink={() => {
+          void handleCopyInviteLink();
+        }}
+        onFromContacts={() => {
+          setInviteModalVisible(false);
+          router.push(`/(tabs)/spaces/${spaceId}/invite/contacts`);
+        }}
+        onShareSpace={() => {
+          void handleShareSpace();
+        }}
+        visible={inviteModalVisible}
+      />
+
+      <FullScreenImageViewer
+        imageUrl={space?.imageUrl ?? null}
+        onClose={() => setViewerVisible(false)}
+        visible={viewerVisible}
+      />
     </SafeAreaView>
   );
 }
@@ -358,7 +461,7 @@ const styles = StyleSheet.create({
   },
   title: {
     color: '#132238',
-    fontSize: 30,
+    fontSize: 22,
     fontWeight: '800',
   },
   spaceDescription: {
@@ -371,7 +474,6 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#6b7280',
     fontSize: 15,
-    textAlign: 'center',
   },
   emptyStateCard: {
     backgroundColor: '#ffffff',
@@ -522,5 +624,30 @@ const styles = StyleSheet.create({
   errorText: {
     color: '#b42318',
     fontSize: 14,
+  },
+  toastStack: {
+    alignItems: 'center',
+    bottom: 24,
+    gap: 8,
+    left: 16,
+    position: 'absolute',
+    right: 16,
+    zIndex: 40,
+  },
+  toast: {
+    backgroundColor: 'rgba(19, 34, 56, 0.92)',
+    borderRadius: 18,
+    elevation: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.18,
+    shadowRadius: 14,
+  },
+  toastText: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '600',
   },
 });
