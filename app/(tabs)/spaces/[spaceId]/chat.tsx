@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { io, type Socket } from 'socket.io-client';
 import {
   ActivityIndicator,
   Alert,
@@ -46,7 +47,7 @@ import {
   type MediaUploadAttachment,
 } from '../../../../services/spaceService';
 import AkibaLink from '../../../../components/AkibaLink';
-import { ApiError, getAuthSession } from '../../../../utils/api';
+import { api, ApiError, getAuthSession } from '../../../../utils/api';
 
 type ChatMessage = Message & {
   senderName: string;
@@ -60,6 +61,11 @@ type ReplyPreview = {
 type MediaViewer = {
   type: 'image' | 'video';
   url: string;
+};
+
+type PresenceUpdatePayload = {
+  onlineCount: number;
+  spaceId: string;
 };
 
 type ComposerMediaAttachment = MediaUploadAttachment & {
@@ -394,6 +400,7 @@ export default function SpaceChatScreen() {
   const [spaceName, setSpaceName] = useState('Space Chat');
   const [spaceImageUrl, setSpaceImageUrl] = useState<string | null>(null);
   const [spaceCreatorUserId, setSpaceCreatorUserId] = useState<string | null>(null);
+  const [onlineCount, setOnlineCount] = useState(0);
   const [menuVisible, setMenuVisible] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
@@ -411,6 +418,7 @@ export default function SpaceChatScreen() {
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const messageLayoutsRef = useRef<Record<string, { height: number; y: number }>>({});
   const highlightedMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const presenceSocketRef = useRef<Socket | null>(null);
   const scrollOffsetRef = useRef(0);
   const viewportHeightRef = useRef(0);
 
@@ -465,6 +473,41 @@ export default function SpaceChatScreen() {
       }
     };
   }, []);
+
+  useEffect(() => {
+    const socketBaseUrl = api.defaults.baseURL;
+
+    if (!spaceId || !currentUserId || !socketBaseUrl) {
+      setOnlineCount(0);
+      return undefined;
+    }
+
+    const socket = io(socketBaseUrl);
+    const handleConnect = () => {
+      socket.emit('join_space', { spaceId, userId: currentUserId });
+    };
+    const handlePresenceUpdate = (payload: PresenceUpdatePayload) => {
+      if (payload.spaceId === spaceId) {
+        setOnlineCount(payload.onlineCount);
+      }
+    };
+
+    presenceSocketRef.current = socket;
+    socket.on('connect', handleConnect);
+    socket.on('presence_update', handlePresenceUpdate);
+
+    if (socket.connected) {
+      handleConnect();
+    }
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('presence_update', handlePresenceUpdate);
+      socket.disconnect();
+      presenceSocketRef.current = null;
+      setOnlineCount(0);
+    };
+  }, [currentUserId, spaceId]);
 
   const showCopyConfirmation = useCallback(() => {
     if (copyToastTimeoutRef.current) {
@@ -677,7 +720,6 @@ export default function SpaceChatScreen() {
   const messagesBottomPadding =
     composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING + TYPING_INDICATOR_RESERVE;
   const isCreator = currentUserId !== null && currentUserId === spaceCreatorUserId;
-  const onlineCount = 0;
   const currentMembership = members.find((member) => member.userId === currentUserId) ?? null;
   const canDeleteSelectedMessage =
     selectedMessage !== null && selectedMessage.senderUserId === currentUserId;
