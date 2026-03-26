@@ -1,4 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import { router } from 'expo-router';
@@ -25,11 +26,19 @@ export default function CreateSpaceScreen() {
   const [approvalThreshold, setApprovalThreshold] = useState('');
   const [hasGoal, setHasGoal] = useState(false);
   const [targetAmount, setTargetAmount] = useState('');
-  const [deadline, setDeadline] = useState('');
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canSubmit = name.trim().length > 0 && !loading;
+  const formattedDeadline = deadlineDate
+    ? deadlineDate.toLocaleDateString('en-KE', {
+        day: 'numeric',
+        month: 'short',
+        year: 'numeric',
+      })
+    : null;
 
   const avatarInitials = name
     .trim()
@@ -81,15 +90,14 @@ export default function CreateSpaceScreen() {
       };
 
       if (hasGoal) {
-        const normalizedTargetAmount = targetAmount.replace(/,/g, '').trim();
-        const normalizedDeadline = deadline.trim();
+        const normalizedTargetAmount = targetAmount.trim();
 
         if (normalizedTargetAmount) {
           payload.targetAmount = Number(normalizedTargetAmount);
         }
 
-        if (normalizedDeadline) {
-          payload.deadline = normalizedDeadline;
+        if (deadlineDate) {
+          payload.deadline = deadlineDate.toISOString();
         }
       }
 
@@ -195,27 +203,52 @@ export default function CreateSpaceScreen() {
             <>
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Target Amount</Text>
-                <TextInput
-                  keyboardType="number-pad"
-                  onChangeText={setTargetAmount}
-                  placeholder="e.g. 50,000"
-                  placeholderTextColor="#94a3b8"
-                  style={styles.input}
-                  value={targetAmount}
-                />
+                <View style={styles.inputWithPrefix}>
+                  <Text style={styles.inputPrefix}>KES</Text>
+                  <TextInput
+                    keyboardType="number-pad"
+                    onChangeText={(value) => {
+                      setTargetAmount(value.replace(/[^\d]/g, ''));
+                    }}
+                    placeholder="50,000"
+                    placeholderTextColor="#94a3b8"
+                    style={styles.prefixedInput}
+                    value={targetAmount}
+                  />
+                </View>
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Deadline</Text>
-                <TextInput
-                  onChangeText={setDeadline}
-                  placeholder="e.g. 30 Dec 2026"
-                  placeholderTextColor="#94a3b8"
-                  style={styles.input}
-                  value={deadline}
-                />
+                <Pressable
+                  onPress={() => setShowDatePicker(true)}
+                  style={[styles.input, styles.dateInputButton]}>
+                  <Text
+                    style={[
+                      styles.dateInputText,
+                      formattedDeadline ? styles.dateInputValue : styles.dateInputPlaceholder,
+                    ]}>
+                    {formattedDeadline ?? 'Select deadline (optional)'}
+                  </Text>
+                </Pressable>
               </View>
             </>
+          ) : null}
+
+          {showDatePicker ? (
+            <DateTimePicker
+              display="default"
+              minimumDate={new Date()}
+              mode="date"
+              onChange={(_event, selectedDate) => {
+                setShowDatePicker(false);
+
+                if (selectedDate) {
+                  setDeadlineDate(selectedDate);
+                }
+              }}
+              value={deadlineDate ?? new Date()}
+            />
           ) : null}
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -330,6 +363,41 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  inputWithPrefix: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderColor: '#e7dfd1',
+    borderRadius: 16,
+    borderWidth: 1,
+    flexDirection: 'row',
+    paddingLeft: 16,
+    paddingRight: 10,
+  },
+  inputPrefix: {
+    color: '#132238',
+    fontSize: 15,
+    fontWeight: '700',
+    marginRight: 10,
+  },
+  prefixedInput: {
+    color: '#132238',
+    flex: 1,
+    fontSize: 16,
+    paddingVertical: 14,
+  },
+  dateInputButton: {
+    justifyContent: 'center',
+    minHeight: 52,
+  },
+  dateInputText: {
+    fontSize: 16,
+  },
+  dateInputValue: {
+    color: '#132238',
+  },
+  dateInputPlaceholder: {
+    color: '#94a3b8',
   },
   textArea: {
     minHeight: 100,
