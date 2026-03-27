@@ -1,12 +1,12 @@
 import * as ImagePicker from 'expo-image-picker';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Ionicons } from '@expo/vector-icons';
-import { Image as ExpoImage } from 'expo-image';
+import { Feather, Ionicons } from '@expo/vector-icons';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Image,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -36,6 +36,10 @@ export default function SpaceSettingsScreen() {
   const [creatorUserId, setCreatorUserId] = useState<string | null>(null);
 
   const currentUserId = getAuthSession()?.user.id ?? null;
+  const nameInputRef = useRef<TextInput | null>(null);
+  const descriptionInputRef = useRef<TextInput | null>(null);
+  const approvalThresholdInputRef = useRef<TextInput | null>(null);
+  const targetAmountInputRef = useRef<TextInput | null>(null);
   const canSubmit = name.trim().length > 0 && !loading && !saving;
   const isCreator = currentUserId !== null && currentUserId === creatorUserId;
   const formattedDeadline = deadlineDate
@@ -218,21 +222,25 @@ export default function SpaceSettingsScreen() {
           <>
             <View style={styles.avatarSection}>
               <Pressable onPress={() => { void handlePickAvatar(); }} style={styles.avatarButton}>
-                {imageUrl ? (
-                  <ExpoImage
-                    contentFit="cover"
-                    source={{ uri: imageUrl }}
-                    style={styles.avatarImage}
-                  />
-                ) : (
-                  <View style={styles.avatarPlaceholder}>
-                    {avatarInitials ? (
-                      <Text style={styles.avatarInitials}>{avatarInitials}</Text>
-                    ) : (
-                      <Ionicons color="#0f766e" name="image-outline" size={28} />
-                    )}
-                  </View>
-                )}
+                <View style={styles.avatarContainer}>
+                  {imageUrl ? (
+                    <Image source={{ uri: imageUrl }} style={styles.avatarImage} />
+                  ) : (
+                    <View style={styles.avatarPlaceholder}>
+                      {avatarInitials ? (
+                        <Text style={styles.avatarInitials}>{avatarInitials}</Text>
+                      ) : (
+                        <Ionicons color="#0f766e" name="image-outline" size={28} />
+                      )}
+                    </View>
+                  )}
+
+                  <Pressable
+                    onPress={() => { void handlePickAvatar(); }}
+                    style={styles.avatarEditOverlay}>
+                    <Feather color="#132238" name="edit-2" size={14} />
+                  </Pressable>
+                </View>
               </Pressable>
               <Text style={styles.avatarHint}>Tap to update the space image</Text>
             </View>
@@ -240,44 +248,69 @@ export default function SpaceSettingsScreen() {
             <View style={styles.form}>
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Space Name</Text>
+                <View style={styles.inputWrapper}>
                 <TextInput
+                  ref={nameInputRef}
                   onChangeText={setName}
                   placeholder="Weekend Chama"
                   placeholderTextColor="#94a3b8"
-                  style={styles.input}
+                  style={[styles.input, styles.inputWithIcon]}
                   value={name}
                 />
+                  <Pressable
+                    onPress={() => nameInputRef.current?.focus()}
+                    style={styles.inputIcon}>
+                    <Feather color="#6b7280" name="edit-2" size={16} />
+                  </Pressable>
+                </View>
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Space Description</Text>
+                <View style={styles.inputWrapper}>
                 <TextInput
                   multiline
                   numberOfLines={3}
                   onChangeText={setDescription}
                   placeholder="What is this space about?"
                   placeholderTextColor="#94a3b8"
-                  style={[styles.input, styles.textArea]}
+                  ref={descriptionInputRef}
+                  style={[styles.input, styles.inputWithIcon, styles.textArea]}
                   textAlignVertical="top"
                   value={description}
                 />
+                  <Pressable
+                    onPress={() => descriptionInputRef.current?.focus()}
+                    style={styles.inputIcon}>
+                    <Feather color="#6b7280" name="edit-2" size={16} />
+                  </Pressable>
+                </View>
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Admins to Approve</Text>
+                <View style={styles.inputWrapper}>
                 <TextInput
                   keyboardType="number-pad"
                   onChangeText={setApprovalThreshold}
                   placeholder="2 or 3"
                   placeholderTextColor="#94a3b8"
-                  style={styles.input}
+                  ref={approvalThresholdInputRef}
+                  style={[styles.input, styles.inputWithIcon]}
                   value={approvalThreshold}
                 />
+                  <Pressable
+                    onPress={() => approvalThresholdInputRef.current?.focus()}
+                    style={styles.inputIcon}>
+                    <Feather color="#6b7280" name="edit-2" size={16} />
+                  </Pressable>
+                </View>
               </View>
 
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Target Amount</Text>
-                <View style={styles.inputWithPrefix}>
+                <View style={styles.inputWrapper}>
+                  <View style={styles.inputWithPrefix}>
                   <Text style={styles.inputPrefix}>KES</Text>
                   <TextInput
                     keyboardType="number-pad"
@@ -286,9 +319,16 @@ export default function SpaceSettingsScreen() {
                     }}
                     placeholder="50,000"
                     placeholderTextColor="#94a3b8"
+                    ref={targetAmountInputRef}
                     style={styles.prefixedInput}
                     value={targetAmount}
                   />
+                  </View>
+                  <Pressable
+                    onPress={() => targetAmountInputRef.current?.focus()}
+                    style={styles.inputIcon}>
+                    <Feather color="#6b7280" name="edit-2" size={16} />
+                  </Pressable>
                 </View>
               </View>
 
@@ -296,7 +336,7 @@ export default function SpaceSettingsScreen() {
                 <Text style={styles.label}>Deadline</Text>
                 <Pressable
                   onPress={() => setShowDatePicker(true)}
-                  style={[styles.input, styles.dateInputButton]}>
+                  style={[styles.inputWrapper, styles.input, styles.dateInputButton]}>
                   <Text
                     style={[
                       styles.dateInputText,
@@ -304,6 +344,9 @@ export default function SpaceSettingsScreen() {
                     ]}>
                     {formattedDeadline ?? 'Select deadline (optional)'}
                   </Text>
+                  <View style={styles.inputIcon}>
+                    <Feather color="#6b7280" name="edit-2" size={16} />
+                  </View>
                 </Pressable>
 
                 {deadlineDate ? (
@@ -392,28 +435,31 @@ const styles = StyleSheet.create({
     gap: 10,
     marginTop: 28,
   },
+  avatarContainer: {
+    alignSelf: 'flex-start',
+    position: 'relative',
+  },
   avatarButton: {
     alignItems: 'center',
-    borderRadius: 48,
-    height: 96,
+    borderRadius: 999,
+    height: 72,
     justifyContent: 'center',
-    overflow: 'hidden',
-    width: 96,
+    width: 72,
   },
   avatarPlaceholder: {
     alignItems: 'center',
     backgroundColor: '#ecfdf3',
     borderColor: '#b7e4d7',
-    borderRadius: 48,
+    borderRadius: 999,
     borderWidth: 1,
-    height: '100%',
+    height: 72,
     justifyContent: 'center',
-    width: '100%',
+    width: 72,
   },
   avatarImage: {
-    borderRadius: 48,
-    height: '100%',
-    width: '100%',
+    borderRadius: 999,
+    height: 72,
+    width: 72,
   },
   avatarInitials: {
     color: '#0f766e',
@@ -423,6 +469,16 @@ const styles = StyleSheet.create({
   avatarHint: {
     color: '#6b7280',
     fontSize: 13,
+  },
+  avatarEditOverlay: {
+    backgroundColor: '#ffffff',
+    borderColor: '#e7dfd1',
+    borderRadius: 999,
+    borderWidth: 1,
+    bottom: 0,
+    padding: 6,
+    position: 'absolute',
+    right: 0,
   },
   form: {
     gap: 18,
@@ -436,6 +492,10 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
   },
+  inputWrapper: {
+    justifyContent: 'center',
+    position: 'relative',
+  },
   input: {
     backgroundColor: '#ffffff',
     borderColor: '#e7dfd1',
@@ -446,6 +506,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 14,
   },
+  inputWithIcon: {
+    paddingRight: 44,
+  },
   inputWithPrefix: {
     alignItems: 'center',
     backgroundColor: '#ffffff',
@@ -454,7 +517,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     flexDirection: 'row',
     paddingLeft: 16,
-    paddingRight: 10,
+    paddingRight: 40,
   },
   inputPrefix: {
     color: '#132238',
@@ -468,6 +531,12 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 14,
   },
+  inputIcon: {
+    height: '100%',
+    justifyContent: 'center',
+    position: 'absolute',
+    right: 12,
+  },
   textArea: {
     minHeight: 100,
     paddingTop: 14,
@@ -477,6 +546,7 @@ const styles = StyleSheet.create({
     minHeight: 52,
   },
   dateInputText: {
+    paddingRight: 28,
     fontSize: 16,
   },
   dateInputValue: {
