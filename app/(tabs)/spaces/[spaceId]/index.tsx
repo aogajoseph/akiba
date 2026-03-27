@@ -224,7 +224,14 @@ export default function SpaceDashboardScreen() {
             </View>
 
             <View style={styles.section}>
-              <Text style={styles.sectionTitle}>Actions</Text>
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionTitle}>Actions</Text>
+                <Pressable
+                  onPress={() => router.push(`/(tabs)/spaces/${space.id}/settings`)}
+                  style={styles.iconButton}>
+                  <Text style={styles.gearIcon}>⚙️</Text>
+                </Pressable>
+              </View>
               <Pressable style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Transactions</Text>
               </Pressable>
@@ -237,11 +244,6 @@ export default function SpaceDashboardScreen() {
                 onPress={() => router.push(`/(tabs)/spaces/${space.id}/members`)}
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Members</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => router.push(`/(tabs)/spaces/${space.id}/settings`)}
-                style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>Space Settings</Text>
               </Pressable>
               <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>Add Members</Text>
@@ -392,6 +394,13 @@ const styles = StyleSheet.create({
     color: '#132238',
     fontSize: 18,
     fontWeight: '700',
+  },
+  iconButton: {
+    borderRadius: 999,
+    padding: 6,
+  },
+  gearIcon: {
+    fontSize: 20,
   },
   adminRow: {
     alignItems: 'center',
