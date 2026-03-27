@@ -18,7 +18,6 @@ import { Group, SpaceAdmin, SpaceMember } from '../../../../../shared/contracts'
 import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
 import InviteMembersModal from '../../../../components/InviteMembersModal';
 import {
-  deleteSpace,
   getAdmins,
   getMembers,
   getSpace,
@@ -120,7 +119,6 @@ export default function MembersScreen() {
   const adminIds = useMemo(() => new Set(admins.map((admin) => admin.userId)), [admins]);
   const adminMembers = members.filter((member) => adminIds.has(member.userId));
   const regularMembers = members.filter((member) => !adminIds.has(member.userId));
-  const isDeletingSpace = actionMemberId === 'delete-space';
 
   const showInviteMembers = () => {
     setInviteModalVisible(true);
@@ -208,48 +206,6 @@ export default function MembersScreen() {
             await leaveSpace(spaceId, myMembership.id);
             router.replace('/(tabs)/spaces');
           });
-        },
-      },
-    ]);
-  };
-
-  const performDeleteSpace = async () => {
-    if (!spaceId) return;
-
-    setActionMemberId('delete-space');
-    setError(null);
-
-    try {
-      const response = await deleteSpace(spaceId);
-
-      if (response.success) {
-        Alert.alert('Success', 'Space deleted successfully');
-
-        // small delay so user sees the message
-        setTimeout(() => {
-          router.replace('/(tabs)/spaces');
-        }, 500);
-      }
-    } catch (caughtError) {
-      const apiError = caughtError as ApiError;
-      setError(apiError.error ?? 'Unable to delete this space.');
-    } finally {
-      setActionMemberId(null);
-    }
-  };
-
-  const confirmDeleteSpace = () => {
-    if (!spaceId || !space || isDeletingSpace) {
-      return;
-    }
-
-    Alert.alert('Delete Space', `Delete ${space.name}? This cannot be undone.`, [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Delete',
-        style: 'destructive',
-        onPress: () => {
-          void performDeleteSpace();
         },
       },
     ]);
@@ -369,17 +325,6 @@ export default function MembersScreen() {
                   actionMemberId === myMembership.id ? styles.disabledButton : null,
                 ]}>
                 <Text style={styles.leaveButtonText}>Leave Space</Text>
-              </Pressable>
-            ) : null}
-
-            {isCreator ? (
-              <Pressable
-                disabled={isDeletingSpace}
-                onPress={confirmDeleteSpace}
-                style={[styles.deleteButton, isDeletingSpace ? styles.disabledButton : null]}>
-                <Text style={styles.deleteButtonText}>
-                  {isDeletingSpace ? 'Deleting...' : 'Delete Space'}
-                </Text>
               </Pressable>
             ) : null}
           </>
@@ -599,18 +544,6 @@ const styles = StyleSheet.create({
   },
   leaveButtonText: {
     color: '#9a5d22',
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  deleteButton: {
-    alignItems: 'center',
-    backgroundColor: '#b42318',
-    borderRadius: 14,
-    justifyContent: 'center',
-    minHeight: 48,
-  },
-  deleteButtonText: {
-    color: '#ffffff',
     fontSize: 15,
     fontWeight: '700',
   },

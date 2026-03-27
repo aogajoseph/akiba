@@ -16,8 +16,8 @@ import {
   View,
 } from 'react-native';
 
-import { getSpace, updateSpace } from '../../../../services/spaceService';
-import { ApiError } from '../../../../utils/api';
+import { deleteSpace, getSpace, updateSpace } from '../../../../services/spaceService';
+import { ApiError, getAuthSession } from '../../../../utils/api';
 
 export default function SpaceSettingsScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
@@ -30,9 +30,13 @@ export default function SpaceSettingsScreen() {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [isDeletingSpace, setIsDeletingSpace] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [creatorUserId, setCreatorUserId] = useState<string | null>(null);
 
+  const currentUserId = getAuthSession()?.user.id ?? null;
   const canSubmit = name.trim().length > 0 && !loading && !saving;
+  const isCreator = currentUserId !== null && currentUserId === creatorUserId;
   const formattedDeadline = deadlineDate
     ? deadlineDate.toLocaleDateString('en-KE', {
         day: 'numeric',
@@ -73,6 +77,7 @@ export default function SpaceSettingsScreen() {
         );
         setDeadlineDate(nextSpace.deadline ? new Date(nextSpace.deadline) : null);
         setImageUrl(nextSpace.imageUrl ?? null);
+        setCreatorUserId(nextSpace.createdByUserId);
       } catch (caughtError) {
         const apiError = caughtError as ApiError;
         setError(apiError.error ?? 'Unable to load this space.');
@@ -131,6 +136,53 @@ export default function SpaceSettingsScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const performDeleteSpace = async () => {
+    if (!spaceId) {
+      return;
+    }
+
+    setIsDeletingSpace(true);
+    setError(null);
+
+    try {
+      const response = await deleteSpace(spaceId);
+
+      if (response.success) {
+        Alert.alert('Success', 'Space deleted successfully');
+
+        setTimeout(() => {
+          router.replace('/(tabs)/spaces');
+        }, 500);
+      }
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to delete this space.');
+    } finally {
+      setIsDeletingSpace(false);
+    }
+  };
+
+  const confirmDeleteSpace = () => {
+    if (!spaceId || isDeletingSpace) {
+      return;
+    }
+
+    Alert.alert(
+      'Delete Space',
+      'This action cannot be undone. Are you sure you want to delete this space?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: () => {
+            void performDeleteSpace();
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -279,6 +331,17 @@ export default function SpaceSettingsScreen() {
                   <Text style={styles.buttonText}>Save Changes</Text>
                 )}
               </Pressable>
+
+              {isCreator ? (
+                <Pressable
+                  disabled={isDeletingSpace}
+                  onPress={confirmDeleteSpace}
+                  style={[styles.deleteButton, isDeletingSpace ? styles.buttonDisabled : null]}>
+                  <Text style={styles.deleteButtonText}>
+                    {isDeletingSpace ? 'Deleting...' : 'Delete Space'}
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           </>
         ) : null}
@@ -432,6 +495,19 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#ffffff',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  deleteButton: {
+    alignItems: 'center',
+    backgroundColor: '#b42318',
+    borderRadius: 14,
+    justifyContent: 'center',
+    marginTop: 12,
+    minHeight: 48,
+  },
+  deleteButtonText: {
+    color: '#ffffff',
+    fontSize: 15,
     fontWeight: '700',
   },
 });
