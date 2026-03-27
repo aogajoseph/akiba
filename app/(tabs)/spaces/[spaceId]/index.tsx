@@ -1,5 +1,5 @@
 import * as Clipboard from 'expo-clipboard';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
@@ -100,36 +100,38 @@ export default function SpaceDashboardScreen() {
     }
   };
 
-  useEffect(() => {
-    const loadSpace = async () => {
-      if (!spaceId) {
-        setError('Missing space id.');
-        setLoading(false);
-        return;
-      }
+  const loadSpace = useCallback(async () => {
+    if (!spaceId) {
+      setError('Missing space id.');
+      setLoading(false);
+      return;
+    }
 
-      setLoading(true);
-      setError(null);
+    setLoading(true);
+    setError(null);
 
-      try {
-        const [spaceResponse, adminsResponse] = await Promise.all([
-          getSpace(spaceId),
-          getAdmins(spaceId),
-        ]);
+    try {
+      const [spaceResponse, adminsResponse] = await Promise.all([
+        getSpace(spaceId),
+        getAdmins(spaceId),
+      ]);
 
-        setSpace(spaceResponse.space ?? spaceResponse.group);
-        setAdmins(adminsResponse.admins);
-        setRemainingSlots(adminsResponse.remainingSlots);
-      } catch (caughtError) {
-        const apiError = caughtError as ApiError;
-        setError(apiError.error ?? 'Unable to load this space.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    void loadSpace();
+      setSpace(spaceResponse.space ?? spaceResponse.group);
+      setAdmins(adminsResponse.admins);
+      setRemainingSlots(adminsResponse.remainingSlots);
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to load this space.');
+    } finally {
+      setLoading(false);
+    }
   }, [spaceId]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadSpace();
+    }, [loadSpace]),
+  );
 
   useEffect(() => {
     return () => {
@@ -235,6 +237,11 @@ export default function SpaceDashboardScreen() {
                 onPress={() => router.push(`/(tabs)/spaces/${space.id}/members`)}
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Members</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push(`/(tabs)/spaces/${space.id}/settings`)}
+                style={styles.placeholderButton}>
+                <Text style={styles.placeholderButtonText}>Space Settings</Text>
               </Pressable>
               <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>Add Members</Text>

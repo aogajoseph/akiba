@@ -16,6 +16,8 @@ import {
   RevokeGroupMemberResponseDto,
   ToggleMessageReactionResponseDto,
   ToggleMessageReactionRequestDto,
+  UpdateGroupRequestDto,
+  UpdateGroupResponseDto,
   UploadMediaMessageResponseDto,
 } from '../../shared/contracts';
 import { api } from '../utils/api';
@@ -48,6 +50,14 @@ export const createSpace = async (
 
 export const getSpace = async (spaceId: string): Promise<GetGroupResponseDto> => {
   const response = await api.get<{ data: GetGroupResponseDto }>(`/spaces/${spaceId}`);
+  return response.data.data;
+};
+
+export const updateSpace = async (
+  spaceId: string,
+  payload: UpdateGroupRequestDto,
+): Promise<UpdateGroupResponseDto> => {
+  const response = await api.patch<{ data: UpdateGroupResponseDto }>(`/groups/${spaceId}`, payload);
   return response.data.data;
 };
 
