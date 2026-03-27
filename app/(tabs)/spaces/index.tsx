@@ -55,7 +55,7 @@ export default function ListSpacesScreen() {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.title}>Spaces</Text>
-            <Text style={styles.subtitle}>Your shared saving spaces.</Text>
+            <Text style={styles.subtitle}>Your shared saving spaces</Text>
           </View>
           <Pressable onPress={() => router.push('/(tabs)/spaces/create')} style={styles.createButton}>
             <Text style={styles.createButtonText}>Create Space</Text>
@@ -98,7 +98,7 @@ export default function ListSpacesScreen() {
                 onPress={() => router.push(`/(tabs)/spaces/${item.id}`)}
                 style={styles.cardContent}>
                 <Text style={styles.cardTitle}>{item.name}</Text>
-                <Text style={styles.cardMeta}>Admins to Approve: {item.approvalThreshold}</Text>
+                <Text style={styles.cardMeta}>Admins: {item.approvalThreshold}</Text>
               </Pressable>
             </View>
           )}

@@ -288,7 +288,7 @@ export default function SpaceSettingsScreen() {
               </View>
 
               <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Admins to Approve</Text>
+                <Text style={styles.label}>Admins</Text>
                 <View style={styles.inputWrapper}>
                 <TextInput
                   keyboardType="number-pad"
@@ -351,7 +351,7 @@ export default function SpaceSettingsScreen() {
 
                 {deadlineDate ? (
                   <Pressable onPress={() => setDeadlineDate(null)}>
-                    <Text style={styles.clearText}>Clear deadline</Text>
+                    <Text style={styles.clearText}>Remove deadline</Text>
                   </Pressable>
                 ) : null}
               </View>

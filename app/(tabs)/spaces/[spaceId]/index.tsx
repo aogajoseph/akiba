@@ -220,7 +220,7 @@ export default function SpaceDashboardScreen() {
                 </View>
               ))}
               <Text style={styles.remainingText}>
-                Admins required to approve: {space.approvalThreshold}
+                Required admins: {space.approvalThreshold}
               </Text>
               <Text style={styles.remainingText}>Available admin slots: {remainingSlots}</Text>
             </View>

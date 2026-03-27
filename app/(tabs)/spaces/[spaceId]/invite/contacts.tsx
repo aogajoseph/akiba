@@ -96,7 +96,7 @@ export default function InviteFromContactsScreen() {
       />
       <View style={styles.container}>
         <Text style={styles.title}>Invite From Contacts</Text>
-        <Text style={styles.subtitle}>Select contacts to invite to this space.</Text>
+        <Text style={styles.subtitle}>Select contacts to invite to this space</Text>
 
         <Pressable onPress={handleSelectAll}>
           <Text style={styles.selectAll}>

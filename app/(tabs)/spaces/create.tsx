@@ -118,7 +118,7 @@ export default function CreateSpaceScreen() {
         keyboardShouldPersistTaps="handled"
         style={styles.container}>
         <Text style={styles.title}>Create Space</Text>
-        <Text style={styles.subtitle}>Spaces bring people together to save for events and shared financial goals.</Text>
+        <Text style={styles.subtitle}>Spaces bring people together to save for events, needs and shared goals.</Text>
 
         <View style={styles.avatarSection}>
           <Pressable onPress={() => { void handlePickAvatar(); }} style={styles.avatarButton}>
@@ -138,7 +138,7 @@ export default function CreateSpaceScreen() {
               </View>
             )}
           </Pressable>
-          <Text style={styles.avatarHint}>Tap to add an image</Text>
+          <Text style={styles.avatarHint}>Add an image for the Space</Text>
         </View>
 
         <View style={styles.form}>
@@ -146,7 +146,7 @@ export default function CreateSpaceScreen() {
             <Text style={styles.label}>Space Name</Text>
             <TextInput
               onChangeText={setName}
-              placeholder="John’s Wedding"
+              placeholder="eg., John’s Wedding"
               placeholderTextColor="#94a3b8"
               style={styles.input}
               value={name}
@@ -159,7 +159,7 @@ export default function CreateSpaceScreen() {
               multiline
               numberOfLines={3}
               onChangeText={setDescription}
-              placeholder="Contributions towards John's and Susan's wedding."
+              placeholder="eg., We are coming together to support John and Susan in their wedding."
               placeholderTextColor="#94a3b8"
               style={[styles.input, styles.textArea]}
               textAlignVertical="top"
@@ -168,7 +168,7 @@ export default function CreateSpaceScreen() {
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Admins to Approve</Text>
+            <Text style={styles.label}>Admins (To approve withdrawals)</Text>
             <TextInput
               keyboardType="number-pad"
               onChangeText={setApprovalThreshold}
@@ -184,7 +184,7 @@ export default function CreateSpaceScreen() {
               <View style={styles.goalToggleText}>
                 <Text style={styles.label}>Set goals for this space (optional)</Text>
                 <Text style={styles.helperText}>
-                  Useful for events eg., weddings, trips, fundraisers etc.,.
+                  Useful for events (weddings, trips, fundraisers etc.,)
                 </Text>
               </View>
 

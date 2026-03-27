@@ -1354,11 +1354,11 @@ export default function SpaceChatScreen() {
           <View style={styles.menuOverlay}>
             <Pressable onPress={closeMenu} style={styles.menuBackdrop} />
             <View style={[styles.menuTray, { top: headerHeight - 12 }]}>
-              <Pressable onPress={handleViewMembers} style={styles.menuItem}>
-                <Text style={styles.menuItemText}>View Members</Text>
-              </Pressable>
               <Pressable onPress={handleSpaceInfo} style={styles.menuItem}>
                 <Text style={styles.menuItemText}>Space Info</Text>
+              </Pressable>
+              <Pressable onPress={handleViewMembers} style={styles.menuItem}>
+                <Text style={styles.menuItemText}>Current Members</Text>
               </Pressable>
               {!isCreator && currentMembership ? (
                 <Pressable onPress={() => { void handleLeaveGroup(); }} style={styles.menuItem}>
