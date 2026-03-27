@@ -17,7 +17,7 @@ import { Group, SpaceAdmin } from '../../../../../shared/contracts';
 import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
 import InviteMembersModal from '../../../../components/InviteMembersModal';
 import { getAdmins, getSpace } from '../../../../services/spaceService';
-import { ApiError } from '../../../../utils/api';
+import { ApiError, getAuthSession } from '../../../../utils/api';
 
 type ToastMessage = {
   id: number;
@@ -35,6 +35,8 @@ export default function SpaceDashboardScreen() {
   const [viewerVisible, setViewerVisible] = useState(false);
   const [toastMessages, setToastMessages] = useState<ToastMessage[]>([]);
   const toastTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
+  const currentUserId = getAuthSession()?.user.id ?? null;
+  const isCreator = currentUserId !== null && currentUserId === space?.createdByUserId;
 
   const showInviteMembers = () => {
     if (!spaceId) {
@@ -226,11 +228,13 @@ export default function SpaceDashboardScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Actions</Text>
-                <Pressable
-                  onPress={() => router.push(`/(tabs)/spaces/${space.id}/settings`)}
-                  style={styles.iconButton}>
-                  <Text style={styles.gearIcon}>⚙️</Text>
-                </Pressable>
+                {isCreator ? (
+                  <Pressable
+                    onPress={() => router.push(`/(tabs)/spaces/${space.id}/settings`)}
+                    style={styles.iconButton}>
+                    <Text style={styles.gearIcon}>⚙️</Text>
+                  </Pressable>
+                ) : null}
               </View>
               <Pressable style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Transactions</Text>

@@ -21,6 +21,7 @@ import { ApiError, getAuthSession } from '../../../../utils/api';
 
 export default function SpaceSettingsScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
+  const [space, setSpace] = useState<{ createdByUserId: string } | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [approvalThreshold, setApprovalThreshold] = useState('');
@@ -69,6 +70,7 @@ export default function SpaceSettingsScreen() {
         const response = await getSpace(spaceId);
         const nextSpace = response.space ?? response.group;
 
+        setSpace(nextSpace);
         setName(nextSpace.name);
         setDescription(nextSpace.description ?? '');
         setApprovalThreshold(String(nextSpace.approvalThreshold));
@@ -88,6 +90,12 @@ export default function SpaceSettingsScreen() {
 
     void loadSpace();
   }, [spaceId]);
+
+  useEffect(() => {
+    if (!loading && space && !isCreator) {
+      router.replace(`/(tabs)/spaces/${spaceId}`);
+    }
+  }, [isCreator, loading, space, spaceId]);
 
   const handlePickAvatar = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -184,6 +192,10 @@ export default function SpaceSettingsScreen() {
       ],
     );
   };
+
+  if (!loading && space && !isCreator) {
+    return null;
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
