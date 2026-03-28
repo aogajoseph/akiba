@@ -14,6 +14,7 @@ import {
 import { LineChart } from 'react-native-chart-kit';
 
 import { Group, SpaceAdmin } from '../../../../../shared/contracts';
+import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
 import {
   getAdmins,
   getSpace,
@@ -59,6 +60,7 @@ export default function SpaceTransactionsScreen() {
   const [space, setSpace] = useState<Group | null>(null);
   const [admins, setAdmins] = useState<SpaceAdmin[]>([]);
   const [summary, setSummary] = useState<TransactionsSummaryState | null>(null);
+  const [viewerVisible, setViewerVisible] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -139,19 +141,27 @@ export default function SpaceTransactionsScreen() {
         {!loading && space && summary ? (
           <>
             <View style={styles.identityCard}>
-              {space.imageUrl ? (
-                <ExpoImage
-                  contentFit="cover"
-                  source={{ uri: space.imageUrl }}
-                  style={styles.spaceImage}
-                />
-              ) : (
-                <View style={styles.placeholderAvatar}>
-                  <Text style={styles.placeholderInitial}>
-                    {space.name.charAt(0).toUpperCase()}
-                  </Text>
-                </View>
-              )}
+              <Pressable
+                disabled={!space.imageUrl}
+                onPress={() => {
+                  if (space.imageUrl) {
+                    setViewerVisible(true);
+                  }
+                }}>
+                {space.imageUrl ? (
+                  <ExpoImage
+                    contentFit="cover"
+                    source={{ uri: space.imageUrl }}
+                    style={styles.spaceImage}
+                  />
+                ) : (
+                  <View style={styles.placeholderAvatar}>
+                    <Text style={styles.placeholderInitial}>
+                      {space.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                )}
+              </Pressable>
 
               <View style={styles.identityText}>
                 <Text style={styles.title}>{space.name}</Text>
@@ -166,14 +176,14 @@ export default function SpaceTransactionsScreen() {
               <Text style={styles.balanceAmount}>
                 {formatCurrency(summary.currentBalance)}
               </Text>
-              <Text style={styles.balanceSubtext}>Available funds</Text>
+              <Text style={styles.balanceSubtext}>Available for withdrawal</Text>
             </View>
 
             {space.targetAmount ? (
               <View style={styles.progressCard}>
                 <View style={styles.progressHeader}>
                   <Text style={styles.progressLabel}>Target Amount</Text>
-                  <Text style={styles.progressLabel}>{progressPercent}%</Text>
+                  <Text style={styles.progressLabel}>Completion: {progressPercent}%</Text>
                 </View>
                 <Text style={styles.progressAmount}>
                   {formatCurrency(space.targetAmount)}
@@ -253,18 +263,17 @@ export default function SpaceTransactionsScreen() {
                 yAxisInterval={1}
               />
             </View>
-
-            <View style={styles.finalBalanceCard}>
-              <Text style={styles.balanceLabel}>Current Balance</Text>
-              <Text style={styles.balanceAmount}>
-                {formatCurrency(summary.currentBalance)}
-              </Text>
-            </View>
           </>
         ) : !loading ? (
           <Text>Unable to load transactions.</Text>
         ) : null}
       </ScrollView>
+
+      <FullScreenImageViewer
+        visible={viewerVisible}
+        imageUrl={space?.imageUrl ?? null}
+        onClose={() => setViewerVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -287,7 +296,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   identityCard: {
-    alignItems: 'center',
+    alignItems: 'flex-start',
     backgroundColor: '#ffffff',
     borderColor: '#e7dfd1',
     borderRadius: 20,
@@ -386,15 +395,14 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   actionRow: {
-    flexDirection: 'row',
     gap: 12,
   },
   actionButton: {
     alignItems: 'center',
     borderRadius: 16,
-    flex: 1,
     justifyContent: 'center',
     minHeight: 50,
+    width: '100%',
   },
   depositButton: {
     backgroundColor: '#0f766e',
@@ -433,12 +441,5 @@ const styles = StyleSheet.create({
   chart: {
     marginLeft: -12,
     marginTop: 8,
-  },
-  finalBalanceCard: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e7dfd1',
-    borderRadius: 20,
-    borderWidth: 1,
-    padding: 18,
   },
 });
