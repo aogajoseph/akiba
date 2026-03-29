@@ -94,6 +94,10 @@ export const getTransactionsSummary = async (
   return response.data.data;
 };
 
+export const createDeposit = async (spaceId: string, amount: number) => {
+  return api.post(`/spaces/${spaceId}/deposit`, { amount });
+};
+
 export const startTyping = async (spaceId: string): Promise<void> => {
   await api.post(`/spaces/${spaceId}/typing/start`);
 };
