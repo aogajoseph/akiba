@@ -98,6 +98,18 @@ export const createDeposit = async (spaceId: string, amount: number) => {
   return api.post(`/spaces/${spaceId}/deposit`, { amount });
 };
 
+export const createWithdrawal = async (
+  spaceId: string,
+  amount: number,
+  reason?: string,
+) => {
+  return api.post(`/spaces/${spaceId}/withdraw`, { amount, reason });
+};
+
+export const approveWithdrawal = async (withdrawalId: string) => {
+  return api.post(`/spaces/withdrawals/${withdrawalId}/approve`);
+};
+
 export const startTyping = async (spaceId: string): Promise<void> => {
   await api.post(`/spaces/${spaceId}/typing/start`);
 };

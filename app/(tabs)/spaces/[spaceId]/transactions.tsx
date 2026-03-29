@@ -13,9 +13,14 @@ import {
 } from 'react-native';
 import { LineChart } from 'react-native-chart-kit';
 
-import { Group, SpaceAdmin } from '../../../../../shared/contracts';
+import {
+  GetTransactionsSummaryResponseDto,
+  Group,
+  SpaceAdmin,
+} from '../../../../../shared/contracts';
 import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
 import {
+  approveWithdrawal,
   getAdmins,
   getSpace,
   getTransactionsSummary,
@@ -31,14 +36,6 @@ const chartConfig = {
   color: (opacity = 1) => `rgba(15, 118, 110, ${opacity})`,
   labelColor: () => '#6b7280',
   style: { borderRadius: 16 },
-};
-
-type TransactionsSummaryState = {
-  currentBalance: number;
-  depositsOverTime: number[];
-  totalDeposits: number;
-  totalWithdrawals: number;
-  withdrawalsOverTime: number[];
 };
 
 const formatCurrency = (amount: number): string => {
@@ -59,8 +56,9 @@ export default function SpaceTransactionsScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [space, setSpace] = useState<Group | null>(null);
   const [admins, setAdmins] = useState<SpaceAdmin[]>([]);
-  const [summary, setSummary] = useState<TransactionsSummaryState | null>(null);
+  const [summary, setSummary] = useState<GetTransactionsSummaryResponseDto | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
+  const [approvingWithdrawals, setApprovingWithdrawals] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -103,6 +101,32 @@ export default function SpaceTransactionsScreen() {
       void loadTransactionsScreen();
     }, [loadTransactionsScreen]),
   );
+
+  const handleApproveWithdrawal = useCallback(async (withdrawalId: string) => {
+    if (!spaceId) {
+      return;
+    }
+
+    setApprovingWithdrawals((current) => ({
+      ...current,
+      [withdrawalId]: true,
+    }));
+    setError(null);
+
+    try {
+      await approveWithdrawal(withdrawalId);
+      const summaryResponse = await getTransactionsSummary(spaceId);
+      setSummary(summaryResponse);
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to approve withdrawal.');
+    } finally {
+      setApprovingWithdrawals((current) => ({
+        ...current,
+        [withdrawalId]: false,
+      }));
+    }
+  }, [spaceId]);
 
   const progress =
     space?.targetAmount && summary
@@ -218,6 +242,65 @@ export default function SpaceTransactionsScreen() {
                   <Text style={styles.actionButtonText}>Withdraw</Text>
                 </Pressable>
               ) : null}
+            </View>
+
+            <View style={styles.chartCard}>
+              <Text style={styles.chartTitle}>Pending Withdrawals</Text>
+              {summary.pendingWithdrawals.length > 0 ? (
+                <View style={styles.pendingWithdrawalsList}>
+                  {summary.pendingWithdrawals.map((withdrawal) => {
+                    const hasApproved = withdrawal.approvals.includes(currentUserId ?? '');
+                    const isApproving = approvingWithdrawals[withdrawal.id] === true;
+
+                    return (
+                      <View key={withdrawal.id} style={styles.pendingWithdrawalItem}>
+                        <View style={styles.pendingWithdrawalHeader}>
+                          <Text style={styles.pendingWithdrawalAmount}>
+                            {formatCurrency(withdrawal.amount)}
+                          </Text>
+                          <Text style={styles.pendingWithdrawalMeta}>
+                            {withdrawal.approvals.length}/{withdrawal.requiredApprovals} approvals
+                          </Text>
+                        </View>
+
+                        <Text style={styles.pendingWithdrawalMeta}>
+                          Requested by {withdrawal.requestedByName}
+                        </Text>
+
+                        {withdrawal.reason ? (
+                          <Text style={styles.pendingWithdrawalReason}>
+                            {withdrawal.reason}
+                          </Text>
+                        ) : null}
+
+                        {isAdmin ? (
+                          <Pressable
+                            disabled={hasApproved || isApproving}
+                            onPress={() => {
+                              void handleApproveWithdrawal(withdrawal.id);
+                            }}
+                            style={[
+                              styles.pendingWithdrawalButton,
+                              hasApproved || isApproving
+                                ? styles.pendingWithdrawalButtonDisabled
+                                : null,
+                            ]}>
+                            <Text style={styles.pendingWithdrawalButtonText}>
+                              {hasApproved
+                                ? 'Approved'
+                                : isApproving
+                                  ? 'Approving...'
+                                  : 'Approve'}
+                            </Text>
+                          </Pressable>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+              ) : (
+                <Text style={styles.chartMeta}>No pending withdrawals right now.</Text>
+              )}
             </View>
 
             <View style={styles.chartCard}>
@@ -441,5 +524,52 @@ const styles = StyleSheet.create({
   chart: {
     marginLeft: -12,
     marginTop: 8,
+  },
+  pendingWithdrawalsList: {
+    gap: 12,
+    marginTop: 4,
+  },
+  pendingWithdrawalItem: {
+    backgroundColor: '#f7f5ef',
+    borderRadius: 16,
+    gap: 8,
+    padding: 14,
+  },
+  pendingWithdrawalHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  pendingWithdrawalAmount: {
+    color: '#132238',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  pendingWithdrawalMeta: {
+    color: '#6b7280',
+    fontSize: 13,
+  },
+  pendingWithdrawalReason: {
+    color: '#132238',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  pendingWithdrawalButton: {
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    backgroundColor: '#132238',
+    borderRadius: 12,
+    justifyContent: 'center',
+    minHeight: 40,
+    minWidth: 96,
+    paddingHorizontal: 16,
+  },
+  pendingWithdrawalButtonDisabled: {
+    opacity: 0.6,
+  },
+  pendingWithdrawalButtonText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '700',
   },
 });
