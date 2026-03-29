@@ -316,72 +316,6 @@ export default function SpaceTransactionsScreen() {
             ) : null}
 
             <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Withdrawal Requests</Text>
-              {summary.pendingWithdrawals.length > 0 ? (
-                <View style={styles.pendingWithdrawalsList}>
-                  {summary.pendingWithdrawals.map((withdrawal) => {
-                    const hasApproved = withdrawal.approvals.includes(currentUserId ?? '');
-                    const isApproving = approvingWithdrawals[withdrawal.id] === true;
-                    const isProcessingPayout = withdrawal.status === 'approved';
-
-                    return (
-                      <View key={withdrawal.id} style={styles.pendingWithdrawalItem}>
-                        <View style={styles.pendingWithdrawalHeader}>
-                          <Text style={styles.pendingWithdrawalAmount}>
-                            {formatCurrency(withdrawal.amount)}
-                          </Text>
-                          <Text style={styles.pendingWithdrawalMeta}>
-                            {isProcessingPayout
-                              ? 'Processing payout...'
-                              : `${withdrawal.approvals.length}/${withdrawal.requiredApprovals} approvals`}
-                          </Text>
-                        </View>
-
-                        <Text style={styles.pendingWithdrawalMeta}>
-                          Requested by {withdrawal.requestedByName}
-                        </Text>
-
-                        <Text style={styles.pendingWithdrawalMeta}>
-                          {isProcessingPayout ? 'Processing payout...' : 'Waiting for approvals'}
-                        </Text>
-
-                        {withdrawal.reason ? (
-                          <Text style={styles.pendingWithdrawalReason}>
-                            {withdrawal.reason}
-                          </Text>
-                        ) : null}
-
-                        {isAdmin && !isProcessingPayout ? (
-                          <Pressable
-                            disabled={hasApproved || isApproving}
-                            onPress={() => {
-                              void handleApproveWithdrawal(withdrawal.id);
-                            }}
-                            style={[
-                              styles.pendingWithdrawalButton,
-                              hasApproved || isApproving
-                                ? styles.pendingWithdrawalButtonDisabled
-                                : null,
-                            ]}>
-                            <Text style={styles.pendingWithdrawalButtonText}>
-                              {hasApproved
-                                ? 'Approved'
-                                : isApproving
-                                  ? 'Approving...'
-                                  : 'Approve'}
-                            </Text>
-                          </Pressable>
-                        ) : null}
-                      </View>
-                    );
-                  })}
-                </View>
-              ) : (
-                <Text style={styles.chartMeta}>No withdrawals are currently in progress.</Text>
-              )}
-            </View>
-
-            <View style={styles.chartCard}>
               <Text style={styles.chartTitle}>Total Deposits</Text>
               <Text style={styles.chartAmount}>
                 {formatCurrency(summary.totalDeposits)}
@@ -428,6 +362,72 @@ export default function SpaceTransactionsScreen() {
         ) : !loading ? (
           <Text>Unable to load transactions.</Text>
         ) : null}
+
+        <View style={styles.chartCard}>
+          <Text style={styles.chartTitle}>Withdrawal Requests</Text>
+          {summary.pendingWithdrawals.length > 0 ? (
+            <View style={styles.pendingWithdrawalsList}>
+              {summary.pendingWithdrawals.map((withdrawal) => {
+                const hasApproved = withdrawal.approvals.includes(currentUserId ?? '');
+                const isApproving = approvingWithdrawals[withdrawal.id] === true;
+                const isProcessingPayout = withdrawal.status === 'approved';
+
+                return (
+                  <View key={withdrawal.id} style={styles.pendingWithdrawalItem}>
+                    <View style={styles.pendingWithdrawalHeader}>
+                      <Text style={styles.pendingWithdrawalAmount}>
+                        {formatCurrency(withdrawal.amount)}
+                      </Text>
+                      <Text style={styles.pendingWithdrawalMeta}>
+                        {isProcessingPayout
+                          ? 'Processing payout...'
+                          : `${withdrawal.approvals.length}/${withdrawal.requiredApprovals} Approved`}
+                      </Text>
+                    </View>
+
+                    <Text style={styles.pendingWithdrawalMeta}>
+                      Requested by {withdrawal.requestedByName}
+                    </Text>
+
+                    <Text style={styles.pendingWithdrawalMeta}>
+                      {isProcessingPayout ? 'Processing payout...' : 'Waiting for approvals'}
+                    </Text>
+
+                    {withdrawal.reason ? (
+                      <Text style={styles.pendingWithdrawalReason}>
+                        {withdrawal.reason}
+                      </Text>
+                    ) : null}
+
+                    {isAdmin && !isProcessingPayout ? (
+                      <Pressable
+                        disabled={hasApproved || isApproving}
+                        onPress={() => {
+                          void handleApproveWithdrawal(withdrawal.id);
+                        }}
+                        style={[
+                          styles.pendingWithdrawalButton,
+                          hasApproved || isApproving
+                            ? styles.pendingWithdrawalButtonDisabled
+                            : null,
+                        ]}>
+                        <Text style={styles.pendingWithdrawalButtonText}>
+                          {hasApproved
+                            ? 'Approved'
+                            : isApproving
+                              ? 'Approving...'
+                              : 'Approve'}
+                        </Text>
+                      </Pressable>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </View>
+          ) : (
+            <Text style={styles.chartMeta}>No withdrawals are currently in progress.</Text>
+          )}
+        </View>
       </ScrollView>
 
       <FullScreenImageViewer
