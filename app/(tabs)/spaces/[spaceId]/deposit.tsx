@@ -18,6 +18,7 @@ export default function DepositScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [amount, setAmount] = useState('');
   const [loading, setLoading] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
@@ -38,7 +39,8 @@ export default function DepositScreen() {
 
     try {
       await createDeposit(spaceId, parsedAmount);
-      Alert.alert('Success', 'Deposit completed successfully.', [
+      setSubmitted(true);
+      Alert.alert('Deposit started', 'Pending deposit confirmation. This may take a few seconds.', [
         {
           text: 'OK',
           onPress: () => router.back(),
@@ -76,13 +78,15 @@ export default function DepositScreen() {
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <Pressable
-            disabled={loading}
+            disabled={loading || submitted}
             onPress={() => { void handleSubmit(); }}
-            style={[styles.button, loading ? styles.buttonDisabled : null]}>
+            style={[styles.button, loading || submitted ? styles.buttonDisabled : null]}>
             {loading ? (
               <ActivityIndicator color="#ffffff" />
             ) : (
-              <Text style={styles.buttonText}>Confirm Deposit</Text>
+              <Text style={styles.buttonText}>
+                {submitted ? 'Awaiting Confirmation...' : 'Confirm Deposit'}
+              </Text>
             )}
           </Pressable>
         </View>

@@ -1,6 +1,6 @@
 import { router, Stack, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Dimensions,
@@ -52,11 +52,27 @@ const buildChartData = (data: number[]) => {
   };
 };
 
+type TransactionsSummaryState = GetTransactionsSummaryResponseDto & {
+  pendingDeposits?: Array<{
+    amount: number;
+    createdAt: string;
+    id: string;
+    status: 'pending' | 'completed' | 'failed';
+    userId: string;
+    userName: string;
+  }>;
+  pendingWithdrawals: Array<
+    GetTransactionsSummaryResponseDto['pendingWithdrawals'][number] & {
+      status?: 'pending' | 'approved' | 'completed' | 'failed';
+    }
+  >;
+};
+
 export default function SpaceTransactionsScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [space, setSpace] = useState<Group | null>(null);
   const [admins, setAdmins] = useState<SpaceAdmin[]>([]);
-  const [summary, setSummary] = useState<GetTransactionsSummaryResponseDto | null>(null);
+  const [summary, setSummary] = useState<TransactionsSummaryState | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [approvingWithdrawals, setApprovingWithdrawals] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
@@ -85,7 +101,7 @@ export default function SpaceTransactionsScreen() {
       ]);
 
       setSpace(spaceResponse.space ?? spaceResponse.group);
-      setSummary(summaryResponse);
+      setSummary(summaryResponse as TransactionsSummaryState);
       setAdmins(adminsResponse.admins);
     } catch (caughtError) {
       console.log('TRANSACTIONS ERROR:', caughtError);
@@ -102,6 +118,41 @@ export default function SpaceTransactionsScreen() {
     }, [loadTransactionsScreen]),
   );
 
+  const refreshSummary = useCallback(async () => {
+    if (!spaceId) {
+      return;
+    }
+
+    try {
+      const summaryResponse = await getTransactionsSummary(spaceId);
+      setSummary(summaryResponse as TransactionsSummaryState);
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to refresh transactions.');
+    }
+  }, [spaceId]);
+
+  useEffect(() => {
+    if (!spaceId || !summary) {
+      return;
+    }
+
+    const hasInFlightDeposits = (summary.pendingDeposits?.length ?? 0) > 0;
+    const hasInFlightWithdrawals = summary.pendingWithdrawals.some(
+      (withdrawal) => withdrawal.status === 'pending' || withdrawal.status === 'approved',
+    );
+
+    if (!hasInFlightDeposits && !hasInFlightWithdrawals) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      void refreshSummary();
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [refreshSummary, spaceId, summary]);
+
   const handleApproveWithdrawal = useCallback(async (withdrawalId: string) => {
     if (!spaceId) {
       return;
@@ -115,8 +166,7 @@ export default function SpaceTransactionsScreen() {
 
     try {
       await approveWithdrawal(withdrawalId);
-      const summaryResponse = await getTransactionsSummary(spaceId);
-      setSummary(summaryResponse);
+      await refreshSummary();
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to approve withdrawal.');
@@ -126,7 +176,7 @@ export default function SpaceTransactionsScreen() {
         [withdrawalId]: false,
       }));
     }
-  }, [spaceId]);
+  }, [refreshSummary, spaceId]);
 
   const progress =
     space?.targetAmount && summary
@@ -244,13 +294,35 @@ export default function SpaceTransactionsScreen() {
               ) : null}
             </View>
 
+            {summary.pendingDeposits && summary.pendingDeposits.length > 0 ? (
+              <View style={styles.chartCard}>
+                <Text style={styles.chartTitle}>Deposits In Progress</Text>
+                <View style={styles.pendingWithdrawalsList}>
+                  {summary.pendingDeposits.map((deposit) => (
+                    <View key={deposit.id} style={styles.pendingWithdrawalItem}>
+                      <View style={styles.pendingWithdrawalHeader}>
+                        <Text style={styles.pendingWithdrawalAmount}>
+                          {formatCurrency(deposit.amount)}
+                        </Text>
+                        <Text style={styles.pendingWithdrawalMeta}>Pending deposit...</Text>
+                      </View>
+                      <Text style={styles.pendingWithdrawalMeta}>
+                        Initiated by {deposit.userName}
+                      </Text>
+                    </View>
+                  ))}
+                </View>
+              </View>
+            ) : null}
+
             <View style={styles.chartCard}>
-              <Text style={styles.chartTitle}>Pending Withdrawals</Text>
+              <Text style={styles.chartTitle}>Withdrawal Requests</Text>
               {summary.pendingWithdrawals.length > 0 ? (
                 <View style={styles.pendingWithdrawalsList}>
                   {summary.pendingWithdrawals.map((withdrawal) => {
                     const hasApproved = withdrawal.approvals.includes(currentUserId ?? '');
                     const isApproving = approvingWithdrawals[withdrawal.id] === true;
+                    const isProcessingPayout = withdrawal.status === 'approved';
 
                     return (
                       <View key={withdrawal.id} style={styles.pendingWithdrawalItem}>
@@ -259,12 +331,18 @@ export default function SpaceTransactionsScreen() {
                             {formatCurrency(withdrawal.amount)}
                           </Text>
                           <Text style={styles.pendingWithdrawalMeta}>
-                            {withdrawal.approvals.length}/{withdrawal.requiredApprovals} approvals
+                            {isProcessingPayout
+                              ? 'Processing payout...'
+                              : `${withdrawal.approvals.length}/${withdrawal.requiredApprovals} approvals`}
                           </Text>
                         </View>
 
                         <Text style={styles.pendingWithdrawalMeta}>
                           Requested by {withdrawal.requestedByName}
+                        </Text>
+
+                        <Text style={styles.pendingWithdrawalMeta}>
+                          {isProcessingPayout ? 'Processing payout...' : 'Waiting for approvals'}
                         </Text>
 
                         {withdrawal.reason ? (
@@ -273,7 +351,7 @@ export default function SpaceTransactionsScreen() {
                           </Text>
                         ) : null}
 
-                        {isAdmin ? (
+                        {isAdmin && !isProcessingPayout ? (
                           <Pressable
                             disabled={hasApproved || isApproving}
                             onPress={() => {
@@ -299,7 +377,7 @@ export default function SpaceTransactionsScreen() {
                   })}
                 </View>
               ) : (
-                <Text style={styles.chartMeta}>No pending withdrawals right now.</Text>
+                <Text style={styles.chartMeta}>No withdrawals are currently in progress.</Text>
               )}
             </View>
 
