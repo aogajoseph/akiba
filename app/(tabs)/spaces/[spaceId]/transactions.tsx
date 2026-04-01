@@ -43,16 +43,39 @@ const formatCurrency = (amount: number): string => {
   return `KES ${amount.toLocaleString()}`;
 };
 
-const buildChartData = (data: number[]) => {
-  const safeData = data.length > 0 ? data : [0];
+type TimeSeriesPoint = {
+  date: string;
+  amount: number;
+};
+
+const formatDateLabel = (date: string) => {
+  if (!date) {
+    return '';
+  }
+
+  const parsedDate = new Date(date);
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return '';
+  }
+
+  return parsedDate.toLocaleDateString('en-KE', {
+    month: 'short',
+    day: 'numeric',
+  });
+};
+
+const buildChartData = (data: TimeSeriesPoint[]) => {
+  const safe = data.length ? data : [{ date: '', amount: 0 }];
 
   return {
-    labels: safeData.map(() => ''),
-    datasets: [{ data: safeData }],
+    labels: safe.map((item) => formatDateLabel(item.date)),
+    datasets: [{ data: safe.map((item) => item.amount) }],
   };
 };
 
 type TransactionsSummaryState = GetTransactionsSummaryResponseDto & {
+  depositsOverTime: TimeSeriesPoint[];
   pendingDeposits?: Array<{
     amount: number;
     createdAt: string;
@@ -66,6 +89,7 @@ type TransactionsSummaryState = GetTransactionsSummaryResponseDto & {
       status?: 'pending' | 'approved' | 'completed' | 'failed';
     }
   >;
+  withdrawalsOverTime: TimeSeriesPoint[];
 };
 
 export default function SpaceTransactionsScreen() {
