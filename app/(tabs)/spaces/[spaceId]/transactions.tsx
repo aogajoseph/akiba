@@ -130,7 +130,7 @@ export default function SpaceTransactionsScreen() {
         .hasPendingTransactions;
     const hasDerivedPendingTransactions =
       (summary.pendingDeposits?.length ?? 0) > 0 ||
-      summary.pendingWithdrawals.some(
+      (summary?.pendingWithdrawals ?? []).some(
         (withdrawal) => withdrawal.status === 'pending' || withdrawal.status === 'approved',
       );
 
@@ -361,9 +361,9 @@ export default function SpaceTransactionsScreen() {
 
         <View style={styles.chartCard}>
           <Text style={styles.chartTitle}>Withdrawal Requests</Text>
-          {summary.pendingWithdrawals.length > 0 ? (
+          {(summary?.pendingWithdrawals ?? []).length > 0 ? (
             <View style={styles.pendingWithdrawalsList}>
-              {summary.pendingWithdrawals.map((withdrawal) => {
+              {(summary?.pendingWithdrawals ?? []).map((withdrawal) => {
                 const hasApproved = withdrawal.approvals.includes(currentUserId ?? '');
                 const isApproving = approvingWithdrawals[withdrawal.id] === true;
                 const isProcessingPayout = withdrawal.status === 'approved';
