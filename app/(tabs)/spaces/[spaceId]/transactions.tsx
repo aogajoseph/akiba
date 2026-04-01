@@ -75,6 +75,7 @@ export default function SpaceTransactionsScreen() {
   const [summary, setSummary] = useState<TransactionsSummaryState | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [approvingWithdrawals, setApprovingWithdrawals] = useState<Record<string, boolean>>({});
+  const [isPolling, setIsPolling] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -118,40 +119,35 @@ export default function SpaceTransactionsScreen() {
     }, [loadTransactionsScreen]),
   );
 
-  const refreshSummary = useCallback(async () => {
-    if (!spaceId) {
+  useEffect(() => {
+    if (!summary) {
+      setIsPolling(false);
       return;
     }
 
-    try {
-      const summaryResponse = await getTransactionsSummary(spaceId);
-      setSummary(summaryResponse as TransactionsSummaryState);
-    } catch (caughtError) {
-      const apiError = caughtError as ApiError;
-      setError(apiError.error ?? 'Unable to refresh transactions.');
-    }
-  }, [spaceId]);
+    const hasPendingTransactions =
+      (summary as TransactionsSummaryState & { hasPendingTransactions?: boolean })
+        .hasPendingTransactions;
+    const hasDerivedPendingTransactions =
+      (summary.pendingDeposits?.length ?? 0) > 0 ||
+      summary.pendingWithdrawals.some(
+        (withdrawal) => withdrawal.status === 'pending' || withdrawal.status === 'approved',
+      );
+
+    setIsPolling(hasPendingTransactions ?? hasDerivedPendingTransactions);
+  }, [summary]);
 
   useEffect(() => {
-    if (!spaceId || !summary) {
-      return;
-    }
-
-    const hasInFlightDeposits = (summary.pendingDeposits?.length ?? 0) > 0;
-    const hasInFlightWithdrawals = summary.pendingWithdrawals.some(
-      (withdrawal) => withdrawal.status === 'pending' || withdrawal.status === 'approved',
-    );
-
-    if (!hasInFlightDeposits && !hasInFlightWithdrawals) {
+    if (!spaceId || !isPolling) {
       return;
     }
 
     const interval = setInterval(() => {
-      void refreshSummary();
+      void loadTransactionsScreen();
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [refreshSummary, spaceId, summary]);
+  }, [isPolling, loadTransactionsScreen, spaceId]);
 
   const handleApproveWithdrawal = useCallback(async (withdrawalId: string) => {
     if (!spaceId) {
@@ -166,7 +162,7 @@ export default function SpaceTransactionsScreen() {
 
     try {
       await approveWithdrawal(withdrawalId);
-      await refreshSummary();
+      await loadTransactionsScreen();
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to approve withdrawal.');
@@ -176,7 +172,7 @@ export default function SpaceTransactionsScreen() {
         [withdrawalId]: false,
       }));
     }
-  }, [refreshSummary, spaceId]);
+  }, [loadTransactionsScreen, spaceId]);
 
   const progress =
     space?.targetAmount && summary
