@@ -94,8 +94,19 @@ export const getTransactionsSummary = async (
   return response.data.data;
 };
 
-export const createDeposit = async (spaceId: string, amount: number) => {
-  return api.post(`/spaces/${spaceId}/deposit`, { amount });
+export const createDeposit = async (
+  spaceId: string,
+  amount: number,
+  options?: {
+    phoneNumber?: string;
+    externalName?: string;
+  },
+) => {
+  return api.post(`/spaces/${spaceId}/deposit`, {
+    amount,
+    phoneNumber: options?.phoneNumber,
+    externalName: options?.externalName,
+  });
 };
 
 export const createWithdrawal = async (

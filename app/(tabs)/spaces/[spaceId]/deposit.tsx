@@ -68,7 +68,9 @@ export default function DepositScreen() {
     setError(null);
 
     try {
-      await createDeposit(spaceId, parsedAmount);
+      await createDeposit(spaceId, parsedAmount, {
+        phoneNumber: normalizedPhoneNumber,
+      });
       setPaymentState('stk_pending');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
