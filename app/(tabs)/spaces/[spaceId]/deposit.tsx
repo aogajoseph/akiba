@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 
+import { normalizePhoneNumber } from '../../../../utils/phone';
 import { createDeposit } from '../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../utils/api';
 
@@ -45,16 +46,16 @@ export default function DepositScreen() {
 
   const handleSubmit = async () => {
     const parsedAmount = Number(amount.trim());
-    const normalizedPhoneNumber = phoneNumber.replace(/[^\d]/g, '');
-    const isValidPhoneNumber =
-      /^0\d{9}$/.test(normalizedPhoneNumber) || /^254\d{9}$/.test(normalizedPhoneNumber);
+    let normalizedPhoneNumber = '';
 
     if (!spaceId) {
       setError('Missing space id.');
       return;
     }
 
-    if (!isValidPhoneNumber) {
+    try {
+      normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
+    } catch {
       setError('Enter a valid M-Pesa phone number.');
       return;
     }

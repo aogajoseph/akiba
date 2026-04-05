@@ -18,6 +18,7 @@ import {
   Group,
   SpaceAdmin,
 } from '../../../../../shared/contracts';
+import { maskPhoneNumber } from '../../../../utils/phone';
 import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
 import {
   approveWithdrawal,
@@ -41,22 +42,6 @@ const chartConfig = {
 const formatCurrency = (amount: number): string => {
   if (typeof amount !== 'number') return 'KES 0';
   return `KES ${amount.toLocaleString()}`;
-};
-
-const maskPhoneNumber = (value?: string): string => {
-  if (!value) {
-    return '';
-  }
-
-  const digitsOnly = value.replace(/[^\d]/g, '');
-
-  if (digitsOnly.length <= 7) {
-    return value;
-  }
-
-  const start = digitsOnly.slice(0, 4);
-  const end = digitsOnly.slice(-3);
-  return `${start}****${end}`;
 };
 
 type TimeSeriesPoint = {

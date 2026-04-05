@@ -11,6 +11,7 @@ import {
   View,
 } from 'react-native';
 
+import { normalizePhoneNumber } from '../../../../utils/phone';
 import { createWithdrawal } from '../../../../services/spaceService';
 import { ApiError } from '../../../../utils/api';
 
@@ -25,7 +26,7 @@ export default function WithdrawScreen() {
 
   const handleSubmit = async () => {
     const parsedAmount = Number(amount.trim());
-    const normalizedPhoneNumber = recipientPhoneNumber.trim();
+    let normalizedPhoneNumber = '';
     const normalizedRecipientName = recipientName.trim();
     const normalizedReason = reason.trim();
 
@@ -39,8 +40,10 @@ export default function WithdrawScreen() {
       return;
     }
 
-    if (!normalizedPhoneNumber) {
-      setError('Enter the recipient phone number.');
+    try {
+      normalizedPhoneNumber = normalizePhoneNumber(recipientPhoneNumber);
+    } catch {
+      setError('Enter a valid recipient phone number.');
       return;
     }
 
