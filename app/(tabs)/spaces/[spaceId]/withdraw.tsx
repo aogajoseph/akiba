@@ -17,12 +17,17 @@ import { ApiError } from '../../../../utils/api';
 export default function WithdrawScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [amount, setAmount] = useState('');
+  const [recipientPhoneNumber, setRecipientPhoneNumber] = useState('');
+  const [recipientName, setRecipientName] = useState('');
   const [reason, setReason] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async () => {
     const parsedAmount = Number(amount.trim());
+    const normalizedPhoneNumber = recipientPhoneNumber.trim();
+    const normalizedRecipientName = recipientName.trim();
+    const normalizedReason = reason.trim();
 
     if (!spaceId) {
       setError('Missing space id.');
@@ -34,11 +39,32 @@ export default function WithdrawScreen() {
       return;
     }
 
+    if (!normalizedPhoneNumber) {
+      setError('Enter the recipient phone number.');
+      return;
+    }
+
+    if (!normalizedRecipientName) {
+      setError('Enter the recipient name.');
+      return;
+    }
+
+    if (!normalizedReason) {
+      setError('Enter the withdrawal reason.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      await createWithdrawal(spaceId, parsedAmount, reason.trim() || undefined);
+      await createWithdrawal(
+        spaceId,
+        parsedAmount,
+        normalizedPhoneNumber,
+        normalizedRecipientName,
+        normalizedReason,
+      );
       Alert.alert('Success', 'Withdrawal request submitted successfully.', [
         {
           text: 'OK',
@@ -62,7 +88,7 @@ export default function WithdrawScreen() {
       />
       <View style={styles.container}>
         <Text style={styles.title}>Request Withdrawal</Text>
-        <Text style={styles.subtitle}>Request funds from this space</Text>
+        <Text style={styles.subtitle}>Request to move funds from this space</Text>
 
         <View style={styles.form}>
           <TextInput
@@ -75,9 +101,26 @@ export default function WithdrawScreen() {
           />
 
           <TextInput
+            keyboardType="phone-pad"
+            onChangeText={setRecipientPhoneNumber}
+            placeholder="Recipient's Mpesa Number"
+            placeholderTextColor="#94a3b8"
+            style={styles.input}
+            value={recipientPhoneNumber}
+          />
+
+          <TextInput
+            onChangeText={setRecipientName}
+            placeholder="Recipient's Name"
+            placeholderTextColor="#94a3b8"
+            style={styles.input}
+            value={recipientName}
+          />
+
+          <TextInput
             multiline
             onChangeText={setReason}
-            placeholder="Reason (optional)"
+            placeholder="Reason e.g., Deposit, Rent etc."
             placeholderTextColor="#94a3b8"
             style={[styles.input, styles.reasonInput]}
             textAlignVertical="top"

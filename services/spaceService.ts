@@ -112,9 +112,16 @@ export const createDeposit = async (
 export const createWithdrawal = async (
   spaceId: string,
   amount: number,
-  reason?: string,
+  recipientPhoneNumber: string,
+  recipientName: string,
+  reason: string,
 ) => {
-  return api.post(`/spaces/${spaceId}/withdraw`, { amount, reason });
+  return api.post(`/spaces/${spaceId}/withdraw`, {
+    amount,
+    recipientPhoneNumber,
+    recipientName,
+    reason,
+  });
 };
 
 export const approveWithdrawal = async (withdrawalId: string) => {

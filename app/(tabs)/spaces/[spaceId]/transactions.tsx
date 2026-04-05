@@ -43,6 +43,22 @@ const formatCurrency = (amount: number): string => {
   return `KES ${amount.toLocaleString()}`;
 };
 
+const maskPhoneNumber = (value?: string): string => {
+  if (!value) {
+    return '';
+  }
+
+  const digitsOnly = value.replace(/[^\d]/g, '');
+
+  if (digitsOnly.length <= 7) {
+    return value;
+  }
+
+  const start = digitsOnly.slice(0, 4);
+  const end = digitsOnly.slice(-3);
+  return `${start}****${end}`;
+};
+
 type TimeSeriesPoint = {
   date: string;
   amount: number;
@@ -86,6 +102,8 @@ type TransactionsSummaryState = GetTransactionsSummaryResponseDto & {
   }>;
   pendingWithdrawals: Array<
     GetTransactionsSummaryResponseDto['pendingWithdrawals'][number] & {
+      recipientName?: string;
+      recipientPhoneNumber?: string;
       status?: 'pending' | 'approved' | 'completed' | 'failed';
     }
   >;
@@ -428,6 +446,15 @@ export default function SpaceTransactionsScreen() {
                     <Text style={styles.pendingWithdrawalMeta}>
                       Requested by {withdrawal.requestedByName}
                     </Text>
+
+                    {withdrawal.recipientName ? (
+                      <Text style={styles.pendingWithdrawalMeta}>
+                        Recipient: {withdrawal.recipientName}
+                        {withdrawal.recipientPhoneNumber
+                          ? ` (${maskPhoneNumber(withdrawal.recipientPhoneNumber)})`
+                          : ''}
+                      </Text>
+                    ) : null}
 
                     <Text style={styles.pendingWithdrawalMeta}>
                       {isProcessingPayout ? 'Processing payout...' : 'Waiting for approvals'}
