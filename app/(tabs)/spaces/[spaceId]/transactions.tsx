@@ -266,18 +266,39 @@ export default function SpaceTransactionsScreen() {
             </View>
 
             <View style={styles.balanceCard}>
-              <Text style={styles.balanceLabel}>Current Balance</Text>
+              <Text style={styles.balanceLabel}>Total Contributions</Text>
               <Text style={styles.balanceAmount}>
-                {formatCurrency(summary.currentBalance)}
+                {formatCurrency(space.totalBalance ?? 0)}
               </Text>
-              <Text style={styles.balanceSubtext}>Available for withdrawal</Text>
+              <View style={styles.balanceBreakdown}>
+                <View style={styles.balanceRow}>
+                  <Text style={styles.balanceRowLabel}>Akiba Service Charge (2.5%)</Text>
+                  <Text style={styles.balanceRowValue}>
+                    {formatCurrency(space.totalFees ?? 0)}
+                  </Text>
+                </View>
+                <View style={styles.balanceRow}>
+                  <Text style={styles.balanceRowLabel}>Available for Withdrawal</Text>
+                  <Text style={styles.balanceRowValue}>
+                    {formatCurrency(space.availableBalance ?? 0)}
+                  </Text>
+                </View>
+              </View>
+              {(space.pendingWithdrawalAmount ?? 0) > 0 ? (
+                <Text style={styles.balanceSubtext}>
+                  Pending Withdrawal:{' '}
+                  <Text style={styles.balancePendingText}>
+                    {formatCurrency(space.pendingWithdrawalAmount ?? 0)}
+                  </Text>
+                </Text>
+              ) : null}
             </View>
 
             {space.targetAmount ? (
               <View style={styles.progressCard}>
                 <View style={styles.progressHeader}>
                   <Text style={styles.progressLabel}>Target Amount</Text>
-                  <Text style={styles.progressLabel}>Completion: {progressPercent}%</Text>
+                  <Text style={styles.completionLabel}>Completion: {progressPercent}%</Text>
                 </View>
                 <Text style={styles.progressAmount}>
                   {formatCurrency(space.targetAmount)}
@@ -539,6 +560,29 @@ const styles = StyleSheet.create({
     fontSize: 13,
     marginTop: 8,
   },
+  balancePendingText: {
+    fontStyle: 'italic',
+  },
+  balanceBreakdown: {
+    gap: 10,
+    marginTop: 16,
+  },
+  balanceRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  balanceRowLabel: {
+    color: '#d1fae5',
+    fontSize: 14,
+    fontWeight: '600',
+    lineHeight: 1,
+  },
+  balanceRowValue: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
   progressCard: {
     backgroundColor: '#ffffff',
     borderColor: '#e7dfd1',
@@ -554,6 +598,11 @@ const styles = StyleSheet.create({
   progressLabel: {
     color: '#132238',
     fontSize: 16,
+    fontWeight: '700',
+  },
+  completionLabel: {
+    color: '#132238',
+    fontSize: 12,
     fontWeight: '700',
   },
   progressAmount: {
