@@ -145,10 +145,10 @@ export default function SpaceDashboardScreen() {
   }, []);
 
   const targetAmount = space?.targetAmount ?? 0;
-  const collectedAmount = space?.collectedAmount ?? 0;
-  const progressRatio =
-    targetAmount > 0 ? Math.min(collectedAmount / targetAmount, 1) : 0;
-  const progressPercent = Math.round(progressRatio * 100);
+  const totalContributions = space?.totalBalance ?? space?.collectedAmount ?? 0;
+  const progressPercent =
+    targetAmount > 0 ? Math.round((totalContributions / targetAmount) * 100) : 0;
+  const progressBarPercent = Math.min(progressPercent, 100);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -188,14 +188,14 @@ export default function SpaceDashboardScreen() {
                 </View>
 
                 <Text style={styles.progressMeta}>
-                  KES {collectedAmount.toLocaleString()} collected
+                  KES {totalContributions.toLocaleString()} collected
                 </Text>
 
                 <View style={styles.progressBarContainer}>
                   <View
                     style={[
                       styles.progressBarFill,
-                      { width: `${progressPercent}%` },
+                      { width: `${progressBarPercent}%` },
                     ]}
                   />
                 </View>

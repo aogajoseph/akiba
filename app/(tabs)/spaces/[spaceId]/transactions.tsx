@@ -198,13 +198,12 @@ export default function SpaceTransactionsScreen() {
     }
   }, [loadTransactionsScreen, spaceId]);
 
-  const progress =
-    space?.targetAmount && summary
-      ? space.targetAmount > 0
-        ? Math.min(summary.currentBalance / space.targetAmount, 1)
-        : 0
+  const totalContributions = space?.totalBalance ?? summary?.totalDeposits ?? 0;
+  const progressPercent =
+    space?.targetAmount && space.targetAmount > 0
+      ? Math.round((totalContributions / space.targetAmount) * 100)
       : 0;
-  const progressPercent = Math.round(progress * 100);
+  const progressBarPercent = Math.min(progressPercent, 100);
   const createdAtLabel = space?.createdAt
     ? new Date(space.createdAt).toDateString()
     : '';
@@ -307,7 +306,7 @@ export default function SpaceTransactionsScreen() {
                   <View
                     style={[
                       styles.progressBarFill,
-                      { width: `${progressPercent}%` },
+                      { width: `${progressBarPercent}%` },
                     ]}
                   />
                 </View>
