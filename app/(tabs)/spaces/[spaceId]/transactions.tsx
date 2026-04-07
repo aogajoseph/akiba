@@ -17,8 +17,8 @@ import {
   GetTransactionsSummaryResponseDto,
   Group,
   SpaceAdmin,
-} from '../../../../../shared/contracts';
-import { maskPhoneNumber } from '../../../../utils/phone';
+} from '@shared/contracts';
+import { maskPhoneNumber } from '@shared/phone';
 import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
 import {
   approveWithdrawal,

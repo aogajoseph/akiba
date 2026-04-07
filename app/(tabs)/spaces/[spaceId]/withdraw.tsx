@@ -11,7 +11,7 @@ import {
   View,
 } from 'react-native';
 
-import { normalizePhoneNumber } from '../../../../utils/phone';
+import { normalizePhoneNumber } from '@shared/phone';
 import { createWithdrawal } from '../../../../services/spaceService';
 import { ApiError } from '../../../../utils/api';
 

@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { TransactionSource } from '@shared/contracts';
-import { normalizePhoneNumber } from '../../../../utils/phone';
+import { normalizePhoneNumber } from '@shared/phone';
 import { createDeposit } from '../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../utils/api';
 
@@ -64,7 +64,7 @@ export default function DepositScreen() {
     }
 
     if (paymentMethod !== TransactionSource.MPESA) {
-      setError('Card payments coming soon.');
+      setError('Credit card payments coming soon.');
       return;
     }
 
@@ -175,7 +175,7 @@ export default function DepositScreen() {
             </View>
           ) : (
             <View style={styles.placeholderCard}>
-              <Text style={styles.placeholderTitle}>Credit Card</Text>
+              <Text style={styles.placeholderTitle}>Card Details</Text>
               <Text style={styles.placeholderText}>Credit card payments coming soon</Text>
             </View>
           )}
