@@ -414,7 +414,10 @@ export default function SpaceSummariesScreen() {
                             ]}>
                             {formatStatus(transaction.status)}
                           </Text>
-                          <Text style={[styles.bodyCell, styles.cellInitiator]} numberOfLines={2}>
+                          <Text
+                            ellipsizeMode="tail"
+                            numberOfLines={1}
+                            style={[styles.bodyCell, styles.cellInitiator]}>
                             {transaction.initiatorName}
                           </Text>
                           <Text style={[styles.bodyCell, styles.cellMembership]}>
@@ -528,7 +531,7 @@ const styles = StyleSheet.create({
     opacity: 0.6,
   },
   table: {
-    minWidth: 980,
+    minWidth: 930,
   },
   tableHeaderRow: {
     backgroundColor: '#edf4f2',
@@ -538,46 +541,55 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e7dfd1',
     borderBottomWidth: 1,
     flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
+    gap: 0,
+    paddingHorizontal: 8,
+    paddingVertical: 8,
   },
   headerCell: {
     color: '#475467',
     fontSize: 12,
     fontWeight: '700',
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   bodyCell: {
     color: '#132238',
     fontSize: 12,
     lineHeight: 18,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
   },
   cellId: {
-    width: 70,
+    minWidth: 70,
   },
   cellDate: {
-    width: 72,
+    minWidth: 70,
   },
   cellTime: {
-    width: 56,
+    minWidth: 70,
   },
   cellType: {
-    width: 84,
+    minWidth: 70,
   },
   cellAmount: {
-    width: 100,
+    minWidth: 90,
+    textAlign: 'left',
   },
   cellStatus: {
-    width: 120,
+    minWidth: 70,
   },
   cellInitiator: {
-    width: 120,
+    flexShrink: 1,
+    maxWidth: 140,
+    minWidth: 100,
   },
   cellMembership: {
-    width: 92,
+    minWidth: 100,
   },
   cellBalance: {
-    width: 110,
+    maxWidth: 130,
+    minWidth: 90,
+    textAlign: 'left',
   },
   depositText: {
     color: '#0f766e',
