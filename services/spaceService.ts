@@ -1,4 +1,5 @@
 import {
+  CreateDepositRequestDto,
   CreateGroupRequestDto,
   CreateGroupResponseDto,
   CreateMessageResponseDto,
@@ -17,6 +18,7 @@ import {
   RevokeGroupMemberResponseDto,
   ToggleMessageReactionResponseDto,
   ToggleMessageReactionRequestDto,
+  TransactionSource,
   UpdateGroupRequestDto,
   UpdateGroupResponseDto,
   UploadMediaMessageResponseDto,
@@ -99,14 +101,17 @@ export const createDeposit = async (
   amount: number,
   options?: {
     phoneNumber?: string;
-    externalName?: string;
+    source?: CreateDepositRequestDto['source'];
   },
 ) => {
-  return api.post(`/spaces/${spaceId}/deposit`, {
+  const payload: CreateDepositRequestDto = {
     amount,
     phoneNumber: options?.phoneNumber,
-    externalName: options?.externalName,
-  });
+    source: options?.source ?? TransactionSource.MPESA,
+    spaceId,
+  };
+
+  return api.post(`/spaces/${spaceId}/deposit`, payload);
 };
 
 export const createWithdrawal = async (

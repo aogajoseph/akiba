@@ -5,12 +5,14 @@ import {
   Modal,
   Pressable,
   SafeAreaView,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
 
+import { TransactionSource } from '@shared/contracts';
 import { normalizePhoneNumber } from '../../../../utils/phone';
 import { createDeposit } from '../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../utils/api';
@@ -24,12 +26,20 @@ type PaymentState =
 
 export default function DepositScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
+  const [paymentMethod, setPaymentMethod] = useState<TransactionSource>(
+    TransactionSource.MPESA,
+  );
   const [phoneNumber, setPhoneNumber] = useState(
     getAuthSession()?.user.phoneNumber ?? '',
   );
   const [amount, setAmount] = useState('');
   const [paymentState, setPaymentState] = useState<PaymentState>('idle');
   const [error, setError] = useState<string | null>(null);
+
+  const handleSelectPaymentMethod = (method: TransactionSource) => {
+    setPaymentMethod(method);
+    setError(null);
+  };
 
   useEffect(() => {
     if (paymentState !== 'stk_pending') {
@@ -53,6 +63,11 @@ export default function DepositScreen() {
       return;
     }
 
+    if (paymentMethod !== TransactionSource.MPESA) {
+      setError('Card payments coming soon.');
+      return;
+    }
+
     try {
       normalizedPhoneNumber = normalizePhoneNumber(phoneNumber);
     } catch {
@@ -71,6 +86,7 @@ export default function DepositScreen() {
     try {
       await createDeposit(spaceId, parsedAmount, {
         phoneNumber: normalizedPhoneNumber,
+        source: paymentMethod,
       });
       setPaymentState('stk_pending');
     } catch (caughtError) {
@@ -96,22 +112,73 @@ export default function DepositScreen() {
           title: 'Deposit',
         }}
       />
-      <View style={styles.container}>
+      <ScrollView
+        contentContainerStyle={styles.contentContainer}
+        keyboardShouldPersistTaps="handled">
+        <View style={styles.container}>
         <Text style={styles.title}>Deposit</Text>
         <Text style={styles.subtitle}>Add funds to this space</Text>
 
         <View style={styles.form}>
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>M-Pesa Phone Number</Text>
-            <TextInput
-              keyboardType="phone-pad"
-              onChangeText={setPhoneNumber}
-              placeholder="07XXXXXXXX"
-              placeholderTextColor="#94a3b8"
-              style={styles.input}
-              value={phoneNumber}
-            />
+            <Text style={styles.label}>Payment Method</Text>
+            <View style={styles.methodSelector}>
+              <Pressable
+                onPress={() => handleSelectPaymentMethod(TransactionSource.MPESA)}
+                style={[
+                  styles.methodOption,
+                  paymentMethod === TransactionSource.MPESA ? styles.methodOptionActive : null,
+                ]}>
+                <Text
+                  style={[
+                    styles.methodOptionText,
+                    paymentMethod === TransactionSource.MPESA
+                      ? styles.methodOptionTextActive
+                      : null,
+                  ]}>
+                  Mpesa
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => handleSelectPaymentMethod(TransactionSource.CARD)}
+                style={[
+                  styles.methodOption,
+                  styles.methodOptionDisabled,
+                  paymentMethod === TransactionSource.CARD ? styles.methodOptionActive : null,
+                ]}>
+                <Text
+                  style={[
+                    styles.methodOptionText,
+                    paymentMethod === TransactionSource.CARD
+                      ? styles.methodOptionTextActive
+                      : null,
+                  ]}>
+                  Credit Card
+                </Text>
+                <Text style={styles.methodOptionCaption}>(Coming soon)</Text>
+              </Pressable>
+            </View>
           </View>
+
+          {paymentMethod === TransactionSource.MPESA ? (
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>M-Pesa Phone Number</Text>
+              <TextInput
+                keyboardType="phone-pad"
+                onChangeText={setPhoneNumber}
+                placeholder="07XXXXXXXX"
+                placeholderTextColor="#94a3b8"
+                style={styles.input}
+                value={phoneNumber}
+              />
+            </View>
+          ) : (
+            <View style={styles.placeholderCard}>
+              <Text style={styles.placeholderTitle}>Credit Card</Text>
+              <Text style={styles.placeholderText}>Credit card payments coming soon</Text>
+            </View>
+          )}
 
           <View style={styles.fieldGroup}>
             <Text style={styles.label}>Amount</Text>
@@ -128,13 +195,19 @@ export default function DepositScreen() {
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
           <Pressable
-            disabled={paymentState !== 'idle'}
+            disabled={paymentState !== 'idle' || paymentMethod !== TransactionSource.MPESA}
             onPress={() => { void handleSubmit(); }}
-            style={[styles.button, paymentState !== 'idle' ? styles.buttonDisabled : null]}>
+            style={[
+              styles.button,
+              paymentState !== 'idle' || paymentMethod !== TransactionSource.MPESA
+                ? styles.buttonDisabled
+                : null,
+            ]}>
             <Text style={styles.buttonText}>Confirm Deposit</Text>
           </Pressable>
         </View>
-      </View>
+        </View>
+      </ScrollView>
 
       <Modal
         animationType="fade"
@@ -195,8 +268,11 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#f7f5ef',
   },
+  contentContainer: {
+    flexGrow: 1,
+  },
   container: {
-    flex: 1,
+    flexGrow: 1,
     padding: 24,
     paddingTop: 32,
   },
@@ -221,6 +297,61 @@ const styles = StyleSheet.create({
     color: '#132238',
     fontSize: 14,
     fontWeight: '600',
+  },
+  methodSelector: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  methodOption: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderColor: '#d7dedb',
+    borderRadius: 16,
+    borderWidth: 1,
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 50,
+    gap: 2,
+    paddingHorizontal: 16,
+  },
+  methodOptionActive: {
+    borderColor: '#0f766e',
+    backgroundColor: '#eefaf8',
+  },
+  methodOptionDisabled: {
+    opacity: 0.55,
+  },
+  methodOptionText: {
+    color: '#132238',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  methodOptionTextActive: {
+    color: '#0f766e',
+  },
+  methodOptionCaption: {
+    color: '#6b7280',
+    fontSize: 12,
+  },
+  placeholderCard: {
+    backgroundColor: '#ffffff',
+    borderColor: '#d7dedb',
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 6,
+    minHeight: 96,
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 18,
+  },
+  placeholderTitle: {
+    color: '#132238',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  placeholderText: {
+    color: '#6b7280',
+    fontSize: 14,
   },
   input: {
     backgroundColor: '#ffffff',
