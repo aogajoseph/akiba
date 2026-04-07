@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as FileSystem from 'expo-file-system/legacy';
 import * as Sharing from 'expo-sharing';
 import { Stack, useLocalSearchParams } from 'expo-router';
@@ -22,14 +23,22 @@ import {
   TransactionStatus,
   TransactionType,
 } from '@shared/contracts';
-import { maskPhoneNumber } from '@shared/phone';
 import { getSpace, getSpaceSummary } from '../../../../services/spaceService';
 import { ApiError } from '../../../../utils/api';
 
-type TransactionGroup = {
-  dateKey: string;
+type StatementTransaction = Transaction & {
+  displayDate: string;
+  displayTime: string;
+  membership: 'Member' | 'Non-member';
+  monthDate: Date;
+  monthKey: string;
+  shortId: string;
+};
+
+type MonthStatementGroup = {
   label: string;
-  transactions: Transaction[];
+  monthDate: Date;
+  transactions: StatementTransaction[];
 };
 
 const formatCurrency = (amount: number): string => {
@@ -40,20 +49,19 @@ const formatCurrency = (amount: number): string => {
   return `KES ${amount.toLocaleString()}`;
 };
 
-const formatAmountWithSign = (transaction: Transaction): string => {
+const formatSignedAmount = (transaction: Transaction): string => {
   const sign = transaction.type === TransactionType.DEPOSIT ? '+' : '-';
-  return `${sign}${transaction.amount.toLocaleString()}`;
+  return `${sign}KES ${transaction.amount.toLocaleString()}`;
 };
 
-const formatTransactionDate = (createdAt: string): string => {
-  return format(parseISO(createdAt), 'dd MMM yyyy');
+const formatStatus = (status: TransactionStatus): string => {
+  return status
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
 };
 
-const formatTransactionTime = (createdAt: string): string => {
-  return format(parseISO(createdAt), 'HH:mm');
-};
-
-const formatTransactionType = (type: TransactionType): string => {
+const formatType = (type: TransactionType): string => {
   if (type === TransactionType.DEPOSIT) {
     return 'Deposit';
   }
@@ -65,60 +73,36 @@ const formatTransactionType = (type: TransactionType): string => {
   return 'Fee';
 };
 
-const formatStatus = (status: TransactionStatus): string => {
-  return status
-    .split('_')
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-    .join(' ');
-};
-
 const buildStatementContent = (
   spaceName: string,
-  dateLabel: string,
-  transactions: Transaction[],
+  monthLabel: string,
+  transactions: StatementTransaction[],
 ): string => {
-  const groupedLines = transactions.map((transaction) => {
-    const typeLabel = formatTransactionType(transaction.type);
-    const amountLabel = `${transaction.type === TransactionType.DEPOSIT ? '+' : '-'}KES ${transaction.amount.toLocaleString()}`;
-    const timeLabel = formatTransactionTime(transaction.createdAt);
-    const detailLines = [
-      `${typeLabel}: ${amountLabel} (${timeLabel})`,
-    ];
-
-    if (transaction.recipientName) {
-      const recipientPhone = transaction.recipientPhoneNumber
-        ? ` (${maskPhoneNumber(transaction.recipientPhoneNumber)})`
-        : '';
-      detailLines.push(`Recipient: ${transaction.recipientName}${recipientPhone}`);
-    }
-
-    if (transaction.reason) {
-      detailLines.push(`Reason: ${transaction.reason}`);
-    }
-
-    if (transaction.status !== TransactionStatus.COMPLETED) {
-      detailLines.push(`Status: ${formatStatus(transaction.status)}`);
-    }
-
-    return detailLines.join('\n');
+  const header =
+    'TxID | Date | Time | Type | Amount | Status | Initiator | Membership | Balance';
+  const separator = '-'.repeat(header.length);
+  const rows = transactions.map((transaction) => {
+    return [
+      transaction.shortId,
+      transaction.displayDate,
+      transaction.displayTime,
+      formatType(transaction.type),
+      formatSignedAmount(transaction),
+      formatStatus(transaction.status).toLowerCase(),
+      transaction.initiatorName,
+      transaction.membership,
+      `KES ${(transaction.runningBalance ?? 0).toLocaleString()}`,
+    ].join(' | ');
   });
-
-  const total = transactions.reduce((sum, transaction) => {
-    if (transaction.type === TransactionType.DEPOSIT) {
-      return sum + transaction.amount;
-    }
-
-    return sum - transaction.amount;
-  }, 0);
 
   return [
     'Akiba Statement',
     `Space: ${spaceName}`,
-    `Date: ${dateLabel}`,
+    `Period: ${monthLabel}`,
     '',
-    ...groupedLines,
-    '',
-    `Total: KES ${total.toLocaleString()}`,
+    header,
+    separator,
+    ...rows,
   ].join('\n');
 };
 
@@ -128,7 +112,7 @@ export default function SpaceSummariesScreen() {
   const [data, setData] = useState<GetSpaceSummaryResponseDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [actioningDateKey, setActioningDateKey] = useState<string | null>(null);
+  const [actioningMonth, setActioningMonth] = useState<string | null>(null);
 
   const loadSummary = useCallback(async () => {
     if (!spaceId) {
@@ -160,21 +144,46 @@ export default function SpaceSummariesScreen() {
     void loadSummary();
   }, [loadSummary]);
 
-  const groupedTransactions = useMemo<TransactionGroup[]>(() => {
-    const transactions = data?.transactions ?? [];
-    const groups = transactions.reduce<Map<string, Transaction[]>>((map, transaction) => {
-      const dateKey = formatTransactionDate(transaction.createdAt);
-      const current = map.get(dateKey) ?? [];
-      current.push(transaction);
-      map.set(dateKey, current);
+  const monthlyGroups = useMemo<MonthStatementGroup[]>(() => {
+    const sortedTransactions = [...(data?.transactions ?? [])].sort((left, right) => {
+      return (
+        parseISO(left.createdAt).getTime() - parseISO(right.createdAt).getTime()
+      );
+    });
+
+    const enriched = sortedTransactions.map<StatementTransaction>((transaction) => {
+      const createdAtDate = parseISO(transaction.createdAt);
+
+      return {
+        ...transaction,
+        displayDate: format(createdAtDate, 'dd MMM'),
+        displayTime: format(createdAtDate, 'HH:mm'),
+        membership: transaction.userId ? 'Member' : 'Non-member',
+        monthDate: createdAtDate,
+        monthKey: format(createdAtDate, 'MMMM yyyy'),
+        shortId: transaction.id.slice(0, 8),
+      };
+    });
+
+    const groups = enriched.reduce<Map<string, MonthStatementGroup>>((map, transaction) => {
+      const existing = map.get(transaction.monthKey);
+
+      if (existing) {
+        existing.transactions.push(transaction);
+        return map;
+      }
+
+      map.set(transaction.monthKey, {
+        label: transaction.monthKey,
+        monthDate: transaction.monthDate,
+        transactions: [transaction],
+      });
       return map;
     }, new Map());
 
-    return Array.from(groups.entries()).map(([label, transactionsForDate]) => ({
-      dateKey: label,
-      label,
-      transactions: transactionsForDate,
-    }));
+    return Array.from(groups.values()).sort((left, right) => {
+      return right.monthDate.getTime() - left.monthDate.getTime();
+    });
   }, [data?.transactions]);
 
   const writeStatementFile = useCallback(async (
@@ -196,18 +205,18 @@ export default function SpaceSummariesScreen() {
     return fileUri;
   }, []);
 
-  const handleShareGroup = useCallback(async (group: TransactionGroup) => {
+  const handleShareMonth = useCallback(async (group: MonthStatementGroup) => {
     if (!space) {
       return;
     }
 
-    setActioningDateKey(group.dateKey);
+    setActioningMonth(group.label);
 
     try {
       const content = buildStatementContent(space.name, group.label, group.transactions);
       const fileUri = await writeStatementFile(
         content,
-        `akiba-statement-${group.dateKey.replace(/\s+/g, '-').toLowerCase()}.txt`,
+        `akiba-statement-${group.label.replace(/\s+/g, '-').toLowerCase()}.txt`,
         FileSystem.cacheDirectory,
       );
 
@@ -227,23 +236,23 @@ export default function SpaceSummariesScreen() {
         caughtError instanceof Error ? caughtError.message : 'Unable to share statement.';
       Alert.alert('Share failed', message);
     } finally {
-      setActioningDateKey(null);
+      setActioningMonth(null);
     }
   }, [space, writeStatementFile]);
 
-  const handleDownloadGroup = useCallback(async (group: TransactionGroup) => {
+  const handleDownloadMonth = useCallback(async (group: MonthStatementGroup) => {
     if (!space) {
       return;
     }
 
-    setActioningDateKey(group.dateKey);
+    setActioningMonth(group.label);
 
     try {
       const content = buildStatementContent(space.name, group.label, group.transactions);
       const statementsDirectory = `${FileSystem.documentDirectory ?? FileSystem.cacheDirectory}akiba-statements/`;
       const fileUri = await writeStatementFile(
         content,
-        `statement-${group.dateKey.replace(/\s+/g, '-').toLowerCase()}.txt`,
+        `statement-${group.label.replace(/\s+/g, '-').toLowerCase()}.txt`,
         statementsDirectory,
       );
 
@@ -253,7 +262,7 @@ export default function SpaceSummariesScreen() {
         caughtError instanceof Error ? caughtError.message : 'Unable to download statement.';
       Alert.alert('Download failed', message);
     } finally {
-      setActioningDateKey(null);
+      setActioningMonth(null);
     }
   }, [space, writeStatementFile]);
 
@@ -313,91 +322,113 @@ export default function SpaceSummariesScreen() {
           </View>
         </View>
 
-        {groupedTransactions.length === 0 ? (
+        {monthlyGroups.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyText}>No transactions yet</Text>
           </View>
         ) : (
-          groupedTransactions.map((group) => (
-            <View key={group.dateKey} style={styles.groupCard}>
-              <View style={styles.groupHeader}>
-                <Text style={styles.groupTitle}>{group.label}</Text>
-                <View style={styles.groupActions}>
+          monthlyGroups.map((group) => (
+            <View key={group.label} style={styles.monthSection}>
+              <View style={styles.monthHeader}>
+                <Text style={styles.monthTitle}>{group.label}</Text>
+                <View style={styles.monthActions}>
                   <Pressable
-                    disabled={actioningDateKey === group.dateKey}
-                    onPress={() => { void handleShareGroup(group); }}
+                    accessibilityLabel={`Share ${group.label} statement`}
+                    disabled={actioningMonth === group.label}
+                    onPress={() => { void handleShareMonth(group); }}
                     style={[
-                      styles.groupActionButton,
-                      actioningDateKey === group.dateKey ? styles.groupActionButtonDisabled : null,
+                      styles.monthActionButton,
+                      actioningMonth === group.label ? styles.monthActionButtonDisabled : null,
                     ]}>
-                    <Text style={styles.groupActionButtonText}>Share</Text>
+                    <Ionicons color="#132238" name="share-social-outline" size={18} />
                   </Pressable>
                   <Pressable
-                    disabled={actioningDateKey === group.dateKey}
-                    onPress={() => { void handleDownloadGroup(group); }}
+                    accessibilityLabel={`Download ${group.label} statement`}
+                    disabled={actioningMonth === group.label}
+                    onPress={() => { void handleDownloadMonth(group); }}
                     style={[
-                      styles.groupActionButton,
-                      actioningDateKey === group.dateKey ? styles.groupActionButtonDisabled : null,
+                      styles.monthActionButton,
+                      actioningMonth === group.label ? styles.monthActionButtonDisabled : null,
                     ]}>
-                    <Text style={styles.groupActionButtonText}>Download</Text>
+                    <Ionicons color="#132238" name="download-outline" size={18} />
                   </Pressable>
                 </View>
               </View>
 
-              <View style={styles.transactionList}>
-                {group.transactions.map((transaction) => {
-                  const isDeposit = transaction.type === TransactionType.DEPOSIT;
-                  const isPending = transaction.status !== TransactionStatus.COMPLETED;
+              <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                <View style={styles.table}>
+                  <View style={[styles.tableRow, styles.tableHeaderRow]}>
+                    <Text style={[styles.headerCell, styles.cellId]}>TxID</Text>
+                    <Text style={[styles.headerCell, styles.cellDate]}>Date</Text>
+                    <Text style={[styles.headerCell, styles.cellTime]}>Time</Text>
+                    <Text style={[styles.headerCell, styles.cellType]}>Type</Text>
+                    <Text style={[styles.headerCell, styles.cellAmount]}>Amount</Text>
+                    <Text style={[styles.headerCell, styles.cellStatus]}>Status</Text>
+                    <Text style={[styles.headerCell, styles.cellInitiator]}>Initiator</Text>
+                    <Text style={[styles.headerCell, styles.cellMembership]}>Membership</Text>
+                    <Text style={[styles.headerCell, styles.cellBalance]}>Balance</Text>
+                  </View>
 
-                  return (
-                    <View key={transaction.id} style={styles.transactionRow}>
-                      <View style={styles.transactionPrimary}>
-                        <Text
-                          style={[
-                            styles.transactionType,
-                            isDeposit ? styles.depositText : styles.withdrawalText,
-                          ]}>
-                          {formatTransactionType(transaction.type)}
-                        </Text>
-                        <Text style={styles.transactionTime}>
-                          {formatTransactionTime(transaction.createdAt)}
-                        </Text>
-                      </View>
-
-                      <View style={styles.transactionSecondary}>
-                        <Text
-                          style={[
-                            styles.transactionAmount,
-                            isDeposit ? styles.depositText : styles.withdrawalText,
-                          ]}>
-                          {formatAmountWithSign(transaction)}
-                        </Text>
-                        <Text
-                          style={[
-                            styles.transactionStatus,
-                            isPending ? styles.pendingText : null,
-                          ]}>
-                          {formatStatus(transaction.status)}
-                        </Text>
-                      </View>
-
-                      {transaction.recipientName ? (
-                        <Text style={styles.transactionDetail}>
-                          {`→ ${transaction.recipientName}${
-                            transaction.recipientPhoneNumber
-                              ? ` (${maskPhoneNumber(transaction.recipientPhoneNumber)})`
-                              : ''
-                          }`}
-                        </Text>
-                      ) : null}
-
-                      {transaction.reason ? (
-                        <Text style={styles.transactionDetail}>{transaction.reason}</Text>
-                      ) : null}
+                  {group.transactions.length === 0 ? (
+                    <View style={styles.emptyTableRow}>
+                      <Text style={styles.emptyTableText}>No transactions yet</Text>
                     </View>
-                  );
-                })}
-              </View>
+                  ) : (
+                    group.transactions.map((transaction) => {
+                      const isDeposit = transaction.type === TransactionType.DEPOSIT;
+                      const isPending =
+                        transaction.status !== TransactionStatus.COMPLETED &&
+                        transaction.status !== TransactionStatus.FAILED &&
+                        transaction.status !== TransactionStatus.REJECTED;
+
+                      return (
+                        <View key={transaction.id} style={styles.tableRow}>
+                          <Text style={[styles.bodyCell, styles.cellId]}>{transaction.shortId}</Text>
+                          <Text style={[styles.bodyCell, styles.cellDate]}>
+                            {transaction.displayDate}
+                          </Text>
+                          <Text style={[styles.bodyCell, styles.cellTime]}>
+                            {transaction.displayTime}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.bodyCell,
+                              styles.cellType,
+                              isDeposit ? styles.depositText : styles.withdrawalText,
+                            ]}>
+                            {formatType(transaction.type)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.bodyCell,
+                              styles.cellAmount,
+                              isDeposit ? styles.depositText : styles.withdrawalText,
+                            ]}>
+                            {formatSignedAmount(transaction)}
+                          </Text>
+                          <Text
+                            style={[
+                              styles.bodyCell,
+                              styles.cellStatus,
+                              isPending ? styles.pendingText : null,
+                            ]}>
+                            {formatStatus(transaction.status)}
+                          </Text>
+                          <Text style={[styles.bodyCell, styles.cellInitiator]} numberOfLines={2}>
+                            {transaction.initiatorName}
+                          </Text>
+                          <Text style={[styles.bodyCell, styles.cellMembership]}>
+                            {transaction.membership}
+                          </Text>
+                          <Text style={[styles.bodyCell, styles.cellBalance]}>
+                            {formatCurrency(transaction.runningBalance ?? 0)}
+                          </Text>
+                        </View>
+                      );
+                    })
+                  )}
+                </View>
+              </ScrollView>
             </View>
           ))
         )}
@@ -461,7 +492,7 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '700',
   },
-  groupCard: {
+  monthSection: {
     backgroundColor: '#ffffff',
     borderColor: '#e7dfd1',
     borderRadius: 20,
@@ -469,79 +500,84 @@ const styles = StyleSheet.create({
     gap: 14,
     padding: 18,
   },
-  groupHeader: {
+  monthHeader: {
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
     gap: 12,
   },
-  groupTitle: {
+  monthTitle: {
     color: '#132238',
     flex: 1,
     fontSize: 17,
     fontWeight: '700',
   },
-  groupActions: {
+  monthActions: {
     flexDirection: 'row',
     gap: 8,
   },
-  groupActionButton: {
+  monthActionButton: {
     alignItems: 'center',
     backgroundColor: '#edf4f2',
     borderRadius: 12,
     justifyContent: 'center',
     minHeight: 36,
-    paddingHorizontal: 12,
+    minWidth: 36,
   },
-  groupActionButtonDisabled: {
+  monthActionButtonDisabled: {
     opacity: 0.6,
   },
-  groupActionButtonText: {
-    color: '#132238',
-    fontSize: 13,
+  table: {
+    minWidth: 980,
+  },
+  tableHeaderRow: {
+    backgroundColor: '#edf4f2',
+  },
+  tableRow: {
+    alignItems: 'flex-start',
+    borderBottomColor: '#e7dfd1',
+    borderBottomWidth: 1,
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  headerCell: {
+    color: '#475467',
+    fontSize: 12,
     fontWeight: '700',
   },
-  transactionList: {
-    gap: 10,
-  },
-  transactionRow: {
-    backgroundColor: '#f7f5ef',
-    borderRadius: 16,
-    gap: 6,
-    padding: 14,
-  },
-  transactionPrimary: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  transactionSecondary: {
-    alignItems: 'center',
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  transactionType: {
-    fontSize: 15,
-    fontWeight: '700',
-  },
-  transactionTime: {
-    color: '#6b7280',
-    fontSize: 13,
-  },
-  transactionAmount: {
-    fontSize: 16,
-    fontWeight: '800',
-  },
-  transactionStatus: {
-    color: '#6b7280',
-    fontSize: 13,
-  },
-  transactionDetail: {
+  bodyCell: {
     color: '#132238',
-    fontSize: 13,
-    lineHeight: 19,
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  cellId: {
+    width: 70,
+  },
+  cellDate: {
+    width: 72,
+  },
+  cellTime: {
+    width: 56,
+  },
+  cellType: {
+    width: 84,
+  },
+  cellAmount: {
+    width: 100,
+  },
+  cellStatus: {
+    width: 120,
+  },
+  cellInitiator: {
+    width: 120,
+  },
+  cellMembership: {
+    width: 92,
+  },
+  cellBalance: {
+    width: 110,
   },
   depositText: {
     color: '#0f766e',
@@ -560,6 +596,17 @@ const styles = StyleSheet.create({
   emptyText: {
     color: '#6b7280',
     fontSize: 15,
+    fontStyle: 'italic',
+    textAlign: 'center',
+  },
+  emptyTableRow: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 96,
+  },
+  emptyTableText: {
+    color: '#6b7280',
+    fontSize: 13,
     fontStyle: 'italic',
     textAlign: 'center',
   },

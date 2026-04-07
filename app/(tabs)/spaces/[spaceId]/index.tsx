@@ -246,12 +246,6 @@ export default function SpaceDashboardScreen() {
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Actions</Text>
                 <View style={styles.headerActions}>
-                  <Pressable
-                    accessibilityLabel="Open summaries"
-                    onPress={() => pushSpaceRoute('summaries')}
-                    style={styles.iconButton}>
-                    <Ionicons color="#132238" name="document-text-outline" size={20} />
-                  </Pressable>
                   {isCreator ? (
                     <Pressable
                       accessibilityLabel="Open settings"
@@ -260,6 +254,12 @@ export default function SpaceDashboardScreen() {
                       <Ionicons color="#132238" name="settings-outline" size={20} />
                     </Pressable>
                   ) : null}
+                  <Pressable
+                    accessibilityLabel="Open summaries"
+                    onPress={() => pushSpaceRoute('summaries')}
+                    style={styles.iconButton}>
+                    <Ionicons color="#132238" name="document-text-outline" size={20} />
+                  </Pressable>
                 </View>
               </View>
               <Pressable
@@ -435,6 +435,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   iconButton: {
+    backgroundColor: '#edf4f2',
     alignItems: 'center',
     borderRadius: 999,
     justifyContent: 'center',
