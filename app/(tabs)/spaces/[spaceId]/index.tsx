@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
@@ -24,6 +25,14 @@ type ToastMessage = {
   text: string;
 };
 
+type SpaceRouteSegment =
+  | 'chat'
+  | 'invite/contacts'
+  | 'members'
+  | 'settings'
+  | 'summaries'
+  | 'transactions';
+
 export default function SpaceDashboardScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [space, setSpace] = useState<Group | null>(null);
@@ -37,6 +46,14 @@ export default function SpaceDashboardScreen() {
   const toastTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
   const currentUserId = getAuthSession()?.user.id ?? null;
   const isCreator = currentUserId !== null && currentUserId === space?.createdByUserId;
+
+  const pushSpaceRoute = (segment: SpaceRouteSegment) => {
+    if (!spaceId) {
+      return;
+    }
+
+    router.push(`/(tabs)/spaces/${spaceId}/${segment}` as const);
+  };
 
   const showInviteMembers = () => {
     if (!spaceId) {
@@ -228,26 +245,35 @@ export default function SpaceDashboardScreen() {
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
                 <Text style={styles.sectionTitle}>Actions</Text>
-                {isCreator ? (
+                <View style={styles.headerActions}>
                   <Pressable
-                    onPress={() => router.push(`/(tabs)/spaces/${space.id}/settings`)}
+                    accessibilityLabel="Open summaries"
+                    onPress={() => pushSpaceRoute('summaries')}
                     style={styles.iconButton}>
-                    <Text style={styles.gearIcon}>⚙️</Text>
+                    <Ionicons color="#132238" name="document-text-outline" size={20} />
                   </Pressable>
-                ) : null}
+                  {isCreator ? (
+                    <Pressable
+                      accessibilityLabel="Open settings"
+                      onPress={() => pushSpaceRoute('settings')}
+                      style={styles.iconButton}>
+                      <Ionicons color="#132238" name="settings-outline" size={20} />
+                    </Pressable>
+                  ) : null}
+                </View>
               </View>
               <Pressable
-                onPress={() => router.push(`/(tabs)/spaces/${space.id}/transactions`)}
+                onPress={() => pushSpaceRoute('transactions')}
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Transactions</Text>
               </Pressable>
               <Pressable
-                onPress={() => router.push(`/(tabs)/spaces/${space.id}/chat`)}
+                onPress={() => pushSpaceRoute('chat')}
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>Open Chat</Text>
               </Pressable>
               <Pressable
-                onPress={() => router.push(`/(tabs)/spaces/${space.id}/members`)}
+                onPress={() => pushSpaceRoute('members')}
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Members</Text>
               </Pressable>
@@ -276,7 +302,7 @@ export default function SpaceDashboardScreen() {
         }}
         onFromContacts={() => {
           setInviteModalVisible(false);
-          router.push(`/(tabs)/spaces/${spaceId}/invite/contacts`);
+          pushSpaceRoute('invite/contacts');
         }}
         onShareSpace={() => {
           void handleShareSpace();
@@ -396,17 +422,25 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
+  headerActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+    flexShrink: 0,
+  },
   sectionTitle: {
     color: '#132238',
     fontSize: 18,
     fontWeight: '700',
+    flex: 1,
   },
   iconButton: {
+    alignItems: 'center',
     borderRadius: 999,
+    justifyContent: 'center',
+    minHeight: 36,
+    minWidth: 36,
     padding: 6,
-  },
-  gearIcon: {
-    fontSize: 20,
   },
   adminRow: {
     alignItems: 'center',

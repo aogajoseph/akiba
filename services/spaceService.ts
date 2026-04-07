@@ -7,6 +7,7 @@ import {
   DeleteGroupResponseDto,
   DeleteMessageResponseDto,
   GetGroupResponseDto,
+  GetSpaceSummaryResponseDto,
   GetTransactionsSummaryResponseDto,
   LeaveGroupResponseDto,
   ListGroupMembersResponseDto,
@@ -92,6 +93,22 @@ export const getTransactionsSummary = async (
 ): Promise<GetTransactionsSummaryResponseDto> => {
   const response = await api.get<{ data: GetTransactionsSummaryResponseDto }>(
     `/spaces/${spaceId}/transactions/summary`,
+  );
+  return response.data.data;
+};
+
+export const getSpaceSummary = async (
+  spaceId: string,
+  params?: {
+    from?: string;
+    to?: string;
+  },
+): Promise<GetSpaceSummaryResponseDto> => {
+  const response = await api.get<{ data: GetSpaceSummaryResponseDto }>(
+    `/spaces/${spaceId}/summary`,
+    {
+      params,
+    },
   );
   return response.data.data;
 };
