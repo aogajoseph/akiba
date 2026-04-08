@@ -196,7 +196,7 @@ export const uploadMediaMessage = async (
     uri: payload.attachment.uri,
     name: payload.attachment.fileName,
     type: payload.attachment.mimeType,
-  } as Blob);
+  } as unknown as Blob);
 
   const response = await api.post<{ data: UploadMediaMessageResponseDto }>(
     `/spaces/${spaceId}/messages/media`,

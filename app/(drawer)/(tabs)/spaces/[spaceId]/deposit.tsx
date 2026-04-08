@@ -14,8 +14,8 @@ import {
 
 import { TransactionSource } from '@shared/contracts';
 import { normalizePhoneNumber } from '@shared/phone';
-import { createDeposit } from '../../../../services/spaceService';
-import { ApiError, getAuthSession } from '../../../../utils/api';
+import { createDeposit } from '../../../../../services/spaceService';
+import { ApiError, getAuthSession } from '../../../../../utils/api';
 
 type PaymentState =
   | 'idle'

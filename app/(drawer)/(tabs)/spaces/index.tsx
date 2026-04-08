@@ -11,11 +11,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Group } from '../../../../shared/contracts';
+import { Group } from '../../../../../shared/contracts';
 import AppHeader from '@/components/AppHeader';
-import FullScreenImageViewer from '../../../components/FullScreenImageViewer';
-import { listSpaces } from '../../../services/spaceService';
-import { ApiError } from '../../../utils/api';
+import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
+import { listSpaces } from '../../../../services/spaceService';
+import { ApiError } from '../../../../utils/api';
 
 export default function ListSpacesScreen() {
   const [spaces, setSpaces] = useState<Group[]>([]);
@@ -60,7 +60,7 @@ export default function ListSpacesScreen() {
             <Text style={styles.title}>Spaces</Text>
             <Text style={styles.subtitle}>Your shared saving spaces</Text>
           </View>
-          <Pressable onPress={() => router.push('/(tabs)/spaces/create')} style={styles.createButton}>
+          <Pressable onPress={() => router.push('/spaces/create')} style={styles.createButton}>
             <Text style={styles.createButtonText}>Create Space</Text>
           </Pressable>
         </View>
@@ -82,7 +82,13 @@ export default function ListSpacesScreen() {
           renderItem={({ item }) => (
             <View style={styles.card}>
               {item.imageUrl ? (
-                <Pressable onPress={() => openViewer(item.imageUrl)} style={styles.cardAvatarButton}>
+                <Pressable
+                  onPress={() => {
+                    if (item.imageUrl) {
+                      openViewer(item.imageUrl);
+                    }
+                  }}
+                  style={styles.cardAvatarButton}>
                   <ExpoImage
                     contentFit="cover"
                     source={{ uri: item.imageUrl }}
@@ -98,7 +104,7 @@ export default function ListSpacesScreen() {
               )}
 
               <Pressable
-                onPress={() => router.push(`/(tabs)/spaces/${item.id}`)}
+                onPress={() => router.push(`/spaces/${item.id}`)}
                 style={styles.cardContent}>
                 <Text style={styles.cardTitle}>{item.name}</Text>
                 <Text style={styles.cardMeta}>Admins: {item.approvalThreshold}</Text>

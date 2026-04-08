@@ -1,7 +1,7 @@
 import { Stack } from 'expo-router';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
-import AppHeader from '../../components/AppHeader';
+import AppHeader from '../../../components/AppHeader';
 
 export default function HomeScreen() {
   return (

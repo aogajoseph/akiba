@@ -12,8 +12,8 @@ import {
 } from 'react-native';
 
 import { normalizePhoneNumber } from '@shared/phone';
-import { createWithdrawal } from '../../../../services/spaceService';
-import { ApiError } from '../../../../utils/api';
+import { createWithdrawal } from '../../../../../services/spaceService';
+import { ApiError } from '../../../../../utils/api';
 
 export default function WithdrawScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();

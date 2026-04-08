@@ -19,14 +19,14 @@ import {
   SpaceAdmin,
 } from '@shared/contracts';
 import { maskPhoneNumber } from '@shared/phone';
-import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
+import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
 import {
   approveWithdrawal,
   getAdmins,
   getSpace,
   getTransactionsSummary,
-} from '../../../../services/spaceService';
-import { ApiError, getAuthSession } from '../../../../utils/api';
+} from '../../../../../services/spaceService';
+import { ApiError, getAuthSession } from '../../../../../utils/api';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -323,14 +323,14 @@ export default function SpaceTransactionsScreen() {
 
             <View style={styles.actionRow}>
               <Pressable
-                onPress={() => router.push(`/(tabs)/spaces/${spaceId}/deposit`)}
+                onPress={() => router.push(`/spaces/${spaceId}/deposit`)}
                 style={[styles.actionButton, styles.depositButton]}>
                 <Text style={styles.actionButtonText}>Deposit</Text>
               </Pressable>
 
               {isAdmin ? (
                 <Pressable
-                  onPress={() => router.push(`/(tabs)/spaces/${spaceId}/withdraw`)}
+                  onPress={() => router.push(`/spaces/${spaceId}/withdraw`)}
                   style={[styles.actionButton, styles.withdrawButton]}>
                   <Text style={styles.actionButtonText}>Withdraw</Text>
                 </Pressable>

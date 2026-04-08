@@ -32,7 +32,7 @@ export default function LoginScreen() {
       await login({
         phoneNumber: form.phoneNumber.trim(),
       });
-      router.replace('/(tabs)/home');
+      router.replace('/home');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to log in right now.');

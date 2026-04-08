@@ -9,10 +9,10 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { User } from '../../../shared/contracts';
+import { User } from '../../../../shared/contracts';
 import AppHeader from '@/components/AppHeader';
-import { logout, me } from '../../services/authService';
-import { ApiError } from '../../utils/api';
+import { logout, me } from '../../../services/authService';
+import { ApiError } from '../../../utils/api';
 
 export default function ProfileScreen() {
   const [user, setUser] = useState<User | null>(null);

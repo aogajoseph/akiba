@@ -17,9 +17,9 @@ import {
   View,
 } from 'react-native';
 
-import { CreateGroupRequestDto } from '../../../../shared/contracts';
-import { createSpace } from '../../../services/spaceService';
-import { ApiError } from '../../../utils/api';
+import { CreateGroupRequestDto } from '../../../../../shared/contracts';
+import { createSpace } from '../../../../services/spaceService';
+import { ApiError } from '../../../../utils/api';
 
 export default function CreateSpaceScreen() {
   const [name, setName] = useState('');
@@ -102,7 +102,7 @@ export default function CreateSpaceScreen() {
       const response = await createSpace(payload);
 
       const nextSpace = response.space ?? response.group;
-      router.replace(`/(tabs)/spaces/${nextSpace.id}`);
+      router.replace(`/spaces/${nextSpace.id}`);
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to create this space.');

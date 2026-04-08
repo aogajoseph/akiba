@@ -12,7 +12,7 @@ export default function AkibaLink({ url }: Props) {
     const { spaceId } = parseAkibaLink(url);
 
     if (spaceId) {
-      router.push(`/(tabs)/spaces/${spaceId}`);
+      router.push(`/spaces/${spaceId}`);
     }
   };
 

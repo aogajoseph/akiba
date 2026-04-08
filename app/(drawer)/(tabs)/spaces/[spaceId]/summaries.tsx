@@ -13,8 +13,7 @@ import {
   Text,
   View,
 } from 'react-native';
-import format from 'date-fns/format';
-import parseISO from 'date-fns/parseISO';
+import { format, parseISO } from 'date-fns';
 
 import {
   GetSpaceSummaryResponseDto,
@@ -23,8 +22,8 @@ import {
   TransactionStatus,
   TransactionType,
 } from '@shared/contracts';
-import { getSpace, getSpaceSummary } from '../../../../services/spaceService';
-import { ApiError } from '../../../../utils/api';
+import { getSpace, getSpaceSummary } from '../../../../../services/spaceService';
+import { ApiError } from '../../../../../utils/api';
 
 type StatementTransaction = Transaction & {
   displayDate: string;

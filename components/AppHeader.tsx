@@ -1,13 +1,16 @@
 import { Ionicons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AppHeader() {
+  const navigation = useNavigation<{ openDrawer: () => void }>();
+
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.container}>
         <View style={styles.side}>
-          <Pressable style={styles.iconButton}>
+          <Pressable onPress={() => navigation.openDrawer()} style={styles.iconButton}>
             <Ionicons color="#132238" name="menu-outline" size={24} />
           </Pressable>
         </View>

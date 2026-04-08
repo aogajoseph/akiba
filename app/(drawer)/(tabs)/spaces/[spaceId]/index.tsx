@@ -14,11 +14,11 @@ import {
   View,
 } from 'react-native';
 
-import { Group, SpaceAdmin } from '../../../../../shared/contracts';
-import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
-import InviteMembersModal from '../../../../components/InviteMembersModal';
-import { getAdmins, getSpace } from '../../../../services/spaceService';
-import { ApiError, getAuthSession } from '../../../../utils/api';
+import { Group, SpaceAdmin } from '../../../../../../shared/contracts';
+import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
+import InviteMembersModal from '../../../../../components/InviteMembersModal';
+import { getAdmins, getSpace } from '../../../../../services/spaceService';
+import { ApiError, getAuthSession } from '../../../../../utils/api';
 
 type ToastMessage = {
   id: number;
@@ -52,7 +52,7 @@ export default function SpaceDashboardScreen() {
       return;
     }
 
-    router.push(`/(tabs)/spaces/${spaceId}/${segment}` as const);
+    router.push(`/spaces/${spaceId}/${segment}` as const);
   };
 
   const showInviteMembers = () => {

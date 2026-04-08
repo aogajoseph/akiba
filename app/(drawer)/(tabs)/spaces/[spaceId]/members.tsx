@@ -14,9 +14,9 @@ import {
   View,
 } from 'react-native';
 
-import { Group, SpaceAdmin, SpaceMember } from '../../../../../shared/contracts';
-import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
-import InviteMembersModal from '../../../../components/InviteMembersModal';
+import { Group, SpaceAdmin, SpaceMember } from '../../../../../../shared/contracts';
+import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
+import InviteMembersModal from '../../../../../components/InviteMembersModal';
 import {
   getAdmins,
   getMembers,
@@ -24,8 +24,8 @@ import {
   leaveSpace,
   promoteMember,
   revokeMember,
-} from '../../../../services/spaceService';
-import { ApiError, getAuthSession } from '../../../../utils/api';
+} from '../../../../../services/spaceService';
+import { ApiError, getAuthSession } from '../../../../../utils/api';
 
 type ToastMessage = {
   id: number;
@@ -204,7 +204,7 @@ export default function MembersScreen() {
         onPress: () => {
           void runMemberAction(myMembership.id, async () => {
             await leaveSpace(spaceId, myMembership.id);
-            router.replace('/(tabs)/spaces');
+            router.replace('/spaces');
           });
         },
       },
@@ -348,7 +348,7 @@ export default function MembersScreen() {
         }}
         onFromContacts={() => {
           setInviteModalVisible(false);
-          router.push(`/(tabs)/spaces/${spaceId}/invite/contacts`);
+          router.push(`/spaces/${spaceId}/invite/contacts`);
         }}
         onShareSpace={() => {
           void handleShareSpace();

@@ -16,8 +16,8 @@ import {
   View,
 } from 'react-native';
 
-import { deleteSpace, getSpace, updateSpace } from '../../../../services/spaceService';
-import { ApiError, getAuthSession } from '../../../../utils/api';
+import { deleteSpace, getSpace, updateSpace } from '../../../../../services/spaceService';
+import { ApiError, getAuthSession } from '../../../../../utils/api';
 
 export default function SpaceSettingsScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
@@ -97,7 +97,7 @@ export default function SpaceSettingsScreen() {
 
   useEffect(() => {
     if (!loading && space && !isCreator) {
-      router.replace(`/(tabs)/spaces/${spaceId}`);
+      router.replace(`/spaces/${spaceId}`);
     }
   }, [isCreator, loading, space, spaceId]);
 
@@ -165,7 +165,7 @@ export default function SpaceSettingsScreen() {
         Alert.alert('Success', 'Space deleted successfully');
 
         setTimeout(() => {
-          router.replace('/(tabs)/spaces');
+          router.replace('/spaces');
         }, 500);
       }
     } catch (caughtError) {

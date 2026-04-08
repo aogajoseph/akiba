@@ -31,7 +31,7 @@ import {
   MessageStatus,
   SpaceMember,
   TypingUser,
-} from '../../../../../shared/contracts';
+} from '../../../../../../shared/contracts';
 import {
   deleteMessage,
   getTypingUsers,
@@ -45,10 +45,10 @@ import {
   toggleReaction,
   uploadMediaMessage,
   type MediaUploadAttachment,
-} from '../../../../services/spaceService';
-import AkibaLink from '../../../../components/AkibaLink';
-import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
-import { api, ApiError, getAuthSession } from '../../../../utils/api';
+} from '../../../../../services/spaceService';
+import AkibaLink from '../../../../../components/AkibaLink';
+import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
+import { api, ApiError, getAuthSession } from '../../../../../utils/api';
 
 type ChatMessage = Message & {
   senderName: string;
@@ -827,7 +827,7 @@ export default function SpaceChatScreen() {
     }
 
     closeMenu();
-    router.push(`/(tabs)/spaces/${spaceId}/members`);
+    router.push(`/spaces/${spaceId}/members`);
   };
 
   const handleSpaceInfo = () => {
@@ -836,7 +836,7 @@ export default function SpaceChatScreen() {
     }
 
     closeMenu();
-    router.push(`/(tabs)/spaces/${spaceId}`);
+    router.push(`/spaces/${spaceId}`);
   };
 
   const handleLeaveGroup = async () => {
@@ -848,7 +848,7 @@ export default function SpaceChatScreen() {
 
     try {
       await leaveSpace(spaceId, currentMembership.id);
-      router.replace('/(tabs)/spaces');
+      router.replace('/spaces');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to leave this space.');
