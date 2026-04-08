@@ -1,8 +1,13 @@
+import { Stack } from 'expo-router';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+
+import AppHeader from '../../components/AppHeader';
 
 export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <AppHeader />
       <View style={styles.container}>
         <Text style={styles.title}>Home</Text>
         <Text style={styles.placeholder}>No Recent Activity</Text>

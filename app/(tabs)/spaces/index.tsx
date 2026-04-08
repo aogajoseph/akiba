@@ -1,4 +1,4 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
 import { useCallback, useState } from 'react';
 import {
@@ -12,6 +12,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Group } from '../../../../shared/contracts';
+import AppHeader from '@/components/AppHeader';
 import FullScreenImageViewer from '../../../components/FullScreenImageViewer';
 import { listSpaces } from '../../../services/spaceService';
 import { ApiError } from '../../../utils/api';
@@ -50,7 +51,9 @@ export default function ListSpacesScreen() {
   );
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <AppHeader />
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <View>

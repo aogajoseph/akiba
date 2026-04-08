@@ -1,15 +1,16 @@
-import { router, useFocusEffect } from 'expo-router';
+import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { User } from '../../../shared/contracts';
+import AppHeader from '@/components/AppHeader';
 import { logout, me } from '../../services/authService';
 import { ApiError } from '../../utils/api';
 
@@ -45,7 +46,9 @@ export default function ProfileScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
+      <Stack.Screen options={{ headerShown: false }} />
+      <AppHeader />
       <View style={styles.container}>
         <Text style={styles.title}>Profile</Text>
 
