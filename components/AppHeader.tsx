@@ -1,5 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useNavigation } from '@react-navigation/native';
+import { useEffect } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -8,6 +9,11 @@ import { useNotificationsStore } from '@/src/store/notificationsStore';
 export default function AppHeader() {
   const navigation = useNavigation<{ openDrawer: () => void }>();
   const unreadCount = useNotificationsStore((state) => state.unreadCount);
+  const fetchNotifications = useNotificationsStore((state) => state.fetchNotifications);
+
+  useEffect(() => {
+    void fetchNotifications();
+  }, [fetchNotifications]);
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>

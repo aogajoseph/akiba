@@ -1,21 +1,16 @@
 import { create } from 'zustand';
 
+import { NotificationDTO } from '../../../shared/contracts';
 import { getAuthSession } from '../../utils/api';
 import { API_BASE_URL } from '@/src/config/api';
 
-export type Notification = {
-  id: string;
-  cursorId: string;
-  title: string;
-  body: string;
-  createdAt: string;
-  isRead: boolean;
-};
+export type Notification = NotificationDTO;
 
 type NotificationsState = {
   notifications: Notification[];
   loading: boolean;
   unreadCount: number;
+  addNotification: (notification: Notification) => void;
   fetchNotifications: () => Promise<void>;
   markAsRead: (id: string) => Promise<void>;
 };
@@ -36,6 +31,23 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
   notifications: [],
   loading: false,
   unreadCount: 0,
+
+  addNotification: (notification) => {
+    set((state) => {
+      const exists = state.notifications.some((item) => item.id === notification.id);
+
+      if (exists) {
+        return state;
+      }
+
+      const updated = [notification, ...state.notifications];
+
+      return {
+        notifications: updated,
+        unreadCount: updated.filter((item) => !item.isRead).length,
+      };
+    });
+  },
 
   fetchNotifications: async () => {
     try {
