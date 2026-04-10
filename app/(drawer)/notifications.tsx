@@ -5,6 +5,7 @@ import {
   type Notification as AppNotification,
 } from '@/src/hooks/useNotifications';
 import { useNotificationsStore } from '@/src/store/notificationsStore';
+import { timeAgo } from '@/src/utils/timeAgo';
 
 export default function NotificationsScreen() {
   const {
@@ -34,10 +35,10 @@ export default function NotificationsScreen() {
           borderColor: '#eee',
         }}>
         <Text style={{ fontWeight: 'bold' }}>{item.title}</Text>
-        <Text>{item.body}</Text>
         <Text style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
-          {new Date(item.createdAt).toLocaleString()}
+          {timeAgo(item.createdAt)}
         </Text>
+        <Text>{item.body}</Text>
       </View>
     </TouchableOpacity>
   );
