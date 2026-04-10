@@ -3,8 +3,11 @@ import { useNavigation } from '@react-navigation/native';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { useNotificationsStore } from '@/src/store/notificationsStore';
+
 export default function AppHeader() {
   const navigation = useNavigation<{ openDrawer: () => void }>();
+  const unreadCount = useNotificationsStore((state) => state.unreadCount);
 
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
@@ -28,7 +31,17 @@ export default function AppHeader() {
 
         <View style={[styles.side, styles.sideRight]}>
           <Pressable style={styles.iconButton}>
-            <Ionicons color="#132238" name="notifications-outline" size={24} />
+            <View style={styles.notificationWrap}>
+              <Ionicons color="#132238" name="notifications-outline" size={24} />
+
+              {unreadCount > 0 ? (
+                <View style={styles.badge}>
+                  <Text style={styles.badgeText}>
+                    {unreadCount > 9 ? '9+' : unreadCount}
+                  </Text>
+                </View>
+              ) : null}
+            </View>
           </Pressable>
         </View>
       </View>
@@ -64,6 +77,25 @@ const styles = StyleSheet.create({
     height: 40,
     justifyContent: 'center',
     width: 40,
+  },
+  notificationWrap: {
+    position: 'relative',
+  },
+  badge: {
+    alignItems: 'center',
+    backgroundColor: 'red',
+    borderRadius: 10,
+    height: 18,
+    justifyContent: 'center',
+    minWidth: 18,
+    paddingHorizontal: 4,
+    position: 'absolute',
+    right: -6,
+    top: -4,
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
   },
   centerWrap: {
     alignItems: 'center',
