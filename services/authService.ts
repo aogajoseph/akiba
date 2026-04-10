@@ -5,6 +5,7 @@ import {
   RegisterRequestDto,
   RegisterResponseDto,
 } from '../../shared/contracts';
+import { registerPushNotificationsForCurrentUser } from '../src/services/pushNotifications';
 import { api, clearAuthSession, setAuthSession } from '../utils/api';
 
 export const register = async (
@@ -15,6 +16,7 @@ export const register = async (
     user: response.data.data.user,
     token: response.data.data.token,
   });
+  void registerPushNotificationsForCurrentUser();
   return response.data.data;
 };
 
@@ -24,6 +26,7 @@ export const login = async (dto: LoginRequestDto): Promise<LoginResponseDto> => 
     user: response.data.data.user,
     token: response.data.data.token,
   });
+  void registerPushNotificationsForCurrentUser();
   return response.data.data;
 };
 

@@ -5,6 +5,7 @@ import { useEffect } from 'react';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { registerPushNotificationsForCurrentUser } from '@/src/services/pushNotifications';
 import { connectWebSocket } from '@/src/services/websocket';
 import { useNotificationsStore } from '@/src/store/notificationsStore';
 
@@ -23,6 +24,10 @@ export default function RootLayout() {
         addNotification(event.payload);
       }
     });
+  }, []);
+
+  useEffect(() => {
+    void registerPushNotificationsForCurrentUser();
   }, []);
 
   return (
