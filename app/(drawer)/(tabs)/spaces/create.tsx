@@ -24,7 +24,6 @@ import { ApiError } from '../../../../utils/api';
 export default function CreateSpaceScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [approvalThreshold, setApprovalThreshold] = useState('');
   const [hasGoal, setHasGoal] = useState(false);
   const [targetAmount, setTargetAmount] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -84,7 +83,6 @@ export default function CreateSpaceScreen() {
         name: name.trim(),
         description: description.trim() || undefined,
         image: selectedImageUri ?? undefined,
-        approvalThreshold: Number(approvalThreshold || 1),
       };
 
       if (hasGoal) {
@@ -168,18 +166,6 @@ export default function CreateSpaceScreen() {
           </View>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Admins (To approve withdrawals)</Text>
-            <TextInput
-              keyboardType="number-pad"
-              onChangeText={setApprovalThreshold}
-              placeholder="2 or 3"
-              placeholderTextColor="#94a3b8"
-              style={styles.input}
-              value={approvalThreshold}
-            />
-          </View>
-
-          <View style={styles.fieldGroup}>
             <View style={styles.goalToggleRow}>
               <View style={styles.goalToggleText}>
                 <Text style={styles.label}>Set goals for this space (optional)</Text>
@@ -250,6 +236,10 @@ export default function CreateSpaceScreen() {
           ) : null}
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
+
+          <Text style={styles.helperText}>
+            Withdrawals unlock automatically after the creator promotes 2 more admins.
+          </Text>
 
           <Pressable
             onPress={handleSubmit}

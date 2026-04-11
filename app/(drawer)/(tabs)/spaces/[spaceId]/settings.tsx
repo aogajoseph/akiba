@@ -27,7 +27,6 @@ export default function SpaceSettingsScreen() {
   const [space, setSpace] = useState<Group | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [approvalThreshold, setApprovalThreshold] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
   const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
@@ -41,7 +40,6 @@ export default function SpaceSettingsScreen() {
   const currentUserId = getAuthSession()?.user.id ?? null;
   const nameInputRef = useRef<TextInput | null>(null);
   const descriptionInputRef = useRef<TextInput | null>(null);
-  const approvalThresholdInputRef = useRef<TextInput | null>(null);
   const targetAmountInputRef = useRef<TextInput | null>(null);
   const canSubmit = name.trim().length > 0 && !loading && !saving;
   const isCreator = currentUserId !== null && currentUserId === space?.createdByUserId;
@@ -67,7 +65,6 @@ export default function SpaceSettingsScreen() {
     setSpace(nextSpace);
     setName(nextSpace.name);
     setDescription(nextSpace.description ?? '');
-    setApprovalThreshold(String(nextSpace.approvalThreshold));
     setTargetAmount(nextSpace.targetAmount !== undefined ? String(nextSpace.targetAmount) : '');
     setDeadlineDate(nextSpace.deadline ? new Date(nextSpace.deadline) : null);
     setSelectedImageUri(nextSpace.imageUrl ?? null);
@@ -135,18 +132,11 @@ export default function SpaceSettingsScreen() {
 
     const trimmedName = name.trim();
     const trimmedDescription = description.trim();
-    const trimmedApprovalThreshold = approvalThreshold.trim();
     const trimmedTargetAmount = targetAmount.trim();
-    const parsedApprovalThreshold = Number(trimmedApprovalThreshold);
     const parsedTargetAmount = trimmedTargetAmount ? Number(trimmedTargetAmount) : undefined;
 
     if (!trimmedName) {
       setError('Space name is required.');
-      return;
-    }
-
-    if (!Number.isInteger(parsedApprovalThreshold) || ![2, 3].includes(parsedApprovalThreshold)) {
-      setError('Admins must be either 2 or 3.');
       return;
     }
 
@@ -169,7 +159,6 @@ export default function SpaceSettingsScreen() {
       const response = await updateSpace(spaceId, {
         name: trimmedName,
         description: trimmedDescription || undefined,
-        approvalThreshold: parsedApprovalThreshold,
         targetAmount: parsedTargetAmount,
         deadline: deadlineDate ? deadlineDate.toISOString() : undefined,
         imageUrl: nextImageUrl,
@@ -290,6 +279,9 @@ export default function SpaceSettingsScreen() {
                   Image upload not supported yet. Current image will remain unchanged.
                 </Text>
               ) : null}
+              <Text style={styles.helperText}>
+                Withdrawal governance is system-managed and unlocks after 3 admins are assigned.
+              </Text>
             </View>
 
             <View style={styles.form}>
@@ -328,28 +320,6 @@ export default function SpaceSettingsScreen() {
                   />
                   <Pressable
                     onPress={() => descriptionInputRef.current?.focus()}
-                    style={styles.inputIcon}>
-                    <Feather color="#6b7280" name="edit-2" size={16} />
-                  </Pressable>
-                </View>
-              </View>
-
-              <View style={styles.fieldGroup}>
-                <Text style={styles.label}>Admins</Text>
-                <View style={styles.inputWrapper}>
-                  <TextInput
-                    keyboardType="number-pad"
-                    onChangeText={(value) => {
-                      setApprovalThreshold(value.replace(/[^\d]/g, '').slice(0, 1));
-                    }}
-                    placeholder="2 or 3"
-                    placeholderTextColor="#94a3b8"
-                    ref={approvalThresholdInputRef}
-                    style={[styles.input, styles.inputWithIcon]}
-                    value={approvalThreshold}
-                  />
-                  <Pressable
-                    onPress={() => approvalThresholdInputRef.current?.focus()}
                     style={styles.inputIcon}>
                     <Feather color="#6b7280" name="edit-2" size={16} />
                   </Pressable>

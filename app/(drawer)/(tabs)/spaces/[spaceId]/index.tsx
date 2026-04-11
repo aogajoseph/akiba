@@ -236,9 +236,7 @@ export default function SpaceDashboardScreen() {
                   <Text style={styles.adminRole}>{admin.role}</Text>
                 </View>
               ))}
-              <Text style={styles.remainingText}>
-                Required admins: {space.approvalThreshold}
-              </Text>
+              <Text style={styles.remainingText}>Withdrawals unlock after 3 admins are assigned.</Text>
               <Text style={styles.remainingText}>Available admin slots: {remainingSlots}</Text>
             </View>
 
