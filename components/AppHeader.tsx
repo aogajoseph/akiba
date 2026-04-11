@@ -3,7 +3,7 @@ import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useState } from 'react';
-import { Image, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { useNotificationsStore } from '@/src/store/notificationsStore';
@@ -58,91 +58,93 @@ export default function AppHeader() {
         </View>
 
         {open ? (
-          <View style={styles.overlay}>
-            <TouchableOpacity
-              activeOpacity={1}
-              onPress={() => setOpen(false)}
-              style={styles.overlayBackground}
-            />
+          <Modal
+            animationType="none"
+            onRequestClose={() => setOpen(false)}
+            transparent
+            visible={open}>
+            <View style={styles.overlay}>
+              <Pressable onPress={() => setOpen(false)} style={styles.overlayBackground} />
 
-            <View style={styles.dropdown}>
-              {notifications.slice(0, 5).length > 0 ? (
-                notifications.slice(0, 5).map((notification, index) => (
-                  <TouchableOpacity
-                    activeOpacity={0.7}
-                    key={notification.cursorId}
-                    onPress={() => {
-                      if (!notification.isRead) {
-                        void markAsRead(notification.id);
-                      }
+              <Pressable onPress={() => {}} style={styles.dropdown}>
+                {notifications.slice(0, 5).length > 0 ? (
+                  notifications.slice(0, 5).map((notification, index) => (
+                    <TouchableOpacity
+                      activeOpacity={0.7}
+                      key={notification.cursorId}
+                      onPress={() => {
+                        if (!notification.isRead) {
+                          void markAsRead(notification.id);
+                        }
 
-                      setOpen(false);
+                        setOpen(false);
 
-                      if (notification.spaceId && notification.transactionId) {
-                        router.push({
-                          pathname: '/spaces/[spaceId]/transactions/[transactionId]',
-                          params: {
-                            spaceId: notification.spaceId,
-                            transactionId: notification.transactionId,
-                          },
-                        });
-                        return;
-                      }
+                        if (notification.spaceId && notification.transactionId) {
+                          router.push({
+                            pathname: '/spaces/[spaceId]/transactions/[transactionId]',
+                            params: {
+                              spaceId: notification.spaceId,
+                              transactionId: notification.transactionId,
+                            },
+                          });
+                          return;
+                        }
 
-                      if (notification.spaceId) {
-                        router.push(`/spaces/${notification.spaceId}`);
-                        return;
-                      }
+                        if (notification.spaceId) {
+                          router.push(`/spaces/${notification.spaceId}`);
+                          return;
+                        }
 
-                      router.push('/notifications');
-                    }}>
-                    <View
-                      style={[
-                        styles.dropdownItem,
-                        !notification.isRead ? styles.dropdownItemUnread : null,
-                        index < Math.min(notifications.length, 5) - 1
-                          ? styles.dropdownItemDivider
-                          : null,
-                      ]}>
-                      <View style={styles.dropdownTitleRow}>
-                        <Text
-                          numberOfLines={1}
-                          style={[
-                            styles.dropdownTitle,
-                            !notification.isRead ? styles.dropdownTitleUnread : null,
-                          ]}>
-                          {notification.title}
+                        router.push('/notifications');
+                      }}>
+                      <View
+                        style={[
+                          styles.dropdownItem,
+                          !notification.isRead ? styles.dropdownItemUnread : null,
+                          index < Math.min(notifications.length, 5) - 1
+                            ? styles.dropdownItemDivider
+                            : null,
+                        ]}>
+                        <View style={styles.dropdownTitleRow}>
+                          <Text
+                            numberOfLines={1}
+                            style={[
+                              styles.dropdownTitle,
+                              !notification.isRead ? styles.dropdownTitleUnread : null,
+                            ]}>
+                            {notification.title}
+                          </Text>
+
+                          {!notification.isRead ? <View style={styles.unreadDot} /> : null}
+                        </View>
+
+                        <Text numberOfLines={2} style={styles.dropdownBody}>
+                          {notification.body}
                         </Text>
 
-                        {!notification.isRead ? <View style={styles.unreadDot} /> : null}
+                        <Text style={styles.dropdownTime}>{timeAgo(notification.createdAt)}</Text>
                       </View>
+                    </TouchableOpacity>
+                  ))
+                ) : (
+                  <View style={styles.emptyState}>
+                    <Text style={styles.emptyStateText}>No notifications</Text>
+                  </View>
+                )}
 
-                      <Text numberOfLines={2} style={styles.dropdownBody}>
-                        {notification.body}
-                      </Text>
-
-                      <Text style={styles.dropdownTime}>{timeAgo(notification.createdAt)}</Text>
-                    </View>
-                  </TouchableOpacity>
-                ))
-              ) : (
-                <View style={styles.emptyState}>
-                  <Text style={styles.emptyStateText}>No notifications</Text>
-                </View>
-              )}
-
-              <TouchableOpacity
-                activeOpacity={0.7}
-                onPress={() => {
-                  setOpen(false);
-                  console.log('Navigating to notifications');
-                  router.push('/notifications');
-                }}
-                style={styles.viewAllButton}>
-                <Text style={styles.viewAllText}>View all</Text>
-              </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={() => {
+                    setOpen(false);
+                    console.log('Navigating to notifications');
+                    router.push('/notifications');
+                  }}
+                  style={styles.viewAllButton}>
+                  <Text style={styles.viewAllText}>View all</Text>
+                </TouchableOpacity>
+              </Pressable>
             </View>
-          </View>
+          </Modal>
         ) : null}
       </View>
     </SafeAreaView>
@@ -159,17 +161,13 @@ const styles = StyleSheet.create({
     position: 'relative',
   },
   overlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 9999,
-    elevation: 50,
+    ...StyleSheet.absoluteFillObject,
+    zIndex: 999,
   },
   overlayBackground: {
     ...StyleSheet.absoluteFillObject,
     backgroundColor: 'transparent',
+    zIndex: 999,
   },
   container: {
     alignItems: 'center',
@@ -223,7 +221,7 @@ const styles = StyleSheet.create({
     top: 50,
     right: 25,
     width: 300,
-    zIndex: 10000,
+    zIndex: 1000,
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -231,7 +229,7 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.1,
     shadowRadius: 10,
-    elevation: 50,
+    elevation: 20,
   },
   dropdownItem: {
     paddingHorizontal: 12,
