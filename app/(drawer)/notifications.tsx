@@ -17,13 +17,15 @@ export default function NotificationsScreen() {
 
   useEffect(() => {
     void fetchNotifications();
+  }, []);
 
+  useEffect(() => {
     const interval = setInterval(() => {
       void fetchNotifications();
     }, 15000);
 
     return () => clearInterval(interval);
-  }, [fetchNotifications]);
+  }, []);
 
   const renderItem = ({ item }: { item: AppNotification }) => (
     <TouchableOpacity activeOpacity={0.7} onPress={() => { void markAsRead(item.id); }}>
@@ -56,7 +58,7 @@ export default function NotificationsScreen() {
           alignItems: 'center',
         }}>
         <Text style={{ fontStyle: 'italic', color: '#888' }}>
-          No Notifications
+          No notifications
         </Text>
       </SafeAreaView>
     );

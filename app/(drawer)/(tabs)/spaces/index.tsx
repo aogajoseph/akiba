@@ -53,7 +53,9 @@ export default function ListSpacesScreen() {
   return (
     <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
-      <AppHeader />
+      <View style={{ zIndex: 1000, elevation: 10 }}>
+        <AppHeader />
+      </View>
       <View style={styles.container}>
         <View style={styles.headerRow}>
           <View>
