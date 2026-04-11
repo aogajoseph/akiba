@@ -37,7 +37,6 @@ export default function SpaceDashboardScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [space, setSpace] = useState<Group | null>(null);
   const [admins, setAdmins] = useState<SpaceAdmin[]>([]);
-  const [remainingSlots, setRemainingSlots] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
@@ -137,7 +136,6 @@ export default function SpaceDashboardScreen() {
 
       setSpace(spaceResponse.space ?? spaceResponse.group);
       setAdmins(adminsResponse.admins);
-      setRemainingSlots(adminsResponse.remainingSlots);
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to load this space.');
@@ -236,8 +234,7 @@ export default function SpaceDashboardScreen() {
                   <Text style={styles.adminRole}>{admin.role}</Text>
                 </View>
               ))}
-              <Text style={styles.remainingText}>Withdrawals unlock after 3 admins are assigned.</Text>
-              <Text style={styles.remainingText}>Available admin slots: {remainingSlots}</Text>
+              <Text style={styles.remainingText}>Admins: {admins.length}</Text>
             </View>
 
             <View style={styles.section}>

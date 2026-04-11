@@ -279,9 +279,6 @@ export default function SpaceSettingsScreen() {
                   Image upload not supported yet. Current image will remain unchanged.
                 </Text>
               ) : null}
-              <Text style={styles.helperText}>
-                Withdrawal governance is system-managed and unlocks after 3 admins are assigned.
-              </Text>
             </View>
 
             <View style={styles.form}>

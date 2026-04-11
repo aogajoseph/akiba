@@ -109,7 +109,7 @@ export default function ListSpacesScreen() {
                 onPress={() => router.push(`/spaces/${item.id}`)}
                 style={styles.cardContent}>
                 <Text style={styles.cardTitle}>{item.name}</Text>
-                <Text style={styles.cardMeta}>Withdrawals unlock after 3 admins are assigned.</Text>
+                <Text style={styles.cardMeta}>Admins: {item.adminCount ?? 1}</Text>
               </Pressable>
             </View>
           )}

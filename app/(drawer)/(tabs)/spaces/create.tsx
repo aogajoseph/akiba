@@ -237,10 +237,6 @@ export default function CreateSpaceScreen() {
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <Text style={styles.helperText}>
-            Withdrawals unlock automatically after the creator promotes 2 more admins.
-          </Text>
-
           <Pressable
             onPress={handleSubmit}
             disabled={!canSubmit}
