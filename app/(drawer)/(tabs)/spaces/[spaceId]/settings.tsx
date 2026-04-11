@@ -16,24 +16,27 @@ import {
   View,
 } from 'react-native';
 
+import { Group } from '@shared/contracts';
 import { deleteSpace, getSpace, updateSpace } from '../../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../../utils/api';
 
+const isPersistableImageUrl = (value: string): boolean => /^https?:\/\//i.test(value.trim());
+
 export default function SpaceSettingsScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
-  const [space, setSpace] = useState<{ createdByUserId: string } | null>(null);
+  const [space, setSpace] = useState<Group | null>(null);
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [approvalThreshold, setApprovalThreshold] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
-  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [persistedImageUrl, setPersistedImageUrl] = useState<string | null>(null);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [isDeletingSpace, setIsDeletingSpace] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [creatorUserId, setCreatorUserId] = useState<string | null>(null);
 
   const currentUserId = getAuthSession()?.user.id ?? null;
   const nameInputRef = useRef<TextInput | null>(null);
@@ -41,7 +44,7 @@ export default function SpaceSettingsScreen() {
   const approvalThresholdInputRef = useRef<TextInput | null>(null);
   const targetAmountInputRef = useRef<TextInput | null>(null);
   const canSubmit = name.trim().length > 0 && !loading && !saving;
-  const isCreator = currentUserId !== null && currentUserId === creatorUserId;
+  const isCreator = currentUserId !== null && currentUserId === space?.createdByUserId;
   const formattedDeadline = deadlineDate
     ? deadlineDate.toLocaleDateString('en-KE', {
         day: 'numeric',
@@ -58,40 +61,42 @@ export default function SpaceSettingsScreen() {
       .map((part) => part.charAt(0).toUpperCase())
       .join('');
   }, [name]);
+  const hasLocalPreviewImage = selectedImageUri?.startsWith('file://') ?? false;
+
+  const applySpaceToForm = (nextSpace: Group) => {
+    setSpace(nextSpace);
+    setName(nextSpace.name);
+    setDescription(nextSpace.description ?? '');
+    setApprovalThreshold(String(nextSpace.approvalThreshold));
+    setTargetAmount(nextSpace.targetAmount !== undefined ? String(nextSpace.targetAmount) : '');
+    setDeadlineDate(nextSpace.deadline ? new Date(nextSpace.deadline) : null);
+    setSelectedImageUri(nextSpace.imageUrl ?? null);
+    setPersistedImageUrl(nextSpace.imageUrl ?? null);
+  };
+
+  const loadSpace = async () => {
+    if (!spaceId) {
+      setError('Missing space id.');
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await getSpace(spaceId);
+      const nextSpace = response.space ?? response.group;
+      applySpaceToForm(nextSpace);
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to load this space.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const loadSpace = async () => {
-      if (!spaceId) {
-        setError('Missing space id.');
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const response = await getSpace(spaceId);
-        const nextSpace = response.space ?? response.group;
-
-        setSpace(nextSpace);
-        setName(nextSpace.name);
-        setDescription(nextSpace.description ?? '');
-        setApprovalThreshold(String(nextSpace.approvalThreshold));
-        setTargetAmount(
-          nextSpace.targetAmount !== undefined ? String(nextSpace.targetAmount) : '',
-        );
-        setDeadlineDate(nextSpace.deadline ? new Date(nextSpace.deadline) : null);
-        setImageUrl(nextSpace.imageUrl ?? null);
-        setCreatorUserId(nextSpace.createdByUserId);
-      } catch (caughtError) {
-        const apiError = caughtError as ApiError;
-        setError(apiError.error ?? 'Unable to load this space.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     void loadSpace();
   }, [spaceId]);
 
@@ -120,7 +125,7 @@ export default function SpaceSettingsScreen() {
       return;
     }
 
-    setImageUrl(result.assets[0].uri);
+    setSelectedImageUri(result.assets[0].uri);
   };
 
   const handleSave = async () => {
@@ -128,18 +133,50 @@ export default function SpaceSettingsScreen() {
       return;
     }
 
+    const trimmedName = name.trim();
+    const trimmedDescription = description.trim();
+    const trimmedApprovalThreshold = approvalThreshold.trim();
+    const trimmedTargetAmount = targetAmount.trim();
+    const parsedApprovalThreshold = Number(trimmedApprovalThreshold);
+    const parsedTargetAmount = trimmedTargetAmount ? Number(trimmedTargetAmount) : undefined;
+
+    if (!trimmedName) {
+      setError('Space name is required.');
+      return;
+    }
+
+    if (!Number.isInteger(parsedApprovalThreshold) || ![2, 3].includes(parsedApprovalThreshold)) {
+      setError('Admins must be either 2 or 3.');
+      return;
+    }
+
+    if (
+      trimmedTargetAmount &&
+      (!Number.isFinite(parsedTargetAmount) || (parsedTargetAmount ?? 0) <= 0)
+    ) {
+      setError('Target amount must be a positive number.');
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
-      await updateSpace(spaceId, {
-        name: name.trim(),
-        description: description.trim() || undefined,
-        approvalThreshold: Number(approvalThreshold || 1),
-        targetAmount: targetAmount.trim() ? Number(targetAmount.trim()) : undefined,
+      const nextImageUrl =
+        selectedImageUri && isPersistableImageUrl(selectedImageUri)
+          ? selectedImageUri
+          : undefined;
+      const response = await updateSpace(spaceId, {
+        name: trimmedName,
+        description: trimmedDescription || undefined,
+        approvalThreshold: parsedApprovalThreshold,
+        targetAmount: parsedTargetAmount,
         deadline: deadlineDate ? deadlineDate.toISOString() : undefined,
-        imageUrl: imageUrl ?? undefined,
+        imageUrl: nextImageUrl,
       });
+      const updatedSpace = response.space ?? response.group;
+
+      applySpaceToForm(updatedSpace);
 
       router.back();
     } catch (caughtError) {
@@ -223,8 +260,8 @@ export default function SpaceSettingsScreen() {
             <View style={styles.avatarSection}>
               <Pressable onPress={() => { void handlePickAvatar(); }} style={styles.avatarButton}>
                 <View style={styles.avatarContainer}>
-                  {imageUrl ? (
-                    <Image source={{ uri: imageUrl }} style={styles.avatarImage} />
+                  {selectedImageUri ? (
+                    <Image source={{ uri: selectedImageUri }} style={styles.avatarImage} />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
                       {avatarInitials ? (
@@ -243,20 +280,30 @@ export default function SpaceSettingsScreen() {
                 </View>
               </Pressable>
               <Text style={styles.avatarHint}>Tap to update the space image</Text>
+              {hasLocalPreviewImage ? (
+                <Text style={styles.helperText}>
+                  Preview only - image upload coming soon
+                </Text>
+              ) : null}
+              {hasLocalPreviewImage ? (
+                <Text style={styles.helperText}>
+                  Image upload not supported yet. Current image will remain unchanged.
+                </Text>
+              ) : null}
             </View>
 
             <View style={styles.form}>
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Space Name</Text>
                 <View style={styles.inputWrapper}>
-                <TextInput
-                  ref={nameInputRef}
-                  onChangeText={setName}
-                  placeholder="Weekend Chama"
-                  placeholderTextColor="#94a3b8"
-                  style={[styles.input, styles.inputWithIcon]}
-                  value={name}
-                />
+                  <TextInput
+                    ref={nameInputRef}
+                    onChangeText={setName}
+                    placeholder="Weekend Chama"
+                    placeholderTextColor="#94a3b8"
+                    style={[styles.input, styles.inputWithIcon]}
+                    value={name}
+                  />
                   <Pressable
                     onPress={() => nameInputRef.current?.focus()}
                     style={styles.inputIcon}>
@@ -268,17 +315,17 @@ export default function SpaceSettingsScreen() {
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Space Description</Text>
                 <View style={styles.inputWrapper}>
-                <TextInput
-                  multiline
-                  numberOfLines={3}
-                  onChangeText={setDescription}
-                  placeholder="What is this space about?"
-                  placeholderTextColor="#94a3b8"
-                  ref={descriptionInputRef}
-                  style={[styles.input, styles.inputWithIcon, styles.textArea]}
-                  textAlignVertical="top"
-                  value={description}
-                />
+                  <TextInput
+                    multiline
+                    numberOfLines={3}
+                    onChangeText={setDescription}
+                    placeholder="What is this space about?"
+                    placeholderTextColor="#94a3b8"
+                    ref={descriptionInputRef}
+                    style={[styles.input, styles.inputWithIcon, styles.textArea]}
+                    textAlignVertical="top"
+                    value={description}
+                  />
                   <Pressable
                     onPress={() => descriptionInputRef.current?.focus()}
                     style={styles.inputIcon}>
@@ -290,15 +337,17 @@ export default function SpaceSettingsScreen() {
               <View style={styles.fieldGroup}>
                 <Text style={styles.label}>Admins</Text>
                 <View style={styles.inputWrapper}>
-                <TextInput
-                  keyboardType="number-pad"
-                  onChangeText={setApprovalThreshold}
-                  placeholder="2 or 3"
-                  placeholderTextColor="#94a3b8"
-                  ref={approvalThresholdInputRef}
-                  style={[styles.input, styles.inputWithIcon]}
-                  value={approvalThreshold}
-                />
+                  <TextInput
+                    keyboardType="number-pad"
+                    onChangeText={(value) => {
+                      setApprovalThreshold(value.replace(/[^\d]/g, '').slice(0, 1));
+                    }}
+                    placeholder="2 or 3"
+                    placeholderTextColor="#94a3b8"
+                    ref={approvalThresholdInputRef}
+                    style={[styles.input, styles.inputWithIcon]}
+                    value={approvalThreshold}
+                  />
                   <Pressable
                     onPress={() => approvalThresholdInputRef.current?.focus()}
                     style={styles.inputIcon}>
@@ -311,18 +360,18 @@ export default function SpaceSettingsScreen() {
                 <Text style={styles.label}>Target Amount</Text>
                 <View style={styles.inputWrapper}>
                   <View style={styles.inputWithPrefix}>
-                  <Text style={styles.inputPrefix}>KES</Text>
-                  <TextInput
-                    keyboardType="number-pad"
-                    onChangeText={(value) => {
-                      setTargetAmount(value.replace(/[^\d]/g, ''));
-                    }}
-                    placeholder="50,000"
-                    placeholderTextColor="#94a3b8"
-                    ref={targetAmountInputRef}
-                    style={styles.prefixedInput}
-                    value={targetAmount}
-                  />
+                    <Text style={styles.inputPrefix}>KES</Text>
+                    <TextInput
+                      keyboardType="number-pad"
+                      onChangeText={(value) => {
+                        setTargetAmount(value.replace(/[^\d]/g, ''));
+                      }}
+                      placeholder="50,000"
+                      placeholderTextColor="#94a3b8"
+                      ref={targetAmountInputRef}
+                      style={styles.prefixedInput}
+                      value={targetAmount}
+                    />
                   </View>
                   <Pressable
                     onPress={() => targetAmountInputRef.current?.focus()}
@@ -469,6 +518,11 @@ const styles = StyleSheet.create({
   avatarHint: {
     color: '#6b7280',
     fontSize: 13,
+  },
+  helperText: {
+    color: '#6b7280',
+    fontSize: 12,
+    textAlign: 'center',
   },
   avatarEditOverlay: {
     backgroundColor: '#ffffff',

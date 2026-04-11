@@ -61,7 +61,7 @@ export const updateSpace = async (
   spaceId: string,
   payload: UpdateGroupRequestDto,
 ): Promise<UpdateGroupResponseDto> => {
-  const response = await api.patch<{ data: UpdateGroupResponseDto }>(`/groups/${spaceId}`, payload);
+  const response = await api.patch<{ data: UpdateGroupResponseDto }>(`/spaces/${spaceId}`, payload);
   return response.data.data;
 };
 
