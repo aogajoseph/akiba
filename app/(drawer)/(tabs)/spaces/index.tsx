@@ -17,6 +17,23 @@ import FullScreenImageViewer from '../../../../components/FullScreenImageViewer'
 import { listSpaces } from '../../../../services/spaceService';
 import { ApiError } from '../../../../utils/api';
 
+const getMembersCount = (
+  space: Group & {
+    members?: unknown[];
+    membersCount?: number;
+  },
+): number => {
+  if (typeof space.membersCount === 'number') {
+    return space.membersCount;
+  }
+
+  if (Array.isArray(space.members)) {
+    return space.members.length;
+  }
+
+  return 0;
+};
+
 export default function ListSpacesScreen() {
   const [spaces, setSpaces] = useState<Group[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,7 +126,7 @@ export default function ListSpacesScreen() {
                 onPress={() => router.push(`/spaces/${item.id}`)}
                 style={styles.cardContent}>
                 <Text style={styles.cardTitle}>{item.name}</Text>
-                <Text style={styles.cardMeta}>Admins: {item.adminCount ?? 1}</Text>
+                <Text style={styles.cardMeta}>Members: {getMembersCount(item)}</Text>
               </Pressable>
             </View>
           )}
