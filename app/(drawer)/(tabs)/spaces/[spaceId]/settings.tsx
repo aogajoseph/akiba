@@ -199,11 +199,10 @@ export default function SpaceSettingsScreen() {
       const response = await deleteSpace(spaceId);
 
       if (response.success) {
-        Alert.alert('Success', 'Space deleted successfully');
-
-        setTimeout(() => {
-          router.replace('/spaces');
-        }, 500);
+        setSpace(null);
+        setImageUrl(undefined);
+        setLocalImage(null);
+        router.replace('/spaces');
       }
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
