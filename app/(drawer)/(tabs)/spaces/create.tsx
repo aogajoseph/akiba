@@ -133,7 +133,7 @@ export default function CreateSpaceScreen() {
         keyboardShouldPersistTaps="handled"
         style={styles.container}>
         <Text style={styles.title}>Create Space</Text>
-        <Text style={styles.subtitle}>Spaces bring people together to save for events, needs and shared goals.</Text>
+        <Text style={styles.subtitle}>Spaces bring people together to save for events and shared goals.</Text>
 
         <View style={styles.avatarSection}>
           <Pressable onPress={() => { void handlePickAvatar(); }} style={styles.avatarButton}>
