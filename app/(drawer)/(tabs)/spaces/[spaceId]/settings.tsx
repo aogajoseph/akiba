@@ -17,10 +17,9 @@ import {
 } from 'react-native';
 
 import { Group } from '@shared/contracts';
+import { uploadImageToCloudinary } from '@/src/services/cloudinary';
 import { deleteSpace, getSpace, updateSpace } from '../../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../../utils/api';
-
-const isPersistableImageUrl = (value: string): boolean => /^https?:\/\//i.test(value.trim());
 
 export default function SpaceSettingsScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
@@ -29,8 +28,8 @@ export default function SpaceSettingsScreen() {
   const [description, setDescription] = useState('');
   const [targetAmount, setTargetAmount] = useState('');
   const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
-  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
-  const [persistedImageUrl, setPersistedImageUrl] = useState<string | null>(null);
+  const [localImage, setLocalImage] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -59,16 +58,20 @@ export default function SpaceSettingsScreen() {
       .map((part) => part.charAt(0).toUpperCase())
       .join('');
   }, [name]);
-  const hasLocalPreviewImage = selectedImageUri?.startsWith('file://') ?? false;
+  const hasPendingImageUpload = localImage !== null;
+  const displayImage = localImage || imageUrl;
 
-  const applySpaceToForm = (nextSpace: Group) => {
+  const applySpaceToForm = (nextSpace: Group, options?: { preserveLocalImage?: boolean }) => {
     setSpace(nextSpace);
     setName(nextSpace.name);
     setDescription(nextSpace.description ?? '');
     setTargetAmount(nextSpace.targetAmount !== undefined ? String(nextSpace.targetAmount) : '');
     setDeadlineDate(nextSpace.deadline ? new Date(nextSpace.deadline) : null);
-    setSelectedImageUri(nextSpace.imageUrl ?? null);
-    setPersistedImageUrl(nextSpace.imageUrl ?? null);
+    setImageUrl(nextSpace.imageUrl);
+
+    if (!options?.preserveLocalImage) {
+      setLocalImage(null);
+    }
   };
 
   const loadSpace = async () => {
@@ -114,7 +117,7 @@ export default function SpaceSettingsScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
       aspect: [1, 1],
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'] as const,
       quality: 1,
     });
 
@@ -122,7 +125,7 @@ export default function SpaceSettingsScreen() {
       return;
     }
 
-    setSelectedImageUri(result.assets[0].uri);
+    setLocalImage(result.assets[0].uri);
   };
 
   const handleSave = async () => {
@@ -152,20 +155,28 @@ export default function SpaceSettingsScreen() {
     setError(null);
 
     try {
-      const nextImageUrl =
-        selectedImageUri && isPersistableImageUrl(selectedImageUri)
-          ? selectedImageUri
-          : undefined;
+      let finalImageUrl = imageUrl;
+
+      if (localImage && !localImage.startsWith('http')) {
+        try {
+          finalImageUrl = await uploadImageToCloudinary(localImage);
+        } catch (uploadError) {
+          console.warn('Image upload failed', uploadError);
+        }
+      }
+
       const response = await updateSpace(spaceId, {
         name: trimmedName,
         description: trimmedDescription || undefined,
         targetAmount: parsedTargetAmount,
         deadline: deadlineDate ? deadlineDate.toISOString() : undefined,
-        imageUrl: nextImageUrl,
+        imageUrl: finalImageUrl,
       });
       const updatedSpace = response.space ?? response.group;
 
-      applySpaceToForm(updatedSpace);
+      applySpaceToForm(updatedSpace, {
+        preserveLocalImage: !finalImageUrl && localImage !== null,
+      });
 
       router.back();
     } catch (caughtError) {
@@ -249,8 +260,8 @@ export default function SpaceSettingsScreen() {
             <View style={styles.avatarSection}>
               <Pressable onPress={() => { void handlePickAvatar(); }} style={styles.avatarButton}>
                 <View style={styles.avatarContainer}>
-                  {selectedImageUri ? (
-                    <Image source={{ uri: selectedImageUri }} style={styles.avatarImage} />
+                  {displayImage ? (
+                    <Image source={{ uri: displayImage }} style={styles.avatarImage} />
                   ) : (
                     <View style={styles.avatarPlaceholder}>
                       {avatarInitials ? (
@@ -269,14 +280,9 @@ export default function SpaceSettingsScreen() {
                 </View>
               </Pressable>
               <Text style={styles.avatarHint}>Tap to update the space image</Text>
-              {hasLocalPreviewImage ? (
+              {hasPendingImageUpload ? (
                 <Text style={styles.helperText}>
-                  Preview only - image upload coming soon
-                </Text>
-              ) : null}
-              {hasLocalPreviewImage ? (
-                <Text style={styles.helperText}>
-                  Image upload not supported yet. Current image will remain unchanged.
+                  Selected image will be uploaded when you save.
                 </Text>
               ) : null}
             </View>

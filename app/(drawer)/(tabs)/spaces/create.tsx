@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 
 import { CreateGroupRequestDto } from '../../../../../shared/contracts';
+import { uploadImageToCloudinary } from '@/src/services/cloudinary';
 import { createSpace } from '../../../../services/spaceService';
 import { ApiError } from '../../../../utils/api';
 
@@ -28,10 +29,12 @@ export default function CreateSpaceScreen() {
   const [targetAmount, setTargetAmount] = useState('');
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [deadlineDate, setDeadlineDate] = useState<Date | null>(null);
-  const [selectedImageUri, setSelectedImageUri] = useState<string | null>(null);
+  const [localImage, setLocalImage] = useState<string | null>(null);
+  const [imageUrl, setImageUrl] = useState<string | undefined>(undefined);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const canSubmit = name.trim().length > 0 && !loading;
+  const displayImage = localImage || imageUrl;
   const formattedDeadline = deadlineDate
     ? deadlineDate.toLocaleDateString('en-KE', {
         day: 'numeric',
@@ -59,7 +62,7 @@ export default function CreateSpaceScreen() {
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
       aspect: [1, 1],
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      mediaTypes: ['images'] as const,
       quality: 1,
     });
 
@@ -67,7 +70,7 @@ export default function CreateSpaceScreen() {
       return;
     }
 
-    setSelectedImageUri(result.assets[0].uri);
+    setLocalImage(result.assets[0].uri);
   };
 
   const handleSubmit = async () => {
@@ -79,10 +82,20 @@ export default function CreateSpaceScreen() {
     setError(null);
 
     try {
+      let finalImageUrl = imageUrl;
+
+      if (localImage && !localImage.startsWith('http')) {
+        try {
+          finalImageUrl = await uploadImageToCloudinary(localImage);
+        } catch (uploadError) {
+          console.warn('Image upload failed', uploadError);
+        }
+      }
+
       const payload: CreateGroupRequestDto = {
         name: name.trim(),
         description: description.trim() || undefined,
-        image: selectedImageUri ?? undefined,
+        imageUrl: finalImageUrl,
       };
 
       if (hasGoal) {
@@ -100,6 +113,10 @@ export default function CreateSpaceScreen() {
       const response = await createSpace(payload);
 
       const nextSpace = response.space ?? response.group;
+      setImageUrl(nextSpace.imageUrl);
+      if (finalImageUrl) {
+        setLocalImage(null);
+      }
       router.replace(`/spaces/${nextSpace.id}`);
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
@@ -120,10 +137,10 @@ export default function CreateSpaceScreen() {
 
         <View style={styles.avatarSection}>
           <Pressable onPress={() => { void handlePickAvatar(); }} style={styles.avatarButton}>
-            {selectedImageUri ? (
+            {displayImage ? (
               <ExpoImage
                 contentFit="cover"
-                source={{ uri: selectedImageUri }}
+                source={{ uri: displayImage }}
                 style={styles.avatarImage}
               />
             ) : (
