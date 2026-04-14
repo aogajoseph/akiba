@@ -86,6 +86,7 @@ const MAX_ATTACHMENT_SIZE_BYTES = 25 * 1024 * 1024;
 const VIDEO_PLACEHOLDER_ASPECT_RATIO = 16 / 9;
 const MESSAGE_HIGHLIGHT_DURATION_MS = 1200;
 const COPY_TOAST_DURATION_MS = 1500;
+const MESSAGE_POLL_INTERVAL_MS = 7500;
 const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢'] as const;
 
 const getReplySnippet = (value: string): string => {
@@ -132,17 +133,6 @@ const formatMessageTime = (value: string): string => {
     month: 'short',
     year: 'numeric',
   });
-};
-
-const getTemporaryMessageStatus = (
-  message: Message,
-  currentUserId: string | null,
-): MessageStatus => {
-  if (message.senderUserId === currentUserId) {
-    return 'delivered';
-  }
-
-  return 'read';
 };
 
 const renderStatusIcon = (status: MessageStatus) => {
@@ -429,6 +419,7 @@ export default function SpaceChatScreen() {
   const currentSession = getAuthSession();
   const currentUserId = currentSession?.user.id ?? null;
   const currentUserName = currentSession?.user.name ?? 'You';
+  const previousMessageSignatureRef = useRef('');
 
   const scrollToBottom = useCallback((animated = true) => {
     requestAnimationFrame(() => {
@@ -647,15 +638,17 @@ export default function SpaceChatScreen() {
     });
   }, [actionTrayTranslateY]);
 
-  const loadMessages = useCallback(async () => {
+  const loadMessages = useCallback(async (options?: { silent?: boolean }) => {
     if (!spaceId) {
       setError('Missing space id.');
       setLoading(false);
       return;
     }
 
-    setLoading(true);
-    setError(null);
+    if (!options?.silent) {
+      setLoading(true);
+      setError(null);
+    }
 
     try {
       const [spaceResponse, messagesResponse, membersResponse] = await Promise.all([
@@ -685,22 +678,48 @@ export default function SpaceChatScreen() {
           ...message,
           media: message.media ?? [],
           reactions: message.reactions ?? [],
-          status: getTemporaryMessageStatus(message, currentUserId),
+          status: message.status ?? 'sent',
           senderName: memberNames.get(message.senderUserId) ?? 'Unknown member',
         }));
 
-      setMessages(nextMessages);
+      const nextMessageSignature = JSON.stringify(
+        nextMessages.map((message) => ({
+          createdAt: message.createdAt,
+          id: message.id,
+          reactions: message.reactions,
+          replyToMessageId: message.replyToMessageId,
+          status: message.status,
+          text: message.text,
+        })),
+      );
+
+      if (nextMessageSignature !== previousMessageSignatureRef.current) {
+        previousMessageSignatureRef.current = nextMessageSignature;
+        setMessages(nextMessages);
+      }
     } catch (caughtError) {
-      const apiError = caughtError as ApiError;
-      setError(apiError.error ?? 'Unable to load chat.');
+      if (!options?.silent) {
+        const apiError = caughtError as ApiError;
+        setError(apiError.error ?? 'Unable to load chat.');
+      }
     } finally {
-      setLoading(false);
+      if (!options?.silent) {
+        setLoading(false);
+      }
     }
-  }, [currentUserId, spaceId]);
+  }, [spaceId]);
 
   useFocusEffect(
     useCallback(() => {
       void loadMessages();
+
+      const interval = setInterval(() => {
+        void loadMessages({ silent: true });
+      }, MESSAGE_POLL_INTERVAL_MS);
+
+      return () => {
+        clearInterval(interval);
+      };
     }, [loadMessages]),
   );
 
@@ -786,8 +805,6 @@ export default function SpaceChatScreen() {
 
   const syncMessageUpdate = useCallback(
     (updatedMessage: Message) => {
-      const nextStatus = getTemporaryMessageStatus(updatedMessage, currentUserId);
-
       setMessages((current) =>
         current.map((message) =>
           message.id === updatedMessage.id
@@ -796,7 +813,7 @@ export default function SpaceChatScreen() {
                 ...updatedMessage,
                 media: updatedMessage.media ?? [],
                 reactions: updatedMessage.reactions ?? [],
-                status: nextStatus,
+                status: updatedMessage.status ?? 'sent',
               }
             : message,
         ),
@@ -809,12 +826,12 @@ export default function SpaceChatScreen() {
               ...updatedMessage,
               media: updatedMessage.media ?? [],
               reactions: updatedMessage.reactions ?? [],
-              status: nextStatus,
+              status: updatedMessage.status ?? 'sent',
             }
           : current,
       );
     },
-    [currentUserId],
+    [],
   );
 
   const closeMenu = () => {
@@ -1083,7 +1100,7 @@ export default function SpaceChatScreen() {
           ...response.message,
           media: response.message.media ?? [],
           reactions: response.message.reactions ?? [],
-          status: 'sent',
+          status: response.message.status ?? 'sent',
           senderName: currentUserName,
         },
       ]);
