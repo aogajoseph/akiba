@@ -48,6 +48,7 @@ import {
 } from '../../../../../services/spaceService';
 import AkibaLink from '../../../../../components/AkibaLink';
 import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
+import { uploadImageToCloudinary } from '../../../../../src/services/cloudinary';
 import { api, ApiError, getAuthSession } from '../../../../../utils/api';
 
 type ChatMessage = Message & {
@@ -67,6 +68,26 @@ type MediaViewer = {
 type PresenceUpdatePayload = {
   onlineCount: number;
   spaceId: string;
+};
+
+type MessageCreatedEvent = {
+  message: Message;
+  spaceId: string;
+};
+
+type MessageDeletedEvent = {
+  messageId: string;
+  spaceId: string;
+};
+
+type ReactionUpdatedEvent = {
+  message: Message;
+  spaceId: string;
+};
+
+type TypingEventPayload = {
+  spaceId: string;
+  users: TypingUser[];
 };
 
 type ComposerMediaAttachment = MediaUploadAttachment & {
@@ -420,12 +441,17 @@ export default function SpaceChatScreen() {
   const currentUserId = currentSession?.user.id ?? null;
   const currentUserName = currentSession?.user.name ?? 'You';
   const previousMessageSignatureRef = useRef('');
+  const membersRef = useRef<SpaceMember[]>([]);
 
   const scrollToBottom = useCallback((animated = true) => {
     requestAnimationFrame(() => {
       scrollViewRef.current?.scrollToEnd({ animated });
     });
   }, []);
+
+  useEffect(() => {
+    membersRef.current = members;
+  }, [members]);
 
   const highlightMessage = useCallback((messageId: string) => {
     setHighlightedMessageId(messageId);
@@ -484,10 +510,106 @@ export default function SpaceChatScreen() {
         setOnlineCount(payload.onlineCount);
       }
     };
+    const resolveSenderName = (senderUserId: string) => {
+      if (senderUserId === currentUserId) {
+        return currentUserName;
+      }
+
+      return membersRef.current.find((member) => member.userId === senderUserId)?.name ?? 'Unknown member';
+    };
+    const upsertRealtimeMessage = (current: ChatMessage[], message: Message): ChatMessage[] => {
+      const nextMessage: ChatMessage = {
+        ...message,
+        media: message.media ?? [],
+        reactions: message.reactions ?? [],
+        status: message.status ?? 'sent',
+        senderName: resolveSenderName(message.senderUserId),
+      };
+      const existingIndex = current.findIndex((item) => item.id === nextMessage.id);
+      const nextMessages =
+        existingIndex >= 0
+          ? current.map((item) => (item.id === nextMessage.id ? { ...item, ...nextMessage } : item))
+          : [...current, nextMessage];
+
+      return [...nextMessages].sort((left, right) => {
+        const timestampDifference =
+          new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
+
+        if (timestampDifference !== 0) {
+          return timestampDifference;
+        }
+
+        return left.id.localeCompare(right.id);
+      });
+    };
+    const handleMessageCreated = (payload: MessageCreatedEvent) => {
+      if (payload.spaceId !== spaceId) {
+        return;
+      }
+
+      setMessages((current) => upsertRealtimeMessage(current, payload.message));
+    };
+    const handleMessageDeleted = (payload: MessageDeletedEvent) => {
+      if (payload.spaceId !== spaceId) {
+        return;
+      }
+
+      setMessages((current) => current.filter((message) => message.id !== payload.messageId));
+      setSelectedMessage((current) =>
+        current?.id === payload.messageId ? null : current,
+      );
+      setReplyTargetMessage((current) =>
+        current?.id === payload.messageId ? null : current,
+      );
+    };
+    const handleReactionUpdated = (payload: ReactionUpdatedEvent) => {
+      if (payload.spaceId !== spaceId) {
+        return;
+      }
+
+      const nextMessage: ChatMessage = {
+        ...payload.message,
+        media: payload.message.media ?? [],
+        reactions: payload.message.reactions ?? [],
+        status: payload.message.status ?? 'sent',
+        senderName: resolveSenderName(payload.message.senderUserId),
+      };
+
+      setMessages((current) =>
+        current.map((message) =>
+          message.id === nextMessage.id
+            ? {
+                ...message,
+                ...nextMessage,
+              }
+            : message,
+        ),
+      );
+
+      setSelectedMessage((current) =>
+        current?.id === nextMessage.id
+          ? {
+              ...current,
+              ...nextMessage,
+            }
+          : current,
+      );
+    };
+    const handleTypingUpdate = (payload: TypingEventPayload) => {
+      if (payload.spaceId !== spaceId) {
+        return;
+      }
+
+      setTypingUsers(payload.users.filter((user) => user.userId !== currentUserId));
+    };
 
     presenceSocketRef.current = socket;
     socket.on('connect', handleConnect);
     socket.on('presence_update', handlePresenceUpdate);
+    socket.on('message_created', handleMessageCreated);
+    socket.on('message_deleted', handleMessageDeleted);
+    socket.on('reaction_updated', handleReactionUpdated);
+    socket.on('typing', handleTypingUpdate);
 
     if (socket.connected) {
       handleConnect();
@@ -496,11 +618,15 @@ export default function SpaceChatScreen() {
     return () => {
       socket.off('connect', handleConnect);
       socket.off('presence_update', handlePresenceUpdate);
+      socket.off('message_created', handleMessageCreated);
+      socket.off('message_deleted', handleMessageDeleted);
+      socket.off('reaction_updated', handleReactionUpdated);
+      socket.off('typing', handleTypingUpdate);
       socket.disconnect();
       presenceSocketRef.current = null;
       setOnlineCount(0);
     };
-  }, [currentUserId, spaceId]);
+  }, [currentUserId, currentUserName, spaceId]);
 
   const showCopyConfirmation = useCallback(() => {
     if (copyToastTimeoutRef.current) {
@@ -805,33 +931,39 @@ export default function SpaceChatScreen() {
 
   const syncMessageUpdate = useCallback(
     (updatedMessage: Message) => {
+      const nextMessage: ChatMessage = {
+        ...updatedMessage,
+        media: updatedMessage.media ?? [],
+        reactions: updatedMessage.reactions ?? [],
+        status: updatedMessage.status ?? 'sent',
+        senderName:
+          updatedMessage.senderUserId === currentUserId
+            ? currentUserName
+            : membersRef.current.find((member) => member.userId === updatedMessage.senderUserId)?.name ??
+              'Unknown member',
+      };
+
       setMessages((current) =>
         current.map((message) =>
-          message.id === updatedMessage.id
+          message.id === nextMessage.id
             ? {
                 ...message,
-                ...updatedMessage,
-                media: updatedMessage.media ?? [],
-                reactions: updatedMessage.reactions ?? [],
-                status: updatedMessage.status ?? 'sent',
+                ...nextMessage,
               }
             : message,
         ),
       );
 
       setSelectedMessage((current) =>
-        current && current.id === updatedMessage.id
+        current && current.id === nextMessage.id
           ? {
               ...current,
-              ...updatedMessage,
-              media: updatedMessage.media ?? [],
-              reactions: updatedMessage.reactions ?? [],
-              status: updatedMessage.status ?? 'sent',
+              ...nextMessage,
             }
           : current,
       );
     },
-    [],
+    [currentUserId, currentUserName],
   );
 
   const closeMenu = () => {
@@ -1086,16 +1218,35 @@ export default function SpaceChatScreen() {
     setError(null);
 
     try {
+      let attachmentToSend = selectedAttachment;
+
+      if (
+        attachmentToSend &&
+        !/^https?:\/\//i.test(attachmentToSend.uri)
+      ) {
+        try {
+          const uploadedMediaUrl = await uploadImageToCloudinary(attachmentToSend.uri);
+
+          attachmentToSend = {
+            ...attachmentToSend,
+            uri: uploadedMediaUrl,
+          };
+        } catch (error) {
+          console.warn('Chat media upload failed', error);
+          return;
+        }
+      }
+
       const response = selectedAttachment
         ? await uploadMediaMessage(spaceId, {
-            attachment: selectedAttachment,
+            attachment: attachmentToSend!,
             replyToMessageId: replyTargetMessage?.id,
             text: text || undefined,
           })
         : await sendMessage(spaceId, text, replyTargetMessage?.id);
 
       setMessages((current) => [
-        ...current,
+        ...current.filter((message) => message.id !== response.message.id),
         {
           ...response.message,
           media: response.message.media ?? [],
@@ -1103,7 +1254,16 @@ export default function SpaceChatScreen() {
           status: response.message.status ?? 'sent',
           senderName: currentUserName,
         },
-      ]);
+      ].sort((left, right) => {
+        const timestampDifference =
+          new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
+
+        if (timestampDifference !== 0) {
+          return timestampDifference;
+        }
+
+        return left.id.localeCompare(right.id);
+      }));
       setDraft('');
       setSelectedAttachment(null);
       setReplyTargetMessage(null);

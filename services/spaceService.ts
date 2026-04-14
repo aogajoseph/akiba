@@ -192,11 +192,18 @@ export const uploadMediaMessage = async (
     formData.append('replyToMessageId', payload.replyToMessageId);
   }
 
-  formData.append('file', {
-    uri: payload.attachment.uri,
-    name: payload.attachment.fileName,
-    type: payload.attachment.mimeType,
-  } as unknown as Blob);
+  if (/^https?:\/\//i.test(payload.attachment.uri)) {
+    const uploadedFileResponse = await fetch(payload.attachment.uri);
+    const uploadedFileBlob = await uploadedFileResponse.blob();
+
+    formData.append('file', uploadedFileBlob, payload.attachment.fileName);
+  } else {
+    formData.append('file', {
+      uri: payload.attachment.uri,
+      name: payload.attachment.fileName,
+      type: payload.attachment.mimeType,
+    } as unknown as Blob);
+  }
 
   const response = await api.post<{ data: UploadMediaMessageResponseDto }>(
     `/spaces/${spaceId}/messages/media`,
