@@ -442,6 +442,9 @@ export default function SpaceChatScreen() {
   const currentUserName = currentSession?.user.name ?? 'You';
   const previousMessageSignatureRef = useRef('');
   const membersRef = useRef<SpaceMember[]>([]);
+  const messagesRef = useRef<ChatMessage[]>([]);
+  const lastMessageTimestampRef = useRef<string | null>(null);
+  const hasConnectedOnceRef = useRef(false);
 
   const scrollToBottom = useCallback((animated = true) => {
     requestAnimationFrame(() => {
@@ -449,9 +452,61 @@ export default function SpaceChatScreen() {
     });
   }, []);
 
+  const mergeMessages = useCallback(
+    (current: ChatMessage[], incoming: ChatMessage[]): ChatMessage[] => {
+      const messagesById = new Map<string, ChatMessage>();
+  
+      for (const message of current) {
+        messagesById.set(message.id, message);
+      }
+  
+      for (const message of incoming) {
+        const existing = messagesById.get(message.id);
+  
+        if (!existing) {
+          messagesById.set(message.id, {
+            ...message,
+            media: message.media ?? [],
+            reactions: message.reactions ?? [],
+            status: message.status ?? 'sent',
+          });
+          continue;
+        }
+  
+        const existingTime = new Date(existing.createdAt).getTime();
+        const incomingTime = new Date(message.createdAt).getTime();
+  
+        if (incomingTime >= existingTime) {
+          messagesById.set(message.id, {
+            ...existing,
+            ...message,
+            media: message.media ?? existing.media ?? [],
+            reactions: message.reactions ?? existing.reactions ?? [],
+            status: message.status ?? existing.status ?? 'sent',
+          });
+        }
+      }
+  
+      return Array.from(messagesById.values()).sort((a, b) => {
+        const diff =
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+  
+        if (diff !== 0) return diff;
+  
+        return a.id.localeCompare(b.id);
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     membersRef.current = members;
   }, [members]);
+
+  useEffect(() => {
+    messagesRef.current = messages;
+    lastMessageTimestampRef.current = messages[messages.length - 1]?.createdAt ?? null;
+  }, [messages]);
 
   const highlightMessage = useCallback((messageId: string) => {
     setHighlightedMessageId(messageId);
@@ -492,141 +547,6 @@ export default function SpaceChatScreen() {
       }
     };
   }, []);
-
-  useEffect(() => {
-    const socketBaseUrl = api.defaults.baseURL;
-
-    if (!spaceId || !currentUserId || !socketBaseUrl) {
-      setOnlineCount(0);
-      return undefined;
-    }
-
-    const socket = io(socketBaseUrl);
-    const handleConnect = () => {
-      socket.emit('join_space', { spaceId, userId: currentUserId });
-    };
-    const handlePresenceUpdate = (payload: PresenceUpdatePayload) => {
-      if (payload.spaceId === spaceId) {
-        setOnlineCount(payload.onlineCount);
-      }
-    };
-    const resolveSenderName = (senderUserId: string) => {
-      if (senderUserId === currentUserId) {
-        return currentUserName;
-      }
-
-      return membersRef.current.find((member) => member.userId === senderUserId)?.name ?? 'Unknown member';
-    };
-    const upsertRealtimeMessage = (current: ChatMessage[], message: Message): ChatMessage[] => {
-      const nextMessage: ChatMessage = {
-        ...message,
-        media: message.media ?? [],
-        reactions: message.reactions ?? [],
-        status: message.status ?? 'sent',
-        senderName: resolveSenderName(message.senderUserId),
-      };
-      const existingIndex = current.findIndex((item) => item.id === nextMessage.id);
-      const nextMessages =
-        existingIndex >= 0
-          ? current.map((item) => (item.id === nextMessage.id ? { ...item, ...nextMessage } : item))
-          : [...current, nextMessage];
-
-      return [...nextMessages].sort((left, right) => {
-        const timestampDifference =
-          new Date(left.createdAt).getTime() - new Date(right.createdAt).getTime();
-
-        if (timestampDifference !== 0) {
-          return timestampDifference;
-        }
-
-        return left.id.localeCompare(right.id);
-      });
-    };
-    const handleMessageCreated = (payload: MessageCreatedEvent) => {
-      if (payload.spaceId !== spaceId) {
-        return;
-      }
-
-      setMessages((current) => upsertRealtimeMessage(current, payload.message));
-    };
-    const handleMessageDeleted = (payload: MessageDeletedEvent) => {
-      if (payload.spaceId !== spaceId) {
-        return;
-      }
-
-      setMessages((current) => current.filter((message) => message.id !== payload.messageId));
-      setSelectedMessage((current) =>
-        current?.id === payload.messageId ? null : current,
-      );
-      setReplyTargetMessage((current) =>
-        current?.id === payload.messageId ? null : current,
-      );
-    };
-    const handleReactionUpdated = (payload: ReactionUpdatedEvent) => {
-      if (payload.spaceId !== spaceId) {
-        return;
-      }
-
-      const nextMessage: ChatMessage = {
-        ...payload.message,
-        media: payload.message.media ?? [],
-        reactions: payload.message.reactions ?? [],
-        status: payload.message.status ?? 'sent',
-        senderName: resolveSenderName(payload.message.senderUserId),
-      };
-
-      setMessages((current) =>
-        current.map((message) =>
-          message.id === nextMessage.id
-            ? {
-                ...message,
-                ...nextMessage,
-              }
-            : message,
-        ),
-      );
-
-      setSelectedMessage((current) =>
-        current?.id === nextMessage.id
-          ? {
-              ...current,
-              ...nextMessage,
-            }
-          : current,
-      );
-    };
-    const handleTypingUpdate = (payload: TypingEventPayload) => {
-      if (payload.spaceId !== spaceId) {
-        return;
-      }
-
-      setTypingUsers(payload.users.filter((user) => user.userId !== currentUserId));
-    };
-
-    presenceSocketRef.current = socket;
-    socket.on('connect', handleConnect);
-    socket.on('presence_update', handlePresenceUpdate);
-    socket.on('message_created', handleMessageCreated);
-    socket.on('message_deleted', handleMessageDeleted);
-    socket.on('reaction_updated', handleReactionUpdated);
-    socket.on('typing', handleTypingUpdate);
-
-    if (socket.connected) {
-      handleConnect();
-    }
-
-    return () => {
-      socket.off('connect', handleConnect);
-      socket.off('presence_update', handlePresenceUpdate);
-      socket.off('message_created', handleMessageCreated);
-      socket.off('message_deleted', handleMessageDeleted);
-      socket.off('reaction_updated', handleReactionUpdated);
-      socket.off('typing', handleTypingUpdate);
-      socket.disconnect();
-      presenceSocketRef.current = null;
-      setOnlineCount(0);
-    };
-  }, [currentUserId, currentUserName, spaceId]);
 
   const showCopyConfirmation = useCallback(() => {
     if (copyToastTimeoutRef.current) {
@@ -764,7 +684,7 @@ export default function SpaceChatScreen() {
     });
   }, [actionTrayTranslateY]);
 
-  const loadMessages = useCallback(async (options?: { silent?: boolean }) => {
+  const loadMessages = useCallback(async (options?: { merge?: boolean; silent?: boolean; since?: string }) => {
     if (!spaceId) {
       setError('Missing space id.');
       setLoading(false);
@@ -779,7 +699,7 @@ export default function SpaceChatScreen() {
     try {
       const [spaceResponse, messagesResponse, membersResponse] = await Promise.all([
         getSpace(spaceId),
-        getMessages(spaceId),
+        getMessages(spaceId, options?.since ? { since: options.since } : undefined),
         getMembers(spaceId),
       ]);
 
@@ -808,8 +728,12 @@ export default function SpaceChatScreen() {
           senderName: memberNames.get(message.senderUserId) ?? 'Unknown member',
         }));
 
+      const resolvedMessages = options?.merge
+        ? mergeMessages(messagesRef.current, nextMessages)
+        : nextMessages;
+
       const nextMessageSignature = JSON.stringify(
-        nextMessages.map((message) => ({
+        resolvedMessages.map((message) => ({
           createdAt: message.createdAt,
           id: message.id,
           reactions: message.reactions,
@@ -821,7 +745,8 @@ export default function SpaceChatScreen() {
 
       if (nextMessageSignature !== previousMessageSignatureRef.current) {
         previousMessageSignatureRef.current = nextMessageSignature;
-        setMessages(nextMessages);
+        messagesRef.current = resolvedMessages;
+        setMessages(resolvedMessages);
       }
     } catch (caughtError) {
       if (!options?.silent) {
@@ -833,7 +758,121 @@ export default function SpaceChatScreen() {
         setLoading(false);
       }
     }
-  }, [spaceId]);
+  }, [mergeMessages, spaceId]);
+
+  useEffect(() => {
+    const socketBaseUrl = api.defaults.baseURL;
+
+    if (!spaceId || !currentUserId || !socketBaseUrl) {
+      setOnlineCount(0);
+      hasConnectedOnceRef.current = false;
+      return undefined;
+    }
+
+    const socket = io(socketBaseUrl);
+    const handleConnect = () => {
+      socket.emit('join_space', { spaceId, userId: currentUserId });
+
+      if (hasConnectedOnceRef.current) {
+        void loadMessages({
+          merge: true,
+          silent: true,
+          since: lastMessageTimestampRef.current ?? undefined,
+        });
+      } else {
+        hasConnectedOnceRef.current = true;
+      }
+    };
+    const handlePresenceUpdate = (payload: PresenceUpdatePayload) => {
+      if (payload.spaceId === spaceId) {
+        setOnlineCount(payload.onlineCount);
+      }
+    };
+    const resolveSenderName = (senderUserId: string) => {
+      if (senderUserId === currentUserId) {
+        return currentUserName;
+      }
+
+      return membersRef.current.find((member) => member.userId === senderUserId)?.name ?? 'Unknown member';
+    };
+    const toRealtimeMessage = (message: Message): ChatMessage => ({
+      ...message,
+      media: message.media ?? [],
+      reactions: message.reactions ?? [],
+      status: message.status ?? 'sent',
+      senderName: resolveSenderName(message.senderUserId),
+    });
+    const handleMessageCreated = (payload: MessageCreatedEvent) => {
+      if (payload.spaceId !== spaceId) {
+        return;
+      }
+
+      setMessages((current) => mergeMessages(current, [toRealtimeMessage(payload.message)]));
+    };
+    const handleMessageDeleted = (payload: MessageDeletedEvent) => {
+      if (payload.spaceId !== spaceId) {
+        return;
+      }
+
+      setMessages((current) => current.filter((message) => message.id !== payload.messageId));
+      setSelectedMessage((current) =>
+        current?.id === payload.messageId ? null : current,
+      );
+      setReplyTargetMessage((current) =>
+        current?.id === payload.messageId ? null : current,
+      );
+    };
+    const handleReactionUpdated = (payload: ReactionUpdatedEvent) => {
+      if (payload.spaceId !== spaceId) {
+        return;
+      }
+
+      const nextMessage = toRealtimeMessage(payload.message);
+
+      setMessages((current) => mergeMessages(current, [nextMessage]));
+
+      setSelectedMessage((current) =>
+        current?.id === nextMessage.id
+          ? {
+              ...current,
+              ...nextMessage,
+            }
+          : current,
+      );
+    };
+    const handleTypingUpdate = (payload: TypingEventPayload) => {
+      if (payload.spaceId !== spaceId) {
+        return;
+      }
+
+      setTypingUsers(payload.users.filter((user) => user.userId !== currentUserId));
+    };
+
+    presenceSocketRef.current = socket;
+    socket.on('connect', handleConnect);
+    socket.on('presence_update', handlePresenceUpdate);
+    socket.on('message_created', handleMessageCreated);
+    socket.on('message_deleted', handleMessageDeleted);
+    socket.on('reaction_updated', handleReactionUpdated);
+    socket.on('typing', handleTypingUpdate);
+
+    if (socket.connected) {
+      handleConnect();
+    }
+
+    return () => {
+      socket.off('connect', handleConnect);
+      socket.off('presence_update', handlePresenceUpdate);
+      socket.off('message_created', handleMessageCreated);
+      socket.off('message_deleted', handleMessageDeleted);
+      socket.off('reaction_updated', handleReactionUpdated);
+      socket.off('typing', handleTypingUpdate);
+      socket.disconnect();
+      presenceSocketRef.current = null;
+      hasConnectedOnceRef.current = false;
+      setOnlineCount(0);
+    };
+  }, [currentUserId, currentUserName, loadMessages, mergeMessages, spaceId]);
 
   useFocusEffect(
     useCallback(() => {

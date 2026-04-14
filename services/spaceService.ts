@@ -83,8 +83,13 @@ export const getMembers = async (
 
 export const getMessages = async (
   spaceId: string,
+  params?: {
+    since?: string;
+  },
 ): Promise<ListMessagesResponseDto> => {
-  const response = await api.get<{ data: ListMessagesResponseDto }>(`/spaces/${spaceId}/messages`);
+  const response = await api.get<{ data: ListMessagesResponseDto }>(`/spaces/${spaceId}/messages`, {
+    params,
+  });
   return response.data.data;
 };
 
