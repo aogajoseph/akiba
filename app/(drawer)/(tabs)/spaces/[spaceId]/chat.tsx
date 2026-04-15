@@ -404,6 +404,8 @@ export default function SpaceChatScreen() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [members, setMembers] = useState<SpaceMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
+  const [nextMessagesCursor, setNextMessagesCursor] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -434,6 +436,11 @@ export default function SpaceChatScreen() {
   const presenceSocketRef = useRef<Socket | null>(null);
   const scrollOffsetRef = useRef(0);
   const viewportHeightRef = useRef(0);
+  const contentHeightRef = useRef(0);
+  const prependScrollAdjustmentRef = useRef<{
+    contentHeight: number;
+    offsetY: number;
+  } | null>(null);
 
   const insets = useSafeAreaInsets();
 
@@ -684,14 +691,25 @@ export default function SpaceChatScreen() {
     });
   }, [actionTrayTranslateY]);
 
-  const loadMessages = useCallback(async (options?: { merge?: boolean; silent?: boolean; since?: string }) => {
+  const loadMessages = useCallback(async (options?: {
+    cursor?: string;
+    limit?: number;
+    merge?: boolean;
+    preserveScrollPosition?: boolean;
+    silent?: boolean;
+    since?: string;
+  }) => {
     if (!spaceId) {
       setError('Missing space id.');
       setLoading(false);
       return;
     }
 
-    if (!options?.silent) {
+    const isLoadingOlderPage = Boolean(options?.cursor);
+
+    if (isLoadingOlderPage) {
+      setLoadingOlderMessages(true);
+    } else if (!options?.silent) {
       setLoading(true);
       setError(null);
     }
@@ -699,7 +717,11 @@ export default function SpaceChatScreen() {
     try {
       const [spaceResponse, messagesResponse, membersResponse] = await Promise.all([
         getSpace(spaceId),
-        getMessages(spaceId, options?.since ? { since: options.since } : undefined),
+        getMessages(spaceId, {
+          cursor: options?.cursor,
+          limit: options?.limit,
+          since: options?.since,
+        }),
         getMembers(spaceId),
       ]);
 
@@ -732,6 +754,10 @@ export default function SpaceChatScreen() {
         ? mergeMessages(messagesRef.current, nextMessages)
         : nextMessages;
 
+      if (!options?.since) {
+        setNextMessagesCursor(messagesResponse.nextCursor ?? null);
+      }
+
       const nextMessageSignature = JSON.stringify(
         resolvedMessages.map((message) => ({
           createdAt: message.createdAt,
@@ -747,18 +773,45 @@ export default function SpaceChatScreen() {
         previousMessageSignatureRef.current = nextMessageSignature;
         messagesRef.current = resolvedMessages;
         setMessages(resolvedMessages);
+      } else if (options?.preserveScrollPosition) {
+        prependScrollAdjustmentRef.current = null;
       }
     } catch (caughtError) {
+      if (options?.preserveScrollPosition) {
+        prependScrollAdjustmentRef.current = null;
+      }
+
       if (!options?.silent) {
         const apiError = caughtError as ApiError;
         setError(apiError.error ?? 'Unable to load chat.');
       }
     } finally {
-      if (!options?.silent) {
+      if (isLoadingOlderPage) {
+        setLoadingOlderMessages(false);
+      } else if (!options?.silent) {
         setLoading(false);
       }
     }
   }, [mergeMessages, spaceId]);
+
+  const loadOlderMessages = useCallback(async () => {
+    if (!nextMessagesCursor || loading || loadingOlderMessages) {
+      return;
+    }
+
+    prependScrollAdjustmentRef.current = {
+      contentHeight: contentHeightRef.current,
+      offsetY: scrollOffsetRef.current,
+    };
+
+    await loadMessages({
+      cursor: nextMessagesCursor,
+      limit: 20,
+      merge: true,
+      preserveScrollPosition: true,
+      silent: true,
+    });
+  }, [loadMessages, loading, loadingOlderMessages, nextMessagesCursor]);
 
   useEffect(() => {
     const socketBaseUrl = api.defaults.baseURL;
@@ -876,10 +929,14 @@ export default function SpaceChatScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void loadMessages();
+      void loadMessages({ limit: 20 });
 
       const interval = setInterval(() => {
-        void loadMessages({ silent: true });
+        void loadMessages({
+          merge: true,
+          silent: true,
+          since: lastMessageTimestampRef.current ?? undefined,
+        });
       }, MESSAGE_POLL_INTERVAL_MS);
 
       return () => {
@@ -1373,6 +1430,15 @@ export default function SpaceChatScreen() {
               const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
               scrollOffsetRef.current = contentOffset.y;
 
+              if (
+                contentOffset.y <= 120 &&
+                nextMessagesCursor &&
+                !loading &&
+                !loadingOlderMessages
+              ) {
+                void loadOlderMessages();
+              }
+
               const isNearBottom =
                 contentSize.height - (contentOffset.y + layoutMeasurement.height) < 100;
 
@@ -1384,8 +1450,30 @@ export default function SpaceChatScreen() {
               { paddingBottom: messagesBottomPadding },
             ]}
             keyboardShouldPersistTaps="handled"
-            onContentSizeChange={() => scrollToBottom(!loading)}
+            onContentSizeChange={(_, contentHeight) => {
+              const pendingPrependAdjustment = prependScrollAdjustmentRef.current;
+              contentHeightRef.current = contentHeight;
+
+              if (pendingPrependAdjustment) {
+                prependScrollAdjustmentRef.current = null;
+                requestAnimationFrame(() => {
+                  scrollViewRef.current?.scrollTo({
+                    y:
+                      pendingPrependAdjustment.offsetY +
+                      Math.max(contentHeight - pendingPrependAdjustment.contentHeight, 0),
+                    animated: false,
+                  });
+                });
+                return;
+              }
+
+              scrollToBottom(!loading);
+            }}
             scrollEventThrottle={16}>
+            {loadingOlderMessages ? (
+              <ActivityIndicator color="#0f766e" style={styles.loader} />
+            ) : null}
+
             {!loading && messages.length === 0 ? (
               <View style={styles.emptyState}>
                 <Text style={styles.emptyTitle}>No messages yet</Text>

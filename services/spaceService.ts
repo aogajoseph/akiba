@@ -84,6 +84,8 @@ export const getMembers = async (
 export const getMessages = async (
   spaceId: string,
   params?: {
+    cursor?: string;
+    limit?: number;
     since?: string;
   },
 ): Promise<ListMessagesResponseDto> => {
