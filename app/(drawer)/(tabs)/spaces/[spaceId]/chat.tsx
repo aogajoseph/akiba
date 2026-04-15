@@ -37,6 +37,7 @@ import {
   getTypingUsers,
   getMembers,
   getMessages,
+  markMessagesRead,
   getSpace,
   leaveSpace,
   sendMessage,
@@ -269,6 +270,7 @@ function MessageMediaCard({
 
 type SwipeableMessageBubbleProps = {
   currentUserId: string | null;
+  displayStatus: MessageStatus;
   isHighlighted: boolean;
   isCurrentUser: boolean;
   message: ChatMessage;
@@ -282,6 +284,7 @@ type SwipeableMessageBubbleProps = {
 
 function SwipeableMessageBubble({
   currentUserId,
+  displayStatus,
   isHighlighted,
   isCurrentUser,
   message,
@@ -390,7 +393,7 @@ function SwipeableMessageBubble({
         ) : null}
         <View style={styles.metaRow}>
           <Text style={styles.messageTime}>{formatMessageTime(message.createdAt)}</Text>
-          <View style={styles.statusContainer}>{renderStatusIcon(message.status)}</View>
+          <View style={styles.statusContainer}>{renderStatusIcon(displayStatus)}</View>
         </View>
       </Pressable>
     </Animated.View>
@@ -403,6 +406,7 @@ export default function SpaceChatScreen() {
   const actionTrayTranslateY = useRef(new Animated.Value(ACTION_TRAY_HEIGHT)).current;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [members, setMembers] = useState<SpaceMember[]>([]);
+  const [lastReadAt, setLastReadAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const [nextMessagesCursor, setNextMessagesCursor] = useState<string | null>(null);
@@ -451,6 +455,8 @@ export default function SpaceChatScreen() {
   const membersRef = useRef<SpaceMember[]>([]);
   const messagesRef = useRef<ChatMessage[]>([]);
   const lastMessageTimestampRef = useRef<string | null>(null);
+  const lastMarkedReadAtRef = useRef<string | null>(null);
+  const hasUserInteractedWithLatestRef = useRef(false);
   const hasConnectedOnceRef = useRef(false);
 
   const scrollToBottom = useCallback((animated = true) => {
@@ -514,6 +520,50 @@ export default function SpaceChatScreen() {
     messagesRef.current = messages;
     lastMessageTimestampRef.current = messages[messages.length - 1]?.createdAt ?? null;
   }, [messages]);
+
+  useEffect(() => {
+    setLastReadAt(null);
+    lastMarkedReadAtRef.current = null;
+    hasUserInteractedWithLatestRef.current = false;
+  }, [spaceId]);
+
+  const getDisplayMessageStatus = useCallback((message: ChatMessage): MessageStatus => {
+    if (!lastReadAt) {
+      return message.status ?? 'sent';
+    }
+
+    return new Date(message.createdAt).getTime() <= new Date(lastReadAt).getTime()
+      ? 'read'
+      : (message.status ?? 'sent');
+  }, [lastReadAt]);
+
+  const markVisibleMessagesRead = useCallback(async (candidateTimestamp?: string) => {
+    if (!spaceId) {
+      return;
+    }
+
+    const latestVisibleTimestamp =
+      candidateTimestamp ?? messagesRef.current[messagesRef.current.length - 1]?.createdAt;
+
+    if (!latestVisibleTimestamp) {
+      return;
+    }
+
+    if (
+      lastMarkedReadAtRef.current &&
+      new Date(latestVisibleTimestamp).getTime() <= new Date(lastMarkedReadAtRef.current).getTime()
+    ) {
+      return;
+    }
+
+    try {
+      const response = await markMessagesRead(spaceId, latestVisibleTimestamp);
+      lastMarkedReadAtRef.current = response.lastReadAt;
+      setLastReadAt(response.lastReadAt);
+    } catch {
+      // Keep this quiet; later fetches will reconcile read state.
+    }
+  }, [spaceId]);
 
   const highlightMessage = useCallback((messageId: string) => {
     setHighlightedMessageId(messageId);
@@ -753,6 +803,11 @@ export default function SpaceChatScreen() {
       const resolvedMessages = options?.merge
         ? mergeMessages(messagesRef.current, nextMessages)
         : nextMessages;
+
+      if (messagesResponse.lastReadAt) {
+        lastMarkedReadAtRef.current = messagesResponse.lastReadAt;
+        setLastReadAt(messagesResponse.lastReadAt);
+      }
 
       if (!options?.since) {
         setNextMessagesCursor(messagesResponse.nextCursor ?? null);
@@ -1426,6 +1481,9 @@ export default function SpaceChatScreen() {
             onLayout={(event) => {
               viewportHeightRef.current = event.nativeEvent.layout.height;
             }}
+            onScrollBeginDrag={() => {
+              hasUserInteractedWithLatestRef.current = true;
+            }}
             onScroll={(event) => {
               const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
               scrollOffsetRef.current = contentOffset.y;
@@ -1441,6 +1499,10 @@ export default function SpaceChatScreen() {
 
               const isNearBottom =
                 contentSize.height - (contentOffset.y + layoutMeasurement.height) < 100;
+
+              if (isNearBottom && hasUserInteractedWithLatestRef.current) {
+                void markVisibleMessagesRead();
+              }
 
               setShowScrollToBottom(!isNearBottom);
             }}
@@ -1497,11 +1559,12 @@ export default function SpaceChatScreen() {
                     styles.messageRow,
                     isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
                   ]}>
-                  <SwipeableMessageBubble
-                    currentUserId={currentUserId}
-                    isHighlighted={highlightedMessageId === message.id}
-                    isCurrentUser={isCurrentUser}
-                    message={message}
+                <SwipeableMessageBubble
+                  currentUserId={currentUserId}
+                  displayStatus={getDisplayMessageStatus(message)}
+                  isHighlighted={highlightedMessageId === message.id}
+                  isCurrentUser={isCurrentUser}
+                  message={message}
                     onLongPress={openActionTray}
                     onOpenMedia={handleOpenMedia}
                     onReplyPress={handleReplyPress}
@@ -1533,7 +1596,11 @@ export default function SpaceChatScreen() {
 
           {showScrollToBottom && (
             <Pressable
-              onPress={() => scrollToBottom(true)}
+              onPress={() => {
+                hasUserInteractedWithLatestRef.current = true;
+                scrollToBottom(true);
+                void markVisibleMessagesRead(lastMessageTimestampRef.current ?? undefined);
+              }}
               style={[
                 styles.scrollToBottomButton,
                 { bottom: composerHeight + keyboardHeight + 20 },

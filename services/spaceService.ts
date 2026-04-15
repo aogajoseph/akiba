@@ -14,6 +14,7 @@ import {
   ListGroupSignatoriesResponseDto,
   ListGroupsResponseDto,
   ListMessagesResponseDto,
+  MarkMessagesReadResponseDto,
   ListTypingUsersResponseDto,
   PromoteGroupMemberResponseDto,
   RevokeGroupMemberResponseDto,
@@ -92,6 +93,17 @@ export const getMessages = async (
   const response = await api.get<{ data: ListMessagesResponseDto }>(`/spaces/${spaceId}/messages`, {
     params,
   });
+  return response.data.data;
+};
+
+export const markMessagesRead = async (
+  spaceId: string,
+  latestVisibleMessageTimestamp: string,
+): Promise<MarkMessagesReadResponseDto> => {
+  const response = await api.post<{ data: MarkMessagesReadResponseDto }>(
+    `/spaces/${spaceId}/messages/read`,
+    { latestVisibleMessageTimestamp },
+  );
   return response.data.data;
 };
 
