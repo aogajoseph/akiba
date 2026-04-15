@@ -6,18 +6,19 @@ import * as WebBrowser from 'expo-web-browser';
 import { Ionicons } from '@expo/vector-icons';
 import { Image as ExpoImage } from 'expo-image';
 import { router, useFocusEffect, useLocalSearchParams } from 'expo-router';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { io, type Socket } from 'socket.io-client';
 import {
   ActivityIndicator,
   Alert,
   Animated,
+  FlatList,
+  type ListRenderItemInfo,
   Image as NativeImage,
   Keyboard,
   Modal,
   PanResponder,
   Pressable,
-  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -95,6 +96,19 @@ type ComposerMediaAttachment = MediaUploadAttachment & {
   height?: number;
   width?: number;
 };
+
+type ChatListItem =
+  | {
+      id: string;
+      kind: 'message';
+      message: ChatMessage;
+      replyPreview: ReplyPreview | null;
+      status: MessageStatus;
+    }
+  | {
+      id: string;
+      kind: 'divider';
+    };
 
 const DEFAULT_COMPOSER_HEIGHT = 74;
 const EXTRA_SCROLL_PADDING = 16;
@@ -282,7 +296,7 @@ type SwipeableMessageBubbleProps = {
   replyPreview: ReplyPreview | null;
 };
 
-function SwipeableMessageBubble({
+const SwipeableMessageBubble = memo(function SwipeableMessageBubble({
   currentUserId,
   displayStatus,
   isHighlighted,
@@ -398,11 +412,26 @@ function SwipeableMessageBubble({
       </Pressable>
     </Animated.View>
   );
-}
+}, (prevProps, nextProps) => {
+  return (
+    prevProps.currentUserId === nextProps.currentUserId &&
+    prevProps.displayStatus === nextProps.displayStatus &&
+    prevProps.isHighlighted === nextProps.isHighlighted &&
+    prevProps.isCurrentUser === nextProps.isCurrentUser &&
+    prevProps.message === nextProps.message &&
+    prevProps.onLongPress === nextProps.onLongPress &&
+    prevProps.onOpenMedia === nextProps.onOpenMedia &&
+    prevProps.onReplyPress === nextProps.onReplyPress &&
+    prevProps.onSaveMedia === nextProps.onSaveMedia &&
+    prevProps.onReply === nextProps.onReply &&
+    prevProps.replyPreview?.senderName === nextProps.replyPreview?.senderName &&
+    prevProps.replyPreview?.text === nextProps.replyPreview?.text
+  );
+});
 
 export default function SpaceChatScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
-  const scrollViewRef = useRef<ScrollView | null>(null);
+  const messagesListRef = useRef<FlatList<ChatListItem> | null>(null);
   const actionTrayTranslateY = useRef(new Animated.Value(ACTION_TRAY_HEIGHT)).current;
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [members, setMembers] = useState<SpaceMember[]>([]);
@@ -410,6 +439,7 @@ export default function SpaceChatScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingOlderMessages, setLoadingOlderMessages] = useState(false);
   const [nextMessagesCursor, setNextMessagesCursor] = useState<string | null>(null);
+  const [newMessagesDividerMessageId, setNewMessagesDividerMessageId] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
   const [draft, setDraft] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -435,16 +465,9 @@ export default function SpaceChatScreen() {
   const copyToastOpacity = useRef(new Animated.Value(0)).current;
   const copyToastTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const typingStopTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const messageLayoutsRef = useRef<Record<string, { height: number; y: number }>>({});
   const highlightedMessageTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const presenceSocketRef = useRef<Socket | null>(null);
-  const scrollOffsetRef = useRef(0);
-  const viewportHeightRef = useRef(0);
-  const contentHeightRef = useRef(0);
-  const prependScrollAdjustmentRef = useRef<{
-    contentHeight: number;
-    offsetY: number;
-  } | null>(null);
+  const isNearBottomRef = useRef(true);
 
   const insets = useSafeAreaInsets();
 
@@ -458,10 +481,11 @@ export default function SpaceChatScreen() {
   const lastMarkedReadAtRef = useRef<string | null>(null);
   const hasUserInteractedWithLatestRef = useRef(false);
   const hasConnectedOnceRef = useRef(false);
+  const previousLatestMessageIdRef = useRef<string | null>(null);
 
   const scrollToBottom = useCallback((animated = true) => {
     requestAnimationFrame(() => {
-      scrollViewRef.current?.scrollToEnd({ animated });
+      messagesListRef.current?.scrollToOffset({ animated, offset: 0 });
     });
   }, []);
 
@@ -525,7 +549,35 @@ export default function SpaceChatScreen() {
     setLastReadAt(null);
     lastMarkedReadAtRef.current = null;
     hasUserInteractedWithLatestRef.current = false;
+    isNearBottomRef.current = true;
+    setNewMessagesDividerMessageId(null);
   }, [spaceId]);
+
+  useEffect(() => {
+    if (!lastReadAt) {
+      setNewMessagesDividerMessageId(null);
+      return;
+    }
+
+    const dividerStillValid =
+      newMessagesDividerMessageId &&
+      messages.some((message) => message.id === newMessagesDividerMessageId) &&
+      messages.some(
+        (message) =>
+          message.id === newMessagesDividerMessageId &&
+          new Date(message.createdAt).getTime() > new Date(lastReadAt).getTime(),
+      );
+
+    if (dividerStillValid) {
+      return;
+    }
+
+    const firstUnreadMessage = messages.find(
+      (message) => new Date(message.createdAt).getTime() > new Date(lastReadAt).getTime(),
+    );
+
+    setNewMessagesDividerMessageId(firstUnreadMessage?.id ?? null);
+  }, [lastReadAt, messages, newMessagesDividerMessageId]);
 
   const getDisplayMessageStatus = useCallback((message: ChatMessage): MessageStatus => {
     if (!lastReadAt) {
@@ -745,7 +797,6 @@ export default function SpaceChatScreen() {
     cursor?: string;
     limit?: number;
     merge?: boolean;
-    preserveScrollPosition?: boolean;
     silent?: boolean;
     since?: string;
   }) => {
@@ -828,14 +879,8 @@ export default function SpaceChatScreen() {
         previousMessageSignatureRef.current = nextMessageSignature;
         messagesRef.current = resolvedMessages;
         setMessages(resolvedMessages);
-      } else if (options?.preserveScrollPosition) {
-        prependScrollAdjustmentRef.current = null;
       }
     } catch (caughtError) {
-      if (options?.preserveScrollPosition) {
-        prependScrollAdjustmentRef.current = null;
-      }
-
       if (!options?.silent) {
         const apiError = caughtError as ApiError;
         setError(apiError.error ?? 'Unable to load chat.');
@@ -854,16 +899,10 @@ export default function SpaceChatScreen() {
       return;
     }
 
-    prependScrollAdjustmentRef.current = {
-      contentHeight: contentHeightRef.current,
-      offsetY: scrollOffsetRef.current,
-    };
-
     await loadMessages({
       cursor: nextMessagesCursor,
       limit: 20,
       merge: true,
-      preserveScrollPosition: true,
       silent: true,
     });
   }, [loadMessages, loading, loadingOlderMessages, nextMessagesCursor]);
@@ -1001,10 +1040,20 @@ export default function SpaceChatScreen() {
   );
 
   useEffect(() => {
-    if (!loading) {
+    const latestMessageId = messages[messages.length - 1]?.id ?? null;
+    const didLatestMessageChange =
+      latestMessageId !== null && previousLatestMessageIdRef.current !== latestMessageId;
+
+    previousLatestMessageIdRef.current = latestMessageId;
+
+    if (!didLatestMessageChange || loadingOlderMessages) {
+      return;
+    }
+
+    if (isNearBottomRef.current) {
       scrollToBottom(false);
     }
-  }, [loading, messages, scrollToBottom]);
+  }, [loadingOlderMessages, messages, scrollToBottom]);
 
   const canSend = useMemo(
     () => (draft.trim().length > 0 || selectedAttachment !== null) && !sending,
@@ -1046,38 +1095,72 @@ export default function SpaceChatScreen() {
     [currentUserId, messageLookup],
   );
 
+  const replyPreviewByMessageId = useMemo(() => {
+    const previews = new Map<string, ReplyPreview | null>();
+
+    for (const message of messages) {
+      previews.set(message.id, getReplyPreview(message));
+    }
+
+    return previews;
+  }, [getReplyPreview, messages]);
+
+  const chatListItems = useMemo<ChatListItem[]>(() => {
+    const items: ChatListItem[] = [];
+
+    for (const message of messages) {
+      if (newMessagesDividerMessageId === message.id) {
+        items.push({
+          id: `divider:${message.id}`,
+          kind: 'divider',
+        });
+      }
+
+      items.push({
+        id: message.id,
+        kind: 'message',
+        message,
+        replyPreview: replyPreviewByMessageId.get(message.id) ?? null,
+        status: getDisplayMessageStatus(message),
+      });
+    }
+
+    return items;
+  }, [getDisplayMessageStatus, messages, newMessagesDividerMessageId, replyPreviewByMessageId]);
+
+  const messageIndexById = useMemo(() => {
+    const nextIndex = new Map<string, number>();
+
+    chatListItems.forEach((item, index) => {
+      if (item.kind === 'message') {
+        nextIndex.set(item.message.id, index);
+      }
+    });
+
+    return nextIndex;
+  }, [chatListItems]);
+
   const handleReplyPress = useCallback(
     (message: ChatMessage) => {
       if (!message.replyToMessageId) {
         return;
       }
 
-      const targetLayout = messageLayoutsRef.current[message.replyToMessageId];
+      const targetIndex = messageIndexById.get(message.replyToMessageId);
 
-      if (!targetLayout) {
+      if (targetIndex === undefined) {
         return;
       }
-
-      const visibleTop = scrollOffsetRef.current;
-      const visibleBottom = visibleTop + viewportHeightRef.current;
-      const targetTop = targetLayout.y;
-      const targetBottom = targetLayout.y + targetLayout.height;
 
       highlightMessage(message.replyToMessageId);
 
-      // We store each row's y-offset relative to the ScrollView content.
-      // If the full replied-to row is already inside the visible viewport,
-      // we only flash it instead of scrolling again.
-      if (targetTop >= visibleTop && targetBottom <= visibleBottom) {
-        return;
-      }
-
-      scrollViewRef.current?.scrollTo({
+      messagesListRef.current?.scrollToIndex({
         animated: true,
-        y: Math.max(targetTop - 12, 0),
+        index: targetIndex,
+        viewPosition: 0.5,
       });
     },
-    [highlightMessage],
+    [highlightMessage, messageIndexById],
   );
 
   const syncMessageUpdate = useCallback(
@@ -1428,6 +1511,64 @@ export default function SpaceChatScreen() {
     }
   };
 
+  const keyExtractor = useCallback((item: ChatListItem) => item.id, []);
+
+  const renderChatListItem = useCallback(
+    ({ item }: ListRenderItemInfo<ChatListItem>) => {
+      if (item.kind === 'divider') {
+        return (
+          <View style={styles.newMessagesDividerContainer}>
+            <View style={styles.newMessagesDividerLine} />
+            <Text style={styles.newMessagesDividerText}>NEW MESSAGES</Text>
+            <View style={styles.newMessagesDividerLine} />
+          </View>
+        );
+      }
+
+      const message = item.message;
+      const isCurrentUser = currentUserId === message.senderUserId;
+
+      return (
+        <View
+          style={[
+            styles.messageRow,
+            isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
+          ]}>
+          <SwipeableMessageBubble
+            currentUserId={currentUserId}
+            displayStatus={item.status}
+            isHighlighted={highlightedMessageId === message.id}
+            isCurrentUser={isCurrentUser}
+            message={message}
+            onLongPress={openActionTray}
+            onOpenMedia={handleOpenMedia}
+            onReplyPress={handleReplyPress}
+            onReply={handleReply}
+            onSaveMedia={saveMediaToDevice}
+            replyPreview={item.replyPreview}
+          />
+        </View>
+      );
+    },
+    [
+      currentUserId,
+      handleOpenMedia,
+      handleReply,
+      handleReplyPress,
+      highlightedMessageId,
+      openActionTray,
+      saveMediaToDevice,
+    ],
+  );
+
+  const renderOlderMessagesLoader = useCallback(() => {
+    if (!loadingOlderMessages) {
+      return null;
+    }
+
+    return <ActivityIndicator color="#0f766e" style={styles.listEdgeLoader} />;
+  }, [loadingOlderMessages]);
+
   return (
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.screen}>
@@ -1476,106 +1617,69 @@ export default function SpaceChatScreen() {
           {loading ? <ActivityIndicator color="#0f766e" style={styles.loader} /> : null}
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-          <ScrollView
-            ref={scrollViewRef}
-            onLayout={(event) => {
-              viewportHeightRef.current = event.nativeEvent.layout.height;
-            }}
-            onScrollBeginDrag={() => {
-              hasUserInteractedWithLatestRef.current = true;
-            }}
-            onScroll={(event) => {
-              const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-              scrollOffsetRef.current = contentOffset.y;
-
-              if (
-                contentOffset.y <= 120 &&
-                nextMessagesCursor &&
-                !loading &&
-                !loadingOlderMessages
-              ) {
+          {messages.length === 0 && !loading ? (
+            <View style={styles.emptyState}>
+              <Text style={styles.emptyTitle}>No messages yet</Text>
+              <Text style={styles.emptySubtitle}>Be the first to start the conversation</Text>
+            </View>
+          ) : (
+            <FlatList
+              ref={messagesListRef}
+              data={chatListItems}
+              inverted
+              initialNumToRender={24}
+              keyExtractor={keyExtractor}
+              keyboardShouldPersistTaps="handled"
+              ListFooterComponent={renderOlderMessagesLoader}
+              maxToRenderPerBatch={12}
+              onEndReached={() => {
                 void loadOlderMessages();
-              }
+              }}
+              onEndReachedThreshold={0.2}
+              onMomentumScrollBegin={() => {
+                hasUserInteractedWithLatestRef.current = true;
+              }}
+              onScroll={(event) => {
+                const { contentOffset } = event.nativeEvent;
+                const isNearBottom = contentOffset.y < 80;
 
-              const isNearBottom =
-                contentSize.height - (contentOffset.y + layoutMeasurement.height) < 100;
+                isNearBottomRef.current = isNearBottom;
 
-              if (isNearBottom && hasUserInteractedWithLatestRef.current) {
-                void markVisibleMessagesRead();
-              }
+                if (isNearBottom && hasUserInteractedWithLatestRef.current) {
+                  void markVisibleMessagesRead();
+                }
 
-              setShowScrollToBottom(!isNearBottom);
-            }}
-            style={styles.messagesScrollView}
-            contentContainerStyle={[
-              styles.messagesContainer,
-              { paddingBottom: messagesBottomPadding },
-            ]}
-            keyboardShouldPersistTaps="handled"
-            onContentSizeChange={(_, contentHeight) => {
-              const pendingPrependAdjustment = prependScrollAdjustmentRef.current;
-              contentHeightRef.current = contentHeight;
-
-              if (pendingPrependAdjustment) {
-                prependScrollAdjustmentRef.current = null;
+                setShowScrollToBottom(!isNearBottom);
+              }}
+              onScrollToIndexFailed={(info) => {
                 requestAnimationFrame(() => {
-                  scrollViewRef.current?.scrollTo({
-                    y:
-                      pendingPrependAdjustment.offsetY +
-                      Math.max(contentHeight - pendingPrependAdjustment.contentHeight, 0),
+                  messagesListRef.current?.scrollToOffset({
                     animated: false,
+                    offset: Math.max(info.averageItemLength * info.index, 0),
                   });
+                  setTimeout(() => {
+                    messagesListRef.current?.scrollToIndex({
+                      animated: true,
+                      index: info.index,
+                      viewPosition: 0.5,
+                    });
+                  }, 50);
                 });
-                return;
-              }
-
-              scrollToBottom(!loading);
-            }}
-            scrollEventThrottle={16}>
-            {loadingOlderMessages ? (
-              <ActivityIndicator color="#0f766e" style={styles.loader} />
-            ) : null}
-
-            {!loading && messages.length === 0 ? (
-              <View style={styles.emptyState}>
-                <Text style={styles.emptyTitle}>No messages yet</Text>
-                <Text style={styles.emptySubtitle}>Start the conversation</Text>
-              </View>
-            ) : null}
-
-            {messages.map((message) => {
-              const isCurrentUser = currentUserId === message.senderUserId;
-
-              return (
-                <View
-                  key={message.id}
-                  onLayout={(event) => {
-                    messageLayoutsRef.current[message.id] = {
-                      height: event.nativeEvent.layout.height,
-                      y: event.nativeEvent.layout.y,
-                    };
-                  }}
-                  style={[
-                    styles.messageRow,
-                    isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
-                  ]}>
-                <SwipeableMessageBubble
-                  currentUserId={currentUserId}
-                  displayStatus={getDisplayMessageStatus(message)}
-                  isHighlighted={highlightedMessageId === message.id}
-                  isCurrentUser={isCurrentUser}
-                  message={message}
-                    onLongPress={openActionTray}
-                    onOpenMedia={handleOpenMedia}
-                    onReplyPress={handleReplyPress}
-                    onSaveMedia={saveMediaToDevice}
-                    onReply={handleReply}
-                    replyPreview={getReplyPreview(message)}
-                  />
-                </View>
-              );
-            })}
-          </ScrollView>
+              }}
+              removeClippedSubviews
+              renderItem={renderChatListItem}
+              scrollEventThrottle={16}
+              style={styles.messagesScrollView}
+              contentContainerStyle={[
+                styles.messagesContainer,
+                {
+                  paddingBottom: 16,
+                  paddingTop: messagesBottomPadding,
+                },
+              ]}
+              windowSize={9}
+            />
+          )}
 
           {typingUsers.length > 0 ? (
             <View
@@ -1897,12 +2001,20 @@ const styles = StyleSheet.create({
   messagesContainer: {
     flexGrow: 1,
     gap: 10,
+    justifyContent: 'flex-end',
     padding: 16,
   },
-  emptyState: {
-    flex: 1,
-    alignItems: 'center',
+  messagesContainerEmpty: {
     justifyContent: 'center',
+  },
+  listEdgeLoader: {
+    marginVertical: 12,
+  },
+  emptyState: {
+    alignItems: 'center',
+    flex: 1,
+    justifyContent: 'center',
+    minHeight: 280,
   },
   emptyTitle: {
     color: '#132238',
@@ -1925,6 +2037,24 @@ const styles = StyleSheet.create({
   },
   otherUserRow: {
     justifyContent: 'flex-start',
+  },
+  newMessagesDividerContainer: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+    marginVertical: 10,
+    paddingHorizontal: 8,
+  },
+  newMessagesDividerLine: {
+    backgroundColor: '#cbd5e1',
+    flex: 1,
+    height: 1,
+  },
+  newMessagesDividerText: {
+    color: '#64748b',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
   messageBubble: {
     borderRadius: 18,
