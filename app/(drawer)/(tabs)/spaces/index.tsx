@@ -1,6 +1,7 @@
 import { router, Stack, useFocusEffect } from 'expo-router';
 import { Image as ExpoImage } from 'expo-image';
-import { useCallback, useState } from 'react';
+import { Ionicons } from '@expo/vector-icons';
+import { useCallback, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,11 +12,15 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Group } from '../../../../../shared/contracts';
+import {
+  type ApiResponse,
+  Group,
+  type GetSpaceNotificationPreferenceResponseDto,
+} from '../../../../../shared/contracts';
 import AppHeader from '@/components/AppHeader';
 import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
 import { listSpaces } from '../../../../services/spaceService';
-import { ApiError } from '../../../../utils/api';
+import { api, ApiError } from '../../../../utils/api';
 
 const getMembersCount = (
   space: Group & {
@@ -36,10 +41,46 @@ const getMembersCount = (
 
 export default function ListSpacesScreen() {
   const [spaces, setSpaces] = useState<Group[]>([]);
+  const [muteMap, setMuteMap] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewerImageUrl, setViewerImageUrl] = useState<string | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
+  const muteHydrationRequestIdRef = useRef(0);
+
+  const hydrateMuteMap = useCallback(async (nextSpaces: Group[]) => {
+    if (nextSpaces.length === 0) {
+      setMuteMap({});
+      return;
+    }
+
+    const requestId = ++muteHydrationRequestIdRef.current;
+
+    const entries = await Promise.all(
+      nextSpaces.map(async (space) => {
+        try {
+          const response = await api.get<ApiResponse<GetSpaceNotificationPreferenceResponseDto>>(
+            `/spaces/${space.id}/notification-preference`,
+          );
+
+          return [space.id, Boolean(response.data?.data?.muted)] as const;
+        } catch {
+          return [space.id, false] as const;
+        }
+      }),
+    );
+
+    if (muteHydrationRequestIdRef.current !== requestId) {
+      return;
+    }
+
+    setMuteMap(
+      entries.reduce<Record<string, boolean>>((accumulator, [spaceId, muted]) => {
+        accumulator[spaceId] = muted;
+        return accumulator;
+      }, {}),
+    );
+  }, []);
 
   const loadSpaces = useCallback(async () => {
     setLoading(true);
@@ -47,14 +88,16 @@ export default function ListSpacesScreen() {
 
     try {
       const response = await listSpaces();
-      setSpaces(response.spaces ?? response.groups);
+      const nextSpaces = response.spaces ?? response.groups;
+      setSpaces(nextSpaces);
+      void hydrateMuteMap(nextSpaces);
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to load spaces.');
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [hydrateMuteMap]);
 
   const openViewer = useCallback((imageUrl: string) => {
     setViewerImageUrl(imageUrl);
@@ -97,6 +140,7 @@ export default function ListSpacesScreen() {
         <FlatList
           contentContainerStyle={styles.listContent}
           data={spaces}
+          extraData={muteMap}
           keyExtractor={(item) => item.id}
           renderItem={({ item }) => (
             <View style={styles.card}>
@@ -113,12 +157,24 @@ export default function ListSpacesScreen() {
                     source={{ uri: item.imageUrl }}
                     style={styles.cardAvatar}
                   />
+                  {muteMap[item.id] ? (
+                    <View style={styles.mutedBadge}>
+                      <Ionicons color="#6b7280" name="notifications-off-outline" size={14} />
+                    </View>
+                  ) : null}
                 </Pressable>
               ) : (
-                <View style={styles.cardAvatarPlaceholder}>
-                  <Text style={styles.cardAvatarInitial}>
-                    {item.name.charAt(0).toUpperCase()}
-                  </Text>
+                <View style={styles.cardAvatarWrapper}>
+                  <View style={styles.cardAvatarPlaceholder}>
+                    <Text style={styles.cardAvatarInitial}>
+                      {item.name.charAt(0).toUpperCase()}
+                    </Text>
+                  </View>
+                  {muteMap[item.id] ? (
+                    <View style={styles.mutedBadge}>
+                      <Ionicons color="#6b7280" name="notifications-off-outline" size={14} />
+                    </View>
+                  ) : null}
                 </View>
               )}
 
@@ -222,11 +278,15 @@ const styles = StyleSheet.create({
   },
   cardAvatarButton: {
     borderRadius: 22,
+    position: 'relative',
   },
   cardAvatar: {
     borderRadius: 22,
     height: 44,
     width: 44,
+  },
+  cardAvatarWrapper: {
+    position: 'relative',
   },
   cardAvatarPlaceholder: {
     alignItems: 'center',
@@ -235,6 +295,19 @@ const styles = StyleSheet.create({
     height: 44,
     justifyContent: 'center',
     width: 44,
+  },
+  mutedBadge: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderColor: '#d5d9e0',
+    borderRadius: 9,
+    borderWidth: 1,
+    height: 18,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: -3,
+    top: -3,
+    width: 18,
   },
   cardAvatarInitial: {
     color: '#ffffff',
