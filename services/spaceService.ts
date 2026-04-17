@@ -202,6 +202,7 @@ export const uploadMediaMessage = async (
   payload: UploadMediaMessagePayload,
 ): Promise<UploadMediaMessageResponseDto> => {
   const formData = new FormData();
+  const isHostedUrl = /^https?:\/\//i.test(payload.attachment.uri);
 
   if (payload.text) {
     formData.append('text', payload.text);
@@ -211,11 +212,9 @@ export const uploadMediaMessage = async (
     formData.append('replyToMessageId', payload.replyToMessageId);
   }
 
-  if (/^https?:\/\//i.test(payload.attachment.uri)) {
-    const uploadedFileResponse = await fetch(payload.attachment.uri);
-    const uploadedFileBlob = await uploadedFileResponse.blob();
-
-    formData.append('file', uploadedFileBlob, payload.attachment.fileName);
+  if (isHostedUrl) {
+    formData.append('mediaUrl', payload.attachment.uri);
+    formData.append('mediaType', payload.attachment.type);
   } else {
     formData.append('file', {
       uri: payload.attachment.uri,
