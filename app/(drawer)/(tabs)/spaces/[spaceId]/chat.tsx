@@ -1262,6 +1262,7 @@ export default function SpaceChatScreen() {
 
     const previousValue = muted;
     const nextValue = !previousValue;
+    console.log('TOGGLE', { previous: previousValue, next: nextValue });
 
     setMuted(nextValue);
     setNotificationsPreferenceLoading(true);
@@ -1890,7 +1891,7 @@ export default function SpaceChatScreen() {
             <Pressable onPress={closeMenu} style={styles.menuBackdrop} />
             <View style={[styles.menuTray, { top: headerHeight - 12 }]}>
               <Pressable
-                accessibilityLabel={muted ? 'Mute Notifications' : 'Unmute Notifications'}
+                accessibilityLabel={muted ? 'Unmute Notifications' : 'Mute Notifications'}
                 disabled={notificationsPreferenceLoading}
                 onPress={() => {
                   void handleToggleNotificationsMuted();
@@ -1904,7 +1905,7 @@ export default function SpaceChatScreen() {
                     style={styles.menuItemIcon}
                   />
                   <Text style={styles.menuItemText}>
-                    {muted ? 'Mute Notifications' : 'Unmute Notifications'}
+                    {muted ? 'Unmute Notifications' : 'Mute Notifications'}
                   </Text>
                 </View>
               </Pressable>

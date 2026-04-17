@@ -55,30 +55,33 @@ export default function ListSpacesScreen() {
     }
 
     const requestId = ++muteHydrationRequestIdRef.current;
+    setMuteMap({});
 
-    const entries = await Promise.all(
+    await Promise.all(
       nextSpaces.map(async (space) => {
+        let muted = false;
+
         try {
           const response = await api.get<ApiResponse<GetSpaceNotificationPreferenceResponseDto>>(
             `/spaces/${space.id}/notification-preference`,
           );
 
-          return [space.id, Boolean(response.data?.data?.muted)] as const;
+          muted = Boolean(response.data?.data?.muted);
         } catch {
-          return [space.id, false] as const;
+          muted = false;
         }
+
+        console.log('SPACE', space.id, 'MUTED:', muted);
+
+        if (muteHydrationRequestIdRef.current !== requestId) {
+          return;
+        }
+
+        setMuteMap((prev) => ({
+          ...prev,
+          [space.id]: muted,
+        }));
       }),
-    );
-
-    if (muteHydrationRequestIdRef.current !== requestId) {
-      return;
-    }
-
-    setMuteMap(
-      entries.reduce<Record<string, boolean>>((accumulator, [spaceId, muted]) => {
-        accumulator[spaceId] = muted;
-        return accumulator;
-      }, {}),
     );
   }, []);
 
@@ -142,50 +145,54 @@ export default function ListSpacesScreen() {
           data={spaces}
           extraData={muteMap}
           keyExtractor={(item) => item.id}
-          renderItem={({ item }) => (
-            <View style={styles.card}>
-              {item.imageUrl ? (
-                <Pressable
-                  onPress={() => {
-                    if (item.imageUrl) {
-                      openViewer(item.imageUrl);
-                    }
-                  }}
-                  style={styles.cardAvatarButton}>
-                  <ExpoImage
-                    contentFit="cover"
-                    source={{ uri: item.imageUrl }}
-                    style={styles.cardAvatar}
-                  />
-                  {muteMap[item.id] ? (
-                    <View style={styles.mutedBadge}>
-                      <Ionicons color="#6b7280" name="notifications-off-outline" size={14} />
-                    </View>
-                  ) : null}
-                </Pressable>
-              ) : (
-                <View style={styles.cardAvatarWrapper}>
-                  <View style={styles.cardAvatarPlaceholder}>
-                    <Text style={styles.cardAvatarInitial}>
-                      {item.name.charAt(0).toUpperCase()}
-                    </Text>
-                  </View>
-                  {muteMap[item.id] ? (
-                    <View style={styles.mutedBadge}>
-                      <Ionicons color="#6b7280" name="notifications-off-outline" size={14} />
-                    </View>
-                  ) : null}
-                </View>
-              )}
+          renderItem={({ item }) => {
+            const isMuted = Boolean(muteMap[item.id]);
 
-              <Pressable
-                onPress={() => router.push(`/spaces/${item.id}`)}
-                style={styles.cardContent}>
-                <Text style={styles.cardTitle}>{item.name}</Text>
-                <Text style={styles.cardMeta}>Members: {getMembersCount(item)}</Text>
-              </Pressable>
-            </View>
-          )}
+            return (
+              <View style={styles.card}>
+                {item.imageUrl ? (
+                  <Pressable
+                    onPress={() => {
+                      if (item.imageUrl) {
+                        openViewer(item.imageUrl);
+                      }
+                    }}
+                    style={styles.cardAvatarButton}>
+                    <ExpoImage
+                      contentFit="cover"
+                      source={{ uri: item.imageUrl }}
+                      style={styles.cardAvatar}
+                    />
+                    {isMuted ? (
+                      <View style={styles.mutedBadge}>
+                        <Ionicons color="#6b7280" name="notifications-off-outline" size={14} />
+                      </View>
+                    ) : null}
+                  </Pressable>
+                ) : (
+                  <View style={styles.cardAvatarWrapper}>
+                    <View style={styles.cardAvatarPlaceholder}>
+                      <Text style={styles.cardAvatarInitial}>
+                        {item.name.charAt(0).toUpperCase()}
+                      </Text>
+                    </View>
+                    {isMuted ? (
+                      <View style={styles.mutedBadge}>
+                        <Ionicons color="#6b7280" name="notifications-off-outline" size={14} />
+                      </View>
+                    ) : null}
+                  </View>
+                )}
+
+                <Pressable
+                  onPress={() => router.push(`/spaces/${item.id}`)}
+                  style={styles.cardContent}>
+                  <Text style={styles.cardTitle}>{item.name}</Text>
+                  <Text style={styles.cardMeta}>Members: {getMembersCount(item)}</Text>
+                </Pressable>
+              </View>
+            );
+          }}
         />
 
         <FullScreenImageViewer
