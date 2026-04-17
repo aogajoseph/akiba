@@ -27,11 +27,14 @@ import {
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import {
+  ApiResponse,
   Message,
   MessageMedia,
   MessageStatus,
   SpaceMember,
   TypingUser,
+  type GetSpaceNotificationPreferenceResponseDto,
+  type UpdateSpaceNotificationPreferenceResponseDto,
 } from '../../../../../../shared/contracts';
 import {
   deleteMessage,
@@ -450,6 +453,8 @@ export default function SpaceChatScreen() {
   const [spaceCreatorUserId, setSpaceCreatorUserId] = useState<string | null>(null);
   const [onlineCount, setOnlineCount] = useState(0);
   const [menuVisible, setMenuVisible] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [notificationsPreferenceLoading, setNotificationsPreferenceLoading] = useState(false);
   const [headerHeight, setHeaderHeight] = useState(0);
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null);
   const [actionTrayVisible, setActionTrayVisible] = useState(false);
@@ -551,6 +556,52 @@ export default function SpaceChatScreen() {
     hasUserInteractedWithLatestRef.current = false;
     isNearBottomRef.current = true;
     setNewMessagesDividerMessageId(null);
+  }, [spaceId]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!spaceId) {
+      setMuted(false);
+      setNotificationsPreferenceLoading(false);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    const loadNotificationPreference = async () => {
+      setNotificationsPreferenceLoading(true);
+
+      try {
+        const response = await api.get<ApiResponse<GetSpaceNotificationPreferenceResponseDto>>(
+          `/spaces/${spaceId}/notification-preference`,
+        );
+
+        if (!isActive) {
+          return;
+        }
+
+        setMuted(Boolean(response.data?.data?.muted));
+      } catch (caughtError) {
+        if (!isActive) {
+          return;
+        }
+
+        const apiError = caughtError as ApiError;
+        console.warn('Failed to load notification preference', apiError.error ?? caughtError);
+        setMuted(false);
+      } finally {
+        if (isActive) {
+          setNotificationsPreferenceLoading(false);
+        }
+      }
+    };
+
+    void loadNotificationPreference();
+
+    return () => {
+      isActive = false;
+    };
   }, [spaceId]);
 
   useEffect(() => {
@@ -1204,23 +1255,32 @@ export default function SpaceChatScreen() {
     setMenuVisible(false);
   };
 
-  const handleViewMembers = () => {
-    if (!spaceId) {
+  const handleToggleNotificationsMuted = useCallback(async () => {
+    if (!spaceId || notificationsPreferenceLoading) {
       return;
     }
 
-    closeMenu();
-    router.push(`/spaces/${spaceId}/members`);
-  };
+    const previousValue = muted;
+    const nextValue = !previousValue;
 
-  const handleSpaceInfo = () => {
-    if (!spaceId) {
-      return;
+    setMuted(nextValue);
+    setNotificationsPreferenceLoading(true);
+
+    try {
+      const response = await api.patch<ApiResponse<UpdateSpaceNotificationPreferenceResponseDto>>(
+        `/spaces/${spaceId}/notification-preference`,
+        { muted: nextValue },
+      );
+
+      setMuted(Boolean(response.data?.data?.muted));
+    } catch (caughtError) {
+      setMuted(previousValue);
+      const apiError = caughtError as ApiError;
+      console.warn('Failed to update notification preference', apiError.error ?? caughtError);
+    } finally {
+      setNotificationsPreferenceLoading(false);
     }
-
-    closeMenu();
-    router.push(`/spaces/${spaceId}`);
-  };
+  }, [muted, notificationsPreferenceLoading, spaceId]);
 
   const handleLeaveGroup = async () => {
     if (!spaceId || !currentMembership) {
@@ -1829,11 +1889,24 @@ export default function SpaceChatScreen() {
           <View style={styles.menuOverlay}>
             <Pressable onPress={closeMenu} style={styles.menuBackdrop} />
             <View style={[styles.menuTray, { top: headerHeight - 12 }]}>
-              <Pressable onPress={handleSpaceInfo} style={styles.menuItem}>
-                <Text style={styles.menuItemText}>Space Info</Text>
-              </Pressable>
-              <Pressable onPress={handleViewMembers} style={styles.menuItem}>
-                <Text style={styles.menuItemText}>Current Members</Text>
+              <Pressable
+                accessibilityLabel={muted ? 'Mute Notifications' : 'Unmute Notifications'}
+                disabled={notificationsPreferenceLoading}
+                onPress={() => {
+                  void handleToggleNotificationsMuted();
+                }}
+                style={styles.menuItem}>
+                <View style={styles.menuItemContent}>
+                  <Ionicons
+                    color="#132238"
+                    name={muted ? 'notifications-off-outline' : 'notifications-outline'}
+                    size={18}
+                    style={styles.menuItemIcon}
+                  />
+                  <Text style={styles.menuItemText}>
+                    {muted ? 'Mute Notifications' : 'Unmute Notifications'}
+                  </Text>
+                </View>
               </Pressable>
               {!isCreator && currentMembership ? (
                 <Pressable onPress={() => { void handleLeaveGroup(); }} style={styles.menuItem}>
@@ -2386,8 +2459,18 @@ const styles = StyleSheet.create({
     shadowRadius: 18,
   },
   menuItem: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     paddingHorizontal: 16,
-    paddingVertical: 14,
+    paddingVertical: 12,
+  },
+  menuItemContent: {
+    alignItems: 'center',
+    flexDirection: 'row',
+  },
+  menuItemIcon: {
+    marginRight: 10,
   },
   menuItemText: {
     color: '#132238',
