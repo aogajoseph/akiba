@@ -10,6 +10,7 @@ import {
   GetSpaceSummaryResponseDto,
   GetTransactionsSummaryResponseDto,
   LeaveGroupResponseDto,
+  JoinGroupResponseDto,
   ListGroupMembersResponseDto,
   ListGroupSignatoriesResponseDto,
   ListGroupsResponseDto,
@@ -55,6 +56,11 @@ export const createSpace = async (
 
 export const getSpace = async (spaceId: string): Promise<GetGroupResponseDto> => {
   const response = await api.get<{ data: GetGroupResponseDto }>(`/spaces/${spaceId}`);
+  return response.data.data;
+};
+
+export const joinSpace = async (spaceId: string): Promise<JoinGroupResponseDto> => {
+  const response = await api.post<{ data: JoinGroupResponseDto }>(`/spaces/${spaceId}/join`);
   return response.data.data;
 };
 

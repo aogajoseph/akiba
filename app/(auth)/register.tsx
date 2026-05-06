@@ -14,6 +14,10 @@ import {
 
 import { RegisterRequestDto } from '../../../shared/contracts';
 import { register } from '../../services/authService';
+import {
+  clearPendingInvite,
+  consumePendingInviteAndJoin,
+} from '../../src/services/pendingInvite';
 import { ApiError } from '../../utils/api';
 
 export default function RegisterScreen() {
@@ -41,7 +45,12 @@ export default function RegisterScreen() {
         name: form.name.trim(),
         phoneNumber: form.phoneNumber.trim(),
       });
-      router.replace('/home');
+      const joinedSpaceId = await consumePendingInviteAndJoin();
+      router.replace(joinedSpaceId ? `/spaces/${joinedSpaceId}` : '/home');
+
+      if (joinedSpaceId) {
+        await clearPendingInvite();
+      }
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to register right now.');

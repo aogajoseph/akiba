@@ -14,6 +14,10 @@ import {
 
 import { LoginRequestDto } from '../../../shared/contracts';
 import { login } from '../../services/authService';
+import {
+  clearPendingInvite,
+  consumePendingInviteAndJoin,
+} from '../../src/services/pendingInvite';
 import { ApiError } from '../../utils/api';
 
 export default function LoginScreen() {
@@ -32,7 +36,12 @@ export default function LoginScreen() {
       await login({
         phoneNumber: form.phoneNumber.trim(),
       });
-      router.replace('/home');
+      const joinedSpaceId = await consumePendingInviteAndJoin();
+      router.replace(joinedSpaceId ? `/spaces/${joinedSpaceId}` : '/home');
+
+      if (joinedSpaceId) {
+        await clearPendingInvite();
+      }
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to log in right now.');

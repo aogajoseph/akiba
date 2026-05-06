@@ -4,6 +4,7 @@ import { User } from '../../shared/contracts';
 
 export type ApiError = {
   error: string;
+  status?: number;
 };
 
 export type AuthSession = {
@@ -26,7 +27,7 @@ export const clearAuthSession = (): void => {
 };
 
 export const api = axios.create({
-  baseURL: 'http://192.168.0.101:4000',
+  baseURL: 'http://192.168.0.106:4000',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -49,7 +50,9 @@ api.interceptors.response.use(
       error.response?.data?.error ??
       error.message ??
       'Something went wrong. Please try again.';
+    const status =
+      typeof error.response?.status === 'number' ? error.response.status : undefined;
 
-    return Promise.reject({ error: message } satisfies ApiError);
+    return Promise.reject({ error: message, status } satisfies ApiError);
   },
 );

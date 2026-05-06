@@ -281,7 +281,7 @@ export default function MembersScreen() {
             </View>
 
             {isCreator ? (
-              <Text style={styles.subtitle}>Manage the people in this space</Text>
+              <Text style={styles.subtitle}>Manage participants in this space</Text>
             ) : null}
 
             {members.length === 1 ? (
@@ -417,8 +417,9 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   subtitle: {
-    color: '#6b7280',
+    color: '#131440',
     fontSize: 15,
+    textAlign: 'center',
   },
   emptyStateCard: {
     backgroundColor: '#ffffff',
@@ -432,11 +433,13 @@ const styles = StyleSheet.create({
     color: '#132238',
     fontSize: 18,
     fontWeight: '700',
+    textAlign: 'center',
   },
   emptyStateText: {
     color: '#6b7280',
     fontSize: 14,
     lineHeight: 20,
+    textAlign: 'center',
   },
   section: {
     backgroundColor: '#ffffff',
