@@ -268,13 +268,13 @@ export default function SpaceDashboardScreen() {
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>Open Chat</Text>
               </Pressable> 
-              <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>Add Members</Text>
-              </Pressable>
               <Pressable
                 onPress={() => pushSpaceRoute('members')}
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Members</Text>
+              </Pressable>
+              <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
+                <Text style={styles.placeholderButtonText}>Add Members</Text>
               </Pressable>
             </View>
           </>
