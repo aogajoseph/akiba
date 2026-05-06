@@ -8,15 +8,14 @@ import {
   Pressable,
   SafeAreaView,
   ScrollView,
-  Share,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
 
 import { Group, SpaceAdmin, SpaceMember } from '../../../../../../shared/contracts';
-import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
-import InviteMembersModal from '../../../../../components/InviteMembersModal';
+import FullScreenImageViewer from '@/components/FullScreenImageViewer';
+import InviteMembersModal from '@/components/InviteMembersModal';
 import {
   getAdmins,
   getMembers,
@@ -24,8 +23,9 @@ import {
   leaveSpace,
   promoteMember,
   revokeMember,
-} from '../../../../../services/spaceService';
-import { ApiError, getAuthSession } from '../../../../../utils/api';
+} from '@/services/spaceService';
+import { getInviteLink, shareInvite } from '@/src/services/inviteService';
+import { ApiError, getAuthSession } from '@/utils/api';
 
 type ToastMessage = {
   id: number;
@@ -47,8 +47,6 @@ export default function MembersScreen() {
 
   const currentUserId = getAuthSession()?.user.id ?? null;
   const isCreator = currentUserId !== null && currentUserId === space?.createdByUserId;
-  const inviteLink = spaceId ? `akiba://spaces/${spaceId}` : null;
-
   const dismissToast = useCallback((toastId: number) => {
     const timeout = toastTimeoutsRef.current[toastId];
 
@@ -125,11 +123,12 @@ export default function MembersScreen() {
   };
 
   const handleCopyInviteLink = async () => {
-    if (!inviteLink) {
+    if (!spaceId) {
       return;
     }
 
     try {
+      const inviteLink = await getInviteLink(spaceId);
       await Clipboard.setStringAsync(inviteLink);
       setInviteModalVisible(false);
       showToast('Link copied to clipboard');
@@ -140,19 +139,23 @@ export default function MembersScreen() {
   };
 
   const handleShareSpace = async () => {
-    if (!inviteLink) {
+    if (!spaceId || !space) {
       return;
     }
 
     try {
-      await Share.share({
-        message: `Join our Akiba Space:\n${inviteLink}`,
-      });
+      await shareInvite({ id: spaceId, name: space.name });
       setInviteModalVisible(false);
     } catch {
-      await Clipboard.setStringAsync(inviteLink);
-      setInviteModalVisible(false);
-      showToast('Link copied to clipboard');
+      try {
+        const inviteLink = await getInviteLink(spaceId);
+        await Clipboard.setStringAsync(inviteLink);
+        showToast('Link copied to clipboard');
+      } catch {
+        setError('Unable to share invite link.');
+      } finally {
+        setInviteModalVisible(false);
+      }
     }
   };
 

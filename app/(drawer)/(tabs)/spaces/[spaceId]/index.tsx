@@ -7,7 +7,6 @@ import {
   ActivityIndicator,
   Pressable,
   SafeAreaView,
-  Share,
   ScrollView,
   StyleSheet,
   Text,
@@ -15,10 +14,11 @@ import {
 } from 'react-native';
 
 import { Group, SpaceAdmin } from '../../../../../../shared/contracts';
-import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
-import InviteMembersModal from '../../../../../components/InviteMembersModal';
-import { getAdmins, getSpace } from '../../../../../services/spaceService';
-import { ApiError, getAuthSession } from '../../../../../utils/api';
+import FullScreenImageViewer from '@/components/FullScreenImageViewer';
+import InviteMembersModal from '@/components/InviteMembersModal';
+import { getAdmins, getSpace } from '@/services/spaceService';
+import { getInviteLink, shareInvite } from '@/src/services/inviteService';
+import { ApiError, getAuthSession } from '@/utils/api';
 
 type ToastMessage = {
   id: number;
@@ -87,9 +87,8 @@ export default function SpaceDashboardScreen() {
       return;
     }
 
-    const link = `akiba://spaces/${spaceId}`;
-
     try {
+      const link = await getInviteLink(spaceId);
       await Clipboard.setStringAsync(link);
       setInviteModalVisible(false);
       showToast('Link copied to clipboard');
@@ -100,21 +99,23 @@ export default function SpaceDashboardScreen() {
   };
 
   const handleShareSpace = async () => {
-    if (!spaceId) {
+    if (!spaceId || !space) {
       return;
     }
 
-    const link = `https://akiba.app/spaces/${spaceId}/join`;
-
     try {
-      await Share.share({
-        message: `Join our Akiba Space on:\n${link}`,
-      });
+      await shareInvite({ id: spaceId, name: space.name });
       setInviteModalVisible(false);
     } catch {
-      await Clipboard.setStringAsync(link);
-      setInviteModalVisible(false);
-      showToast('Link copied to clipboard');
+      try {
+        const link = await getInviteLink(spaceId);
+        await Clipboard.setStringAsync(link);
+        showToast('Link copied to clipboard');
+      } catch {
+        setError('Unable to share invite link.');
+      } finally {
+        setInviteModalVisible(false);
+      }
     }
   };
 

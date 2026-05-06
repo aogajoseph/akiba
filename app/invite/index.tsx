@@ -99,6 +99,8 @@ export default function InviteResolverScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
+          <Text style={styles.brandTitle}>Akiba</Text>
+          <Text style={styles.brandSubtitle}>Save money with friends & family</Text>
           <Text style={styles.title}>This invite link is invalid</Text>
         </View>
       </SafeAreaView>
@@ -109,6 +111,9 @@ export default function InviteResolverScreen() {
     return (
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
+          <Text style={styles.brandTitle}>Akiba</Text>
+          <Text style={styles.brandSubtitle}>Save money with friends & family</Text>
+          <Text style={styles.inviteLine}>You&apos;ve been invited to join {spaceName}</Text>
           <Text style={styles.title}>{errorMessage ?? 'Unable to join this space.'}</Text>
           <Pressable
             onPress={() => {
@@ -127,6 +132,9 @@ export default function InviteResolverScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
+        <Text style={styles.brandTitle}>Akiba</Text>
+        <Text style={styles.brandSubtitle}>Save money with friends & family</Text>
+        <Text style={styles.inviteLine}>You&apos;ve been invited to join {spaceName}</Text>
         <Text style={styles.title}>Joining {spaceName}...</Text>
         <ActivityIndicator color="#0f766e" style={styles.loader} />
       </View>
@@ -145,10 +153,30 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     padding: 24,
   },
+  brandTitle: {
+    color: '#0f766e',
+    fontSize: 28,
+    fontWeight: '800',
+    textAlign: 'center',
+  },
+  brandSubtitle: {
+    color: '#6b7280',
+    fontSize: 15,
+    marginTop: 8,
+    textAlign: 'center',
+  },
+  inviteLine: {
+    color: '#132238',
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 24,
+    textAlign: 'center',
+  },
   title: {
     color: '#132238',
     fontSize: 20,
     fontWeight: '700',
+    marginTop: 12,
     textAlign: 'center',
   },
   loader: {

@@ -8,11 +8,13 @@ import {
   FlatList,
   Pressable,
   SafeAreaView,
-  Share,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+
+import { getSpace } from '@/services/spaceService';
+import { getInviteLink, shareInvite } from '@/src/services/inviteService';
 
 type InviteContact = {
   id: string;
@@ -24,7 +26,7 @@ export default function InviteFromContactsScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [contacts, setContacts] = useState<InviteContact[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const inviteLink = `https://akiba.app/spaces/${spaceId}/join`;
+  const [spaceName, setSpaceName] = useState('This savings space');
 
   useEffect(() => {
     const loadContacts = async () => {
@@ -53,8 +55,26 @@ export default function InviteFromContactsScreen() {
       setContacts(formatted);
     };
 
+    const loadSpace = async () => {
+      if (!spaceId) {
+        return;
+      }
+
+      try {
+        const response = await getSpace(spaceId);
+        const nextSpace = response.space ?? response.group;
+
+        if (nextSpace?.name) {
+          setSpaceName(nextSpace.name);
+        }
+      } catch {
+        // Keep the branded fallback name if the space cannot be loaded here.
+      }
+    };
+
     void loadContacts();
-  }, []);
+    void loadSpace();
+  }, [spaceId]);
 
   const toggleSelect = (id: string) => {
     setSelectedIds((prev) =>
@@ -79,11 +99,14 @@ export default function InviteFromContactsScreen() {
     }
 
     try {
-      await Share.share({
-        message: `Join our Akiba Space:\n${inviteLink}`,
-      });
+      await shareInvite({ id: spaceId, name: spaceName });
     } catch {
-      await Clipboard.setStringAsync(inviteLink);
+      try {
+        const inviteLink = await getInviteLink(spaceId);
+        await Clipboard.setStringAsync(inviteLink);
+      } catch {
+        Alert.alert('Unable to share invite', 'Please try again in a moment.');
+      }
     }
   };
 

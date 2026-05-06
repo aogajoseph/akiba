@@ -59,6 +59,11 @@ export const getSpace = async (spaceId: string): Promise<GetGroupResponseDto> =>
   return response.data.data;
 };
 
+export const getSpaceInviteLink = async (spaceId: string): Promise<string> => {
+  const response = await api.get<{ data: { link: string } }>(`/spaces/${spaceId}/invite-link`);
+  return response.data.data.link;
+};
+
 export const joinSpace = async (spaceId: string): Promise<JoinGroupResponseDto> => {
   const response = await api.post<{ data: JoinGroupResponseDto }>(`/spaces/${spaceId}/join`);
   return response.data.data;
