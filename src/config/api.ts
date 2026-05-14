@@ -1,3 +1,1 @@
-import { api } from '../../utils/api';
-
-export const API_BASE_URL = api.defaults.baseURL ?? '';
+export const API_BASE_URL = 'http://192.168.0.106:4000';

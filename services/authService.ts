@@ -12,9 +12,9 @@ export const register = async (
   dto: RegisterRequestDto,
 ): Promise<RegisterResponseDto> => {
   const response = await api.post<{ data: RegisterResponseDto }>('/auth/register', dto);
-  setAuthSession({
+  await setAuthSession({
     user: response.data.data.user,
-    token: response.data.data.token,
+    accessToken: response.data.data.accessToken,
   });
   void registerPushNotificationsForCurrentUser();
   return response.data.data;
@@ -22,9 +22,9 @@ export const register = async (
 
 export const login = async (dto: LoginRequestDto): Promise<LoginResponseDto> => {
   const response = await api.post<{ data: LoginResponseDto }>('/auth/login', dto);
-  setAuthSession({
+  await setAuthSession({
     user: response.data.data.user,
-    token: response.data.data.token,
+    accessToken: response.data.data.accessToken,
   });
   void registerPushNotificationsForCurrentUser();
   return response.data.data;
@@ -35,6 +35,6 @@ export const me = async (): Promise<MeResponseDto> => {
   return response.data.data;
 };
 
-export const logout = (): void => {
-  clearAuthSession();
+export const logout = async (): Promise<void> => {
+  await clearAuthSession();
 };

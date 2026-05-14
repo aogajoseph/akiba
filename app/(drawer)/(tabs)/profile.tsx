@@ -40,8 +40,8 @@ export default function ProfileScreen() {
     }, [loadProfile]),
   );
 
-  const handleLogout = () => {
-    logout();
+  const handleLogout = async () => {
+    await logout();
     router.replace('/(auth)/login');
   };
 
@@ -66,7 +66,7 @@ export default function ProfileScreen() {
           </View>
         ) : null}
 
-        <Pressable onPress={handleLogout} style={styles.button}>
+        <Pressable onPress={() => { void handleLogout(); }} style={styles.button}>
           <Text style={styles.buttonText}>Logout</Text>
         </Pressable>
       </View>

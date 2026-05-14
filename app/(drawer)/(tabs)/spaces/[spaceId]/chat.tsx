@@ -969,7 +969,11 @@ export default function SpaceChatScreen() {
 
     const socket = io(socketBaseUrl);
     const handleConnect = () => {
-      socket.emit('join_space', { spaceId, userId: currentUserId });
+      socket.emit('join_space', {
+        spaceId,
+        token: currentSession?.accessToken,
+        userId: currentUserId,
+      });
 
       if (hasConnectedOnceRef.current) {
         void loadMessages({

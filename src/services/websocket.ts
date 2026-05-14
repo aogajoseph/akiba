@@ -5,28 +5,30 @@ import { API_BASE_URL } from '@/src/config/api';
 let socket: WebSocket | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
 let messageHandler: ((event: NotificationEvent) => void) | null = null;
+let shouldReconnect = true;
 
 const getWebSocketUrl = (): string | null => {
   if (!API_BASE_URL) {
     return null;
   }
 
-  const userId = getAuthSession()?.user.id;
+  const accessToken = getAuthSession()?.accessToken;
 
-  if (!userId) {
+  if (!accessToken) {
     return null;
   }
 
   const url = new URL(API_BASE_URL);
   url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
   url.pathname = '/notifications/ws';
-  url.searchParams.set('userId', userId);
+  url.searchParams.set('token', accessToken);
 
   return url.toString();
 };
 
 export const connectWebSocket = (onMessage: (event: NotificationEvent) => void): void => {
   messageHandler = onMessage;
+  shouldReconnect = true;
 
   if (
     socket &&
@@ -68,6 +70,10 @@ export const connectWebSocket = (onMessage: (event: NotificationEvent) => void):
       clearTimeout(reconnectTimeout);
     }
 
+    if (!shouldReconnect) {
+      return;
+    }
+
     reconnectTimeout = setTimeout(() => {
       reconnectTimeout = null;
 
@@ -80,4 +86,18 @@ export const connectWebSocket = (onMessage: (event: NotificationEvent) => void):
   socket.onerror = (err) => {
     console.error('WebSocket error', err);
   };
+};
+
+export const disconnectWebSocket = (): void => {
+  shouldReconnect = false;
+
+  if (reconnectTimeout) {
+    clearTimeout(reconnectTimeout);
+    reconnectTimeout = null;
+  }
+
+  if (socket) {
+    socket.close();
+    socket = null;
+  }
 };

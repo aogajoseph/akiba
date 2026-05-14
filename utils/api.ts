@@ -1,33 +1,27 @@
 import axios from 'axios';
 
-import { User } from '../../shared/contracts';
+import { API_BASE_URL } from '@/src/config/api';
+import { type AuthSession, useAuthStore } from '@/src/store/authStore';
 
 export type ApiError = {
   error: string;
   status?: number;
 };
 
-export type AuthSession = {
-  user: User;
-  token: string;
-};
-
-let authSession: AuthSession | null = null;
-
-export const setAuthSession = (session: AuthSession): void => {
-  authSession = session;
-};
-
 export const getAuthSession = (): AuthSession | null => {
-  return authSession;
+  return useAuthStore.getState().session;
 };
 
-export const clearAuthSession = (): void => {
-  authSession = null;
+export const setAuthSession = async (session: AuthSession): Promise<void> => {
+  await useAuthStore.getState().setSession(session);
+};
+
+export const clearAuthSession = async (): Promise<void> => {
+  await useAuthStore.getState().clearSession();
 };
 
 export const api = axios.create({
-  baseURL: 'http://192.168.0.106:4000',
+  baseURL: API_BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
@@ -36,8 +30,8 @@ export const api = axios.create({
 api.interceptors.request.use((config) => {
   const session = getAuthSession();
 
-  if (session?.user.id) {
-    config.headers['x-user-id'] = session.user.id;
+  if (session?.accessToken) {
+    config.headers.Authorization = `Bearer ${session.accessToken}`;
   }
 
   return config;
@@ -46,12 +40,17 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    const status =
+      typeof error.response?.status === 'number' ? error.response.status : undefined;
+
+    if (status === 401) {
+      void clearAuthSession();
+    }
+
     const message =
       error.response?.data?.error ??
       error.message ??
       'Something went wrong. Please try again.';
-    const status =
-      typeof error.response?.status === 'number' ? error.response.status : undefined;
 
     return Promise.reject({ error: message, status } satisfies ApiError);
   },

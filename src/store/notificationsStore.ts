@@ -16,14 +16,14 @@ type NotificationsState = {
 };
 
 const getNotificationHeaders = (): HeadersInit => {
-  const userId = getAuthSession()?.user.id;
+  const accessToken = getAuthSession()?.accessToken;
 
-  if (!userId) {
+  if (!accessToken) {
     return {};
   }
 
   return {
-    'x-user-id': userId,
+    Authorization: `Bearer ${accessToken}`,
   };
 };
 
@@ -53,7 +53,7 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     try {
       set({ loading: true });
 
-      if (!API_BASE_URL || !getAuthSession()?.user.id) {
+      if (!API_BASE_URL || !getAuthSession()?.accessToken) {
         set({ notifications: [], unreadCount: 0 });
         return;
       }
