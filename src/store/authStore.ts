@@ -18,6 +18,7 @@ type AuthState = {
   clearSession: () => Promise<void>;
   restoreSession: () => Promise<void>;
   setSession: (session: AuthSession) => Promise<void>;
+  setUser: (user: User) => void;
 };
 
 let restorePromise: Promise<void> | null = null;
@@ -92,5 +93,20 @@ export const useAuthStore = create<AuthState>((set) => ({
     })();
 
     return restorePromise;
+  },
+
+  setUser: (user) => {
+    set((state) => {
+      if (!state.session) {
+        return state;
+      }
+
+      return {
+        session: {
+          ...state.session,
+          user,
+        },
+      };
+    });
   },
 }));

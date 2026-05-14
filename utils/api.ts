@@ -16,6 +16,10 @@ export const setAuthSession = async (session: AuthSession): Promise<void> => {
   await useAuthStore.getState().setSession(session);
 };
 
+export const setAuthSessionUser = (user: AuthSession['user']): void => {
+  useAuthStore.getState().setUser(user);
+};
+
 export const clearAuthSession = async (): Promise<void> => {
   await useAuthStore.getState().clearSession();
 };
