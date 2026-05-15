@@ -308,7 +308,7 @@ export default function HomeScreen() {
 
         {!notificationsLoading && recentActivity.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Your activity will appear here</Text>
+            <Text style={styles.emptyTitle}>Space Activity</Text>
             <Text style={styles.emptyBody}>
               Deposits, withdrawals, approvals and other space updates will appear here.
             </Text>

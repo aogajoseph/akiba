@@ -261,7 +261,7 @@ export default function SpaceDashboardScreen() {
               <Pressable
                 onPress={() => pushSpaceRoute('transactions')}
                 style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>View Transactions</Text>
+                <Text style={styles.placeholderButtonText}>Transact</Text>
               </Pressable>
               <Pressable
                 onPress={() => pushSpaceRoute('chat')}

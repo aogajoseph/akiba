@@ -116,6 +116,9 @@ type ChatListItem =
 const DEFAULT_COMPOSER_HEIGHT = 74;
 const EXTRA_SCROLL_PADDING = 16;
 const ACTION_TRAY_HEIGHT = 220;
+const BOTTOM_MESSAGE_COMFORT_PADDING = 16;
+const MIN_INPUT_HEIGHT = 30;
+const MAX_INPUT_HEIGHT = 120;
 const MAX_SWIPE_DISTANCE = 88;
 const REPLY_SWIPE_THRESHOLD = 72;
 const TYPING_STOP_DELAY_MS = 900;
@@ -212,11 +215,7 @@ const renderMessageText = (text: string) => {
       return <AkibaLink key={`${part}-${index}`} url={part} />;
     }
 
-    return (
-      <Text key={`${part}-${index}`} style={styles.messageText}>
-        {part}
-      </Text>
-    );
+    return <Text key={`${part}-${index}`}>{part}</Text>;
   });
 };
 
@@ -354,7 +353,7 @@ const SwipeableMessageBubble = memo(function SwipeableMessageBubble({
   return (
     <Animated.View
       {...panResponder.panHandlers}
-      style={{ transform: [{ translateX }] }}>
+      style={[styles.swipeableMessageContainer, { transform: [{ translateX }] }]}>
       <Pressable
         onLongPress={() => onLongPress(message)}
         style={[
@@ -386,9 +385,9 @@ const SwipeableMessageBubble = memo(function SwipeableMessageBubble({
         ) : null}
         <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
         {message.text ? (
-          <View style={styles.messageTextWrapper}>
+          <Text style={styles.messageTextWrapper}>
             {renderMessageText(message.text)}
-          </View>
+          </Text>
         ) : null}
         {message.reactions.length > 0 ? (
           <View style={styles.reactionsContainer}>
@@ -448,6 +447,7 @@ export default function SpaceChatScreen() {
   const [error, setError] = useState<string | null>(null);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [composerHeight, setComposerHeight] = useState(DEFAULT_COMPOSER_HEIGHT);
+  const [draftInputHeight, setDraftInputHeight] = useState(MIN_INPUT_HEIGHT);
   const [spaceName, setSpaceName] = useState('Space Chat');
   const [spaceImageUrl, setSpaceImageUrl] = useState<string | null>(null);
   const [spaceCreatorUserId, setSpaceCreatorUserId] = useState<string | null>(null);
@@ -487,10 +487,12 @@ export default function SpaceChatScreen() {
   const hasUserInteractedWithLatestRef = useRef(false);
   const hasConnectedOnceRef = useRef(false);
   const previousLatestMessageIdRef = useRef<string | null>(null);
+  const olderMessagesLoadTriggeredRef = useRef(false);
+  const hasPerformedInitialScrollRef = useRef(false);
 
   const scrollToBottom = useCallback((animated = true) => {
     requestAnimationFrame(() => {
-      messagesListRef.current?.scrollToOffset({ animated, offset: 0 });
+      messagesListRef.current?.scrollToEnd({ animated });
     });
   }, []);
 
@@ -554,7 +556,9 @@ export default function SpaceChatScreen() {
     setLastReadAt(null);
     lastMarkedReadAtRef.current = null;
     hasUserInteractedWithLatestRef.current = false;
+    hasPerformedInitialScrollRef.current = false;
     isNearBottomRef.current = true;
+    olderMessagesLoadTriggeredRef.current = false;
     setNewMessagesDividerMessageId(null);
   }, [spaceId]);
 
@@ -1120,7 +1124,11 @@ export default function SpaceChatScreen() {
   );
   const composerBottom = keyboardHeight > 0 ? keyboardHeight - insets.bottom : 0;
   const messagesBottomPadding =
-    composerHeight + keyboardHeight + EXTRA_SCROLL_PADDING + TYPING_INDICATOR_RESERVE;
+    composerHeight +
+    composerBottom +
+    Math.max(insets.bottom, EXTRA_SCROLL_PADDING) +
+    BOTTOM_MESSAGE_COMFORT_PADDING +
+    TYPING_INDICATOR_RESERVE;
   const isCreator = currentUserId !== null && currentUserId === spaceCreatorUserId;
   const currentMembership = members.find((member) => member.userId === currentUserId) ?? null;
   const canDeleteSelectedMessage =
@@ -1564,6 +1572,7 @@ export default function SpaceChatScreen() {
         return left.id.localeCompare(right.id);
       }));
       setDraft('');
+      setDraftInputHeight(MIN_INPUT_HEIGHT);
       setSelectedAttachment(null);
       setReplyTargetMessage(null);
       void notifyStopTyping();
@@ -1584,7 +1593,7 @@ export default function SpaceChatScreen() {
         return (
           <View style={styles.newMessagesDividerContainer}>
             <View style={styles.newMessagesDividerLine} />
-            <Text style={styles.newMessagesDividerText}>NEW MESSAGES</Text>
+            <Text style={styles.newMessagesDividerText}>NEW</Text>
             <View style={styles.newMessagesDividerLine} />
           </View>
         );
@@ -1691,24 +1700,49 @@ export default function SpaceChatScreen() {
             <FlatList
               ref={messagesListRef}
               data={chatListItems}
-              inverted
               initialNumToRender={24}
               keyExtractor={keyExtractor}
               keyboardShouldPersistTaps="handled"
-              ListFooterComponent={renderOlderMessagesLoader}
+              ListHeaderComponent={renderOlderMessagesLoader}
               maxToRenderPerBatch={12}
-              onEndReached={() => {
-                void loadOlderMessages();
+              onContentSizeChange={() => {
+                if (messages.length === 0 || loadingOlderMessages) {
+                  return;
+                }
+
+                if (!hasPerformedInitialScrollRef.current) {
+                  hasPerformedInitialScrollRef.current = true;
+                  scrollToBottom(false);
+                  return;
+                }
+
+                if (isNearBottomRef.current) {
+                  scrollToBottom(false);
+                }
               }}
-              onEndReachedThreshold={0.2}
               onMomentumScrollBegin={() => {
                 hasUserInteractedWithLatestRef.current = true;
               }}
               onScroll={(event) => {
-                const { contentOffset } = event.nativeEvent;
-                const isNearBottom = contentOffset.y < 80;
+                const {
+                  contentOffset,
+                  contentSize,
+                  layoutMeasurement,
+                } = event.nativeEvent;
+                const distanceFromBottom =
+                  contentSize.height - layoutMeasurement.height - contentOffset.y;
+                const isNearBottom = distanceFromBottom < 80;
 
                 isNearBottomRef.current = isNearBottom;
+
+                if (contentOffset.y <= 120) {
+                  if (!olderMessagesLoadTriggeredRef.current) {
+                    olderMessagesLoadTriggeredRef.current = true;
+                    void loadOlderMessages();
+                  }
+                } else if (contentOffset.y > 160) {
+                  olderMessagesLoadTriggeredRef.current = false;
+                }
 
                 if (isNearBottom && hasUserInteractedWithLatestRef.current) {
                   void markVisibleMessagesRead();
@@ -1738,8 +1772,8 @@ export default function SpaceChatScreen() {
               contentContainerStyle={[
                 styles.messagesContainer,
                 {
-                  paddingBottom: 16,
-                  paddingTop: messagesBottomPadding,
+                  paddingBottom: messagesBottomPadding,
+                  paddingTop: 16,
                 },
               ]}
               windowSize={9}
@@ -1870,9 +1904,20 @@ export default function SpaceChatScreen() {
                 <TextInput
                   multiline
                   onChangeText={handleDraftChange}
+                  onContentSizeChange={(event) => {
+                    const nextHeight = Math.max(
+                      MIN_INPUT_HEIGHT,
+                      Math.min(MAX_INPUT_HEIGHT, Math.ceil(event.nativeEvent.contentSize.height)),
+                    );
+
+                    if (nextHeight !== draftInputHeight) {
+                      setDraftInputHeight(nextHeight);
+                    }
+                  }}
                   placeholder="Type here..."
                   placeholderTextColor="#94a3b8"
-                  style={styles.input}
+                  scrollEnabled={draftInputHeight >= MAX_INPUT_HEIGHT}
+                  style={[styles.input, { height: draftInputHeight }]}
                   textAlignVertical="top"
                   value={draft}
                 />
@@ -2110,6 +2155,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     width: '100%',
   },
+  swipeableMessageContainer: {
+    flexShrink: 1,
+    maxWidth: '100%',
+  },
   currentUserRow: {
     justifyContent: 'flex-end',
   },
@@ -2138,6 +2187,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     gap: 6,
     maxWidth: '82%',
+    minWidth: 0,
     padding: 10,
     overflow: 'hidden',
   },
@@ -2237,15 +2287,14 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '600',
   },
-  messageText: {
+  messageTextWrapper: {
     color: '#132238',
     flexShrink: 1,
+    flexWrap: 'wrap',
     fontSize: 15,
     lineHeight: 22,
-  },
-  messageTextWrapper: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    minWidth: 0,
+    width: '100%',
   },
   reactionsContainer: {
     flexDirection: 'row',
@@ -2414,23 +2463,29 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 10,
     minHeight: 46,
+    maxHeight: 136,
     paddingLeft: 12,
     paddingRight: 16,
-    paddingVertical: 8,
+    paddingVertical: 6,
   },
   attachButton: {
     alignItems: 'center',
-    height: 30,
+    alignSelf: 'flex-end',
+    height: 32,
     justifyContent: 'center',
+    marginBottom: 2,
     width: 24,
   },
   input: {
+    alignSelf: 'stretch',
     color: '#132238',
     flex: 1,
     fontSize: 15,
-    maxHeight: 120,
-    minHeight: 30,
-    paddingVertical: 4,
+    lineHeight: 22,
+    maxHeight: MAX_INPUT_HEIGHT,
+    minHeight: MIN_INPUT_HEIGHT,
+    paddingBottom: 4,
+    paddingTop: 4,
   },
   sendButton: {
     alignItems: 'center',

@@ -29,12 +29,12 @@ export default function InviteMembersModal({
             <Text style={styles.modalButtonText}>From Contacts</Text>
           </Pressable>
 
-          <Pressable onPress={onCopyLink} style={styles.modalButton}>
-            <Text style={styles.modalButtonText}>Copy Invite Link</Text>
+          <Pressable onPress={onShareSpace} style={styles.modalButton}>
+            <Text style={styles.modalButtonText}>Share this Space</Text>
           </Pressable>
 
-          <Pressable onPress={onShareSpace} style={styles.modalButton}>
-            <Text style={styles.modalButtonText}>Share Space</Text>
+          <Pressable onPress={onCopyLink} style={styles.modalButton}>
+            <Text style={styles.modalButtonText}>Copy Invite Link</Text>
           </Pressable>
 
           <Pressable onPress={onClose} style={styles.modalCancel}>
