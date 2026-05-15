@@ -1,5 +1,4 @@
 import { Ionicons } from '@expo/vector-icons';
-import { useNavigation } from '@react-navigation/native';
 import { useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { useState } from 'react';
@@ -10,7 +9,6 @@ import { useNotificationsStore } from '@/src/store/notificationsStore';
 import { timeAgo } from '@/src/utils/timeAgo';
 
 export default function AppHeader() {
-  const navigation = useNavigation<{ openDrawer: () => void }>();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const { notifications, unreadCount, fetchNotifications, markAsRead } = useNotificationsStore();
@@ -23,24 +21,20 @@ export default function AppHeader() {
     <SafeAreaView edges={['top']} style={styles.safeArea}>
       <View style={styles.headerWrapper}>
         <View style={styles.container}>
-          <View style={styles.side}>
-            <Pressable onPress={() => navigation.openDrawer()} style={styles.iconButton}>
-              <Ionicons color="#132238" name="menu-outline" size={24} />
-            </Pressable>
+          {/* Drawer trigger intentionally removed for simplified v1 header.
+              Drawer infrastructure is preserved for future expansion. */}
+          <View style={styles.brand}>
+            <Image
+              resizeMode="contain"
+              source={require('../assets/images/logo.png')}
+              style={styles.logo}
+            />
+            <Text style={styles.brandText}>Akiba</Text>
           </View>
 
-          <View pointerEvents="none" style={styles.centerWrap}>
-            <View style={styles.brand}>
-              <Image
-                resizeMode="contain"
-                source={require('../assets/images/logo.png')}
-                style={styles.logo}
-              />
-              <Text style={styles.brandText}>Akiba</Text>
-            </View>
-          </View>
+          <View pointerEvents="none" style={styles.spacer} />
 
-          <View style={[styles.side, styles.sideRight]}>
+          <View style={styles.rightSection}>
             <Pressable onPress={() => setOpen((prev) => !prev)} style={styles.iconButton}>
               <View style={styles.notificationWrap}>
                 <Ionicons color="#132238" name="notifications-outline" size={24} />
@@ -173,18 +167,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     height: 60,
-    justifyContent: 'space-between',
     paddingHorizontal: 16,
     position: 'relative',
   },
-  side: {
-    alignItems: 'flex-start',
+  spacer: {
+    flex: 1,
+  },
+  rightSection: {
+    alignItems: 'flex-end',
     justifyContent: 'center',
     width: 44,
     zIndex: 1,
-  },
-  sideRight: {
-    alignItems: 'flex-end',
   },
   iconButton: {
     alignItems: 'center',
@@ -295,15 +288,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     fontWeight: '700',
     textAlign: 'center',
-  },
-  centerWrap: {
-    alignItems: 'center',
-    bottom: 0,
-    justifyContent: 'center',
-    left: 60,
-    position: 'absolute',
-    right: 60,
-    top: 0,
   },
   brand: {
     alignItems: 'center',
