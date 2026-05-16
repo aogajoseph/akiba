@@ -308,7 +308,6 @@ export default function HomeScreen() {
 
         {!notificationsLoading && recentActivity.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Space Activity</Text>
             <Text style={styles.emptyBody}>
               Deposits, withdrawals, approvals and other space updates will appear here.
             </Text>
@@ -371,12 +370,12 @@ const styles = StyleSheet.create({
   },
   greeting: {
     color: '#99f6e4',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '700',
   },
   heroSubtitle: {
     color: '#d7e3f1',
-    fontSize: 14,
+    fontSize: 18,
     lineHeight: 21,
   },
   heroStatsRow: {

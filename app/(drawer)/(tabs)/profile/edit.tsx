@@ -11,6 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { updateProfile } from '@/services/authService';
+import { useUsernameAvailability } from '@/src/hooks/useUsernameAvailability';
 import { useAuthStore } from '@/src/store/authStore';
 import { ApiError } from '@/utils/api';
 
@@ -21,6 +22,9 @@ export default function EditProfileScreen() {
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput | null>(null);
+  const availability = useUsernameAvailability(username, {
+    initialUsername: sessionUser?.username,
+  });
 
   useEffect(() => {
     setUsername(sessionUser?.username ?? '');
@@ -31,6 +35,16 @@ export default function EditProfileScreen() {
     trimmedUsername.length > 0 && !saving && trimmedUsername !== (sessionUser?.username ?? '');
 
   const handleSave = async () => {
+    if (availability.validationError) {
+      setError(availability.validationError);
+      return;
+    }
+
+    if (availability.available === false) {
+      setError('That username is already taken.');
+      return;
+    }
+
     if (!canSave) {
       if (!trimmedUsername) {
         setError('Username is required.');
@@ -79,6 +93,30 @@ export default function EditProfileScreen() {
             <Text style={styles.readOnlyHint}>
               Use 3-20 lowercase letters, numbers, underscores, or periods.
             </Text>
+            {availability.validationError ? (
+              <Text style={styles.errorText}>{availability.validationError}</Text>
+            ) : availability.checking ? (
+              <Text style={styles.neutralText}>Checking username...</Text>
+            ) : availability.available === true && trimmedUsername !== (sessionUser?.username ?? '') ? (
+              <Text style={styles.successText}>Username available.</Text>
+            ) : availability.available === false ? (
+              <>
+                <Text style={styles.errorText}>That username is already taken.</Text>
+                {availability.suggestions.length > 0 ? (
+                  <View style={styles.suggestionsRow}>
+                    {availability.suggestions.map((suggestion) => (
+                      <Pressable
+                        key={suggestion}
+                        onPress={() => setUsername(suggestion)}
+                        style={styles.suggestionChip}>
+                        <Text style={styles.suggestionChipText}>@{suggestion}</Text>
+                      </Pressable>
+                    ))}
+                  </View>
+                ) : null}
+              </>
+            ) : null}
+            {availability.error ? <Text style={styles.errorText}>{availability.error}</Text> : null}
           </View>
 
           <View style={styles.readOnlyCard}>
@@ -198,6 +236,30 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '600',
     lineHeight: 20,
+  },
+  neutralText: {
+    color: '#64748b',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  suggestionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    marginTop: 2,
+  },
+  suggestionChip: {
+    backgroundColor: '#edf7f5',
+    borderColor: '#cde8e3',
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  suggestionChipText: {
+    color: '#0f766e',
+    fontSize: 12,
+    fontWeight: '700',
   },
   button: {
     alignItems: 'center',

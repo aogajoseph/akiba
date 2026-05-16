@@ -1,5 +1,5 @@
-import { Link, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { Link, router } from 'expo-router';
+import { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -12,42 +12,52 @@ import {
   View,
 } from 'react-native';
 
-import { LoginRequestDto } from '../../../shared/contracts';
-import { login } from '../../services/authService';
 import AuthBrand from '../../src/components/auth/AuthBrand';
-import {
-  clearPendingInvite,
-  consumePendingInviteAndJoin,
-} from '../../src/services/pendingInvite';
+import { requestPasswordReset } from '../../services/authService';
 import { ApiError } from '../../utils/api';
 
-export default function LoginScreen() {
-  const router = useRouter();
-  const [form, setForm] = useState<LoginRequestDto>({
-    identifier: '',
-    password: '',
-  });
+const RESEND_COOLDOWN_SECONDS = 30;
+
+export default function ForgotPasswordScreen() {
+  const [phoneNumber, setPhoneNumber] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) {
+      return;
+    }
+
+    const timeout = setTimeout(() => {
+      setCooldown((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => clearTimeout(timeout);
+  }, [cooldown]);
 
   const handleSubmit = async () => {
+    if (cooldown > 0 || loading) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      await login({
-        identifier: form.identifier.trim(),
-        password: form.password,
+      await requestPasswordReset({
+        phoneNumber: phoneNumber.trim(),
       });
-      const joinedSpaceId = await consumePendingInviteAndJoin();
-      router.replace(joinedSpaceId ? `/spaces/${joinedSpaceId}` : '/home');
-
-      if (joinedSpaceId) {
-        await clearPendingInvite();
-      }
+      setCooldown(RESEND_COOLDOWN_SECONDS);
+      router.push({
+        pathname: '/(auth)/reset-password',
+        params: {
+          phoneNumber: phoneNumber.trim(),
+        },
+      });
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
-      setError(apiError.error ?? 'Unable to log in right now.');
+      setError(apiError.error ?? 'Unable to send a reset code right now.');
     } finally {
       setLoading(false);
     }
@@ -60,63 +70,50 @@ export default function LoginScreen() {
         style={styles.container}>
         <View style={styles.card}>
           <AuthBrand color="#0f766e" />
-          <Text style={styles.title}>Welcome back</Text>
+          <Text style={styles.title}>Reset your password</Text>
+          <Text style={styles.subtitle}>
+            Enter your phone number and we&apos;ll send you a verification code on WhatsApp.
+          </Text>
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Username or phone number</Text>
+              <Text style={styles.label}>Phone number</Text>
               <TextInput
-                autoCapitalize="none"
-                autoCorrect={false}
-                onChangeText={(value) => setForm((current) => ({ ...current, identifier: value }))}
-                placeholder="Username or phone number"
+                keyboardType="phone-pad"
+                onChangeText={setPhoneNumber}
+                placeholder="+254700000000"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
-                value={form.identifier}
+                value={phoneNumber}
               />
-            </View>
-
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                autoCapitalize="none"
-                onChangeText={(value) => setForm((current) => ({ ...current, password: value }))}
-                placeholder="Enter your password"
-                placeholderTextColor="#7c8b9b"
-                secureTextEntry
-                style={styles.input}
-                value={form.password}
-              />
-            </View>
-
-            <View style={styles.inlineActionRow}>
-              <Link href="/(auth)/forgot-password" style={styles.inlineActionLink}>
-                Forgot Password?
-              </Link>
             </View>
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
             <Pressable
-              disabled={loading}
-              onPress={handleSubmit}
+              disabled={loading || cooldown > 0}
+              onPress={() => {
+                void handleSubmit();
+              }}
               style={({ pressed }) => [
                 styles.button,
-                pressed && !loading ? styles.buttonPressed : null,
-                loading ? styles.buttonDisabled : null,
+                pressed && !loading && cooldown === 0 ? styles.buttonPressed : null,
+                loading || cooldown > 0 ? styles.buttonDisabled : null,
               ]}>
               {loading ? (
                 <ActivityIndicator color="#f7f3ea" />
               ) : (
-                <Text style={styles.buttonText}>Log in</Text>
+                <Text style={styles.buttonText}>
+                  {cooldown > 0 ? `Resend in ${cooldown}s` : 'Send OTP'}
+                </Text>
               )}
             </Pressable>
           </View>
 
           <View style={styles.footerRow}>
-            <Text style={styles.footerText}>Need an account?</Text>
-            <Link href="/(auth)/register" style={styles.footerLink}>
-              Register
+            <Text style={styles.footerText}>Remembered your password?</Text>
+            <Link href="/(auth)/login" style={styles.footerLink}>
+              Log in
             </Link>
           </View>
         </View>
@@ -151,6 +148,12 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     marginTop: 10,
   },
+  subtitle: {
+    color: '#526172',
+    fontSize: 15,
+    lineHeight: 22,
+    marginTop: 8,
+  },
   form: {
     gap: 16,
     marginTop: 24,
@@ -178,21 +181,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
-  inlineActionRow: {
-    alignItems: 'flex-end',
-  },
-  inlineActionLink: {
-    color: '#0f766e',
-    fontSize: 13,
-    fontWeight: '700',
-  },
   button: {
     alignItems: 'center',
     backgroundColor: '#0f766e',
     borderRadius: 16,
-    minHeight: 52,
     justifyContent: 'center',
-    marginTop: 6,
+    minHeight: 52,
   },
   buttonPressed: {
     opacity: 0.9,

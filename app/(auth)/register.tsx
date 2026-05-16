@@ -14,6 +14,8 @@ import {
 
 import { RegisterRequestDto } from '../../../shared/contracts';
 import { register } from '../../services/authService';
+import AuthBrand from '../../src/components/auth/AuthBrand';
+import { useUsernameAvailability } from '../../src/hooks/useUsernameAvailability';
 import {
   clearPendingInvite,
   consumePendingInviteAndJoin,
@@ -29,6 +31,7 @@ export default function RegisterScreen() {
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const availability = useUsernameAvailability(form.username);
 
   const handleChange = (field: keyof RegisterRequestDto, value: string) => {
     setForm((current) => ({
@@ -38,6 +41,16 @@ export default function RegisterScreen() {
   };
 
   const handleSubmit = async () => {
+    if (availability.validationError) {
+      setError(availability.validationError);
+      return;
+    }
+
+    if (availability.available === false) {
+      setError('That username is already taken.');
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
@@ -67,9 +80,9 @@ export default function RegisterScreen() {
         behavior={Platform.select({ ios: 'padding', default: undefined })}
         style={styles.container}>
         <View style={styles.card}>
-          <Text style={styles.eyebrow}>Akiba</Text>
-          <Text style={styles.title}>Create your account</Text>
-          <Text style={styles.subtitle}>Start saving together in shared spaces.</Text>
+          <AuthBrand color="#9a5d22" />
+          <Text style={styles.title}>Welcome</Text>
+          <Text style={styles.subtitle}>Save money together in shared spaces.</Text>
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
@@ -84,8 +97,32 @@ export default function RegisterScreen() {
                 value={form.username}
               />
               <Text style={styles.helperText}>
-                Use 3-20 lowercase letters, numbers, underscores, or periods.
+                Use 3-20 lowercase letters, numbers, underscores or periods.
               </Text>
+              {availability.validationError ? (
+                <Text style={styles.helperError}>{availability.validationError}</Text>
+              ) : availability.checking ? (
+                <Text style={styles.helperText}>Checking username...</Text>
+              ) : availability.available === true ? (
+                <Text style={styles.helperSuccess}>Username available</Text>
+              ) : availability.available === false ? (
+                <View style={styles.suggestionsBlock}>
+                  <Text style={styles.helperError}>That username is taken.</Text>
+                  {availability.suggestions.length > 0 ? (
+                    <View style={styles.suggestionsRow}>
+                      {availability.suggestions.map((suggestion) => (
+                        <Pressable
+                          key={suggestion}
+                          onPress={() => handleChange('username', suggestion)}
+                          style={styles.suggestionChip}>
+                          <Text style={styles.suggestionChipText}>@{suggestion}</Text>
+                        </Pressable>
+                      ))}
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+              {availability.error ? <Text style={styles.helperError}>{availability.error}</Text> : null}
             </View>
 
             <View style={styles.fieldGroup}>
@@ -164,18 +201,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 10 },
     elevation: 6,
   },
-  eyebrow: {
-    color: '#9a5d22',
-    fontSize: 12,
-    fontWeight: '700',
-    letterSpacing: 1.4,
-    marginBottom: 10,
-    textTransform: 'uppercase',
-  },
   title: {
     color: '#132238',
     fontSize: 30,
     fontWeight: '800',
+    marginTop: 10,
   },
   subtitle: {
     color: '#526172',
@@ -214,6 +244,38 @@ const styles = StyleSheet.create({
     color: '#6b7280',
     fontSize: 12,
     lineHeight: 18,
+  },
+  helperSuccess: {
+    color: '#0f766e',
+    fontSize: 12,
+    fontWeight: '600',
+    lineHeight: 18,
+  },
+  helperError: {
+    color: '#b42318',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  suggestionsBlock: {
+    gap: 8,
+  },
+  suggestionsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  suggestionChip: {
+    backgroundColor: '#edf3ef',
+    borderColor: '#d6e2db',
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+  },
+  suggestionChipText: {
+    color: '#164e63',
+    fontSize: 12,
+    fontWeight: '700',
   },
   button: {
     alignItems: 'center',
