@@ -20,19 +20,19 @@ import { useNotificationsStore } from '@/src/store/notificationsStore';
 import { timeAgo } from '@/src/utils/timeAgo';
 import { ApiError } from '@/utils/api';
 
-const getGreeting = (name?: string): string => {
+const getGreeting = (username?: string): string => {
   const hour = new Date().getHours();
-  const firstName = name?.trim().split(/\s+/)[0] ?? 'there';
+  const handle = username?.trim().replace(/^@+/, '') ?? 'there';
 
   if (hour < 12) {
-    return `Good morning, ${firstName}`;
+    return `Good morning, @${handle}`;
   }
 
   if (hour < 18) {
-    return `Good afternoon, ${firstName}`;
+    return `Good afternoon, @${handle}`;
   }
 
-  return `Good evening, ${firstName}`;
+  return `Good evening, @${handle}`;
 };
 
 const formatCurrency = (amount?: number): string => {
@@ -118,7 +118,7 @@ export default function HomeScreen() {
     }, [loadSpaces]),
   );
 
-  const greeting = getGreeting(sessionUser?.name);
+  const greeting = getGreeting(sessionUser?.username ?? sessionUser?.name);
   const totalAvailableBalance = useMemo(() => {
     return spaces.reduce((sum, space) => {
       if (typeof space.availableBalance === 'number') {

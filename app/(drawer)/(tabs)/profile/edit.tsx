@@ -16,23 +16,24 @@ import { ApiError } from '@/utils/api';
 
 export default function EditProfileScreen() {
   const sessionUser = useAuthStore((state) => state.session?.user ?? null);
-  const [name, setName] = useState(sessionUser?.name ?? '');
+  const [username, setUsername] = useState(sessionUser?.username ?? '');
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const inputRef = useRef<TextInput | null>(null);
 
   useEffect(() => {
-    setName(sessionUser?.name ?? '');
-  }, [sessionUser?.name]);
+    setUsername(sessionUser?.username ?? '');
+  }, [sessionUser?.username]);
 
-  const trimmedName = useMemo(() => name.trim(), [name]);
-  const canSave = trimmedName.length > 0 && !saving && trimmedName !== (sessionUser?.name ?? '');
+  const trimmedUsername = useMemo(() => username.trim().toLowerCase(), [username]);
+  const canSave =
+    trimmedUsername.length > 0 && !saving && trimmedUsername !== (sessionUser?.username ?? '');
 
   const handleSave = async () => {
     if (!canSave) {
-      if (!trimmedName) {
-        setError('Display name is required.');
+      if (!trimmedUsername) {
+        setError('Username is required.');
       }
       return;
     }
@@ -43,9 +44,9 @@ export default function EditProfileScreen() {
 
     try {
       await updateProfile({
-        name: trimmedName,
+        username: trimmedUsername,
       });
-      setSuccess('Profile updated successfully.');
+      setSuccess('Username updated successfully.');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to update your profile.');
@@ -60,32 +61,36 @@ export default function EditProfileScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Edit Profile</Text>
           <Text style={styles.subtitle}>
-            Update the display name shown to members across your spaces.
+            Update the username shown across Akiba.
           </Text>
 
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Display Name</Text>
+            <Text style={styles.label}>Username</Text>
             <TextInput
-              autoCapitalize="words"
-              onChangeText={setName}
-              placeholder="Jane Doe"
+              autoCapitalize="none"
+              autoCorrect={false}
+              onChangeText={setUsername}
+              placeholder="jane.doe"
               placeholderTextColor="#94a3b8"
               ref={inputRef}
               style={styles.input}
-              value={name}
+              value={username}
             />
-          </View>
-
-          <View style={styles.readOnlyCard}>
-            <Text style={styles.readOnlyLabel}>Username</Text>
-            <Text style={styles.readOnlyValue}>@{sessionUser?.username ?? 'username'}</Text>
-            <Text style={styles.readOnlyHint}>Usernames cannot be changed right now.</Text>
+            <Text style={styles.readOnlyHint}>
+              Use 3-20 lowercase letters, numbers, underscores, or periods.
+            </Text>
           </View>
 
           <View style={styles.readOnlyCard}>
             <Text style={styles.readOnlyLabel}>Phone Number</Text>
             <Text style={styles.readOnlyValue}>{sessionUser?.phoneNumber ?? 'Not available'}</Text>
             <Text style={styles.readOnlyHint}>Phone number changes are not available yet.</Text>
+          </View>
+
+          <View style={styles.readOnlyCard}>
+            <Text style={styles.readOnlyLabel}>Legacy Name</Text>
+            <Text style={styles.readOnlyValue}>{sessionUser?.name ?? 'Not available'}</Text>
+            <Text style={styles.readOnlyHint}>Kept internally for compatibility during migration.</Text>
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}

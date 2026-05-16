@@ -23,7 +23,6 @@ import { ApiError } from '../../utils/api';
 export default function RegisterScreen() {
   const router = useRouter();
   const [form, setForm] = useState<RegisterRequestDto>({
-    name: '',
     password: '',
     phoneNumber: '',
     username: '',
@@ -44,7 +43,6 @@ export default function RegisterScreen() {
 
     try {
       await register({
-        name: form.name.trim(),
         password: form.password,
         phoneNumber: form.phoneNumber.trim(),
         username: form.username.trim().toLowerCase(),
@@ -75,30 +73,18 @@ export default function RegisterScreen() {
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Name</Text>
-              <TextInput
-                autoCapitalize="words"
-                onChangeText={(value) => handleChange('name', value)}
-                placeholder="Jane Doe"
-                placeholderTextColor="#7c8b9b"
-                style={styles.input}
-                value={form.name}
-              />
-            </View>
-
-            <View style={styles.fieldGroup}>
               <Text style={styles.label}>Username</Text>
               <TextInput
                 autoCapitalize="none"
                 autoCorrect={false}
                 onChangeText={(value) => handleChange('username', value.replace(/\s+/g, '').toLowerCase())}
-                placeholder="jane_doe"
+                placeholder="jane.doe"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
                 value={form.username}
               />
               <Text style={styles.helperText}>
-                Lowercase letters, numbers, and underscores only.
+                Use 3-20 lowercase letters, numbers, underscores, or periods.
               </Text>
             </View>
 

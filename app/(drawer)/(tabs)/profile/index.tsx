@@ -52,14 +52,14 @@ export default function ProfileScreen() {
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
   const joinedLabel = formatJoinedDate(displayUser?.createdAt);
   const initials = useMemo(() => {
-    return (displayUser?.name ?? '')
+    return (displayUser?.username ?? displayUser?.name ?? '')
       .trim()
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2)
       .map((part) => part.charAt(0).toUpperCase())
       .join('');
-  }, [displayUser?.name]);
+  }, [displayUser?.name, displayUser?.username]);
 
   const loadProfile = useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
     if (mode === 'refresh') {
@@ -137,18 +137,18 @@ export default function ProfileScreen() {
             )}
           </View>
           <View style={styles.heroBody}>
-            <Text style={styles.heroTitle}>{displayUser?.name ?? 'Your account'}</Text>
+            <Text style={styles.heroTitle}>@{displayUser?.username ?? 'username'}</Text>
             <Text style={styles.heroHandle}>
-              @{displayUser?.username ?? 'username'}
-            </Text>
-            <Text style={styles.heroSubtitle}>
               {displayUser?.phoneNumber ?? 'Phone number unavailable'}
             </Text>
+            <Text style={styles.heroSubtitle}>{joinedLabel}</Text>
             <View style={styles.badge}>
               <Ionicons color="#0f766e" name="shield-checkmark-outline" size={14} />
               <Text style={styles.badgeText}>Secure session active</Text>
             </View>
-            <Text style={styles.joinedText}>{joinedLabel}</Text>
+            {displayUser?.name && displayUser.name !== displayUser.username ? (
+              <Text style={styles.joinedText}>Legacy name: {displayUser.name}</Text>
+            ) : null}
           </View>
         </View>
 
@@ -165,7 +165,7 @@ export default function ProfileScreen() {
           <ProfileRow
             icon="create-outline"
             onPress={() => router.push('/profile/edit')}
-            subtitle="Update the name shown across your spaces"
+            subtitle="Update your username across Akiba"
             title="Edit Profile"
           />
           <View style={styles.divider} />

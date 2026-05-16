@@ -220,11 +220,13 @@ export default function MembersScreen() {
     const loadingAction = actionMemberId === member.id;
 
     return (
-      <View key={member.id} style={[styles.memberCard, isAdmin ? styles.adminCard : null]}>
+        <View key={member.id} style={[styles.memberCard, isAdmin ? styles.adminCard : null]}>
         <View style={styles.memberHeader}>
           <View>
-            <Text style={styles.memberName}>{member.name}</Text>
-            <Text style={styles.memberUsername}>@{member.username}</Text>
+            <Text style={styles.memberName}>@{member.username}</Text>
+            {member.name && member.name !== `@${member.username}` && member.name !== member.username ? (
+              <Text style={styles.memberUsername}>{member.name}</Text>
+            ) : null}
             <Text style={styles.memberMeta}>{isAdmin ? 'Admin' : 'Member'}</Text>
           </View>
           {isCreatorMember ? <Text style={styles.creatorBadge}>Creator</Text> : null}

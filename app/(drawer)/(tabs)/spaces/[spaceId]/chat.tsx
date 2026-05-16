@@ -501,7 +501,10 @@ export default function SpaceChatScreen() {
 
   const currentSession = getAuthSession();
   const currentUserId = currentSession?.user.id ?? null;
-  const currentUserName = currentSession?.user.name ?? 'You';
+  const currentUserName =
+    (currentSession?.user.username ? `@${currentSession.user.username}` : null) ??
+    currentSession?.user.name ??
+    'You';
   const previousMessageSignatureRef = useRef('');
   const membersRef = useRef<SpaceMember[]>([]);
   const messagesRef = useRef<ChatMessage[]>([]);
@@ -915,7 +918,7 @@ export default function SpaceChatScreen() {
       const memberNames = new Map<string, string>(
         nextMembers.map((member: SpaceMember) => [
           member.userId,
-          formatParticipantLabel(member.name, member.username, member.userId),
+          formatParticipantLabel(undefined, member.username, member.userId),
         ]),
       );
 
@@ -1027,7 +1030,7 @@ export default function SpaceChatScreen() {
 
       const member = membersRef.current.find((item) => item.userId === senderUserId);
       return member
-        ? formatParticipantLabel(member.name, member.username, member.userId)
+        ? formatParticipantLabel(undefined, member.username, member.userId)
         : 'Unknown member';
     };
     const toRealtimeMessage = (message: Message): ChatMessage => ({
@@ -1270,7 +1273,7 @@ export default function SpaceChatScreen() {
                   (item) => item.userId === updatedMessage.senderUserId,
                 );
                 return member
-                  ? formatParticipantLabel(member.name, member.username, member.userId)
+                  ? formatParticipantLabel(undefined, member.username, member.userId)
                   : 'Unknown member';
               })(),
       };
@@ -1825,7 +1828,11 @@ export default function SpaceChatScreen() {
               <View style={styles.typingContainer}>
                 <Text style={styles.typingText}>
                   {typingUsers.length === 1
-                    ? `${typingUsers[0].name} is typing...`
+                    ? `${formatParticipantLabel(
+                        typingUsers[0].name,
+                        typingUsers[0].username,
+                        typingUsers[0].userId,
+                      )} is typing...`
                     : `${typingUsers.length} people are typing...`}
                 </Text>
               </View>

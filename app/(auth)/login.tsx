@@ -23,8 +23,8 @@ import { ApiError } from '../../utils/api';
 export default function LoginScreen() {
   const router = useRouter();
   const [form, setForm] = useState<LoginRequestDto>({
+    identifier: '',
     password: '',
-    phoneNumber: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -35,8 +35,8 @@ export default function LoginScreen() {
 
     try {
       await login({
+        identifier: form.identifier.trim(),
         password: form.password,
-        phoneNumber: form.phoneNumber.trim(),
       });
       const joinedSpaceId = await consumePendingInviteAndJoin();
       router.replace(joinedSpaceId ? `/spaces/${joinedSpaceId}` : '/home');
@@ -64,14 +64,15 @@ export default function LoginScreen() {
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Phone number</Text>
+              <Text style={styles.label}>Username or phone number</Text>
               <TextInput
-                keyboardType="phone-pad"
-                onChangeText={(value) => setForm((current) => ({ ...current, phoneNumber: value }))}
-                placeholder="+254700000000"
+                autoCapitalize="none"
+                autoCorrect={false}
+                onChangeText={(value) => setForm((current) => ({ ...current, identifier: value }))}
+                placeholder="@akiba_user or +254700000000"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
-                value={form.phoneNumber}
+                value={form.identifier}
               />
             </View>
 
