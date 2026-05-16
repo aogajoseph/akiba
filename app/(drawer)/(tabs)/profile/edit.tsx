@@ -77,6 +77,12 @@ export default function EditProfileScreen() {
           </View>
 
           <View style={styles.readOnlyCard}>
+            <Text style={styles.readOnlyLabel}>Username</Text>
+            <Text style={styles.readOnlyValue}>@{sessionUser?.username ?? 'username'}</Text>
+            <Text style={styles.readOnlyHint}>Usernames cannot be changed right now.</Text>
+          </View>
+
+          <View style={styles.readOnlyCard}>
             <Text style={styles.readOnlyLabel}>Phone Number</Text>
             <Text style={styles.readOnlyValue}>{sessionUser?.phoneNumber ?? 'Not available'}</Text>
             <Text style={styles.readOnlyHint}>Phone number changes are not available yet.</Text>

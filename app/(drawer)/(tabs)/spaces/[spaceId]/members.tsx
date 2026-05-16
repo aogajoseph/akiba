@@ -224,6 +224,7 @@ export default function MembersScreen() {
         <View style={styles.memberHeader}>
           <View>
             <Text style={styles.memberName}>{member.name}</Text>
+            <Text style={styles.memberUsername}>@{member.username}</Text>
             <Text style={styles.memberMeta}>{isAdmin ? 'Admin' : 'Member'}</Text>
           </View>
           {isCreatorMember ? <Text style={styles.creatorBadge}>Creator</Text> : null}
@@ -492,6 +493,12 @@ const styles = StyleSheet.create({
     color: '#132238',
     fontSize: 16,
     fontWeight: '700',
+  },
+  memberUsername: {
+    color: '#0f766e',
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: 2,
   },
   memberMeta: {
     color: '#6b7280',

@@ -23,6 +23,7 @@ import { ApiError } from '../../utils/api';
 export default function LoginScreen() {
   const router = useRouter();
   const [form, setForm] = useState<LoginRequestDto>({
+    password: '',
     phoneNumber: '',
   });
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,7 @@ export default function LoginScreen() {
 
     try {
       await login({
+        password: form.password,
         phoneNumber: form.phoneNumber.trim(),
       });
       const joinedSpaceId = await consumePendingInviteAndJoin();
@@ -65,11 +67,24 @@ export default function LoginScreen() {
               <Text style={styles.label}>Phone number</Text>
               <TextInput
                 keyboardType="phone-pad"
-                onChangeText={(value) => setForm({ phoneNumber: value })}
+                onChangeText={(value) => setForm((current) => ({ ...current, phoneNumber: value }))}
                 placeholder="+254700000000"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
                 value={form.phoneNumber}
+              />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                autoCapitalize="none"
+                onChangeText={(value) => setForm((current) => ({ ...current, password: value }))}
+                placeholder="Enter your password"
+                placeholderTextColor="#7c8b9b"
+                secureTextEntry
+                style={styles.input}
+                value={form.password}
               />
             </View>
 

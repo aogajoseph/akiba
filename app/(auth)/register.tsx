@@ -24,7 +24,9 @@ export default function RegisterScreen() {
   const router = useRouter();
   const [form, setForm] = useState<RegisterRequestDto>({
     name: '',
+    password: '',
     phoneNumber: '',
+    username: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -43,7 +45,9 @@ export default function RegisterScreen() {
     try {
       await register({
         name: form.name.trim(),
+        password: form.password,
         phoneNumber: form.phoneNumber.trim(),
+        username: form.username.trim().toLowerCase(),
       });
       const joinedSpaceId = await consumePendingInviteAndJoin();
       router.replace(joinedSpaceId ? `/spaces/${joinedSpaceId}` : '/home');
@@ -83,6 +87,22 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Username</Text>
+              <TextInput
+                autoCapitalize="none"
+                autoCorrect={false}
+                onChangeText={(value) => handleChange('username', value.replace(/\s+/g, '').toLowerCase())}
+                placeholder="jane_doe"
+                placeholderTextColor="#7c8b9b"
+                style={styles.input}
+                value={form.username}
+              />
+              <Text style={styles.helperText}>
+                Lowercase letters, numbers, and underscores only.
+              </Text>
+            </View>
+
+            <View style={styles.fieldGroup}>
               <Text style={styles.label}>Phone number</Text>
               <TextInput
                 keyboardType="phone-pad"
@@ -92,6 +112,20 @@ export default function RegisterScreen() {
                 style={styles.input}
                 value={form.phoneNumber}
               />
+            </View>
+
+            <View style={styles.fieldGroup}>
+              <Text style={styles.label}>Password</Text>
+              <TextInput
+                autoCapitalize="none"
+                onChangeText={(value) => handleChange('password', value)}
+                placeholder="At least 8 characters"
+                placeholderTextColor="#7c8b9b"
+                secureTextEntry
+                style={styles.input}
+                value={form.password}
+              />
+              <Text style={styles.helperText}>Use at least 8 characters.</Text>
             </View>
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -189,6 +223,11 @@ const styles = StyleSheet.create({
     color: '#b42318',
     fontSize: 14,
     lineHeight: 20,
+  },
+  helperText: {
+    color: '#6b7280',
+    fontSize: 12,
+    lineHeight: 18,
   },
   button: {
     alignItems: 'center',

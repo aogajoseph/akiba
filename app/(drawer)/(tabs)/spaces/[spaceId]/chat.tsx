@@ -141,6 +141,29 @@ const getReplySnippet = (value: string): string => {
   return `${normalized.slice(0, 87).trimEnd()}...`;
 };
 
+const formatParticipantLabel = (
+  name: string | undefined,
+  username: string | undefined,
+  fallback: string,
+): string => {
+  const trimmedName = name?.trim();
+  const trimmedUsername = username?.trim().replace(/^@+/, '');
+
+  if (trimmedName && trimmedUsername && trimmedName.toLowerCase() !== trimmedUsername.toLowerCase()) {
+    return `${trimmedName} · @${trimmedUsername}`;
+  }
+
+  if (trimmedName) {
+    return trimmedName;
+  }
+
+  if (trimmedUsername) {
+    return `@${trimmedUsername}`;
+  }
+
+  return fallback;
+};
+
 const formatMessageTime = (value: string): string => {
   const date = new Date(value);
 
@@ -890,7 +913,10 @@ export default function SpaceChatScreen() {
       setMembers(nextMembers);
 
       const memberNames = new Map<string, string>(
-        nextMembers.map((member: SpaceMember) => [member.userId, member.name]),
+        nextMembers.map((member: SpaceMember) => [
+          member.userId,
+          formatParticipantLabel(member.name, member.username, member.userId),
+        ]),
       );
 
       const nextMessages = [...messagesResponse.messages]
@@ -999,7 +1025,10 @@ export default function SpaceChatScreen() {
         return currentUserName;
       }
 
-      return membersRef.current.find((member) => member.userId === senderUserId)?.name ?? 'Unknown member';
+      const member = membersRef.current.find((item) => item.userId === senderUserId);
+      return member
+        ? formatParticipantLabel(member.name, member.username, member.userId)
+        : 'Unknown member';
     };
     const toRealtimeMessage = (message: Message): ChatMessage => ({
       ...message,
@@ -1236,8 +1265,14 @@ export default function SpaceChatScreen() {
         senderName:
           updatedMessage.senderUserId === currentUserId
             ? currentUserName
-            : membersRef.current.find((member) => member.userId === updatedMessage.senderUserId)?.name ??
-              'Unknown member',
+            : (() => {
+                const member = membersRef.current.find(
+                  (item) => item.userId === updatedMessage.senderUserId,
+                );
+                return member
+                  ? formatParticipantLabel(member.name, member.username, member.userId)
+                  : 'Unknown member';
+              })(),
       };
 
       setMessages((current) =>

@@ -138,6 +138,9 @@ export default function ProfileScreen() {
           </View>
           <View style={styles.heroBody}>
             <Text style={styles.heroTitle}>{displayUser?.name ?? 'Your account'}</Text>
+            <Text style={styles.heroHandle}>
+              @{displayUser?.username ?? 'username'}
+            </Text>
             <Text style={styles.heroSubtitle}>
               {displayUser?.phoneNumber ?? 'Phone number unavailable'}
             </Text>
@@ -164,6 +167,12 @@ export default function ProfileScreen() {
             onPress={() => router.push('/profile/edit')}
             subtitle="Update the name shown across your spaces"
             title="Edit Profile"
+          />
+          <View style={styles.divider} />
+          <ProfileRow
+            icon="at-outline"
+            subtitle={`@${displayUser?.username ?? 'username'}`}
+            title="Username"
           />
           <View style={styles.divider} />
           <ProfileRow
@@ -293,6 +302,11 @@ const styles = StyleSheet.create({
   heroSubtitle: {
     color: '#d9e3ef',
     fontSize: 15,
+  },
+  heroHandle: {
+    color: '#99f6e4',
+    fontSize: 14,
+    fontWeight: '700',
   },
   badge: {
     alignItems: 'center',
