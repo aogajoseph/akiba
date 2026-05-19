@@ -79,13 +79,17 @@ export default function ForgotPasswordScreen() {
             <View style={styles.fieldGroup}>
               <Text style={styles.label}>Phone number</Text>
               <TextInput
+                autoCorrect={false}
                 keyboardType="phone-pad"
-                onChangeText={setPhoneNumber}
+                onChangeText={(value) => setPhoneNumber(value.trimStart())}
                 placeholder="+254700000000"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
                 value={phoneNumber}
               />
+              <Text style={styles.helperText}>
+                Include country code if outside your default region.
+              </Text>
             </View>
 
             {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -175,6 +179,11 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  helperText: {
+    color: '#6b7280',
+    fontSize: 12,
+    lineHeight: 18,
   },
   errorText: {
     color: '#b42318',

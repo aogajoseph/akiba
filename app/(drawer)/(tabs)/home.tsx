@@ -370,12 +370,12 @@ const styles = StyleSheet.create({
   },
   greeting: {
     color: '#99f6e4',
-    fontSize: 14,
+    fontSize: 18,
     fontWeight: '700',
   },
   heroSubtitle: {
     color: '#d7e3f1',
-    fontSize: 18,
+    fontSize: 14,
     lineHeight: 21,
   },
   heroStatsRow: {
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   },
   emptyTitle: {
     color: '#132238',
-    fontSize: 18,
+    fontSize: 14,
     fontWeight: '800',
   },
   emptyBody: {

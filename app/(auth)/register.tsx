@@ -129,12 +129,15 @@ export default function RegisterScreen() {
               <Text style={styles.label}>Phone number</Text>
               <TextInput
                 keyboardType="phone-pad"
-                onChangeText={(value) => handleChange('phoneNumber', value)}
+                onChangeText={(value) => handleChange('phoneNumber', value.trimStart())}
                 placeholder="+254700000000"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
                 value={form.phoneNumber}
               />
+              <Text style={styles.helperText}>
+                Include country code if outside your default region.
+              </Text>
             </View>
 
             <View style={styles.fieldGroup}>
