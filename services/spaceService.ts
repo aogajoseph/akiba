@@ -7,6 +7,7 @@ import {
   DeleteGroupResponseDto,
   DeleteMessageResponseDto,
   GetGroupResponseDto,
+  GetSpaceNotificationPreferenceResponseDto,
   GetSpaceSummaryResponseDto,
   GetTransactionsSummaryResponseDto,
   LeaveGroupResponseDto,
@@ -24,6 +25,7 @@ import {
   TransactionSource,
   UpdateGroupRequestDto,
   UpdateGroupResponseDto,
+  UpdateSpaceNotificationPreferenceResponseDto,
   UploadMediaMessageResponseDto,
 } from '../../shared/contracts';
 import { api } from '../utils/api';
@@ -90,6 +92,26 @@ export const getMembers = async (
   spaceId: string,
 ): Promise<ListGroupMembersResponseDto> => {
   const response = await api.get<{ data: ListGroupMembersResponseDto }>(`/spaces/${spaceId}/members`);
+  return response.data.data;
+};
+
+export const getSpaceNotificationPreference = async (
+  spaceId: string,
+): Promise<GetSpaceNotificationPreferenceResponseDto> => {
+  const response = await api.get<{ data: GetSpaceNotificationPreferenceResponseDto }>(
+    `/spaces/${spaceId}/notification-preference`,
+  );
+  return response.data.data;
+};
+
+export const updateSpaceNotificationPreference = async (
+  spaceId: string,
+  muted: boolean,
+): Promise<UpdateSpaceNotificationPreferenceResponseDto> => {
+  const response = await api.patch<{ data: UpdateSpaceNotificationPreferenceResponseDto }>(
+    `/spaces/${spaceId}/notification-preference`,
+    { muted },
+  );
   return response.data.data;
 };
 

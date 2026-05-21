@@ -4,7 +4,6 @@ import { router, Stack, useFocusEffect } from 'expo-router';
 import { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -88,10 +87,6 @@ export default function ProfileScreen() {
     }, [loadProfile, user]),
   );
 
-  const handlePlaceholderPress = (title: string) => {
-    Alert.alert(title, 'This section will be expanded in a later update.');
-  };
-
   const handleLogout = async () => {
     if (loggingOut) {
       return;
@@ -165,7 +160,7 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
           <ProfileRow
             icon="at-outline"
-            subtitle={`${normalizedUsername}`}
+            subtitle={`@${normalizedUsername}`}
             title="Username"
           />
           <View style={styles.divider} />
@@ -177,7 +172,7 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
           <ProfileRow
             icon="mail-outline"
-            subtitle="(Coming Soon)"
+            subtitle="Email support coming soon"
             title="Email"
             trailing={<Text style={styles.placeholderValue}>Not Available</Text>}
           />
@@ -196,22 +191,22 @@ export default function ProfileScreen() {
         <ProfileSection title="Preferences">
           <ProfileRow
             icon="notifications-outline"
-            onPress={() => handlePlaceholderPress('Notifications')}
+            onPress={() => router.push('/profile/notifications')}
             subtitle="Manage alerts and updates"
             title="Notifications"
           />
           <View style={styles.divider} />
           <ProfileRow
             icon="color-palette-outline"
-            onPress={() => handlePlaceholderPress('Appearance')}
-            subtitle="(Coming Soon)"
+            // onPress={() => handlePlaceholderPress('Appearance')}
+            subtitle="Appearance settings coming soon"
             title="Appearance"
           />
           <View style={styles.divider} />
           <ProfileRow
             icon="language-outline"
-            onPress={() => handlePlaceholderPress('Language')}
-            subtitle="(Coming Soon)"
+            // onPress={() => handlePlaceholderPress('Language')}
+            subtitle="Language settings coming soon"
             title="Language"
           />
         </ProfileSection>
@@ -226,23 +221,31 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
           <ProfileRow
             icon="help-buoy-outline"
-            onPress={() => handlePlaceholderPress('Help & Support')}
+            onPress={() => router.push('/profile/help-support')}
             subtitle="Get help with your spaces or account"
             title="Help & Support"
           />
           <View style={styles.divider} />
           <ProfileRow
             icon="document-text-outline"
-            onPress={() => handlePlaceholderPress('Privacy Policy')}
-            subtitle="Review how Akiba handles your data"
+            onPress={() => router.push('/profile/privacy')}
+            subtitle="Review how we handle your data"
             title="Privacy Policy"
           />
           <View style={styles.divider} />
           <ProfileRow
             icon="receipt-outline"
-            onPress={() => handlePlaceholderPress('Terms')}
-            subtitle="Review the current product terms"
-            title="Terms"
+            onPress={() => router.push('/profile/terms')}
+            subtitle="Review our current terms of service"
+            title="Terms & Conditions"
+          />
+          <View style={styles.divider} />
+          <ProfileRow
+            destructive
+            icon="trash-outline"
+            onPress={() => router.push('/profile/delete-account')}
+            subtitle="Learn how account deletion support will work"
+            title="Delete Account"
           />
         </ProfileSection>
       </ScrollView>
