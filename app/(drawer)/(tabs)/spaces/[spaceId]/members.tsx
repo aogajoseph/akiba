@@ -16,6 +16,8 @@ import {
 import { Group, SpaceAdmin, SpaceMember } from '../../../../../../shared/contracts';
 import FullScreenImageViewer from '@/components/FullScreenImageViewer';
 import InviteMembersModal from '@/components/InviteMembersModal';
+import AppAvatar from '@/src/components/identity/AppAvatar';
+import AvatarViewerModal from '@/src/components/identity/AvatarViewerModal';
 import {
   getAdmins,
   getMembers,
@@ -43,6 +45,10 @@ export default function MembersScreen() {
   const [inviteModalVisible, setInviteModalVisible] = useState(false);
   const [toastMessages, setToastMessages] = useState<ToastMessage[]>([]);
   const [viewerVisible, setViewerVisible] = useState(false);
+  const [memberAvatarViewer, setMemberAvatarViewer] = useState<{
+    avatarUrl?: string | null;
+    username: string;
+  } | null>(null);
   const toastTimeoutsRef = useRef<Record<number, ReturnType<typeof setTimeout>>>({});
 
   const currentUserId = getAuthSession()?.user.id ?? null;
@@ -220,14 +226,27 @@ export default function MembersScreen() {
     const loadingAction = actionMemberId === member.id;
 
     return (
-        <View key={member.id} style={[styles.memberCard, isAdmin ? styles.adminCard : null]}>
+      <View key={member.id} style={[styles.memberCard, isAdmin ? styles.adminCard : null]}>
         <View style={styles.memberHeader}>
-          <View>
+          <View style={styles.memberIdentity}>
+            <AppAvatar
+              avatarUrl={member.avatarUrl}
+              onPress={() =>
+                setMemberAvatarViewer({
+                  avatarUrl: member.avatarUrl,
+                  username: member.username,
+                })
+              }
+              size="medium"
+              username={member.username}
+            />
+            <View style={styles.memberTextBlock}>
             <Text style={styles.memberName}>@{member.username}</Text>
             {member.name && member.name !== `@${member.username}` && member.name !== member.username ? (
               <Text style={styles.memberUsername}>{member.name}</Text>
             ) : null}
             <Text style={styles.memberMeta}>{isAdmin ? 'Admin' : 'Member'}</Text>
+            </View>
           </View>
           {isCreatorMember ? <Text style={styles.creatorBadge}>Creator</Text> : null}
         </View>
@@ -294,10 +313,10 @@ export default function MembersScreen() {
               <View style={styles.emptyStateCard}>
                 <Text style={styles.emptyStateTitle}>You&apos;re the only one in this space</Text>
                 <Text style={styles.emptyStateText}>
-                  Add members and start saving together
+                  Invite others and start saving together
                 </Text>
                 <Pressable onPress={showInviteMembers} style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonText}>Add Members</Text>
+                  <Text style={styles.primaryButtonText}>Invite Members</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -366,6 +385,13 @@ export default function MembersScreen() {
         imageUrl={space?.imageUrl ?? null}
         onClose={() => setViewerVisible(false)}
         visible={viewerVisible}
+      />
+
+      <AvatarViewerModal
+        avatarUrl={memberAvatarViewer?.avatarUrl}
+        onClose={() => setMemberAvatarViewer(null)}
+        username={memberAvatarViewer?.username}
+        visible={memberAvatarViewer !== null}
       />
     </SafeAreaView>
   );
@@ -490,6 +516,15 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flexDirection: 'row',
     justifyContent: 'space-between',
+  },
+  memberIdentity: {
+    alignItems: 'center',
+    flex: 1,
+    flexDirection: 'row',
+    gap: 12,
+  },
+  memberTextBlock: {
+    flex: 1,
   },
   memberName: {
     color: '#132238',

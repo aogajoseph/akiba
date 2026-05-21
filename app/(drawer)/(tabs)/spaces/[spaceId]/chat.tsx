@@ -53,15 +53,21 @@ import {
 } from '../../../../../services/spaceService';
 import AkibaLink from '../../../../../components/AkibaLink';
 import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
+import AppAvatar from '../../../../../src/components/identity/AppAvatar';
+import AvatarViewerModal from '../../../../../src/components/identity/AvatarViewerModal';
 import { uploadImageToCloudinary } from '../../../../../src/services/cloudinary';
 import { api, ApiError, getAuthSession } from '../../../../../utils/api';
 
 type ChatMessage = Message & {
+  senderAvatarUrl?: string | null;
   senderName: string;
+  senderUsername?: string;
 };
 
 type ReplyPreview = {
+  avatarUrl?: string | null;
   senderName: string;
+  senderUsername?: string;
   text: string;
 };
 
@@ -309,10 +315,12 @@ function MessageMediaCard({
 
 type SwipeableMessageBubbleProps = {
   currentUserId: string | null;
+  currentUserUsername?: string;
   displayStatus: MessageStatus;
   isHighlighted: boolean;
   isCurrentUser: boolean;
   message: ChatMessage;
+  onAvatarPress: (username: string, avatarUrl?: string | null) => void;
   onLongPress: (message: ChatMessage) => void;
   onOpenMedia: (media: MessageMedia) => void;
   onReplyPress: (message: ChatMessage) => void;
@@ -323,10 +331,12 @@ type SwipeableMessageBubbleProps = {
 
 const SwipeableMessageBubble = memo(function SwipeableMessageBubble({
   currentUserId,
+  currentUserUsername,
   displayStatus,
   isHighlighted,
   isCurrentUser,
   message,
+  onAvatarPress,
   onLongPress,
   onOpenMedia,
   onReplyPress,
@@ -391,12 +401,27 @@ const SwipeableMessageBubble = memo(function SwipeableMessageBubble({
               styles.inlineReplyContainer,
               isCurrentUser ? styles.inlineReplyCurrentUser : styles.inlineReplyOtherUser,
             ]}>
-            <Text numberOfLines={1} style={styles.inlineReplySender}>
-              {replyPreview.senderName}
-            </Text>
-            <Text numberOfLines={2} style={styles.inlineReplyText}>
-              {replyPreview.text}
-            </Text>
+            <View style={styles.inlineReplyRow}>
+              <AppAvatar
+                avatarUrl={replyPreview.avatarUrl}
+                onPress={() =>
+                  onAvatarPress(
+                    replyPreview.senderUsername ?? replyPreview.senderName,
+                    replyPreview.avatarUrl,
+                  )
+                }
+                size="small"
+                username={replyPreview.senderUsername ?? replyPreview.senderName}
+              />
+              <View style={styles.inlineReplyTextBlock}>
+                <Text numberOfLines={1} style={styles.inlineReplySender}>
+                  {replyPreview.senderName}
+                </Text>
+                <Text numberOfLines={2} style={styles.inlineReplyText}>
+                  {replyPreview.text}
+                </Text>
+              </View>
+            </View>
           </Pressable>
         ) : null}
         {messageMedia ? (
@@ -406,7 +431,10 @@ const SwipeableMessageBubble = memo(function SwipeableMessageBubble({
             onSave={onSaveMedia}
           />
         ) : null}
-        <Text style={styles.senderName}>{isCurrentUser ? 'You' : message.senderName}</Text>
+        <Text style={styles.senderName}>
+          {isCurrentUser ? 'You' : message.senderName}
+          {isCurrentUser && currentUserUsername ? ` · @${currentUserUsername}` : ''}
+        </Text>
         {message.text ? (
           <Text style={styles.messageTextWrapper}>
             {renderMessageText(message.text)}
@@ -440,16 +468,20 @@ const SwipeableMessageBubble = memo(function SwipeableMessageBubble({
 }, (prevProps, nextProps) => {
   return (
     prevProps.currentUserId === nextProps.currentUserId &&
+    prevProps.currentUserUsername === nextProps.currentUserUsername &&
     prevProps.displayStatus === nextProps.displayStatus &&
     prevProps.isHighlighted === nextProps.isHighlighted &&
     prevProps.isCurrentUser === nextProps.isCurrentUser &&
     prevProps.message === nextProps.message &&
+    prevProps.onAvatarPress === nextProps.onAvatarPress &&
     prevProps.onLongPress === nextProps.onLongPress &&
     prevProps.onOpenMedia === nextProps.onOpenMedia &&
     prevProps.onReplyPress === nextProps.onReplyPress &&
     prevProps.onSaveMedia === nextProps.onSaveMedia &&
     prevProps.onReply === nextProps.onReply &&
+    prevProps.replyPreview?.avatarUrl === nextProps.replyPreview?.avatarUrl &&
     prevProps.replyPreview?.senderName === nextProps.replyPreview?.senderName &&
+    prevProps.replyPreview?.senderUsername === nextProps.replyPreview?.senderUsername &&
     prevProps.replyPreview?.text === nextProps.replyPreview?.text
   );
 });
@@ -486,6 +518,10 @@ export default function SpaceChatScreen() {
   const [typingUsers, setTypingUsers] = useState<TypingUser[]>([]);
   const [mediaViewer, setMediaViewer] = useState<MediaViewer | null>(null);
   const [avatarViewerVisible, setAvatarViewerVisible] = useState(false);
+  const [userAvatarViewer, setUserAvatarViewer] = useState<{
+    avatarUrl?: string | null;
+    username: string;
+  } | null>(null);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [showCopyToast, setShowCopyToast] = useState(false);
@@ -501,8 +537,10 @@ export default function SpaceChatScreen() {
 
   const currentSession = getAuthSession();
   const currentUserId = currentSession?.user.id ?? null;
+  const currentUserUsername = currentSession?.user.username?.trim().replace(/^@+/, '') ?? null;
+  const currentUserAvatarUrl = currentSession?.user.avatarUrl ?? null;
   const currentUserName =
-    (currentSession?.user.username ? `@${currentSession.user.username}` : null) ??
+    (currentUserUsername ? `@${currentUserUsername}` : null) ??
     currentSession?.user.name ??
     'You';
   const previousMessageSignatureRef = useRef('');
@@ -915,10 +953,21 @@ export default function SpaceChatScreen() {
       setSpaceCreatorUserId(space?.createdByUserId ?? null);
       setMembers(nextMembers);
 
-      const memberNames = new Map<string, string>(
+      const memberIdentity = new Map<
+        string,
+        {
+          avatarUrl?: string | null;
+          senderName: string;
+          senderUsername: string;
+        }
+      >(
         nextMembers.map((member: SpaceMember) => [
           member.userId,
-          formatParticipantLabel(undefined, member.username, member.userId),
+          {
+            avatarUrl: member.avatarUrl ?? null,
+            senderName: formatParticipantLabel(undefined, member.username, member.userId),
+            senderUsername: member.username,
+          },
         ]),
       );
 
@@ -932,7 +981,9 @@ export default function SpaceChatScreen() {
           media: message.media ?? [],
           reactions: message.reactions ?? [],
           status: message.status ?? 'sent',
-          senderName: memberNames.get(message.senderUserId) ?? 'Unknown member',
+          senderName: memberIdentity.get(message.senderUserId)?.senderName ?? 'Unknown member',
+          senderUsername: memberIdentity.get(message.senderUserId)?.senderUsername,
+          senderAvatarUrl: memberIdentity.get(message.senderUserId)?.avatarUrl ?? null,
         }));
 
       const resolvedMessages = options?.merge
@@ -1023,23 +1074,41 @@ export default function SpaceChatScreen() {
         setOnlineCount(payload.onlineCount);
       }
     };
-    const resolveSenderName = (senderUserId: string) => {
+    const resolveSenderIdentity = (senderUserId: string) => {
       if (senderUserId === currentUserId) {
-        return currentUserName;
+        return {
+          avatarUrl: currentUserAvatarUrl,
+          senderName: currentUserName,
+          senderUsername: currentUserUsername ?? undefined,
+        };
       }
 
       const member = membersRef.current.find((item) => item.userId === senderUserId);
       return member
-        ? formatParticipantLabel(undefined, member.username, member.userId)
-        : 'Unknown member';
+        ? {
+            avatarUrl: member.avatarUrl ?? null,
+            senderName: formatParticipantLabel(undefined, member.username, member.userId),
+            senderUsername: member.username,
+          }
+        : {
+            avatarUrl: null,
+            senderName: 'Unknown member',
+            senderUsername: undefined,
+          };
     };
-    const toRealtimeMessage = (message: Message): ChatMessage => ({
-      ...message,
-      media: message.media ?? [],
-      reactions: message.reactions ?? [],
-      status: message.status ?? 'sent',
-      senderName: resolveSenderName(message.senderUserId),
-    });
+    const toRealtimeMessage = (message: Message): ChatMessage => {
+      const senderIdentity = resolveSenderIdentity(message.senderUserId);
+
+      return {
+        ...message,
+        media: message.media ?? [],
+        reactions: message.reactions ?? [],
+        status: message.status ?? 'sent',
+        senderAvatarUrl: senderIdentity.avatarUrl,
+        senderName: senderIdentity.senderName,
+        senderUsername: senderIdentity.senderUsername,
+      };
+    };
     const handleMessageCreated = (payload: MessageCreatedEvent) => {
       if (payload.spaceId !== spaceId) {
         return;
@@ -1110,7 +1179,15 @@ export default function SpaceChatScreen() {
       hasConnectedOnceRef.current = false;
       setOnlineCount(0);
     };
-  }, [currentUserId, currentUserName, loadMessages, mergeMessages, spaceId]);
+  }, [
+    currentUserAvatarUrl,
+    currentUserId,
+    currentUserName,
+    currentUserUsername,
+    loadMessages,
+    mergeMessages,
+    spaceId,
+  ]);
 
   useFocusEffect(
     useCallback(() => {
@@ -1166,6 +1243,13 @@ export default function SpaceChatScreen() {
   const canDeleteSelectedMessage =
     selectedMessage !== null && selectedMessage.senderUserId === currentUserId;
 
+  const openUserAvatarViewer = useCallback((username: string, avatarUrl?: string | null) => {
+    setUserAvatarViewer({
+      avatarUrl: avatarUrl ?? null,
+      username: username.replace(/^@+/, ''),
+    });
+  }, []);
+
   const getReplyPreview = useCallback(
     (message: ChatMessage | null): ReplyPreview | null => {
       if (!message?.replyToMessageId) {
@@ -1182,8 +1266,10 @@ export default function SpaceChatScreen() {
       }
 
       return {
+        avatarUrl: repliedToMessage.senderAvatarUrl,
         senderName:
           repliedToMessage.senderUserId === currentUserId ? 'You' : repliedToMessage.senderName,
+        senderUsername: repliedToMessage.senderUsername,
         text: getReplySnippet(repliedToMessage.text),
       };
     },
@@ -1265,6 +1351,11 @@ export default function SpaceChatScreen() {
         media: updatedMessage.media ?? [],
         reactions: updatedMessage.reactions ?? [],
         status: updatedMessage.status ?? 'sent',
+        senderAvatarUrl:
+          updatedMessage.senderUserId === currentUserId
+            ? currentUserAvatarUrl
+            : membersRef.current.find((item) => item.userId === updatedMessage.senderUserId)
+                ?.avatarUrl ?? null,
         senderName:
           updatedMessage.senderUserId === currentUserId
             ? currentUserName
@@ -1276,6 +1367,11 @@ export default function SpaceChatScreen() {
                   ? formatParticipantLabel(undefined, member.username, member.userId)
                   : 'Unknown member';
               })(),
+        senderUsername:
+          updatedMessage.senderUserId === currentUserId
+            ? currentUserUsername ?? undefined
+            : membersRef.current.find((item) => item.userId === updatedMessage.senderUserId)
+                ?.username,
       };
 
       setMessages((current) =>
@@ -1298,7 +1394,7 @@ export default function SpaceChatScreen() {
           : current,
       );
     },
-    [currentUserId, currentUserName],
+    [currentUserAvatarUrl, currentUserId, currentUserName, currentUserUsername],
   );
 
   const closeMenu = () => {
@@ -1597,7 +1693,9 @@ export default function SpaceChatScreen() {
           media: response.message.media ?? [],
           reactions: response.message.reactions ?? [],
           status: response.message.status ?? 'sent',
+          senderAvatarUrl: currentUserAvatarUrl,
           senderName: currentUserName,
+          senderUsername: currentUserUsername ?? undefined,
         },
       ].sort((left, right) => {
         const timestampDifference =
@@ -1646,12 +1744,27 @@ export default function SpaceChatScreen() {
             styles.messageRow,
             isCurrentUser ? styles.currentUserRow : styles.otherUserRow,
           ]}>
+          {!isCurrentUser ? (
+            <AppAvatar
+              avatarUrl={message.senderAvatarUrl}
+              onPress={() =>
+                openUserAvatarViewer(
+                  message.senderUsername ?? message.senderName,
+                  message.senderAvatarUrl,
+                )
+              }
+              size="small"
+              username={message.senderUsername ?? message.senderName}
+            />
+          ) : null}
           <SwipeableMessageBubble
             currentUserId={currentUserId}
+            currentUserUsername={currentUserUsername ?? undefined}
             displayStatus={item.status}
             isHighlighted={highlightedMessageId === message.id}
             isCurrentUser={isCurrentUser}
             message={message}
+            onAvatarPress={openUserAvatarViewer}
             onLongPress={openActionTray}
             onOpenMedia={handleOpenMedia}
             onReplyPress={handleReplyPress}
@@ -1659,15 +1772,32 @@ export default function SpaceChatScreen() {
             onSaveMedia={saveMediaToDevice}
             replyPreview={item.replyPreview}
           />
+          {isCurrentUser ? (
+            <AppAvatar
+              avatarUrl={currentUserAvatarUrl}
+              onPress={() =>
+                openUserAvatarViewer(
+                  currentUserUsername ?? currentUserName,
+                  currentUserAvatarUrl,
+                )
+              }
+              size="small"
+              username={currentUserUsername ?? currentUserName}
+            />
+          ) : null}
         </View>
       );
     },
     [
+      currentUserAvatarUrl,
       currentUserId,
       handleOpenMedia,
       handleReply,
       handleReplyPress,
       highlightedMessageId,
+      currentUserName,
+      currentUserUsername,
+      openUserAvatarViewer,
       openActionTray,
       saveMediaToDevice,
     ],
@@ -2055,6 +2185,13 @@ export default function SpaceChatScreen() {
         visible={avatarViewerVisible}
       />
 
+      <AvatarViewerModal
+        avatarUrl={userAvatarViewer?.avatarUrl}
+        onClose={() => setUserAvatarViewer(null)}
+        username={userAvatarViewer?.username}
+        visible={userAvatarViewer !== null}
+      />
+
       <Modal
         animationType="fade"
         onRequestClose={() => setMediaViewer(null)}
@@ -2194,7 +2331,9 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   messageRow: {
+    alignItems: 'flex-end',
     flexDirection: 'row',
+    gap: 8,
     width: '100%',
   },
   swipeableMessageContainer: {
@@ -2267,6 +2406,16 @@ const styles = StyleSheet.create({
     gap: 2,
     paddingHorizontal: 10,
     paddingVertical: 8,
+  },
+  inlineReplyRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
+  inlineReplyTextBlock: {
+    flex: 1,
+    gap: 2,
+    minWidth: 0,
   },
   inlineReplyCurrentUser: {
     backgroundColor: 'rgba(15, 118, 110, 0.10)',

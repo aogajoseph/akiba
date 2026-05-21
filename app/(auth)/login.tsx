@@ -76,9 +76,6 @@ export default function LoginScreen() {
                 style={styles.input}
                 value={form.identifier}
               />
-              <Text style={styles.helperText}>
-                Include country code if outside your default region.
-              </Text>
             </View>
 
             <View style={styles.fieldGroup}>
@@ -177,11 +174,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
-  },
-  helperText: {
-    color: '#6b7280',
-    fontSize: 12,
-    lineHeight: 18,
   },
   errorText: {
     color: '#b42318',

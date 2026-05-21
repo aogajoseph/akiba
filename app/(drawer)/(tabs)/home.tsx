@@ -25,14 +25,14 @@ const getGreeting = (username?: string): string => {
   const handle = username?.trim().replace(/^@+/, '') ?? 'there';
 
   if (hour < 12) {
-    return `Good morning, @${handle}`;
+    return `Good morning, ${handle}`;
   }
 
-  if (hour < 18) {
-    return `Good afternoon, @${handle}`;
+  if (hour < 16) {
+    return `Good afternoon, ${handle}`;
   }
 
-  return `Good evening, @${handle}`;
+  return `Good evening, ${handle}`;
 };
 
 const formatCurrency = (amount?: number): string => {
@@ -171,10 +171,14 @@ export default function HomeScreen() {
           />
         }>
         <View style={styles.heroCard}>
-          <Text style={styles.greeting}>{greeting}</Text>
-          <Text style={styles.heroSubtitle}>
-            Track money activity, recent updates and where your attention is needed.
-          </Text>
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroTextBlock}>
+              <Text style={styles.greeting}>{greeting}</Text>
+              <Text style={styles.heroSubtitle}>
+                Track money activity, recent updates and where your attention is needed.
+              </Text>
+            </View>
+          </View>
 
           <View style={styles.heroStatsRow}>
             <View style={styles.heroStat}>
@@ -367,6 +371,15 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     gap: 10,
     padding: 20,
+  },
+  heroTopRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 14,
+  },
+  heroTextBlock: {
+    flex: 1,
+    gap: 10,
   },
   greeting: {
     color: '#99f6e4',

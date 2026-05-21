@@ -82,7 +82,7 @@ export default function RegisterScreen() {
         <View style={styles.card}>
           <AuthBrand color="#9a5d22" />
           <Text style={styles.title}>Welcome</Text>
-          <Text style={styles.subtitle}>Save money together in shared spaces.</Text>
+          <Text style={styles.subtitle}>Save money with friends & family in shared spaces.</Text>
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
@@ -135,9 +135,6 @@ export default function RegisterScreen() {
                 style={styles.input}
                 value={form.phoneNumber}
               />
-              <Text style={styles.helperText}>
-                Include country code if outside your default region.
-              </Text>
             </View>
 
             <View style={styles.fieldGroup}>

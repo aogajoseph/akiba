@@ -1,6 +1,10 @@
+import * as ImagePicker from 'expo-image-picker';
+import { Feather } from '@expo/vector-icons';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
+  Image,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -11,16 +15,22 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { updateProfile } from '@/services/authService';
+import AppAvatar from '@/src/components/identity/AppAvatar';
+import AvatarViewerModal from '@/src/components/identity/AvatarViewerModal';
 import { useUsernameAvailability } from '@/src/hooks/useUsernameAvailability';
+import { uploadImageToCloudinary } from '@/src/services/cloudinary';
 import { useAuthStore } from '@/src/store/authStore';
 import { ApiError } from '@/utils/api';
 
 export default function EditProfileScreen() {
   const sessionUser = useAuthStore((state) => state.session?.user ?? null);
   const [username, setUsername] = useState(sessionUser?.username ?? '');
+  const [localAvatarUri, setLocalAvatarUri] = useState<string | null>(null);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(sessionUser?.avatarUrl ?? null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [avatarViewerVisible, setAvatarViewerVisible] = useState(false);
   const inputRef = useRef<TextInput | null>(null);
   const availability = useUsernameAvailability(username, {
     initialUsername: sessionUser?.username,
@@ -28,11 +38,44 @@ export default function EditProfileScreen() {
 
   useEffect(() => {
     setUsername(sessionUser?.username ?? '');
-  }, [sessionUser?.username]);
+    setAvatarUrl(sessionUser?.avatarUrl ?? null);
+    setLocalAvatarUri(null);
+  }, [sessionUser?.avatarUrl, sessionUser?.username]);
 
   const trimmedUsername = useMemo(() => username.trim().toLowerCase(), [username]);
+  const normalizedUsername = trimmedUsername || sessionUser?.username || 'username';
+  const displayAvatarUri = localAvatarUri ?? avatarUrl;
+  const avatarChanged = displayAvatarUri !== (sessionUser?.avatarUrl ?? null);
+  const hasPendingImageUpload =
+    localAvatarUri !== null && !/^https?:\/\//i.test(localAvatarUri);
   const canSave =
-    trimmedUsername.length > 0 && !saving && trimmedUsername !== (sessionUser?.username ?? '');
+    trimmedUsername.length > 0 &&
+    !saving &&
+    (trimmedUsername !== (sessionUser?.username ?? '') || avatarChanged);
+
+  const handlePickAvatar = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+
+    if (!permission.granted) {
+      Alert.alert('Permission required', 'Please allow photo library access to choose a profile image.');
+      return;
+    }
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      allowsEditing: true,
+      aspect: [1, 1],
+      mediaTypes: ['images'] as const,
+      quality: 1,
+    });
+
+    if (result.canceled || !result.assets.length) {
+      return;
+    }
+
+    setLocalAvatarUri(result.assets[0].uri);
+    setError(null);
+    setSuccess(null);
+  };
 
   const handleSave = async () => {
     if (availability.validationError) {
@@ -57,9 +100,20 @@ export default function EditProfileScreen() {
     setSuccess(null);
 
     try {
+      let finalAvatarUrl = avatarUrl;
+
+      if (localAvatarUri && !/^https?:\/\//i.test(localAvatarUri)) {
+        finalAvatarUrl = await uploadImageToCloudinary(localAvatarUri);
+      } else if (localAvatarUri) {
+        finalAvatarUrl = localAvatarUri;
+      }
+
       await updateProfile({
         username: trimmedUsername,
+        avatarUrl: finalAvatarUrl,
       });
+      setAvatarUrl(finalAvatarUrl ?? null);
+      setLocalAvatarUri(null);
       setSuccess('Username updated successfully.');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
@@ -75,11 +129,45 @@ export default function EditProfileScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Edit Profile</Text>
           <Text style={styles.subtitle}>
-            Update the username shown across Akiba.
+            Update how people recognize you on Akiba.
           </Text>
 
+          <View style={styles.avatarSection}>
+            <Pressable
+              onPress={() => {
+                if (displayAvatarUri) {
+                  setAvatarViewerVisible(true);
+                } else {
+                  void handlePickAvatar();
+                }
+              }}
+              style={styles.avatarButton}>
+              {displayAvatarUri ? (
+                <Image source={{ uri: displayAvatarUri }} style={styles.avatarImage} />
+              ) : (
+                <AppAvatar size="xlarge" username={normalizedUsername} />
+              )}
+            </Pressable>
+            <Text style={styles.avatarTitle}>Profile picture</Text>
+            <Text style={styles.avatarHint}>
+              A profile photo helps other users recognize you more easily in spaces and chats.
+            </Text>
+            <Pressable
+              onPress={() => {
+                void handlePickAvatar();
+              }}
+              style={styles.avatarAction}>
+              <Text style={styles.avatarActionText}>
+                {displayAvatarUri ? 'Update profile picture' : 'Choose Photo'}
+              </Text>
+            </Pressable>
+            {hasPendingImageUpload ? (
+              <Text style={styles.neutralText}>Selected photo will upload when you save.</Text>
+            ) : null}
+          </View>
+
           <View style={styles.fieldGroup}>
-            <Text style={styles.label}>Username</Text>
+            <Text style={styles.label}>Current username</Text>
             <TextInput
               autoCapitalize="none"
               autoCorrect={false}
@@ -91,7 +179,7 @@ export default function EditProfileScreen() {
               value={username}
             />
             <Text style={styles.readOnlyHint}>
-              Use 3-20 lowercase letters, numbers, underscores, or periods.
+              This is the name people see across spaces and chats. Use 3-20 lowercase letters, numbers, underscores or periods.
             </Text>
             {availability.validationError ? (
               <Text style={styles.errorText}>{availability.validationError}</Text>
@@ -122,13 +210,7 @@ export default function EditProfileScreen() {
           <View style={styles.readOnlyCard}>
             <Text style={styles.readOnlyLabel}>Phone Number</Text>
             <Text style={styles.readOnlyValue}>{sessionUser?.phoneNumber ?? 'Not available'}</Text>
-            <Text style={styles.readOnlyHint}>Phone number changes are not available yet.</Text>
-          </View>
-
-          <View style={styles.readOnlyCard}>
-            <Text style={styles.readOnlyLabel}>Legacy Name</Text>
-            <Text style={styles.readOnlyValue}>{sessionUser?.name ?? 'Not available'}</Text>
-            <Text style={styles.readOnlyHint}>Kept internally for compatibility during migration.</Text>
+            <Text style={styles.readOnlyHint}>Phone number changes coming soon.</Text>
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
@@ -152,6 +234,13 @@ export default function EditProfileScreen() {
           </Pressable>
         </View>
       </ScrollView>
+
+      <AvatarViewerModal
+        avatarUrl={displayAvatarUri}
+        onClose={() => setAvatarViewerVisible(false)}
+        username={normalizedUsername}
+        visible={avatarViewerVisible}
+      />
     </SafeAreaView>
   );
 }
@@ -171,6 +260,60 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     gap: 18,
     padding: 20,
+  },
+  avatarSection: {
+    alignItems: 'center',
+    gap: 10,
+    paddingBottom: 6,
+  },
+  avatarButton: {
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarImage: {
+    borderRadius: 44,
+    height: 88,
+    width: 88,
+  },
+  avatarEditOverlay: {
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    bottom: -2,
+    elevation: 2,
+    height: 32,
+    justifyContent: 'center',
+    position: 'absolute',
+    right: -2,
+    shadowColor: '#132238',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
+    width: 32,
+  },
+  avatarTitle: {
+    color: '#132238',
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  avatarHint: {
+    color: '#64748b',
+    fontSize: 13,
+    lineHeight: 19,
+    textAlign: 'center',
+  },
+  avatarAction: {
+    backgroundColor: '#edf7f5',
+    borderColor: '#cde8e3',
+    borderRadius: 999,
+    borderWidth: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+  },
+  avatarActionText: {
+    color: '#0f766e',
+    fontSize: 13,
+    fontWeight: '700',
   },
   title: {
     color: '#132238',

@@ -102,7 +102,7 @@ export default function ResetPasswordScreen() {
           <AuthBrand color="#0f766e" />
           <Text style={styles.title}>Enter your reset code</Text>
           <Text style={styles.subtitle}>
-            Confirm the WhatsApp OTP and choose a new password.
+            Enter OTP and choose a new password.
           </Text>
 
           <View style={styles.form}>
@@ -117,9 +117,6 @@ export default function ResetPasswordScreen() {
                 style={styles.input}
                 value={phoneNumber}
               />
-              <Text style={styles.helperText}>
-                Include country code if outside your default region.
-              </Text>
             </View>
 
             <View style={styles.fieldGroup}>
@@ -257,11 +254,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
-  },
-  helperText: {
-    color: '#6b7280',
-    fontSize: 12,
-    lineHeight: 18,
   },
   inlineActionRow: {
     alignItems: 'flex-end',

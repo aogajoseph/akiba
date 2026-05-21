@@ -16,6 +16,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { User } from '@shared/contracts';
 import AppHeader from '@/components/AppHeader';
+import AppAvatar from '@/src/components/identity/AppAvatar';
+import AvatarViewerModal from '@/src/components/identity/AvatarViewerModal';
 import ProfileRow from '@/src/components/profile/ProfileRow';
 import ProfileSection from '@/src/components/profile/ProfileSection';
 import { logout, me } from '@/services/authService';
@@ -47,19 +49,15 @@ export default function ProfileScreen() {
   const [loading, setLoading] = useState(sessionUser === null);
   const [refreshing, setRefreshing] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [avatarViewerVisible, setAvatarViewerVisible] = useState(false);
 
   const displayUser = user ?? sessionUser;
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
   const joinedLabel = formatJoinedDate(displayUser?.createdAt);
-  const initials = useMemo(() => {
-    return (displayUser?.username ?? displayUser?.name ?? '')
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean)
-      .slice(0, 2)
-      .map((part) => part.charAt(0).toUpperCase())
-      .join('');
-  }, [displayUser?.name, displayUser?.username]);
+  const normalizedUsername = useMemo(
+    () => displayUser?.username?.trim().replace(/^@+/, '') ?? 'username',
+    [displayUser?.username],
+  );
 
   const loadProfile = useCallback(async (mode: 'initial' | 'refresh' = 'initial') => {
     if (mode === 'refresh') {
@@ -129,15 +127,14 @@ export default function ProfileScreen() {
           />
         }>
         <View style={styles.heroCard}>
-          <View style={styles.avatar}>
-            {initials ? (
-              <Text style={styles.avatarText}>{initials}</Text>
-            ) : (
-              <Ionicons color="#0f766e" name="person-outline" size={28} />
-            )}
-          </View>
+          <AppAvatar
+            avatarUrl={displayUser?.avatarUrl}
+            onPress={() => setAvatarViewerVisible(true)}
+            size="large"
+            username={normalizedUsername}
+          />
           <View style={styles.heroBody}>
-            <Text style={styles.heroTitle}>@{displayUser?.username ?? 'username'}</Text>
+            <Text style={styles.heroTitle}>@{normalizedUsername}</Text>
             <Text style={styles.heroHandle}>
               {displayUser?.phoneNumber ?? 'Phone number unavailable'}
             </Text>
@@ -146,9 +143,6 @@ export default function ProfileScreen() {
               <Ionicons color="#0f766e" name="shield-checkmark-outline" size={14} />
               <Text style={styles.badgeText}>Secure session active</Text>
             </View>
-            {displayUser?.name && displayUser.name !== displayUser.username ? (
-              <Text style={styles.joinedText}>Legacy name: {displayUser.name}</Text>
-            ) : null}
           </View>
         </View>
 
@@ -165,13 +159,13 @@ export default function ProfileScreen() {
           <ProfileRow
             icon="create-outline"
             onPress={() => router.push('/profile/edit')}
-            subtitle="Update your username across Akiba"
+            subtitle="Update your identity across Akiba"
             title="Edit Profile"
           />
           <View style={styles.divider} />
           <ProfileRow
             icon="at-outline"
-            subtitle={`@${displayUser?.username ?? 'username'}`}
+            subtitle={`${normalizedUsername}`}
             title="Username"
           />
           <View style={styles.divider} />
@@ -183,9 +177,9 @@ export default function ProfileScreen() {
           <View style={styles.divider} />
           <ProfileRow
             icon="mail-outline"
-            subtitle="Email support will be added later"
+            subtitle="(Coming Soon)"
             title="Email"
-            trailing={<Text style={styles.placeholderValue}>Not added</Text>}
+            trailing={<Text style={styles.placeholderValue}>Not Available</Text>}
           />
           <View style={styles.divider} />
           <ProfileRow
@@ -194,7 +188,7 @@ export default function ProfileScreen() {
             onPress={() => {
               void handleLogout();
             }}
-            subtitle={loggingOut ? 'Signing you out' : 'End this session on this device'}
+            subtitle={loggingOut ? 'Signing you out' : 'End current session on this device'}
             title={loggingOut ? 'Logging Out...' : 'Logout'}
           />
         </ProfileSection>
@@ -203,21 +197,21 @@ export default function ProfileScreen() {
           <ProfileRow
             icon="notifications-outline"
             onPress={() => handlePlaceholderPress('Notifications')}
-            subtitle="Manage alerts and message updates"
+            subtitle="Manage alerts and updates"
             title="Notifications"
           />
           <View style={styles.divider} />
           <ProfileRow
             icon="color-palette-outline"
             onPress={() => handlePlaceholderPress('Appearance')}
-            subtitle="Theme options will appear here"
+            subtitle="(Coming Soon)"
             title="Appearance"
           />
           <View style={styles.divider} />
           <ProfileRow
             icon="language-outline"
             onPress={() => handlePlaceholderPress('Language')}
-            subtitle="Language preferences are planned"
+            subtitle="(Coming Soon)"
             title="Language"
           />
         </ProfileSection>
@@ -233,7 +227,7 @@ export default function ProfileScreen() {
           <ProfileRow
             icon="help-buoy-outline"
             onPress={() => handlePlaceholderPress('Help & Support')}
-            subtitle="Get help with your account and spaces"
+            subtitle="Get help with your spaces or account"
             title="Help & Support"
           />
           <View style={styles.divider} />
@@ -252,6 +246,13 @@ export default function ProfileScreen() {
           />
         </ProfileSection>
       </ScrollView>
+
+      <AvatarViewerModal
+        avatarUrl={displayUser?.avatarUrl}
+        onClose={() => setAvatarViewerVisible(false)}
+        username={normalizedUsername}
+        visible={avatarViewerVisible}
+      />
     </SafeAreaView>
   );
 }
@@ -276,19 +277,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 16,
     padding: 20,
-  },
-  avatar: {
-    alignItems: 'center',
-    backgroundColor: '#edf7f5',
-    borderRadius: 24,
-    height: 64,
-    justifyContent: 'center',
-    width: 64,
-  },
-  avatarText: {
-    color: '#0f766e',
-    fontSize: 24,
-    fontWeight: '800',
   },
   heroBody: {
     flex: 1,
@@ -323,11 +311,6 @@ const styles = StyleSheet.create({
     color: '#0f766e',
     fontSize: 12,
     fontWeight: '700',
-  },
-  joinedText: {
-    color: '#c4d3e3',
-    fontSize: 13,
-    marginTop: 4,
   },
   loadingCard: {
     alignItems: 'center',
