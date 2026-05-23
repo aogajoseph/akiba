@@ -3,8 +3,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import ProfileSection from '@/src/components/profile/ProfileSection';
 
-const SUPPORT_PHONE = '+254 700 000 000';
-const SUPPORT_EMAIL = 'support@akiba.app';
+const SUPPORT_PHONE = '+254 725 406 004';
+const SUPPORT_EMAIL = 'help@akiba.com';
 
 const openLink = async (url: string) => {
   const supported = await Linking.canOpenURL(url);
@@ -23,7 +23,7 @@ export default function HelpSupportScreen() {
         <View style={styles.heroCard}>
           <Text style={styles.title}>Help & Support</Text>
           <Text style={styles.subtitle}>
-            If something feels stuck or unclear, we are here to help you get back on track.
+            Need help with your Akiba account or spaces? Let us know.
           </Text>
         </View>
 
@@ -32,7 +32,7 @@ export default function HelpSupportScreen() {
             <View style={styles.body}>
               <Text style={styles.rowTitle}>Support Phone</Text>
               <Text style={styles.rowValue}>{SUPPORT_PHONE}</Text>
-              <Text style={styles.rowHint}>Tap to call Akiba support.</Text>
+              <Text style={styles.rowHint}>Tap to call us</Text>
             </View>
           </Pressable>
           <View style={styles.divider} />
@@ -40,7 +40,7 @@ export default function HelpSupportScreen() {
             <View style={styles.body}>
               <Text style={styles.rowTitle}>Support Email</Text>
               <Text style={styles.rowValue}>{SUPPORT_EMAIL}</Text>
-              <Text style={styles.rowHint}>Tap to open your mail app.</Text>
+              <Text style={styles.rowHint}>Tap to mail us</Text>
             </View>
           </Pressable>
         </ProfileSection>
@@ -49,8 +49,7 @@ export default function HelpSupportScreen() {
           <View style={styles.textCard}>
             <Text style={styles.question}>I joined the wrong space. What should I do?</Text>
             <Text style={styles.answer}>
-              Open the space, check the members area, and use the leave option if it is available
-              for your role.
+              Open the space, check the members area, and tap the leave option.
             </Text>
           </View>
           <View style={styles.divider} />
@@ -74,8 +73,8 @@ export default function HelpSupportScreen() {
         <ProfileSection title="Response Expectations">
           <View style={styles.textCard}>
             <Text style={styles.answer}>
-              We aim to respond as quickly as we can. For urgent account issues, calling support is
-              usually the fastest option.
+              Akiba responds as quickly as possible. For urgent account and space issues, calling us is
+              usually the best option.
             </Text>
           </View>
         </ProfileSection>

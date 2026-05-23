@@ -129,7 +129,7 @@ export default function ProfileScreen() {
             username={normalizedUsername}
           />
           <View style={styles.heroBody}>
-            <Text style={styles.heroTitle}>@{normalizedUsername}</Text>
+            <Text style={styles.heroTitle}>{normalizedUsername}</Text>
             <Text style={styles.heroHandle}>
               {displayUser?.phoneNumber ?? 'Phone number unavailable'}
             </Text>
@@ -199,7 +199,7 @@ export default function ProfileScreen() {
           <ProfileRow
             icon="color-palette-outline"
             // onPress={() => handlePlaceholderPress('Appearance')}
-            subtitle="Appearance settings coming soon"
+            subtitle="Theme settings coming soon"
             title="Appearance"
           />
           <View style={styles.divider} />
@@ -207,7 +207,7 @@ export default function ProfileScreen() {
             icon="language-outline"
             // onPress={() => handlePlaceholderPress('Language')}
             subtitle="Language settings coming soon"
-            title="Language"
+            title="Translate"
           />
         </ProfileSection>
 
@@ -222,7 +222,7 @@ export default function ProfileScreen() {
           <ProfileRow
             icon="help-buoy-outline"
             onPress={() => router.push('/profile/help-support')}
-            subtitle="Get help with your spaces or account"
+            subtitle="Get help with your account or spaces"
             title="Help & Support"
           />
           <View style={styles.divider} />
@@ -239,12 +239,14 @@ export default function ProfileScreen() {
             subtitle="Review our current terms of service"
             title="Terms & Conditions"
           />
-          <View style={styles.divider} />
+        </ProfileSection>
+
+        <ProfileSection title="Danger Zone">
           <ProfileRow
             destructive
             icon="trash-outline"
             onPress={() => router.push('/profile/delete-account')}
-            subtitle="Learn how account deletion support will work"
+            subtitle="Delete your Akiba account"
             title="Delete Account"
           />
         </ProfileSection>

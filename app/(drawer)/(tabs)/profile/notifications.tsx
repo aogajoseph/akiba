@@ -118,7 +118,7 @@ export default function NotificationSettingsScreen() {
 
   const unreadSummary = useMemo(() => {
     if (unreadCount === 0) {
-      return 'You are fully caught up right now.';
+      return 'No new notifications at the moment.';
     }
 
     return `${unreadCount} unread ${unreadCount === 1 ? 'update' : 'updates'} are currently waiting for you.`;
@@ -141,8 +141,8 @@ export default function NotificationSettingsScreen() {
         <View style={styles.heroCard}>
           <Text style={styles.title}>Notifications</Text>
           <Text style={styles.subtitle}>
-            Choose how Akiba keeps you informed. Space muting is saved to your account. Other
-            preferences below are stored on this device for now.
+            Decide how Akiba keeps you informed. Your
+            preferences are stored on this device for now.
           </Text>
           <Text style={styles.heroMeta}>{unreadSummary}</Text>
         </View>
@@ -158,7 +158,7 @@ export default function NotificationSettingsScreen() {
 
         <ProfileSection title="General">
           <SettingsSwitchRow
-            description="Allow Akiba to keep sending push alerts to this device."
+            description="Allow push alerts to this device."
             helper="Stored on this device"
             onValueChange={(value) => {
               void updateLocalSetting('pushNotifications', value);
@@ -168,7 +168,7 @@ export default function NotificationSettingsScreen() {
           />
           <View style={styles.divider} />
           <SettingsSwitchRow
-            description="Receive updates about joins, changes, and other space activity."
+            description="Receive updates on space activities."
             helper="Stored on this device"
             onValueChange={(value) => {
               void updateLocalSetting('activityUpdates', value);
@@ -178,7 +178,7 @@ export default function NotificationSettingsScreen() {
           />
           <View style={styles.divider} />
           <SettingsSwitchRow
-            description="Be notified when deposits or withdrawals need your attention."
+            description="Get alerts on deposits and withdrawals."
             helper="Stored on this device"
             onValueChange={(value) => {
               void updateLocalSetting('transactionAlerts', value);
@@ -188,7 +188,7 @@ export default function NotificationSettingsScreen() {
           />
           <View style={styles.divider} />
           <SettingsSwitchRow
-            description="Get alerts when approvals are waiting for action."
+            description="Get alerts on pending approvals."
             helper="Stored on this device"
             onValueChange={(value) => {
               void updateLocalSetting('approvalRequests', value);
@@ -210,7 +210,7 @@ export default function NotificationSettingsScreen() {
 
         <ProfileSection title="Spaces">
           <SettingsSwitchRow
-            description="Mute notification delivery for every space you currently belong to."
+            description="Mute notification delivery for the spaces you belong to."
             disabled={spaceCount === 0 || savingMuted}
             helper={
               spaceCount === 0
@@ -237,7 +237,7 @@ export default function NotificationSettingsScreen() {
 
         <ProfileSection title="Sounds & Badges">
           <SettingsSwitchRow
-            description="Show unread counts on supported app icons."
+            description="Show unread counts on app icons."
             helper="Stored on this device"
             onValueChange={(value) => {
               void updateLocalSetting('appBadgeCount', value);
@@ -247,7 +247,7 @@ export default function NotificationSettingsScreen() {
           />
           <View style={styles.divider} />
           <SettingsSwitchRow
-            description="Play a sound when new notification banners arrive."
+            description="Play a sound for new notifications."
             helper="Stored on this device"
             onValueChange={(value) => {
               void updateLocalSetting('notificationSounds', value);

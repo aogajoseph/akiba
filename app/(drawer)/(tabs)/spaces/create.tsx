@@ -133,7 +133,7 @@ export default function CreateSpaceScreen() {
         keyboardShouldPersistTaps="handled"
         style={styles.container}>
         <Text style={styles.title}>Create Space</Text>
-        <Text style={styles.subtitle}>Spaces allow people to save money for events and shared goals.</Text>
+        <Text style={styles.subtitle}>Spaces allow people to save money together for events and shared goals.</Text>
 
         <View style={styles.avatarSection}>
           <Pressable onPress={() => { void handlePickAvatar(); }} style={styles.avatarButton}>
@@ -174,7 +174,7 @@ export default function CreateSpaceScreen() {
               multiline
               numberOfLines={3}
               onChangeText={setDescription}
-              placeholder="eg., We are coming together to support John and Susan in their wedding."
+              placeholder="eg., This space was created to support John and Susan in their upcoming wedding."
               placeholderTextColor="#94a3b8"
               style={[styles.input, styles.textArea]}
               textAlignVertical="top"

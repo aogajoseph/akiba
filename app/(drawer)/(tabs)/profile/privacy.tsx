@@ -9,52 +9,45 @@ export default function PrivacyPolicyScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <LongFormSection title="Information We Collect">
           <Text style={styles.bodyText}>
-            We collect the basics needed to help you use Akiba, including your account details,
-            phone number, username, profile photo if you add one, and activity inside the spaces
-            you join.
+            We collect the basics needed to set up and use Akiba accounts and spaces. These may include phone numbers, usernames, profile pictures (if added) and space details (upon creation).
           </Text>
         </LongFormSection>
 
         <LongFormSection title="How Akiba Uses Information">
           <Text style={styles.bodyText}>
-            We use your information to help you sign in, keep spaces working, show shared activity,
-            support deposits and withdrawals, and make the app easier to use.
+            We use your information to help you sign in, keep spaces working, show shared activity, support deposits and withdrawals including other financial activities, and make the app easy to use.
           </Text>
         </LongFormSection>
 
         <LongFormSection title="Notifications & Communication">
           <Text style={styles.bodyText}>
-            Akiba may send alerts about activity in your spaces, approvals, messages, or account
-            recovery. You can control many of these alerts in your notification settings.
+            Akiba may send alerts about activity in your spaces, approvals, messages or account recovery. You can control many of these alerts in your notification settings.
           </Text>
         </LongFormSection>
 
         <LongFormSection title="Security & Account Protection">
           <Text style={styles.bodyText}>
-            We use account authentication, protected sessions, and verification checks to help keep
-            your account safe. You are still responsible for protecting your device and sharing
+            We use account authentication, protected sessions and verification checks to help keep your account safe. You are still responsible for protecting your device and sharing
             access carefully.
           </Text>
         </LongFormSection>
 
         <LongFormSection title="Communities & Shared Spaces">
           <Text style={styles.bodyText}>
-            Some information you share, like your username, avatar, and activity inside a space,
-            is visible to other members of that space so the group can collaborate clearly.
+            Some information you share, like your username, avatar and activity inside a space is visible to other members of that space so the group can collaborate clearly.
           </Text>
         </LongFormSection>
 
         <LongFormSection title="Data Storage">
           <Text style={styles.bodyText}>
-            We store account and activity data so your spaces, balances, chat history, and group
-            actions stay available when you return.
+            We store account and activity data so your spaces, balances, chat history and group actions stay available when you return.
           </Text>
         </LongFormSection>
 
         <LongFormSection title="Contact Information">
           <Text style={styles.bodyText}>
-            If you have questions about privacy, you can contact Akiba support at
-            {' '}support@akiba.app or +254 700 000 000.
+            If you have questions about privacy, you can contact us at
+            {' '}help@akiba.com or +254 725 406 004.
           </Text>
         </LongFormSection>
       </ScrollView>

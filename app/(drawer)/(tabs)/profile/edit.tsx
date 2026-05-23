@@ -210,7 +210,7 @@ export default function EditProfileScreen() {
           <View style={styles.readOnlyCard}>
             <Text style={styles.readOnlyLabel}>Phone Number</Text>
             <Text style={styles.readOnlyValue}>{sessionUser?.phoneNumber ?? 'Not available'}</Text>
-            <Text style={styles.readOnlyHint}>Phone number changes coming soon.</Text>
+            <Text style={styles.readOnlyHint}>Phone number change coming soon.</Text>
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}
