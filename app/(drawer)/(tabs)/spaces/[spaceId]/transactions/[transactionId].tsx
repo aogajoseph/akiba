@@ -9,8 +9,8 @@ import {
   View,
 } from 'react-native';
 
-import { Transaction, TransactionType } from '@shared/contracts';
-import { maskPhoneNumber } from '@shared/phone';
+import { Transaction, TransactionType } from '../../../../../../../backend/shared/contracts';
+import { maskPhoneNumber } from '../../../../../../../backend/shared/phone';
 import { getSpaceSummary } from '../../../../../../services/spaceService';
 import { ApiError } from '../../../../../../utils/api';
 

@@ -8,7 +8,7 @@ export default function DeleteAccountScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Delete Account</Text>
           <Text style={styles.body}>
-            Account deletion support is coming soon. If you need immediate assistance, please contact Akiba support.
+            Account deletion support is coming soon. If you need immediate assistance, please contact us for help.
           </Text>
           <Text style={styles.helper}>
             The account deletion flow is already taking shape. However safety and security issues are still under review.

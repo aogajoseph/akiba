@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { User } from '@shared/contracts';
+import { User } from '../../../../../backend/shared/contracts';
 import AppHeader from '@/components/AppHeader';
 import AppAvatar from '@/src/components/identity/AppAvatar';
 import AvatarViewerModal from '@/src/components/identity/AvatarViewerModal';

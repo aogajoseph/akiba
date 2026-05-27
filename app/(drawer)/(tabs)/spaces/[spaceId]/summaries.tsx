@@ -21,7 +21,7 @@ import {
   Transaction,
   TransactionStatus,
   TransactionType,
-} from '@shared/contracts';
+} from '../../../../../../backend/shared/contracts';
 import { getSpace, getSpaceSummary } from '../../../../../services/spaceService';
 import { ApiError } from '../../../../../utils/api';
 

@@ -27,7 +27,7 @@ import {
   UpdateGroupResponseDto,
   UpdateSpaceNotificationPreferenceResponseDto,
   UploadMediaMessageResponseDto,
-} from '../../shared/contracts';
+} from '../../backend/shared/contracts';
 import { api } from '../utils/api';
 
 export type MediaUploadAttachment = {

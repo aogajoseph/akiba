@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 
-import { LoginRequestDto } from '../../../shared/contracts';
+import { LoginRequestDto } from '../../../backend/shared/contracts';
 import { login } from '../../services/authService';
 import AuthBrand from '../../src/components/auth/AuthBrand';
 import {

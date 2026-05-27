@@ -1,6 +1,9 @@
-import { NotificationEvent } from '../../../shared/contracts';
+import { NotificationEvent } from '../../../backend/shared/contracts';
 import { getAuthSession } from '../../utils/api';
-import { API_BASE_URL } from '@/src/config/api';
+import {
+  buildNotificationsWebSocketUrl,
+  logApiConfigWarningOnce,
+} from '@/src/config/api';
 
 let socket: WebSocket | null = null;
 let reconnectTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -8,22 +11,19 @@ let messageHandler: ((event: NotificationEvent) => void) | null = null;
 let shouldReconnect = true;
 
 const getWebSocketUrl = (): string | null => {
-  if (!API_BASE_URL) {
-    return null;
-  }
-
   const accessToken = getAuthSession()?.accessToken;
 
   if (!accessToken) {
     return null;
   }
 
-  const url = new URL(API_BASE_URL);
-  url.protocol = url.protocol === 'https:' ? 'wss:' : 'ws:';
-  url.pathname = '/notifications/ws';
-  url.searchParams.set('token', accessToken);
+  const url = buildNotificationsWebSocketUrl(accessToken);
 
-  return url.toString();
+  if (!url) {
+    logApiConfigWarningOnce();
+  }
+
+  return url;
 };
 
 export const connectWebSocket = (onMessage: (event: NotificationEvent) => void): void => {

@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import { API_BASE_URL } from '@/src/config/api';
+import { API_BASE_URL, API_CONFIG_ERROR, logApiConfigWarningOnce } from '@/src/config/api';
 import { type AuthSession, useAuthStore } from '@/src/store/authStore';
 
 export type ApiError = {
@@ -25,13 +25,22 @@ export const clearAuthSession = async (): Promise<void> => {
 };
 
 export const api = axios.create({
-  baseURL: API_BASE_URL,
+  ...(API_BASE_URL ? { baseURL: API_BASE_URL } : {}),
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
 api.interceptors.request.use((config) => {
+  if (!API_BASE_URL) {
+    logApiConfigWarningOnce();
+
+    return Promise.reject({
+      error: API_CONFIG_ERROR ?? 'API URL is not configured.',
+      status: 500,
+    } satisfies ApiError);
+  }
+
   const session = getAuthSession();
 
   if (session?.accessToken) {

@@ -12,8 +12,8 @@ import {
   View,
 } from 'react-native';
 
-import { TransactionSource } from '@shared/contracts';
-import { normalizePhoneNumber } from '@shared/phone';
+import { TransactionSource } from '../../../../../../backend/shared/contracts';
+import { normalizePhoneNumber } from '../../../../../../backend/shared/phone';
 import { createDeposit } from '../../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../../utils/api';
 

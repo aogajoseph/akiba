@@ -12,7 +12,7 @@ import {
   View,
 } from 'react-native';
 
-import { RegisterRequestDto } from '../../../shared/contracts';
+import { RegisterRequestDto } from '../../../backend/shared/contracts';
 import { register } from '../../services/authService';
 import AuthBrand from '../../src/components/auth/AuthBrand';
 import { useUsernameAvailability } from '../../src/hooks/useUsernameAvailability';

@@ -35,7 +35,7 @@ import {
   TypingUser,
   type GetSpaceNotificationPreferenceResponseDto,
   type UpdateSpaceNotificationPreferenceResponseDto,
-} from '../../../../../../shared/contracts';
+} from '../../../../../../backend/shared/contracts';
 import {
   deleteMessage,
   getTypingUsers,
@@ -55,6 +55,7 @@ import AkibaLink from '../../../../../components/AkibaLink';
 import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
 import AppAvatar from '../../../../../src/components/identity/AppAvatar';
 import AvatarViewerModal from '../../../../../src/components/identity/AvatarViewerModal';
+import { SOCKET_IO_URL, logApiConfigWarningOnce } from '../../../../../src/config/api';
 import { uploadImageToCloudinary } from '../../../../../src/services/cloudinary';
 import { api, ApiError, getAuthSession } from '../../../../../utils/api';
 
@@ -1043,9 +1044,13 @@ export default function SpaceChatScreen() {
   }, [loadMessages, loading, loadingOlderMessages, nextMessagesCursor]);
 
   useEffect(() => {
-    const socketBaseUrl = api.defaults.baseURL;
+    const socketBaseUrl = SOCKET_IO_URL;
 
     if (!spaceId || !currentUserId || !socketBaseUrl) {
+      if (!socketBaseUrl) {
+        logApiConfigWarningOnce();
+      }
+
       setOnlineCount(0);
       hasConnectedOnceRef.current = false;
       return undefined;

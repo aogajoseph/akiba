@@ -1,8 +1,8 @@
 import axios from 'axios';
 import { create } from 'zustand';
 
-import { MeResponseDto, User } from '../../../shared/contracts';
-import { API_BASE_URL } from '@/src/config/api';
+import { MeResponseDto, User } from '../../../backend/shared/contracts';
+import { buildApiUrl, logApiConfigWarningOnce } from '@/src/config/api';
 import { clearAccessToken, getAccessToken, setAccessToken } from '@/src/services/authStorage';
 
 export type AuthSession = {
@@ -24,7 +24,14 @@ type AuthState = {
 let restorePromise: Promise<void> | null = null;
 
 const fetchAuthenticatedUser = async (accessToken: string): Promise<User> => {
-  const response = await axios.get<{ data: MeResponseDto }>(`${API_BASE_URL}/auth/me`, {
+  const meUrl = buildApiUrl('/auth/me');
+
+  if (!meUrl) {
+    logApiConfigWarningOnce();
+    throw new Error('API URL is not configured');
+  }
+
+  const response = await axios.get<{ data: MeResponseDto }>(meUrl, {
     headers: {
       Authorization: `Bearer ${accessToken}`,
     },

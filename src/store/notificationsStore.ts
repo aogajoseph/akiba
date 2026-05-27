@@ -1,8 +1,8 @@
 import { create } from 'zustand';
 
-import { NotificationDTO } from '../../../shared/contracts';
+import { NotificationDTO } from '../../../backend/shared/contracts';
 import { getAuthSession } from '../../utils/api';
-import { API_BASE_URL } from '@/src/config/api';
+import { buildApiUrl, logApiConfigWarningOnce } from '@/src/config/api';
 
 export type Notification = NotificationDTO;
 
@@ -53,12 +53,15 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     try {
       set({ loading: true });
 
-      if (!API_BASE_URL || !getAuthSession()?.accessToken) {
+      const notificationsUrl = buildApiUrl('/notifications');
+
+      if (!notificationsUrl || !getAuthSession()?.accessToken) {
+        logApiConfigWarningOnce();
         set({ notifications: [], unreadCount: 0 });
         return;
       }
 
-      const res = await fetch(`${API_BASE_URL}/notifications`, {
+      const res = await fetch(notificationsUrl, {
         headers: getNotificationHeaders(),
       });
       const data = await res.json().catch(() => null);
@@ -98,7 +101,14 @@ export const useNotificationsStore = create<NotificationsState>((set, get) => ({
     });
 
     try {
-      await fetch(`${API_BASE_URL}/notifications/${id}/read`, {
+      const markReadUrl = buildApiUrl(`/notifications/${id}/read`);
+
+      if (!markReadUrl) {
+        logApiConfigWarningOnce();
+        throw new Error('API URL is not configured');
+      }
+
+      await fetch(markReadUrl, {
         method: 'PATCH',
         headers: getNotificationHeaders(),
       });

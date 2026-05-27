@@ -37,6 +37,7 @@ yarn-error.*
 
 # Environment variables
 .env
+.env.production
 .env.*
 
 # typescript
