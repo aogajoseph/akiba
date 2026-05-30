@@ -1,8 +1,9 @@
 import * as SplashScreen from 'expo-splash-screen';
+import * as Linking from 'expo-linking';
 import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { router, Stack, useSegments } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import 'react-native-reanimated';
 
 import LaunchSplash from '@/src/components/launch/LaunchSplash';
@@ -12,6 +13,12 @@ import { useAuthStore } from '@/src/store/authStore';
 import { connectWebSocket, disconnectWebSocket } from '@/src/services/websocket';
 import { useNotificationsStore } from '@/src/store/notificationsStore';
 import { useOnboardingStore } from '@/src/store/onboardingStore';
+import {
+  captureInviteFromUrl,
+  getPendingInviteState,
+  hydratePendingInviteCache,
+  type PendingInvite,
+} from '@/src/services/pendingInvite';
 
 void SplashScreen.preventAutoHideAsync().catch(() => undefined);
 
@@ -22,11 +29,18 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const segments = useSegments();
+  const isAuthRoute =
+    segments[0] === 'forgot-password' ||
+    segments[0] === 'login' ||
+    segments[0] === 'register' ||
+    segments[0] === 'reset-password';
   const authStatus = useAuthStore((state) => state.status);
   const restoreSession = useAuthStore((state) => state.restoreSession);
   const hasSeenOnboarding = useOnboardingStore((state) => state.hasSeenOnboarding);
   const hydrateOnboarding = useOnboardingStore((state) => state.hydrate);
-  const bootReady = authStatus !== 'restoring' && hasSeenOnboarding !== null;
+  const [pendingInvite, setPendingInvite] = useState<PendingInvite | null | undefined>(undefined);
+  const bootReady =
+    authStatus !== 'restoring' && hasSeenOnboarding !== null && pendingInvite !== undefined;
 
   useEffect(() => {
     void restoreSession();
@@ -35,6 +49,32 @@ export default function RootLayout() {
   useEffect(() => {
     void hydrateOnboarding();
   }, [hydrateOnboarding]);
+
+  useEffect(() => {
+    void hydratePendingInviteCache()
+      .then((invite) => {
+        setPendingInvite(invite);
+      })
+      .catch(() => {
+        setPendingInvite(null);
+      });
+  }, []);
+
+  useEffect(() => {
+    if (pendingInvite === undefined) {
+      return;
+    }
+
+    const cachedInvite = getPendingInviteState();
+    if (
+      cachedInvite?.spaceId === pendingInvite?.spaceId &&
+      cachedInvite?.spaceName === pendingInvite?.spaceName
+    ) {
+      return;
+    }
+
+    setPendingInvite(cachedInvite ?? null);
+  }, [authStatus, hasSeenOnboarding, pendingInvite, segments]);
 
   useEffect(() => {
     if (authStatus !== 'authenticated') {
@@ -67,6 +107,37 @@ export default function RootLayout() {
   }, [authStatus, segments]);
 
   useEffect(() => {
+    let active = true;
+
+    const handleIncomingUrl = async (url: string, source: 'initial' | 'foreground' | 'warm-start') => {
+      const invite = await captureInviteFromUrl(url, source).catch(() => null);
+
+      if (!active) {
+        return;
+      }
+
+      if (invite) {
+        setPendingInvite(invite);
+      }
+    };
+
+    const subscribe = Linking.addEventListener('url', ({ url }) => {
+      void handleIncomingUrl(url, 'foreground');
+    });
+
+    void Linking.getInitialURL().then((url) => {
+      if (url) {
+        void handleIncomingUrl(url, 'initial');
+      }
+    });
+
+    return () => {
+      active = false;
+      subscribe.remove();
+    };
+  }, []);
+
+  useEffect(() => {
     if (!bootReady) {
       return;
     }
@@ -85,24 +156,39 @@ export default function RootLayout() {
   }, [bootReady, hasSeenOnboarding, segments]);
 
   useEffect(() => {
-    if (!bootReady || hasSeenOnboarding !== true) {
+    if (!bootReady || hasSeenOnboarding !== true || !pendingInvite) {
       return;
     }
 
-    if (segments[0] === 'onboarding') {
-      router.replace(authStatus === 'authenticated' ? '/home' : '/(auth)/login');
+    if (segments[0] === 'onboarding' || isAuthRoute) {
+      return;
     }
-  }, [authStatus, bootReady, hasSeenOnboarding, segments]);
+
+    if (authStatus === 'authenticated' && segments[0] !== 'invite') {
+      router.replace({
+        pathname: '/invite',
+        params: {
+          spaceId: pendingInvite.spaceId,
+          ...(pendingInvite.spaceName ? { spaceName: pendingInvite.spaceName } : {}),
+        },
+      });
+      return;
+    }
+
+    if (authStatus === 'unauthenticated' && !isAuthRoute) {
+      router.replace('/(auth)/login');
+    }
+  }, [authStatus, bootReady, hasSeenOnboarding, isAuthRoute, pendingInvite, segments]);
 
   useEffect(() => {
-    if (!bootReady || authStatus !== 'authenticated') {
+    if (!bootReady || authStatus !== 'authenticated' || pendingInvite) {
       return;
     }
 
-    if (segments[0] === '(auth)') {
+    if (isAuthRoute) {
       router.replace('/home');
     }
-  }, [authStatus, bootReady, segments]);
+  }, [authStatus, bootReady, isAuthRoute, pendingInvite, segments]);
 
   if (!bootReady) {
     return <LaunchSplash dark={colorScheme === 'dark'} />;

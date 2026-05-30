@@ -4,6 +4,7 @@ import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import AuthBrand from '../src/components/auth/AuthBrand';
 import { useAuthStore } from '../src/store/authStore';
+import { getPendingInviteState } from '../src/services/pendingInvite';
 import { useOnboardingStore } from '../src/store/onboardingStore';
 
 type Slide = {
@@ -35,6 +36,19 @@ export default function OnboardingScreen() {
 
   const completeOnboarding = async () => {
     await markComplete();
+    const pendingInvite = getPendingInviteState();
+
+    if (pendingInvite && authStatus === 'authenticated') {
+      router.replace({
+        pathname: '/invite',
+        params: {
+          spaceId: pendingInvite.spaceId,
+          ...(pendingInvite.spaceName ? { spaceName: pendingInvite.spaceName } : {}),
+        },
+      });
+      return;
+    }
+
     router.replace(authStatus === 'authenticated' ? '/home' : '/(auth)/login');
   };
 

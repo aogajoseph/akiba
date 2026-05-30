@@ -9,9 +9,9 @@ import {
   View,
 } from 'react-native';
 
-import { joinSpace } from '../../services/spaceService';
 import {
   clearPendingInvite,
+  consumePendingInviteAndJoin,
   setPendingInvite,
 } from '../../src/services/pendingInvite';
 import { ApiError, getAuthSession } from '../../utils/api';
@@ -46,7 +46,7 @@ export default function InviteResolverScreen() {
       const session = getAuthSession();
 
       if (!session?.user.id) {
-        await setPendingInvite({ spaceId, spaceName });
+        await setPendingInvite({ spaceId, spaceName }, { source: 'route' });
         router.replace('/(auth)/login');
         return;
       }
@@ -58,9 +58,9 @@ export default function InviteResolverScreen() {
       setIsJoining(true);
 
       try {
-        await joinSpace(spaceId);
+        await setPendingInvite({ spaceId, spaceName }, { source: 'route' });
+        await consumePendingInviteAndJoin();
         router.replace(`/spaces/${spaceId}`);
-        await clearPendingInvite();
       } catch (caughtError) {
         const apiError = caughtError as ApiError;
 
