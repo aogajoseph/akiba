@@ -15,6 +15,7 @@ import {
 import { LoginRequestDto } from '../../../backend/shared/contracts';
 import { login } from '../../services/authService';
 import AuthBrand from '../../src/components/auth/AuthBrand';
+import PasswordField from '../../src/components/auth/PasswordField';
 import {
   clearPendingInvite,
   consumePendingInviteAndJoin,
@@ -29,6 +30,7 @@ export default function LoginScreen() {
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
 
   const handleSubmit = async () => {
     setLoading(true);
@@ -78,18 +80,16 @@ export default function LoginScreen() {
               />
             </View>
 
-            <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
-                autoCapitalize="none"
-                onChangeText={(value) => setForm((current) => ({ ...current, password: value }))}
-                placeholder="Enter your password"
-                placeholderTextColor="#7c8b9b"
-                secureTextEntry
-                style={styles.input}
-                value={form.password}
-              />
-            </View>
+            <PasswordField
+              autoCapitalize="none"
+              label="Password"
+              onChangeText={(value) => setForm((current) => ({ ...current, password: value }))}
+              onToggleVisibility={() => setPasswordVisible((current) => !current)}
+              placeholder="Enter your password"
+              placeholderTextColor="#7c8b9b"
+              value={form.password}
+              visible={passwordVisible}
+            />
 
             <View style={styles.inlineActionRow}>
               <Link href="/(auth)/forgot-password" style={styles.inlineActionLink}>

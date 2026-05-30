@@ -15,6 +15,7 @@ import {
 import { RegisterRequestDto } from '../../../backend/shared/contracts';
 import { register } from '../../services/authService';
 import AuthBrand from '../../src/components/auth/AuthBrand';
+import PasswordField from '../../src/components/auth/PasswordField';
 import { useUsernameAvailability } from '../../src/hooks/useUsernameAvailability';
 import {
   clearPendingInvite,
@@ -31,6 +32,7 @@ export default function RegisterScreen() {
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [passwordVisible, setPasswordVisible] = useState(false);
   const availability = useUsernameAvailability(form.username);
 
   const handleChange = (field: keyof RegisterRequestDto, value: string) => {
@@ -138,15 +140,16 @@ export default function RegisterScreen() {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Password</Text>
-              <TextInput
+              <PasswordField
                 autoCapitalize="none"
+                containerStyle={styles.passwordRow}
+                label="Password"
                 onChangeText={(value) => handleChange('password', value)}
+                onToggleVisibility={() => setPasswordVisible((current) => !current)}
                 placeholder="At least 8 characters"
                 placeholderTextColor="#7c8b9b"
-                secureTextEntry
-                style={styles.input}
                 value={form.password}
+                visible={passwordVisible}
               />
               <Text style={styles.helperText}>Use at least 8 characters.</Text>
             </View>
@@ -234,6 +237,10 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 16,
     paddingVertical: 14,
+  },
+  passwordRow: {
+    backgroundColor: '#f5ede0',
+    borderColor: '#eadbc4',
   },
   errorText: {
     color: '#b42318',

@@ -13,6 +13,7 @@ import {
 } from 'react-native';
 
 import AuthBrand from '../../src/components/auth/AuthBrand';
+import PasswordField from '../../src/components/auth/PasswordField';
 import { requestPasswordReset, verifyPasswordReset } from '../../services/authService';
 import { ApiError } from '../../utils/api';
 
@@ -29,6 +30,8 @@ export default function ResetPasswordScreen() {
   const [loading, setLoading] = useState(false);
   const [resending, setResending] = useState(false);
   const [cooldown, setCooldown] = useState(RESEND_COOLDOWN_SECONDS);
+  const [newPasswordVisible, setNewPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
 
   useEffect(() => {
     if (cooldown <= 0) {
@@ -132,28 +135,28 @@ export default function ResetPasswordScreen() {
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>New password</Text>
-              <TextInput
+              <PasswordField
                 autoCapitalize="none"
+                label="New password"
                 onChangeText={setNewPassword}
+                onToggleVisibility={() => setNewPasswordVisible((current) => !current)}
                 placeholder="At least 8 characters"
                 placeholderTextColor="#7c8b9b"
-                secureTextEntry
-                style={styles.input}
                 value={newPassword}
+                visible={newPasswordVisible}
               />
             </View>
 
             <View style={styles.fieldGroup}>
-              <Text style={styles.label}>Confirm new password</Text>
-              <TextInput
+              <PasswordField
                 autoCapitalize="none"
+                label="Confirm new password"
                 onChangeText={setConfirmPassword}
+                onToggleVisibility={() => setConfirmPasswordVisible((current) => !current)}
                 placeholder="Repeat your password"
                 placeholderTextColor="#7c8b9b"
-                secureTextEntry
-                style={styles.input}
                 value={confirmPassword}
+                visible={confirmPasswordVisible}
               />
               {confirmPassword.length > 0 && !passwordsMatch ? (
                 <Text style={styles.errorText}>Passwords do not match.</Text>
