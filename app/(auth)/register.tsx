@@ -17,10 +17,7 @@ import { register } from '../../services/authService';
 import AuthBrand from '../../src/components/auth/AuthBrand';
 import PasswordField from '../../src/components/auth/PasswordField';
 import { useUsernameAvailability } from '../../src/hooks/useUsernameAvailability';
-import {
-  clearPendingInvite,
-  consumePendingInviteAndJoin,
-} from '../../src/services/pendingInvite';
+import { getPendingInvite, getPendingInviteRoute } from '../../src/services/pendingInvite';
 import { ApiError } from '../../utils/api';
 
 export default function RegisterScreen() {
@@ -62,12 +59,9 @@ export default function RegisterScreen() {
         phoneNumber: form.phoneNumber.trim(),
         username: form.username.trim().toLowerCase(),
       });
-      const joinedSpaceId = await consumePendingInviteAndJoin();
-      router.replace(joinedSpaceId ? `/spaces/${joinedSpaceId}` : '/home');
-
-      if (joinedSpaceId) {
-        await clearPendingInvite();
-      }
+      const pendingInvite = await getPendingInvite();
+      const pendingInviteRoute = getPendingInviteRoute(pendingInvite);
+      router.replace(pendingInviteRoute ?? '/home');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to register right now.');

@@ -1,6 +1,6 @@
 import { Share } from 'react-native';
 
-import { getSpaceInviteLink } from '@/services/spaceService';
+import { getSpaceInviteLink, getSpaceInviteLinkDetails } from '@/services/spaceService';
 
 /**
  * SINGLE SOURCE OF TRUTH for invite sharing.
@@ -16,14 +16,15 @@ export const getInviteLink = async (spaceId: string): Promise<string> => {
 };
 
 export const generateShareMessage = async (space: ShareSpace): Promise<string> => {
-  const inviteLink = await getInviteLink(space.id);
+  const inviteLinkDetails = await getSpaceInviteLinkDetails(space.id);
   const safeName = space.name?.trim() ? space.name.trim() : 'My Savings Group';
 
   return `Akiba \u{1F4B0}
 Save money with friends & family
 
 \u{1F4CC} ${safeName}
-\u{1F449} Join here: ${inviteLink}`;
+\u{1F449} Open in Akiba: ${inviteLinkDetails.primaryLink}
+\u{1F449} Browser fallback: ${inviteLinkDetails.fallbackLink}`;
 };
 
 export const shareInvite = async (space: ShareSpace): Promise<void> => {

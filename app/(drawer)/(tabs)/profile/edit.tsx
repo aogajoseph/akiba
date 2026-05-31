@@ -158,7 +158,7 @@ export default function EditProfileScreen() {
               }}
               style={styles.avatarAction}>
               <Text style={styles.avatarActionText}>
-                {displayAvatarUri ? 'Update profile picture' : 'Choose Photo'}
+                {displayAvatarUri ? 'Update profile picture' : 'Upload Image'}
               </Text>
             </Pressable>
             {hasPendingImageUpload ? (

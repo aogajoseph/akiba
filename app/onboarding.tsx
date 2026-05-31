@@ -4,7 +4,7 @@ import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 import AuthBrand from '../src/components/auth/AuthBrand';
 import { useAuthStore } from '../src/store/authStore';
-import { getPendingInviteState } from '../src/services/pendingInvite';
+import { getPendingInviteRoute, getPendingInviteState } from '../src/services/pendingInvite';
 import { useOnboardingStore } from '../src/store/onboardingStore';
 
 type Slide = {
@@ -15,11 +15,11 @@ type Slide = {
 const slides: Slide[] = [
   {
     title: 'Welcome to Akiba',
-    body: 'Save money with friends, family and communities in shared spaces.',
+    body: 'Save money with friends, family & communities in shared spaces.',
   },
   {
     title: 'Manage Goals as a Team',
-    body: 'Secure contributions, controlled withdrawals and transparent tracking, keeping everyone informed.',
+    body: 'Secure contributions, controlled withdrawals & transparency with everyone involved.',
   },
   {
     title: 'Do More Together',
@@ -37,15 +37,10 @@ export default function OnboardingScreen() {
   const completeOnboarding = async () => {
     await markComplete();
     const pendingInvite = getPendingInviteState();
+    const pendingInviteRoute = getPendingInviteRoute(pendingInvite);
 
-    if (pendingInvite && authStatus === 'authenticated') {
-      router.replace({
-        pathname: '/invite',
-        params: {
-          spaceId: pendingInvite.spaceId,
-          ...(pendingInvite.spaceName ? { spaceName: pendingInvite.spaceName } : {}),
-        },
-      });
+    if (pendingInviteRoute) {
+      router.replace(pendingInviteRoute);
       return;
     }
 

@@ -16,10 +16,7 @@ import { LoginRequestDto } from '../../../backend/shared/contracts';
 import { login } from '../../services/authService';
 import AuthBrand from '../../src/components/auth/AuthBrand';
 import PasswordField from '../../src/components/auth/PasswordField';
-import {
-  clearPendingInvite,
-  consumePendingInviteAndJoin,
-} from '../../src/services/pendingInvite';
+import { getPendingInvite, getPendingInviteRoute } from '../../src/services/pendingInvite';
 import { ApiError } from '../../utils/api';
 
 export default function LoginScreen() {
@@ -41,12 +38,9 @@ export default function LoginScreen() {
         identifier: form.identifier.trim(),
         password: form.password,
       });
-      const joinedSpaceId = await consumePendingInviteAndJoin();
-      router.replace(joinedSpaceId ? `/spaces/${joinedSpaceId}` : '/home');
-
-      if (joinedSpaceId) {
-        await clearPendingInvite();
-      }
+      const pendingInvite = await getPendingInvite();
+      const pendingInviteRoute = getPendingInviteRoute(pendingInvite);
+      router.replace(pendingInviteRoute ?? '/home');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to log in right now.');

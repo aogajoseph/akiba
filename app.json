@@ -2,7 +2,7 @@
   "expo": {
     "name": "Akiba",
     "slug": "akiba",
-    "version": "1.0.0",
+    "version": "0.8.0-beta.1",
     "orientation": "portrait",
     "icon": "./assets/images/logo.png",
     "scheme": "akiba",
@@ -13,6 +13,31 @@
     },
     "android": {
       "package": "com.akiba.app",
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ],
+          "data": [
+            {
+              "scheme": "akiba",
+              "host": "invite"
+            },
+            {
+              "scheme": "https",
+              "host": "akiba.app",
+              "pathPrefix": "/invite"
+            },
+            {
+              "scheme": "https",
+              "host": "www.akiba.app",
+              "pathPrefix": "/invite"
+            }
+          ]
+        }
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/logo.png"
@@ -40,7 +65,9 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true,

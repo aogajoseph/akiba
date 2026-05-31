@@ -27,8 +27,16 @@ import {
   UpdateGroupResponseDto,
   UpdateSpaceNotificationPreferenceResponseDto,
   UploadMediaMessageResponseDto,
+  type InviteValidationResponseDto,
 } from '../../backend/shared/contracts';
 import { api } from '../utils/api';
+
+export type SpaceInviteLinkResponseDto = {
+  fallbackLink: string;
+  link: string;
+  primaryLink: string;
+  token: string;
+};
 
 export type MediaUploadAttachment = {
   fileName: string;
@@ -62,8 +70,27 @@ export const getSpace = async (spaceId: string): Promise<GetGroupResponseDto> =>
 };
 
 export const getSpaceInviteLink = async (spaceId: string): Promise<string> => {
-  const response = await api.get<{ data: { link: string } }>(`/spaces/${spaceId}/invite-link`);
+  const response = await api.get<{ data: SpaceInviteLinkResponseDto }>(`/spaces/${spaceId}/invite-link`);
   return response.data.data.link;
+};
+
+export const getSpaceInviteLinkDetails = async (
+  spaceId: string,
+): Promise<SpaceInviteLinkResponseDto> => {
+  const response = await api.get<{ data: SpaceInviteLinkResponseDto }>(`/spaces/${spaceId}/invite-link`);
+  return response.data.data;
+};
+
+export const validateInviteToken = async (
+  token: string,
+): Promise<InviteValidationResponseDto> => {
+  const response = await api.get<{ data: InviteValidationResponseDto }>('/api/invite/validate', {
+    params: {
+      token,
+    },
+  });
+
+  return response.data.data;
 };
 
 export const joinSpace = async (spaceId: string): Promise<JoinGroupResponseDto> => {

@@ -136,7 +136,7 @@ export default function ListSpacesScreen() {
         {!loading && spaces.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No Spaces Yet</Text>
-            <Text style={styles.emptyText}>Create a space to start saving with others.</Text>
+            <Text style={styles.emptyText}>Create a space to start saving with friends, family and other groups.</Text>
           </View>
         ) : null}
 

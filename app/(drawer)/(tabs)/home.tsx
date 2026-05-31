@@ -231,10 +231,9 @@ export default function HomeScreen() {
 
         {!loading && spaces.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Start your first shared savings space</Text>
+            <Text style={styles.emptyTitle}>Save money with others in shared spaces</Text>
             <Text style={styles.emptyBody}>
-              Create a group for family, friends, events, or a simple chama and begin tracking
-              money together.
+              Create a space and start saving with friends, family and other groups.
             </Text>
             <View style={styles.emptyActions}>
               <Pressable onPress={() => router.push('/spaces/create')} style={styles.primaryButton}>

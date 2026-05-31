@@ -1,20 +1,45 @@
 import * as Linking from 'expo-linking';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
-import { joinSpace } from '../../services/spaceService';
-import { ApiError } from '../../utils/api';
 import { logStructuredEvent } from '@/src/utils/logger';
 
 export type PendingInvite = {
-  spaceId: string;
+  spaceId?: string;
   spaceName?: string;
+  token?: string;
 };
+
+export type PendingInviteRoute =
+  | {
+      pathname: '/invite/join';
+      params: {
+        token: string;
+        spaceId?: string;
+        spaceName?: string;
+      };
+    }
+  | {
+      pathname: '/invite/join';
+      params: {
+        spaceId: string;
+        spaceName?: string;
+      };
+    };
 
 const PENDING_INVITE_STORAGE_KEY = 'akiba:pendingInvite';
 let currentPendingInvite: PendingInvite | null | undefined = undefined;
 
 const normalizeInvite = (invite: PendingInvite): PendingInvite | null => {
-  const spaceId = invite.spaceId.trim();
+  const token = invite.token?.trim();
+  const spaceId = invite.spaceId?.trim();
+
+  if (token) {
+    return {
+      token,
+      ...(spaceId ? { spaceId } : {}),
+      spaceName: invite.spaceName?.trim() ? invite.spaceName.trim() : undefined,
+    };
+  }
 
   if (!spaceId) {
     return null;
@@ -26,26 +51,80 @@ const normalizeInvite = (invite: PendingInvite): PendingInvite | null => {
   };
 };
 
+const normalizeInvitePath = (parsed: Linking.ParsedURL): string => {
+  const path = parsed.path?.replace(/^\/+/, '') ?? '';
+  const host = (parsed as { hostname?: string; host?: string }).hostname?.replace(/^\/+/, '')
+    ?? (parsed as { hostname?: string; host?: string }).host?.replace(/^\/+/, '')
+    ?? '';
+
+  if (host === 'akiba.app' || host === 'www.akiba.app') {
+    return path;
+  }
+
+  return [host, path].filter(Boolean).join('/').replace(/^\/+/, '');
+};
+
 export const getPendingInviteState = (): PendingInvite | null | undefined => {
   return currentPendingInvite;
+};
+
+export const getPendingInviteRoute = (
+  invite: PendingInvite | null | undefined,
+): PendingInviteRoute | null => {
+  if (!invite) {
+    return null;
+  }
+
+  if (invite.token) {
+    return {
+      pathname: '/invite/join',
+      params: {
+        token: invite.token,
+        ...(invite.spaceId ? { spaceId: invite.spaceId } : {}),
+        ...(invite.spaceName ? { spaceName: invite.spaceName } : {}),
+      },
+    };
+  }
+
+  if (!invite.spaceId) {
+    return null;
+  }
+
+  return {
+    pathname: '/invite/join',
+    params: {
+      spaceId: invite.spaceId,
+      ...(invite.spaceName ? { spaceName: invite.spaceName } : {}),
+    },
+  };
 };
 
 export const parseInviteUrl = (url: string): PendingInvite | null => {
   try {
     const parsed = Linking.parse(url);
-    const path = parsed.path?.replace(/^\/+/, '') ?? '';
+    const normalizedPath = normalizeInvitePath(parsed);
 
-    if (path !== 'invite') {
+    if (normalizedPath !== 'invite' && normalizedPath !== 'invite/join') {
       return null;
     }
 
+    const rawToken = parsed.queryParams?.token;
     const rawSpaceId = parsed.queryParams?.spaceId;
     const rawSpaceName = parsed.queryParams?.spaceName;
+    const token = typeof rawToken === 'string' ? rawToken.trim() : '';
     const spaceId = typeof rawSpaceId === 'string' ? rawSpaceId.trim() : '';
     const spaceName =
       typeof rawSpaceName === 'string' && rawSpaceName.trim().length > 0
         ? rawSpaceName.trim()
         : undefined;
+
+    if (token) {
+      return {
+        token,
+        ...(spaceId ? { spaceId } : {}),
+        ...(spaceName ? { spaceName } : {}),
+      };
+    }
 
     if (!spaceId) {
       return null;
@@ -53,7 +132,7 @@ export const parseInviteUrl = (url: string): PendingInvite | null => {
 
     return {
       spaceId,
-      spaceName,
+      ...(spaceName ? { spaceName } : {}),
     };
   } catch {
     return null;
@@ -75,8 +154,9 @@ export const captureInviteFromUrl = async (
 
   logStructuredEvent('invite.link.parsed', {
     source,
-    spaceId: invite.spaceId,
+    hasSpaceId: Boolean(invite.spaceId),
     hasSpaceName: Boolean(invite.spaceName),
+    hasToken: Boolean(invite.token),
   });
 
   await setPendingInvite(invite, { source });
@@ -107,9 +187,10 @@ export const setPendingInvite = async (
     JSON.stringify(normalizedInvite),
   );
   logStructuredEvent('invite.persisted', {
-    source: options?.source ?? 'set',
-    spaceId: normalizedInvite.spaceId,
+    hasSpaceId: Boolean(normalizedInvite.spaceId),
     hasSpaceName: Boolean(normalizedInvite.spaceName),
+    hasToken: Boolean(normalizedInvite.token),
+    source: options?.source ?? 'set',
   });
 };
 
@@ -122,16 +203,18 @@ export const getPendingInvite = async (): Promise<PendingInvite | null> => {
 
   try {
     const parsed = JSON.parse(rawValue) as Partial<PendingInvite>;
+    const invite = normalizeInvite({
+      spaceId: typeof parsed.spaceId === 'string' ? parsed.spaceId : undefined,
+      spaceName: typeof parsed.spaceName === 'string' ? parsed.spaceName : undefined,
+      token: typeof parsed.token === 'string' ? parsed.token : undefined,
+    });
 
-    if (typeof parsed.spaceId !== 'string' || parsed.spaceId.trim().length === 0) {
+    if (!invite) {
       await AsyncStorage.removeItem(PENDING_INVITE_STORAGE_KEY);
       return null;
     }
 
-    return {
-      spaceId: parsed.spaceId,
-      spaceName: typeof parsed.spaceName === 'string' ? parsed.spaceName : undefined,
-    };
+    return invite;
   } catch {
     await AsyncStorage.removeItem(PENDING_INVITE_STORAGE_KEY);
     return null;
@@ -149,8 +232,9 @@ export const hydratePendingInviteCache = async (): Promise<PendingInvite | null>
 
   if (invite) {
     logStructuredEvent('invite.restored', {
-      spaceId: invite.spaceId,
+      hasSpaceId: Boolean(invite.spaceId),
       hasSpaceName: Boolean(invite.spaceName),
+      hasToken: Boolean(invite.token),
     });
   } else {
     logStructuredEvent('invite.context.missing', {
@@ -159,62 +243,4 @@ export const hydratePendingInviteCache = async (): Promise<PendingInvite | null>
   }
 
   return invite;
-};
-
-const isRecoverableJoinError = (error: ApiError): boolean => {
-  if (typeof error.status === 'number') {
-    return error.status >= 500;
-  }
-
-  return true;
-};
-
-export const consumePendingInviteAndJoin = async (): Promise<string | null> => {
-  const invite = currentPendingInvite ?? (await hydratePendingInviteCache());
-
-  if (!invite?.spaceId) {
-    logStructuredEvent('invite.context.missing', {
-      source: 'join',
-    });
-    return null;
-  }
-
-  try {
-    logStructuredEvent('invite.join.started', {
-      spaceId: invite.spaceId,
-      hasSpaceName: Boolean(invite.spaceName),
-    });
-    await joinSpace(invite.spaceId);
-    await clearPendingInvite();
-    logStructuredEvent('invite.join.success', {
-      spaceId: invite.spaceId,
-      hasSpaceName: Boolean(invite.spaceName),
-    });
-    return invite.spaceId;
-  } catch (caughtError) {
-    const apiError = caughtError as ApiError;
-
-    if (apiError.error === 'User is already a member of this group') {
-      await clearPendingInvite();
-      logStructuredEvent('invite.join.success', {
-        spaceId: invite.spaceId,
-        hasSpaceName: Boolean(invite.spaceName),
-        alreadyMember: true,
-      });
-      return invite.spaceId;
-    }
-
-    if (!isRecoverableJoinError(apiError)) {
-      await clearPendingInvite();
-    }
-
-    logStructuredEvent('invite.join.failed', {
-      spaceId: invite.spaceId,
-      hasSpaceName: Boolean(invite.spaceName),
-      error: apiError.error ?? 'Unknown error',
-      status: apiError.status,
-    });
-
-    throw caughtError;
-  }
 };

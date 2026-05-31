@@ -51,7 +51,7 @@ export default function ProfileScreen() {
   const [avatarViewerVisible, setAvatarViewerVisible] = useState(false);
 
   const displayUser = user ?? sessionUser;
-  const appVersion = Constants.expoConfig?.version ?? '1.0.0';
+  const appVersion = Constants.expoConfig?.version ?? '0.8.0-beta.1';
   const joinedLabel = formatJoinedDate(displayUser?.createdAt);
   const normalizedUsername = useMemo(
     () => displayUser?.username?.trim().replace(/^@+/, '') ?? 'username',

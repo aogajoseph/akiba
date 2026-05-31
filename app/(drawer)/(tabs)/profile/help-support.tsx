@@ -65,7 +65,7 @@ export default function HelpSupportScreen() {
             <Text style={styles.question}>Can support help with account recovery?</Text>
             <Text style={styles.answer}>
               Yes. If you are locked out or need help resetting access, contact us and we will
-              guide you through the next step.
+              guide you through the next steps.
             </Text>
           </View>
         </ProfileSection>
@@ -73,7 +73,7 @@ export default function HelpSupportScreen() {
         <ProfileSection title="Response Expectations">
           <View style={styles.textCard}>
             <Text style={styles.answer}>
-              Akiba responds as quickly as possible. For urgent account and space issues, calling us is
+              Akiba Ltd responds as quickly as possible. For urgent account and space issues, calling us is
               usually the best option.
             </Text>
           </View>

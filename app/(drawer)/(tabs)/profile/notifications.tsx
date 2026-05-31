@@ -141,8 +141,7 @@ export default function NotificationSettingsScreen() {
         <View style={styles.heroCard}>
           <Text style={styles.title}>Notifications</Text>
           <Text style={styles.subtitle}>
-            Decide how Akiba keeps you informed. Your
-            preferences are stored on this device for now.
+            Decide how Akiba keeps you informed.
           </Text>
           <Text style={styles.heroMeta}>{unreadSummary}</Text>
         </View>
@@ -158,7 +157,7 @@ export default function NotificationSettingsScreen() {
 
         <ProfileSection title="General">
           <SettingsSwitchRow
-            description="Allow push alerts to this device."
+            description="Allow push alerts on this device."
             helper="Stored on this device"
             onValueChange={(value) => {
               void updateLocalSetting('pushNotifications', value);

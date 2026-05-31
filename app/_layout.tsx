@@ -16,6 +16,7 @@ import { useOnboardingStore } from '@/src/store/onboardingStore';
 import {
   captureInviteFromUrl,
   getPendingInviteState,
+  getPendingInviteRoute,
   hydratePendingInviteCache,
   type PendingInvite,
 } from '@/src/services/pendingInvite';
@@ -68,7 +69,8 @@ export default function RootLayout() {
     const cachedInvite = getPendingInviteState();
     if (
       cachedInvite?.spaceId === pendingInvite?.spaceId &&
-      cachedInvite?.spaceName === pendingInvite?.spaceName
+      cachedInvite?.spaceName === pendingInvite?.spaceName &&
+      cachedInvite?.token === pendingInvite?.token
     ) {
       return;
     }
@@ -164,28 +166,25 @@ export default function RootLayout() {
       return;
     }
 
-    if (authStatus === 'authenticated' && segments[0] !== 'invite') {
-      router.replace({
-        pathname: '/invite',
-        params: {
-          spaceId: pendingInvite.spaceId,
-          ...(pendingInvite.spaceName ? { spaceName: pendingInvite.spaceName } : {}),
-        },
-      });
+    const inviteRoute = getPendingInviteRoute(pendingInvite);
+
+    if (inviteRoute && segments[0] !== 'invite') {
+      router.replace(inviteRoute);
+      return;
+    }
+  }, [bootReady, hasSeenOnboarding, pendingInvite, segments]);
+
+  useEffect(() => {
+    if (!bootReady || pendingInvite) {
       return;
     }
 
     if (authStatus === 'unauthenticated' && !isAuthRoute) {
       router.replace('/(auth)/login');
-    }
-  }, [authStatus, bootReady, hasSeenOnboarding, isAuthRoute, pendingInvite, segments]);
-
-  useEffect(() => {
-    if (!bootReady || authStatus !== 'authenticated' || pendingInvite) {
       return;
     }
 
-    if (isAuthRoute) {
+    if (authStatus === 'authenticated' && isAuthRoute) {
       router.replace('/home');
     }
   }, [authStatus, bootReady, isAuthRoute, pendingInvite, segments]);
