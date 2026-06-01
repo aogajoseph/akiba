@@ -16,7 +16,7 @@ import {
   View,
 } from 'react-native';
 
-import { Group } from '../../../../../../backend/shared/contracts';
+import { Group } from '@/shared/contracts';
 import { uploadImageToCloudinary } from '@/src/services/cloudinary';
 import { deleteSpace, getSpace, updateSpace } from '../../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../../utils/api';

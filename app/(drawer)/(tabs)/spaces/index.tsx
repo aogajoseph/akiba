@@ -16,7 +16,7 @@ import {
   type ApiResponse,
   Group,
   type GetSpaceNotificationPreferenceResponseDto,
-} from '../../../../../backend/shared/contracts';
+} from '@/shared/contracts';
 import AppHeader from '@/components/AppHeader';
 import FullScreenImageViewer from '../../../../components/FullScreenImageViewer';
 import { listSpaces } from '../../../../services/spaceService';

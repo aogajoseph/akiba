@@ -13,7 +13,7 @@ import {
   View,
 } from 'react-native';
 
-import { Group, SpaceAdmin, SpaceMember } from '../../../../../../backend/shared/contracts';
+import { Group, SpaceAdmin, SpaceMember } from '@/shared/contracts';
 import FullScreenImageViewer from '@/components/FullScreenImageViewer';
 import InviteMembersModal from '@/components/InviteMembersModal';
 import AppAvatar from '@/src/components/identity/AppAvatar';

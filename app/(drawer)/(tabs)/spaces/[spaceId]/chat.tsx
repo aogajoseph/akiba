@@ -35,7 +35,7 @@ import {
   TypingUser,
   type GetSpaceNotificationPreferenceResponseDto,
   type UpdateSpaceNotificationPreferenceResponseDto,
-} from '../../../../../../backend/shared/contracts';
+} from '@/shared/contracts';
 import {
   deleteMessage,
   getTypingUsers,

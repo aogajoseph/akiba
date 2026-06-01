@@ -17,7 +17,7 @@ import {
   View,
 } from 'react-native';
 
-import { CreateGroupRequestDto } from '../../../../../backend/shared/contracts';
+import { CreateGroupRequestDto } from '@/shared/contracts';
 import { uploadImageToCloudinary } from '@/src/services/cloudinary';
 import { createSpace } from '../../../../services/spaceService';
 import { ApiError } from '../../../../utils/api';

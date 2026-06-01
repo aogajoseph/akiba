@@ -12,7 +12,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Group, NotificationDTO } from '../../../../backend/shared/contracts';
+import { Group, NotificationDTO } from '@/shared/contracts';
 import AppHeader from '@/components/AppHeader';
 import { listSpaces } from '@/services/spaceService';
 import { useAuthStore } from '@/src/store/authStore';
