@@ -28,7 +28,7 @@ import {
   UpdateSpaceNotificationPreferenceResponseDto,
   UploadMediaMessageResponseDto,
   type InviteValidationResponseDto,
-} from '../../backend/shared/contracts';
+} from '@/shared/contracts';
 import { api } from '../utils/api';
 
 export type SpaceInviteLinkResponseDto = {

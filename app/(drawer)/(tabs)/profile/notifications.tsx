@@ -19,7 +19,7 @@ import {
 } from '@/src/services/notificationSettings';
 import {
   getSpaceNotificationPreference,
-  listSpaces,
+  listSpaces,backend
   updateSpaceNotificationPreference,
 } from '@/services/spaceService';
 import { useNotificationsStore } from '@/src/store/notificationsStore';

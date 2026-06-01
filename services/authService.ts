@@ -11,7 +11,7 @@ import {
   UpdateProfileRequestDto,
   UpdateProfileResponseDto,
   UsernameAvailabilityResponseDto,
-} from '../../backend/shared/contracts';
+} from '@/shared/contracts';
 import { registerPushNotificationsForCurrentUser } from '../src/services/pushNotifications';
 import { api, clearAuthSession, setAuthSession, setAuthSessionUser } from '../utils/api';
 
