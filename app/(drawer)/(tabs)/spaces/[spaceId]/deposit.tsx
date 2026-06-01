@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 
 import { TransactionSource } from '@/shared/contracts';
-import { normalizePhoneNumber } from '@d/shared/phone';
+import { normalizePhoneNumber } from '@/shared/phone';
 import { createDeposit } from '../../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../../utils/api';
 
