@@ -1,4 +1,4 @@
-import { Image, StyleSheet, Text, View } from 'react-native';
+import { Image, SafeAreaView, StyleSheet, Text, View } from 'react-native';
 
 type LaunchSplashProps = {
   dark: boolean;
@@ -6,15 +6,17 @@ type LaunchSplashProps = {
 
 export default function LaunchSplash({ dark }: LaunchSplashProps) {
   return (
-    <View style={[styles.container, { backgroundColor: dark ? '#111827' : '#F7F3EA' }]}>
+    <SafeAreaView style={[styles.container, { backgroundColor: dark ? '#111827' : '#F7F3EA' }]}>
       <View style={styles.hero}>
         <View style={[styles.logoWrap, dark ? styles.logoWrapDark : null]}>
           <Image source={require('../../../assets/images/logo.png')} style={styles.logo} />
         </View>
       </View>
 
-      <Text style={[styles.tagline, { color: dark ? '#E5E7EB' : '#526172' }]}>Save money with others in shared spaces</Text>
-    </View>
+      <Text style={[styles.tagline, { color: dark ? '#E5E7EB' : '#526172' }]}>
+        Save money with others in shared spaces
+      </Text>
+    </SafeAreaView>
   );
 }
 
@@ -26,7 +28,7 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingBottom: 28,
     paddingHorizontal: 24,
-    paddingTop: 92,
+    paddingTop: 24,
   },
   hero: {
     alignItems: 'center',

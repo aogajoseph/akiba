@@ -179,6 +179,10 @@ export default function RootLayout() {
       return;
     }
 
+    if (hasSeenOnboarding === false) {
+      return;
+    }
+
     if (authStatus === 'unauthenticated' && !isAuthRoute) {
       router.replace('/(auth)/login');
       return;
