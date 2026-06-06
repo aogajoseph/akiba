@@ -14,7 +14,7 @@ export default function LaunchSplash({ dark }: LaunchSplashProps) {
       </View>
 
       <Text style={[styles.tagline, { color: dark ? '#E5E7EB' : '#526172' }]}>
-        Save money with others in shared spaces
+        Raise money with others in shared spaces
       </Text>
     </SafeAreaView>
   );

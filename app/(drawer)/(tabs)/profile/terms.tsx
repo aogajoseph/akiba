@@ -9,7 +9,7 @@ export default function TermsScreen() {
       <ScrollView contentContainerStyle={styles.content}>
         <LongFormSection title="Using Akiba Responsibly">
           <Text style={styles.bodyText}>
-            Akiba is designed to help friends, families and other groups of people save money transparently for events and shared goals. Please use it honestly and respectfully.
+            Akiba is designed to help friends, families and other groups of people raise and spend money transparently for events and shared goals. Please use it honestly and respectfully.
           </Text>
         </LongFormSection>
 

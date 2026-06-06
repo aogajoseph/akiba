@@ -5,12 +5,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { LoginRequestDto } from '@/shared/contracts';
 import { login } from '../../services/authService';
@@ -50,7 +50,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.select({ ios: 'padding', default: undefined })}
         style={styles.container}>

@@ -5,12 +5,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import AuthBrand from '../../src/components/auth/AuthBrand';
 import PasswordField from '../../src/components/auth/PasswordField';
@@ -97,7 +97,7 @@ export default function ResetPasswordScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.select({ ios: 'padding', default: undefined })}
         style={styles.container}>

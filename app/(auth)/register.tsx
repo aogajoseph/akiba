@@ -5,12 +5,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { RegisterRequestDto } from '@/shared/contracts';
 import { register } from '../../services/authService';
@@ -71,14 +71,14 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['top', 'left', 'right', 'bottom']} style={styles.safeArea}>
       <KeyboardAvoidingView
         behavior={Platform.select({ ios: 'padding', default: undefined })}
         style={styles.container}>
         <View style={styles.card}>
           <AuthBrand color="#9a5d22" />
           <Text style={styles.title}>Welcome</Text>
-          <Text style={styles.subtitle}>Save money with friends & family in shared spaces.</Text>
+          <Text style={styles.subtitle}>Raise money with family & friends in shared spaces.</Text>
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>

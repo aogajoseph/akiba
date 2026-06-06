@@ -1,6 +1,7 @@
 import { router } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { Pressable, SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import AuthBrand from '../src/components/auth/AuthBrand';
 import { useAuthStore } from '../src/store/authStore';
@@ -15,7 +16,7 @@ type Slide = {
 const slides: Slide[] = [
   {
     title: 'Welcome to Akiba',
-    body: 'Save money with friends, family & communities in shared spaces.',
+    body: 'Raise money with friends, family & communities in shared spaces.',
   },
   {
     title: 'Manage Goals as a Team',
@@ -29,6 +30,7 @@ const slides: Slide[] = [
 
 export default function OnboardingScreen() {
   const [index, setIndex] = useState(0);
+  const insets = useSafeAreaInsets();
   const authStatus = useAuthStore((state) => state.status);
   const markComplete = useOnboardingStore((state) => state.markComplete);
   const isLastSlide = index === slides.length - 1;
@@ -48,8 +50,15 @@ export default function OnboardingScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
+    <View style={styles.safeArea}>
+      <View
+        style={[
+          styles.container,
+          {
+            paddingBottom: 24 + insets.bottom,
+            paddingTop: 24 + insets.top,
+          },
+        ]}>
         <View style={styles.header}>
           <AuthBrand color="#0f766e" />
           <Pressable onPress={() => {
@@ -92,7 +101,7 @@ export default function OnboardingScreen() {
           </View>
         </View>
       </View>
-    </SafeAreaView>
+    </View>
   );
 }
 

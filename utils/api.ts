@@ -8,6 +8,30 @@ export type ApiError = {
   status?: number;
 };
 
+const shouldLogApiTraffic = process.env.EXPO_PUBLIC_DEBUG_API_LOGS === 'true';
+
+const logApiTraffic = (stage: string, details: Record<string, unknown>): void => {
+  if (!shouldLogApiTraffic) {
+    return;
+  }
+
+  console.log(
+    JSON.stringify({
+      event: `api.${stage}`,
+      ...details,
+    }),
+  );
+};
+
+const isApiErrorLike = (error: unknown): error is ApiError => {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'error' in error &&
+    typeof (error as { error?: unknown }).error === 'string'
+  );
+};
+
 export const getAuthSession = (): AuthSession | null => {
   return useAuthStore.getState().session;
 };
@@ -41,6 +65,14 @@ api.interceptors.request.use((config) => {
     } satisfies ApiError);
   }
 
+  logApiTraffic('request', {
+    baseURL: config.baseURL ?? API_BASE_URL,
+    data: config.data,
+    method: config.method,
+    params: config.params,
+    url: config.url,
+  });
+
   const session = getAuthSession();
 
   if (session?.accessToken) {
@@ -53,8 +85,25 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
+    if (isApiErrorLike(error)) {
+      logApiTraffic('error', {
+        error: error.error,
+        status: error.status,
+      });
+
+      return Promise.reject(error);
+    }
+
     const status =
       typeof error.response?.status === 'number' ? error.response.status : undefined;
+
+    logApiTraffic('response', {
+      data: error.response?.data,
+      message: error.message,
+      method: error.config?.method,
+      status,
+      url: error.config?.url,
+    });
 
     if (status === 401) {
       void clearAuthSession();

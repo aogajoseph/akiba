@@ -231,7 +231,7 @@ export default function HomeScreen() {
 
         {!loading && spaces.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Save money with others in shared spaces</Text>
+            <Text style={styles.emptyTitle}>Raise money with others in shared spaces</Text>
             <Text style={styles.emptyBody}>
               Create a space and start saving with friends, family and other groups.
             </Text>

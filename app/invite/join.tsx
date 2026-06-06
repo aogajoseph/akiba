@@ -241,7 +241,7 @@ export default function InviteJoinScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <Text style={styles.brandTitle}>Akiba</Text>
-          <Text style={styles.brandSubtitle}>Save money with friends & family</Text>
+          <Text style={styles.brandSubtitle}>Raise money with friends & family</Text>
           <Text style={styles.title}>{errorMessage ?? 'This invite link is invalid.'}</Text>
           <Pressable
             onPress={() => {
@@ -260,7 +260,7 @@ export default function InviteJoinScreen() {
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.container}>
           <Text style={styles.brandTitle}>Akiba</Text>
-          <Text style={styles.brandSubtitle}>Save money with friends & family</Text>
+          <Text style={styles.brandSubtitle}>Raise money with friends & family</Text>
           <Text style={styles.inviteLine}>You&apos;ve been invited to join {spaceName}</Text>
           <Text style={styles.title}>{errorMessage ?? 'Unable to resolve this invite.'}</Text>
           <Pressable
@@ -279,7 +279,7 @@ export default function InviteJoinScreen() {
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         <Text style={styles.brandTitle}>Akiba</Text>
-        <Text style={styles.brandSubtitle}>Save money with friends & family</Text>
+        <Text style={styles.brandSubtitle}>Raise money with friends & family</Text>
         <Text style={styles.inviteLine}>
           You&apos;ve been invited to join {spaceName}
         </Text>
