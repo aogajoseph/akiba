@@ -16,14 +16,14 @@ type Slide = {
 const slides: Slide[] = [
   {
     title: 'Welcome to Akiba',
-    body: 'Raise money with friends, family & communities in shared spaces.',
+    body: 'Raise money with friends, family and communities in shared spaces.',
   },
   {
-    title: 'Manage Goals as a Team',
-    body: 'Secure contributions, controlled withdrawals & transparency with everyone involved.',
+    title: 'Work as a team',
+    body: 'Protected contributions, controlled withdrawals and full transparency for everyone.',
   },
   {
-    title: 'Do More Together',
+    title: 'Do more, together',
     body: 'Turn shared goals into shared success.',
   },
 ];
@@ -69,8 +69,9 @@ export default function OnboardingScreen() {
         </View>
 
         <View style={styles.slideCard}>
-          <Text style={styles.title}>{currentSlide.title}</Text>
-          <Text style={styles.body}>{currentSlide.body}</Text>
+          <View style={styles.accentBar} />
+            <Text style={styles.title}>{currentSlide.title}</Text>
+            <Text style={styles.body}>{currentSlide.body}</Text>
         </View>
 
         <View style={styles.footer}>
@@ -126,7 +127,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   slideCard: {
-    backgroundColor: '#ffffff',
+    backgroundColor: '#fffdf9',
     borderRadius: 28,
     elevation: 4,
     flex: 1,
@@ -138,17 +139,25 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     shadowOffset: { width: 0, height: 10 },
   },
+  accentBar: {
+    width: 40,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: '#0f766e',
+    marginBottom: 16,
+  },
   title: {
-    color: '#132238',
-    fontSize: 30,
+    color: '#1f3b34',
+    fontSize: 32,
     fontWeight: '800',
-    lineHeight: 36,
+    lineHeight: 40,
+    letterSpacing: -0.5,
   },
   body: {
-    color: '#526172',
-    fontSize: 16,
-    lineHeight: 24,
-    marginTop: 16,
+    color: '#5f6b65',
+    fontSize: 17,
+    lineHeight: 28,
+    marginTop: 18,
   },
   footer: {
     gap: 18,
