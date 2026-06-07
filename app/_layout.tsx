@@ -30,11 +30,12 @@ export const unstable_settings = {
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const segments = useSegments();
+  const currentSegment = segments[segments.length - 1];
   const isAuthRoute =
-    segments[0] === 'forgot-password' ||
-    segments[0] === 'login' ||
-    segments[0] === 'register' ||
-    segments[0] === 'reset-password';
+    currentSegment === 'forgot-password' ||
+    currentSegment === 'login' ||
+    currentSegment === 'register' ||
+    currentSegment === 'reset-password';
   const authStatus = useAuthStore((state) => state.status);
   const restoreSession = useAuthStore((state) => state.restoreSession);
   const hasSeenOnboarding = useOnboardingStore((state) => state.hasSeenOnboarding);
