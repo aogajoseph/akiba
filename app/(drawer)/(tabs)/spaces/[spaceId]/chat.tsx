@@ -136,7 +136,20 @@ const VIDEO_PLACEHOLDER_ASPECT_RATIO = 16 / 9;
 const MESSAGE_HIGHLIGHT_DURATION_MS = 1200;
 const COPY_TOAST_DURATION_MS = 1500;
 const MESSAGE_POLL_INTERVAL_MS = 7500;
-const REACTION_OPTIONS = ['👍', '❤️', '😂', '😮', '😢'] as const;
+const REACTION_OPTIONS = [
+  '👍', // like
+  '❤️', // love
+  '😂', // laugh
+  '😮', // wow
+  '😢', // sad
+  '🙏', // thanks/prayer
+  '🔥', // awesome
+  '👏', // applause
+  '🎉', // celebration
+  '✅', // agree/confirmed
+  '👀', // watching/interested
+  '🕊️', // peace/dove
+] as const;
 
 const getReplySnippet = (value: string): string => {
   const normalized = value.replace(/\s+/g, ' ').trim();
@@ -1867,7 +1880,7 @@ export default function SpaceChatScreen() {
           {messages.length === 0 && !loading ? (
             <View style={styles.emptyState}>
               <Text style={styles.emptyTitle}>No messages yet</Text>
-              <Text style={styles.emptySubtitle}>Be the first to start the conversation</Text>
+              <Text style={styles.emptySubtitle}>Be the first to send a message</Text>
             </View>
           ) : (
             <FlatList
@@ -2138,7 +2151,7 @@ export default function SpaceChatScreen() {
               {!isCreator && currentMembership ? (
                 <Pressable onPress={() => { void handleLeaveGroup(); }} style={styles.menuItem}>
                   <Text style={[styles.menuItemText, styles.destructiveMenuItemText]}>
-                    Leave Group
+                    Leave Space
                   </Text>
                 </Pressable>
               ) : null}

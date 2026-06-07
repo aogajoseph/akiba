@@ -118,7 +118,7 @@ export default function NotificationSettingsScreen() {
 
   const unreadSummary = useMemo(() => {
     if (unreadCount === 0) {
-      return 'No new notifications at the moment.';
+      return 'No new notifications at the moment';
     }
 
     return `${unreadCount} unread ${unreadCount === 1 ? 'update' : 'updates'} are currently waiting for you.`;
@@ -224,7 +224,7 @@ export default function NotificationSettingsScreen() {
           />
           <View style={styles.divider} />
           <SettingsSwitchRow
-            description="Keep important alerts and mentions visible even when you reduce noise."
+            description="Keep important alerts and mentions visible even with noise reduction."
             helper="Stored on this device"
             onValueChange={(value) => {
               void updateLocalSetting('allowImportantAlerts', value);
@@ -246,7 +246,7 @@ export default function NotificationSettingsScreen() {
           />
           <View style={styles.divider} />
           <SettingsSwitchRow
-            description="Play a sound for new notifications."
+            description="Play sound for new notifications."
             helper="Stored on this device"
             onValueChange={(value) => {
               void updateLocalSetting('notificationSounds', value);

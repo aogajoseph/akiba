@@ -103,9 +103,9 @@ export default function ResetPasswordScreen() {
         style={styles.container}>
         <View style={styles.card}>
           <AuthBrand color="#0f766e" />
-          <Text style={styles.title}>Enter your reset code</Text>
+          <Text style={styles.title}>Enter reset code</Text>
           <Text style={styles.subtitle}>
-            Enter OTP and choose a new password.
+            Enter OTP and create a new password.
           </Text>
 
           <View style={styles.form}>
@@ -115,7 +115,7 @@ export default function ResetPasswordScreen() {
                 autoCorrect={false}
                 keyboardType="phone-pad"
                 onChangeText={(value) => setPhoneNumber(value.trimStart())}
-                placeholder="+254700000000"
+                placeholder="0712345678"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
                 value={phoneNumber}

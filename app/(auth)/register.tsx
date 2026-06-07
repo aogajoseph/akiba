@@ -78,7 +78,7 @@ export default function RegisterScreen() {
         <View style={styles.card}>
           <AuthBrand color="#9a5d22" />
           <Text style={styles.title}>Welcome</Text>
-          <Text style={styles.subtitle}>Raise money with family & friends in shared spaces.</Text>
+          <Text style={styles.subtitle}>Raise money with your family, friends and communities in shared spaces.</Text>
 
           <View style={styles.form}>
             <View style={styles.fieldGroup}>
@@ -87,7 +87,7 @@ export default function RegisterScreen() {
                 autoCapitalize="none"
                 autoCorrect={false}
                 onChangeText={(value) => handleChange('username', value.replace(/\s+/g, '').toLowerCase())}
-                placeholder="jane.doe"
+                placeholder="john.doe"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
                 value={form.username}
@@ -126,7 +126,7 @@ export default function RegisterScreen() {
               <TextInput
                 keyboardType="phone-pad"
                 onChangeText={(value) => handleChange('phoneNumber', value.trimStart())}
-                placeholder="+254700000000"
+                placeholder="0712345678"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
                 value={form.phoneNumber}

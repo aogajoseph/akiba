@@ -114,7 +114,7 @@ export default function EditProfileScreen() {
       });
       setAvatarUrl(finalAvatarUrl ?? null);
       setLocalAvatarUri(null);
-      setSuccess('Username updated successfully.');
+      setSuccess('Profile updated successfully.');
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to update your profile.');
@@ -129,7 +129,7 @@ export default function EditProfileScreen() {
         <View style={styles.card}>
           <Text style={styles.title}>Edit Profile</Text>
           <Text style={styles.subtitle}>
-            Update how people recognize you on Akiba.
+            Update how people see you on Akiba.
           </Text>
 
           <View style={styles.avatarSection}>
@@ -162,7 +162,7 @@ export default function EditProfileScreen() {
               </Text>
             </Pressable>
             {hasPendingImageUpload ? (
-              <Text style={styles.neutralText}>Selected photo will upload when you save.</Text>
+              <Text style={styles.neutralText}>Selected image will upload when you save.</Text>
             ) : null}
           </View>
 
@@ -210,7 +210,7 @@ export default function EditProfileScreen() {
           <View style={styles.readOnlyCard}>
             <Text style={styles.readOnlyLabel}>Phone Number</Text>
             <Text style={styles.readOnlyValue}>{sessionUser?.phoneNumber ?? 'Not available'}</Text>
-            <Text style={styles.readOnlyHint}>Phone number change coming soon.</Text>
+            <Text style={styles.readOnlyHint}>Phone number change functionality coming soon.</Text>
           </View>
 
           {error ? <Text style={styles.errorText}>{error}</Text> : null}

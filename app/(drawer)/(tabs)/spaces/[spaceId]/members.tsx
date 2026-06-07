@@ -241,7 +241,7 @@ export default function MembersScreen() {
               username={member.username}
             />
             <View style={styles.memberTextBlock}>
-            <Text style={styles.memberName}>@{member.username}</Text>
+            <Text style={styles.memberName}>{member.username}</Text>
             {member.name && member.name !== `@${member.username}` && member.name !== member.username ? (
               <Text style={styles.memberUsername}>{member.name}</Text>
             ) : null}
@@ -313,7 +313,7 @@ export default function MembersScreen() {
               <View style={styles.emptyStateCard}>
                 <Text style={styles.emptyStateTitle}>You&apos;re the only one in this space</Text>
                 <Text style={styles.emptyStateText}>
-                  Invite others and start saving together
+                  Invite others and start raising money together
                 </Text>
                 <Pressable onPress={showInviteMembers} style={styles.primaryButton}>
                   <Text style={styles.primaryButtonText}>Invite Members</Text>

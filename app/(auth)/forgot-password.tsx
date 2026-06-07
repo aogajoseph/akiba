@@ -82,7 +82,7 @@ export default function ForgotPasswordScreen() {
                 autoCorrect={false}
                 keyboardType="phone-pad"
                 onChangeText={(value) => setPhoneNumber(value.trimStart())}
-                placeholder="+254700000000"
+                placeholder="0712345678"
                 placeholderTextColor="#7c8b9b"
                 style={styles.input}
                 value={phoneNumber}

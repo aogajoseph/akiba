@@ -23,7 +23,7 @@ export default function HelpSupportScreen() {
         <View style={styles.heroCard}>
           <Text style={styles.title}>Help & Support</Text>
           <Text style={styles.subtitle}>
-            Need help with your Akiba account or spaces? Let us know.
+            Need help with your spaces or Akiba account? Let us know.
           </Text>
         </View>
 
@@ -49,14 +49,14 @@ export default function HelpSupportScreen() {
           <View style={styles.textCard}>
             <Text style={styles.question}>I joined the wrong space. What should I do?</Text>
             <Text style={styles.answer}>
-              Open the space, check the members area, and tap the leave option.
+              Open the space, check the members area and tap the leave option.
             </Text>
           </View>
           <View style={styles.divider} />
           <View style={styles.textCard}>
             <Text style={styles.question}>Why am I not receiving every notification?</Text>
             <Text style={styles.answer}>
-              Check your device push permissions, your notification settings, and whether the space
+              Check your device push permissions, your notification settings and whether the space
               itself has been muted.
             </Text>
           </View>
@@ -73,7 +73,7 @@ export default function HelpSupportScreen() {
         <ProfileSection title="Response Expectations">
           <View style={styles.textCard}>
             <Text style={styles.answer}>
-              Akiba Ltd responds as quickly as possible. For urgent account and space issues, calling us is
+              Akiba Group Ltd responds as soon as possible. For urgent space and account issues, calling us is
               usually the best option.
             </Text>
           </View>

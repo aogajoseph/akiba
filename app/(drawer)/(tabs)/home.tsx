@@ -25,14 +25,14 @@ const getGreeting = (username?: string): string => {
   const handle = username?.trim().replace(/^@+/, '') ?? 'there';
 
   if (hour < 12) {
-    return `Good morning, ${handle}`;
+    return `Good morning ${handle}`;
   }
 
   if (hour < 16) {
-    return `Good afternoon, ${handle}`;
+    return `Good afternoon ${handle}`;
   }
 
-  return `Good evening, ${handle}`;
+  return `Good evening ${handle}`;
 };
 
 const formatCurrency = (amount?: number): string => {
@@ -175,7 +175,7 @@ export default function HomeScreen() {
             <View style={styles.heroTextBlock}>
               <Text style={styles.greeting}>{greeting}</Text>
               <Text style={styles.heroSubtitle}>
-                Track money activity, recent updates and where your attention is needed.
+                Track contributions, withdrawals, approvals, and chat with people in your shared spaces.
               </Text>
             </View>
           </View>
@@ -231,9 +231,9 @@ export default function HomeScreen() {
 
         {!loading && spaces.length === 0 ? (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyTitle}>Raise money with others in shared spaces</Text>
+            <Text style={styles.emptyTitle}>Raise money in shared spaces</Text>
             <Text style={styles.emptyBody}>
-              Create a space and start saving with friends, family and other groups.
+              Create a space and start raising money with your family, friends and communities.
             </Text>
             <View style={styles.emptyActions}>
               <Pressable onPress={() => router.push('/spaces/create')} style={styles.primaryButton}>
@@ -312,7 +312,7 @@ export default function HomeScreen() {
         {!notificationsLoading && recentActivity.length === 0 ? (
           <View style={styles.emptyCard}>
             <Text style={styles.emptyBody}>
-              Deposits, withdrawals, approvals and other space updates will appear here.
+              Financial activities and other space updates will appear here.
             </Text>
           </View>
         ) : (

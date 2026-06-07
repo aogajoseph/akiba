@@ -123,7 +123,7 @@ export default function ListSpacesScreen() {
         <View style={styles.headerRow}>
           <View>
             <Text style={styles.title}>Spaces</Text>
-            <Text style={styles.subtitle}>Your shared saving spaces</Text>
+            <Text style={styles.subtitle}>Your shared spaces</Text>
           </View>
           <Pressable onPress={() => router.push('/spaces/create')} style={styles.createButton}>
             <Text style={styles.createButtonText}>Create Space</Text>
@@ -136,7 +136,7 @@ export default function ListSpacesScreen() {
         {!loading && spaces.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No Spaces Yet</Text>
-            <Text style={styles.emptyText}>Create a space to start saving with friends, family and other groups.</Text>
+            <Text style={styles.emptyText}>Create a space to start raising money with your family, friends and communities.</Text>
           </View>
         ) : null}
 

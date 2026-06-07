@@ -55,7 +55,7 @@ export default function CreateSpaceScreen() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
     if (!permission.granted) {
-      Alert.alert('Permission required', 'Please allow photo library access to choose a space image.');
+      Alert.alert('Permission required', 'Please allow photo library access to choose an image for your space.');
       return;
     }
 
@@ -153,7 +153,7 @@ export default function CreateSpaceScreen() {
               </View>
             )}
           </Pressable>
-          <Text style={styles.avatarHint}>Add an image for your Space</Text>
+          <Text style={styles.avatarHint}>Use an image that describes your space</Text>
         </View>
 
         <View style={styles.form}>

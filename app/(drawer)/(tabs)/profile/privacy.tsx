@@ -21,7 +21,7 @@ export default function PrivacyPolicyScreen() {
 
         <LongFormSection title="Notifications & Communication">
           <Text style={styles.bodyText}>
-            Akiba may send alerts about activity in your spaces, approvals, messages or account recovery. You can control many of these alerts in your notification settings.
+            Akiba may send alerts about activity in your spaces, approvals, messages or account recovery. You can control many of these alerts in your notification preferences.
           </Text>
         </LongFormSection>
 
@@ -34,7 +34,7 @@ export default function PrivacyPolicyScreen() {
 
         <LongFormSection title="Communities & Shared Spaces">
           <Text style={styles.bodyText}>
-            Some information you share, like your username, avatar and activity inside a space is visible to other members of that space so the group can collaborate clearly.
+            Some information you share, like your username, avatar and activity inside a space is visible to other members of that space to enhance collaboration.
           </Text>
         </LongFormSection>
 
