@@ -152,7 +152,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView edges={['left', 'right', 'bottom']} style={styles.safeArea}>
       <Stack.Screen options={{ headerShown: false }} />
       <View style={styles.headerWrap}>
         <AppHeader />
