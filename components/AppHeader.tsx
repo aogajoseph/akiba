@@ -1,24 +1,52 @@
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import { useEffect } from 'react';
-import { useState } from 'react';
-import { Image, Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useCallback, useEffect, useState } from 'react';
+import {
+  Image,
+  LayoutChangeEvent,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useNotificationsStore } from '@/src/store/notificationsStore';
 import { timeAgo } from '@/src/utils/timeAgo';
 
+const HEADER_CONTENT_HEIGHT = 60;
+const DROPDOWN_GAP = 8;
+
 export default function AppHeader() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [open, setOpen] = useState(false);
+  const [headerHeight, setHeaderHeight] = useState(0);
   const { notifications, unreadCount, fetchNotifications, markAsRead } = useNotificationsStore();
+  const dropdownTop = (headerHeight || insets.top + HEADER_CONTENT_HEIGHT) + DROPDOWN_GAP;
+
+  const handleHeaderLayout = useCallback(
+    (event: LayoutChangeEvent) => {
+      const nextHeaderHeight = Math.ceil(event.nativeEvent.layout.height);
+
+      if (nextHeaderHeight > 0 && nextHeaderHeight !== headerHeight) {
+        setHeaderHeight(nextHeaderHeight);
+      }
+    },
+    [headerHeight],
+  );
 
   useEffect(() => {
     void fetchNotifications();
   }, [fetchNotifications]);
 
   return (
-    <SafeAreaView edges={['top']} style={styles.safeArea}>
+    <SafeAreaView
+      edges={['top']}
+      onLayout={handleHeaderLayout}
+      style={styles.safeArea}>
       <View style={styles.headerWrapper}>
         <View style={styles.container}>
           {/* Drawer trigger intentionally removed for simplified v1 header.
@@ -57,10 +85,13 @@ export default function AppHeader() {
             onRequestClose={() => setOpen(false)}
             transparent
             visible={open}>
-            <View style={styles.overlay}>
-              <Pressable onPress={() => setOpen(false)} style={styles.overlayBackground} />
+            <View pointerEvents="box-none" style={styles.overlay}>
+              <Pressable
+                onPress={() => setOpen(false)}
+                style={[styles.overlayBackground, { top: dropdownTop }]}
+              />
 
-              <Pressable onPress={() => {}} style={styles.dropdown}>
+              <Pressable onPress={() => {}} style={[styles.dropdown, { top: dropdownTop }]}>
                 {notifications.slice(0, 5).length > 0 ? (
                   notifications.slice(0, 5).map((notification, index) => (
                     <TouchableOpacity
@@ -211,7 +242,6 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     paddingVertical: 8,
     position: 'absolute',
-    top: 50,
     right: 25,
     width: 300,
     zIndex: 1000,
