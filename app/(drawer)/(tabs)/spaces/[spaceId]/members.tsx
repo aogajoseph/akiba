@@ -121,8 +121,13 @@ export default function MembersScreen() {
   }, [currentUserId, members]);
 
   const adminIds = useMemo(() => new Set(admins.map((admin) => admin.userId)), [admins]);
-  const adminMembers = members.filter((member) => adminIds.has(member.userId));
-  const regularMembers = members.filter((member) => !adminIds.has(member.userId));
+  const creatorMember = members.find((member) => member.userId === space?.createdByUserId) ?? null;
+  const adminMembers = members.filter(
+    (member) => member.userId !== space?.createdByUserId && adminIds.has(member.userId),
+  );
+  const regularMembers = members.filter(
+    (member) => member.userId !== space?.createdByUserId && !adminIds.has(member.userId),
+  );
 
   const showInviteMembers = () => {
     setInviteModalVisible(true);
@@ -224,6 +229,7 @@ export default function MembersScreen() {
     const isAdmin = adminIds.has(member.userId);
     const isCreatorMember = space?.createdByUserId === member.userId;
     const loadingAction = actionMemberId === member.id;
+    const roleLabel = isCreatorMember ? 'Creator' : isAdmin ? 'Admin' : 'Member';
 
     return (
       <View key={member.id} style={[styles.memberCard, isAdmin ? styles.adminCard : null]}>
@@ -245,7 +251,7 @@ export default function MembersScreen() {
             {member.name && member.name !== `@${member.username}` && member.name !== member.username ? (
               <Text style={styles.memberUsername}>{member.name}</Text>
             ) : null}
-            <Text style={styles.memberMeta}>{isAdmin ? 'Admin' : 'Member'}</Text>
+            <Text style={styles.memberMeta}>{roleLabel}</Text>
             </View>
           </View>
           {isCreatorMember ? <Text style={styles.creatorBadge}>Creator</Text> : null}
@@ -318,6 +324,15 @@ export default function MembersScreen() {
                 <Pressable onPress={showInviteMembers} style={styles.primaryButton}>
                   <Text style={styles.primaryButtonText}>Invite Members</Text>
                 </Pressable>
+              </View>
+            ) : null}
+
+            {creatorMember ? (
+              <View style={styles.section}>
+                <View style={styles.sectionHeader}>
+                  <Text style={styles.sectionTitle}>Creator</Text>
+                </View>
+                {renderMemberCard(creatorMember)}
               </View>
             ) : null}
 

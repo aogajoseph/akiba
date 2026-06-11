@@ -33,6 +33,10 @@ type SpaceRouteSegment =
   | 'summaries'
   | 'transactions';
 
+const formatParticipantCount = (count: number): string => {
+  return `${count} ${count === 1 ? 'Participant' : 'Participants'}`;
+};
+
 export default function SpaceDashboardScreen() {
   const { spaceId } = useLocalSearchParams<{ spaceId: string }>();
   const [space, setSpace] = useState<Group | null>(null);
@@ -192,6 +196,9 @@ export default function SpaceDashboardScreen() {
             <Text style={styles.title}>{space.name}</Text>
             <Text style={styles.subtitle}>
               {space.description?.trim() || 'No description yet'}
+            </Text>
+            <Text style={styles.participantCount}>
+              {formatParticipantCount(space.membersCount ?? 0)}
             </Text>
 
             {space.targetAmount ? (
@@ -353,6 +360,12 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#6b7280',
     fontSize: 15,
+    textAlign: 'center',
+  },
+  participantCount: {
+    color: '#0f766e',
+    fontSize: 13,
+    fontWeight: '700',
     textAlign: 'center',
   },
   progressCard: {

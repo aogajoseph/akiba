@@ -57,6 +57,10 @@ const getSpaceBalanceLabel = (space: Group): string => {
   return formatCurrency(0);
 };
 
+const formatParticipantCount = (count: number): string => {
+  return `${count} ${count === 1 ? 'Participant' : 'Participants'}`;
+};
+
 const getActivityRoute = (activity: NotificationDTO) => {
   if (activity.spaceId && activity.transactionId) {
     return {
@@ -278,7 +282,7 @@ export default function HomeScreen() {
                     <View style={styles.metaItem}>
                       <Ionicons color="#64748b" name="people-outline" size={14} />
                       <Text style={styles.metaText}>
-                        {space.membersCount ?? 0} members
+                        {formatParticipantCount(space.membersCount ?? 0)}
                       </Text>
                     </View>
 

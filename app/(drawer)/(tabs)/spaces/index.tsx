@@ -22,7 +22,7 @@ import FullScreenImageViewer from '../../../../components/FullScreenImageViewer'
 import { listSpaces } from '../../../../services/spaceService';
 import { api, ApiError } from '../../../../utils/api';
 
-const getMembersCount = (
+const getParticipantsCount = (
   space: Group & {
     members?: unknown[];
     membersCount?: number;
@@ -37,6 +37,10 @@ const getMembersCount = (
   }
 
   return 0;
+};
+
+const formatParticipantCount = (count: number): string => {
+  return `${count} ${count === 1 ? 'Participant' : 'Participants'}`;
 };
 
 export default function ListSpacesScreen() {
@@ -188,7 +192,9 @@ export default function ListSpacesScreen() {
                   onPress={() => router.push(`/spaces/${item.id}`)}
                   style={styles.cardContent}>
                   <Text style={styles.cardTitle}>{item.name}</Text>
-                  <Text style={styles.cardMeta}>Members: {getMembersCount(item)}</Text>
+                  <Text style={styles.cardMeta}>
+                    {formatParticipantCount(getParticipantsCount(item))}
+                  </Text>
                 </Pressable>
               </View>
             );
