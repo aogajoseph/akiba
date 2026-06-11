@@ -587,7 +587,7 @@ const styles = StyleSheet.create({
     color: '#d1fae5',
     fontSize: 14,
     fontWeight: '600',
-    lineHeight: 1,
+    flex: 1,
   },
   balanceRowValue: {
     color: '#ffffff',
