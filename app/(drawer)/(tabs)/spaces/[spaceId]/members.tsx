@@ -29,7 +29,7 @@ import {
 } from '@/services/spaceService';
 import { getInviteLink, shareInvite } from '@/src/services/inviteService';
 import { ApiError, getAuthSession } from '@/utils/api';
-import { canPromoteAnotherAdmin } from '@shared/withdrawalGovernance';
+import { canPromoteAnotherAdmin } from '@/shared/withdrawalGovernance';
 
 type ToastMessage = {
   id: number;
