@@ -229,6 +229,14 @@ export const approveWithdrawal = async (withdrawalId: string) => {
   return api.post(`/spaces/withdrawals/${withdrawalId}/approve`);
 };
 
+export const rejectWithdrawal = async (withdrawalId: string) => {
+  return api.post(`/spaces/withdrawals/${withdrawalId}/reject`);
+};
+
+export const cancelWithdrawal = async (withdrawalId: string) => {
+  return api.post(`/spaces/withdrawals/${withdrawalId}/cancel`);
+};
+
 export const startTyping = async (spaceId: string): Promise<void> => {
   await api.post(`/spaces/${spaceId}/typing/start`);
 };

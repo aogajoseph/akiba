@@ -378,7 +378,8 @@ export default function SpaceSummariesScreen() {
                       const isPending =
                         transaction.status !== TransactionStatus.COMPLETED &&
                         transaction.status !== TransactionStatus.FAILED &&
-                        transaction.status !== TransactionStatus.REJECTED;
+                        transaction.status !== TransactionStatus.REJECTED &&
+                        transaction.status !== TransactionStatus.CANCELLED;
 
                       return (
                         <View key={transaction.id} style={styles.tableRow}>

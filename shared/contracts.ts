@@ -64,6 +64,7 @@ export enum TransactionStatus {
   PENDING_APPROVAL = 'pending_approval',
   APPROVED = 'approved',
   REJECTED = 'rejected',
+  CANCELLED = 'cancelled',
   COMPLETED = 'completed',
   FAILED = 'failed',
   REVERSED = 'reversed',
@@ -147,6 +148,8 @@ export type Transaction = {
   recipientPhoneNumber?: string;
   recipientName?: string;
   status: TransactionStatus;
+  requiredApprovals?: number;
+  snapshotAdminIds?: ID[];
   createdAt: string;
   groupId?: ID;
   initiatedByUserId?: ID;
@@ -377,7 +380,8 @@ export type PendingWithdrawalSummaryDto = {
   reason?: string;
   approvals: ID[];
   requiredApprovals: number;
-  status?: 'pending' | 'approved' | 'rejected' | 'completed';
+  snapshotAdminIds?: ID[];
+  status?: 'pending' | 'approved' | 'rejected' | 'completed' | 'cancelled';
   createdAt: string;
 };
 

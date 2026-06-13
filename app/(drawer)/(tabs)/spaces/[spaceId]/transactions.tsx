@@ -17,16 +17,25 @@ import {
   GetTransactionsSummaryResponseDto,
   Group,
   SpaceAdmin,
+  TransactionStatus,
 } from '@/shared/contracts';
 import { maskPhoneNumber } from '@/shared/phone';
 import FullScreenImageViewer from '../../../../../components/FullScreenImageViewer';
 import {
   approveWithdrawal,
+  cancelWithdrawal,
   getAdmins,
   getSpace,
   getTransactionsSummary,
+  rejectWithdrawal,
 } from '../../../../../services/spaceService';
 import { ApiError, getAuthSession } from '../../../../../utils/api';
+import {
+  canAdminActOnWithdrawal,
+  canCancelWithdrawal,
+  getWithdrawalRequestBlockingReason,
+  isWithdrawalRequestEligible,
+} from '@shared/withdrawalGovernance';
 
 const screenWidth = Dimensions.get('window').width;
 
@@ -102,11 +111,14 @@ export default function SpaceTransactionsScreen() {
   const [summary, setSummary] = useState<TransactionsSummaryState | null>(null);
   const [viewerVisible, setViewerVisible] = useState(false);
   const [approvingWithdrawals, setApprovingWithdrawals] = useState<Record<string, boolean>>({});
+  const [rejectingWithdrawals, setRejectingWithdrawals] = useState<Record<string, boolean>>({});
+  const [cancellingWithdrawals, setCancellingWithdrawals] = useState<Record<string, boolean>>({});
   const [isPolling, setIsPolling] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const currentUserId = getAuthSession()?.user.id ?? null;
+  const isCreator = currentUserId !== null && currentUserId === space?.createdByUserId;
   const isAdmin = useMemo(() => {
     return admins.some((admin) => admin.userId === currentUserId);
   }, [admins, currentUserId]);
@@ -201,7 +213,68 @@ export default function SpaceTransactionsScreen() {
     }
   }, [loadTransactionsScreen, spaceId]);
 
+  const handleRejectWithdrawal = useCallback(async (withdrawalId: string) => {
+    if (!spaceId) {
+      return;
+    }
+
+    setRejectingWithdrawals((current) => ({
+      ...current,
+      [withdrawalId]: true,
+    }));
+    setError(null);
+
+    try {
+      await rejectWithdrawal(withdrawalId);
+      await loadTransactionsScreen();
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to reject withdrawal.');
+    } finally {
+      setRejectingWithdrawals((current) => ({
+        ...current,
+        [withdrawalId]: false,
+      }));
+    }
+  }, [loadTransactionsScreen, spaceId]);
+
+  const handleCancelWithdrawal = useCallback(async (withdrawalId: string) => {
+    if (!spaceId) {
+      return;
+    }
+
+    setCancellingWithdrawals((current) => ({
+      ...current,
+      [withdrawalId]: true,
+    }));
+    setError(null);
+
+    try {
+      await cancelWithdrawal(withdrawalId);
+      await loadTransactionsScreen();
+    } catch (caughtError) {
+      const apiError = caughtError as ApiError;
+      setError(apiError.error ?? 'Unable to cancel withdrawal.');
+    } finally {
+      setCancellingWithdrawals((current) => ({
+        ...current,
+        [withdrawalId]: false,
+      }));
+    }
+  }, [loadTransactionsScreen, spaceId]);
+
   const totalContributions = space?.totalBalance ?? summary?.totalDeposits ?? 0;
+  const hasActiveWithdrawal = (summary?.pendingWithdrawals ?? []).length > 0;
+  const withdrawalEligibilityReason = getWithdrawalRequestBlockingReason({
+    adminCount: admins.length,
+    hasActiveWithdrawal,
+    isCreator,
+  });
+  const canRequestWithdrawal = isWithdrawalRequestEligible({
+    adminCount: admins.length,
+    hasActiveWithdrawal,
+    isCreator,
+  });
   const progressPercent =
     space?.targetAmount && space.targetAmount > 0
       ? Math.round((totalContributions / space.targetAmount) * 100)
@@ -328,14 +401,34 @@ export default function SpaceTransactionsScreen() {
                 <Text style={styles.actionButtonText}>Deposit</Text>
               </Pressable>
 
-              {isAdmin ? (
-                <Pressable
-                  onPress={() => router.push(`/spaces/${spaceId}/withdraw`)}
-                  style={[styles.actionButton, styles.withdrawButton]}>
-                  <Text style={styles.actionButtonText}>Withdraw</Text>
-                </Pressable>
-              ) : null}
+              <Pressable
+                disabled={!canRequestWithdrawal}
+                onPress={() => {
+                  if (canRequestWithdrawal) {
+                    router.push(`/spaces/${spaceId}/withdraw`);
+                  }
+                }}
+                style={[
+                  styles.actionButton,
+                  styles.withdrawButton,
+                  !canRequestWithdrawal ? styles.actionButtonDisabled : null,
+                ]}>
+                <Text style={styles.actionButtonText}>Withdraw</Text>
+              </Pressable>
             </View>
+
+            <View style={styles.withdrawGuidance}>
+              <Text style={styles.withdrawGuidanceText}>
+                Only the Space Creator can request withdrawals.
+              </Text>
+              <Text style={styles.withdrawGuidanceText}>
+                All Admins must approve before funds are released.
+              </Text>
+            </View>
+
+            {withdrawalEligibilityReason && isCreator ? (
+              <Text style={styles.withdrawEligibilityError}>{withdrawalEligibilityReason}</Text>
+            ) : null}
 
             {summary.pendingDeposits && summary.pendingDeposits.length > 0 ? (
               <View style={styles.chartCard}>
@@ -413,7 +506,15 @@ export default function SpaceTransactionsScreen() {
               {(summary?.pendingWithdrawals ?? []).map((withdrawal) => {
                 const hasApproved = withdrawal.approvals.includes(currentUserId ?? '');
                 const isApproving = approvingWithdrawals[withdrawal.id] === true;
+                const isRejecting = rejectingWithdrawals[withdrawal.id] === true;
+                const isCancelling = cancellingWithdrawals[withdrawal.id] === true;
                 const isProcessingPayout = withdrawal.status === 'approved';
+                const isCreatorWithdrawal = currentUserId === withdrawal.requestedByUserId;
+                const withdrawalStatusEnum =
+                  withdrawal.status === 'approved'
+                    ? TransactionStatus.APPROVED
+                    : TransactionStatus.PENDING_APPROVAL;
+                const canCancel = canCancelWithdrawal(isCreatorWithdrawal, withdrawalStatusEnum);
 
                 return (
                   <View key={withdrawal.id} style={styles.pendingWithdrawalItem}>
@@ -451,24 +552,61 @@ export default function SpaceTransactionsScreen() {
                       </Text>
                     ) : null}
 
-                    {isAdmin && !isProcessingPayout ? (
+                    {canAdminActOnWithdrawal(isAdmin, isCreator) && !isProcessingPayout ? (
+                      <View style={styles.pendingWithdrawalActions}>
+                        <Pressable
+                          disabled={hasApproved || isApproving || isRejecting}
+                          onPress={() => {
+                            void handleApproveWithdrawal(withdrawal.id);
+                          }}
+                          style={[
+                            styles.pendingWithdrawalButton,
+                            styles.pendingWithdrawalApproveButton,
+                            hasApproved || isApproving || isRejecting
+                              ? styles.pendingWithdrawalButtonDisabled
+                              : null,
+                          ]}>
+                          <Text style={styles.pendingWithdrawalButtonText}>
+                            {hasApproved
+                              ? 'Approved'
+                              : isApproving
+                                ? 'Approving...'
+                                : 'Approve'}
+                          </Text>
+                        </Pressable>
+
+                        <Pressable
+                          disabled={hasApproved || isRejecting || isApproving}
+                          onPress={() => {
+                            void handleRejectWithdrawal(withdrawal.id);
+                          }}
+                          style={[
+                            styles.pendingWithdrawalButton,
+                            styles.pendingWithdrawalRejectButton,
+                            hasApproved || isRejecting || isApproving
+                              ? styles.pendingWithdrawalButtonDisabled
+                              : null,
+                          ]}>
+                          <Text style={styles.pendingWithdrawalButtonText}>
+                            {isRejecting ? 'Rejecting...' : 'Reject'}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    ) : null}
+
+                    {canCancel ? (
                       <Pressable
-                        disabled={hasApproved || isApproving}
+                        disabled={isCancelling}
                         onPress={() => {
-                          void handleApproveWithdrawal(withdrawal.id);
+                          void handleCancelWithdrawal(withdrawal.id);
                         }}
                         style={[
                           styles.pendingWithdrawalButton,
-                          hasApproved || isApproving
-                            ? styles.pendingWithdrawalButtonDisabled
-                            : null,
+                          styles.pendingWithdrawalCancelButton,
+                          isCancelling ? styles.pendingWithdrawalButtonDisabled : null,
                         ]}>
                         <Text style={styles.pendingWithdrawalButtonText}>
-                          {hasApproved
-                            ? 'Approved'
-                            : isApproving
-                              ? 'Approving...'
-                              : 'Approve'}
+                          {isCancelling ? 'Cancelling...' : 'Cancel withdrawal'}
                         </Text>
                       </Pressable>
                     ) : null}
@@ -645,11 +783,30 @@ const styles = StyleSheet.create({
     minHeight: 50,
     width: '100%',
   },
+  actionButtonDisabled: {
+    opacity: 0.5,
+  },
   depositButton: {
     backgroundColor: '#0f766e',
   },
   withdrawButton: {
     backgroundColor: '#132238',
+  },
+  withdrawGuidance: {
+    gap: 4,
+    marginTop: -2,
+    paddingHorizontal: 4,
+  },
+  withdrawGuidanceText: {
+    color: '#6b7280',
+    fontSize: 13,
+    lineHeight: 18,
+  },
+  withdrawEligibilityError: {
+    color: '#b42318',
+    fontSize: 13,
+    fontWeight: '600',
+    marginTop: -2,
   },
   actionButtonText: {
     color: '#ffffff',
@@ -687,6 +844,11 @@ const styles = StyleSheet.create({
     gap: 12,
     marginTop: 4,
   },
+  pendingWithdrawalActions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
   pendingWithdrawalItem: {
     backgroundColor: '#f7f5ef',
     borderRadius: 16,
@@ -714,13 +876,21 @@ const styles = StyleSheet.create({
   },
   pendingWithdrawalButton: {
     alignItems: 'center',
-    alignSelf: 'flex-start',
     backgroundColor: '#132238',
     borderRadius: 12,
     justifyContent: 'center',
     minHeight: 40,
     minWidth: 96,
     paddingHorizontal: 16,
+  },
+  pendingWithdrawalApproveButton: {
+    backgroundColor: '#132238',
+  },
+  pendingWithdrawalRejectButton: {
+    backgroundColor: '#b42318',
+  },
+  pendingWithdrawalCancelButton: {
+    backgroundColor: '#6b7280',
   },
   pendingWithdrawalButtonDisabled: {
     opacity: 0.6,

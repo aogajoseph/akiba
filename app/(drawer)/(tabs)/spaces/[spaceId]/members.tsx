@@ -22,12 +22,14 @@ import {
   getAdmins,
   getMembers,
   getSpace,
+  getTransactionsSummary,
   leaveSpace,
   promoteMember,
   revokeMember,
 } from '@/services/spaceService';
 import { getInviteLink, shareInvite } from '@/src/services/inviteService';
 import { ApiError, getAuthSession } from '@/utils/api';
+import { canPromoteAnotherAdmin } from '@shared/withdrawalGovernance';
 
 type ToastMessage = {
   id: number;
@@ -39,6 +41,9 @@ export default function MembersScreen() {
   const [space, setSpace] = useState<Group | null>(null);
   const [members, setMembers] = useState<SpaceMember[]>([]);
   const [admins, setAdmins] = useState<SpaceAdmin[]>([]);
+  const [transactionsSummary, setTransactionsSummary] = useState<{
+    pendingWithdrawals: Array<{ id: string }>;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionMemberId, setActionMemberId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -84,15 +89,17 @@ export default function MembersScreen() {
     setError(null);
 
     try {
-      const [spaceResponse, membersResponse, adminsResponse] = await Promise.all([
+      const [spaceResponse, membersResponse, adminsResponse, summaryResponse] = await Promise.all([
         getSpace(spaceId),
         getMembers(spaceId),
         getAdmins(spaceId),
+        getTransactionsSummary(spaceId),
       ]);
 
       setSpace(spaceResponse.space ?? spaceResponse.group);
       setMembers(membersResponse.members);
       setAdmins(adminsResponse.admins);
+      setTransactionsSummary(summaryResponse as { pendingWithdrawals: Array<{ id: string }> });
     } catch (caughtError) {
       const apiError = caughtError as ApiError;
       setError(apiError.error ?? 'Unable to load members.');
@@ -121,6 +128,7 @@ export default function MembersScreen() {
   }, [currentUserId, members]);
 
   const adminIds = useMemo(() => new Set(admins.map((admin) => admin.userId)), [admins]);
+  const hasActiveWithdrawal = (transactionsSummary?.pendingWithdrawals?.length ?? 0) > 0;
   const creatorMember = members.find((member) => member.userId === space?.createdByUserId) ?? null;
   const adminMembers = members.filter(
     (member) => member.userId !== space?.createdByUserId && adminIds.has(member.userId),
@@ -190,6 +198,11 @@ export default function MembersScreen() {
       return;
     }
 
+    if (!adminIds.has(member.userId) && !canPromoteAnotherAdmin(admins.length)) {
+      setError('This space already has the maximum number of Admins (2).');
+      return;
+    }
+
     void runMemberAction(member.id, async () => {
       await promoteMember(spaceId, member.id);
     });
@@ -229,6 +242,7 @@ export default function MembersScreen() {
     const isAdmin = adminIds.has(member.userId);
     const isCreatorMember = space?.createdByUserId === member.userId;
     const loadingAction = actionMemberId === member.id;
+    const governanceFrozen = hasActiveWithdrawal;
     const roleLabel = isCreatorMember ? 'Creator' : isAdmin ? 'Admin' : 'Member';
 
     return (
@@ -260,20 +274,26 @@ export default function MembersScreen() {
         {isCreator && !isCreatorMember ? (
           isAdmin ? (
             <Pressable
-              disabled={loadingAction}
+              disabled={loadingAction || governanceFrozen}
               onPress={() => handleRevoke(member)}
-              style={[styles.secondaryButton, loadingAction ? styles.disabledButton : null]}>
+              style={[
+                styles.secondaryButton,
+                loadingAction || governanceFrozen ? styles.disabledButton : null,
+              ]}>
               <Text style={styles.secondaryButtonText}>
-                {loadingAction ? 'Working...' : 'Revoke Admin'}
+                {loadingAction ? 'Working...' : governanceFrozen ? 'Locked' : 'Revoke Admin'}
               </Text>
             </Pressable>
           ) : (
             <Pressable
-              disabled={loadingAction}
+              disabled={loadingAction || governanceFrozen}
               onPress={() => handlePromote(member)}
-              style={[styles.primaryButton, loadingAction ? styles.disabledButton : null]}>
+              style={[
+                styles.primaryButton,
+                loadingAction || governanceFrozen ? styles.disabledButton : null,
+              ]}>
               <Text style={styles.primaryButtonText}>
-                {loadingAction ? 'Working...' : 'Promote to Admin'}
+                {loadingAction ? 'Working...' : governanceFrozen ? 'Locked' : 'Promote to Admin'}
               </Text>
             </Pressable>
           )
@@ -313,6 +333,12 @@ export default function MembersScreen() {
 
             {isCreator ? (
               <Text style={styles.subtitle}>Manage participants in this space</Text>
+            ) : null}
+
+            {hasActiveWithdrawal ? (
+              <Text style={styles.governanceLockText}>
+                Admin changes are locked while a withdrawal is active.
+              </Text>
             ) : null}
 
             {members.length === 1 ? (
@@ -358,13 +384,21 @@ export default function MembersScreen() {
 
             {myMembership && !isCreator ? (
               <Pressable
-                disabled={actionMemberId === myMembership.id}
+                disabled={actionMemberId === myMembership.id || (hasActiveWithdrawal && adminIds.has(myMembership.userId))}
                 onPress={handleLeave}
                 style={[
                   styles.leaveButton,
-                  actionMemberId === myMembership.id ? styles.disabledButton : null,
+                  actionMemberId === myMembership.id || (hasActiveWithdrawal && adminIds.has(myMembership.userId))
+                    ? styles.disabledButton
+                    : null,
                 ]}>
-                <Text style={styles.leaveButtonText}>Leave Space</Text>
+                <Text style={styles.leaveButtonText}>
+                  {actionMemberId === myMembership.id
+                    ? 'Working...'
+                    : hasActiveWithdrawal && adminIds.has(myMembership.userId)
+                      ? 'Locked'
+                      : 'Leave Space'}
+                </Text>
               </Pressable>
             ) : null}
           </>
@@ -466,6 +500,12 @@ const styles = StyleSheet.create({
   subtitle: {
     color: '#131440',
     fontSize: 15,
+    textAlign: 'center',
+  },
+  governanceLockText: {
+    color: '#b42318',
+    fontSize: 13,
+    marginTop: -6,
     textAlign: 'center',
   },
   emptyStateCard: {
