@@ -83,8 +83,8 @@ export default function ProfileScreen() {
 
   useFocusEffect(
     useCallback(() => {
-      void loadProfile(user ? 'refresh' : 'initial');
-    }, [loadProfile, user]),
+      void loadProfile(sessionUser ? 'refresh' : 'initial');
+    }, [loadProfile, sessionUser]),
   );
 
   const handleLogout = async () => {
