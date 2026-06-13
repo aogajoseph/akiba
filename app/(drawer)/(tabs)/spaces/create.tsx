@@ -22,6 +22,26 @@ import { uploadImageToCloudinary } from '@/src/services/cloudinary';
 import { createSpace } from '../../../../services/spaceService';
 import { ApiError } from '../../../../utils/api';
 
+const getErrorMessage = (error: unknown, fallback: string): string => {
+  if (typeof error === 'object' && error !== null) {
+    const maybeError = error as { error?: unknown; message?: unknown };
+
+    if (typeof maybeError.error === 'string' && maybeError.error.trim()) {
+      return maybeError.error;
+    }
+
+    if (typeof maybeError.message === 'string' && maybeError.message.trim()) {
+      return maybeError.message;
+    }
+  }
+
+  if (typeof error === 'string' && error.trim()) {
+    return error;
+  }
+
+  return fallback;
+};
+
 export default function CreateSpaceScreen() {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
@@ -88,7 +108,8 @@ export default function CreateSpaceScreen() {
         try {
           finalImageUrl = await uploadImageToCloudinary(localImage);
         } catch (uploadError) {
-          console.warn('Image upload failed', uploadError);
+          setError(getErrorMessage(uploadError, 'Unable to upload the space image.'));
+          return;
         }
       }
 
