@@ -47,25 +47,55 @@ export default function HelpSupportScreen() {
 
         <ProfileSection title="Frequently Asked Questions">
           <View style={styles.textCard}>
-            <Text style={styles.question}>I joined the wrong space. What should I do?</Text>
+            <Text style={styles.question}>
+              I contributed money to the wrong space. What should I do?
+            </Text>
             <Text style={styles.answer}>
-              Open the space, check the members area and tap the leave option.
+              This is the first version of Akiba, so all contributions are currently irreversible. Please always double-check the space name, purpose and members before contributing. In future versions, we plan to introduce safer recovery and reversal mechanisms for such cases. For urgent situations, you can contact our support team via call or email and we’ll do our best to assist where possible.
             </Text>
           </View>
+
           <View style={styles.divider} />
+
           <View style={styles.textCard}>
-            <Text style={styles.question}>Why am I not receiving every notification?</Text>
+            <Text style={styles.question}>
+              How do I know a space won’t misuse or take my money?
+            </Text>
             <Text style={styles.answer}>
-              Check your device push permissions, your notification settings and whether the space
-              itself has been muted.
+              Akiba is built on transparency within each space, but responsibility is shared. Before contributing, ensure you verify the space creator, admins and members, understand the group’s objective, and actively follow conversations in the chat. Contributions should only be made to spaces you trust and clearly understand.
             </Text>
           </View>
+
           <View style={styles.divider} />
+
           <View style={styles.textCard}>
-            <Text style={styles.question}>Can support help with account recovery?</Text>
+            <Text style={styles.question}>
+              Can I leave a space if I’m no longer interested?
+            </Text>
             <Text style={styles.answer}>
-              Yes. If you are locked out or need help resetting access, contact us and we will
-              guide you through the next steps.
+              Yes, but it depends on your role. Members can leave a space at any time. Admins must first transfer or step down from their role before leaving. Creators cannot directly leave a space, but they can delete it once all protocols are met (No pending transactions and all funds being fully withdrawn).
+            </Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.textCard}>
+            <Text style={styles.question}>
+              Why am I not receiving every notification?
+            </Text>
+            <Text style={styles.answer}>
+              Check your device push notification permissions, in-app notification settings and whether the space has been muted. Some updates may also be delayed due to network or background app restrictions.
+            </Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.textCard}>
+            <Text style={styles.question}>
+              Can support help with account recovery?
+            </Text>
+            <Text style={styles.answer}>
+              Yes. If you are locked out or need help regaining access, contact support and we’ll guide you through the recovery process step by step.
             </Text>
           </View>
         </ProfileSection>

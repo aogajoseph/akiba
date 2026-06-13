@@ -182,7 +182,7 @@ export default function CreateSpaceScreen() {
             <Text style={styles.label}>Space Name</Text>
             <TextInput
               onChangeText={setName}
-              placeholder="eg., John’s Wedding"
+              placeholder="John’s Wedding"
               placeholderTextColor="#94a3b8"
               style={styles.input}
               value={name}
@@ -195,7 +195,7 @@ export default function CreateSpaceScreen() {
               multiline
               numberOfLines={3}
               onChangeText={setDescription}
-              placeholder="eg., This space was created to support John and Susan in their upcoming wedding."
+              placeholder="This space was created to support John and Susan in their upcoming wedding."
               placeholderTextColor="#94a3b8"
               style={[styles.input, styles.textArea]}
               textAlignVertical="top"

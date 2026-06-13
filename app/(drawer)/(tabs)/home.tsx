@@ -25,14 +25,14 @@ const getGreeting = (username?: string): string => {
   const handle = username?.trim().replace(/^@+/, '') ?? 'there';
 
   if (hour < 12) {
-    return `Good morning ${handle}`;
+    return `Good morning, ${handle}`;
   }
 
   if (hour < 16) {
-    return `Good afternoon ${handle}`;
+    return `Good afternoon, ${handle}`;
   }
 
-  return `Good evening ${handle}`;
+  return `Good evening, ${handle}`;
 };
 
 const formatCurrency = (amount?: number): string => {
@@ -179,7 +179,7 @@ export default function HomeScreen() {
             <View style={styles.heroTextBlock}>
               <Text style={styles.greeting}>{greeting}</Text>
               <Text style={styles.heroSubtitle}>
-                Track contributions, withdrawals, approvals, and chat with people in your shared spaces.
+                Track contributions, withdrawals, approvals and chat with people in your shared spaces.
               </Text>
             </View>
           </View>
@@ -218,7 +218,7 @@ export default function HomeScreen() {
         ) : null}
 
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Your Spaces</Text>
+          <Text style={styles.sectionTitle}>Your shared spaces</Text>
           <Pressable onPress={() => router.push('/spaces')}>
             <Text style={styles.sectionAction}>View all</Text>
           </Pressable>

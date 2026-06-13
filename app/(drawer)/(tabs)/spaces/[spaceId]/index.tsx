@@ -247,7 +247,7 @@ export default function SpaceDashboardScreen() {
 
             <View style={styles.section}>
               <View style={styles.sectionHeader}>
-                <Text style={styles.sectionTitle}>Actions</Text>
+                <Text style={styles.sectionTitle}>Space Options</Text>
                 <View style={styles.headerActions}>
                   {isCreator ? (
                     <Pressable
@@ -266,22 +266,22 @@ export default function SpaceDashboardScreen() {
                 </View>
               </View>
               <Pressable
-                onPress={() => pushSpaceRoute('transactions')}
-                style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>Transact</Text>
-              </Pressable>
-              <Pressable
                 onPress={() => pushSpaceRoute('chat')}
                 style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>Open Chat</Text>
-              </Pressable> 
-              <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
-                <Text style={styles.placeholderButtonText}>Invite Members</Text>
+                <Text style={styles.placeholderButtonText}>Chat</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => pushSpaceRoute('transactions')}
+                style={styles.placeholderButton}>
+                <Text style={styles.placeholderButtonText}>Finances</Text>
               </Pressable>
               <Pressable
                 onPress={() => pushSpaceRoute('members')}
                 style={styles.placeholderButton}>
                 <Text style={styles.placeholderButtonText}>View Members</Text>
+              </Pressable>
+              <Pressable onPress={showInviteMembers} style={styles.placeholderButton}>
+                <Text style={styles.placeholderButtonText}>Invite Members</Text>
               </Pressable>
             </View>
           </>
