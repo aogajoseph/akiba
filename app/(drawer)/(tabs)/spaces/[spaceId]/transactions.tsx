@@ -35,7 +35,7 @@ import {
   canCancelWithdrawal,
   getWithdrawalRequestBlockingReason,
   isWithdrawalRequestEligible,
-} from '@shared/withdrawalGovernance';
+} from '@/shared/withdrawalGovernance';
 
 const screenWidth = Dimensions.get('window').width;
 
