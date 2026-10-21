@@ -4,15 +4,15 @@ Labels: Baseline = explicit domain rule; MVP = planned first release slice; Futu
 
 | Area | Requirement | Status | Verification |
 |---|---|---|---|
-| Product model | Financial Universe is primary collaborative context | Baseline | Membership-scoped integration tests |
-| Purpose | Event and Goal Universe purposes | Baseline | Creation/validation tests |
+| Product model | Group is primary collaborative context | Baseline | Membership-scoped integration tests |
+| Purpose | Event and Goal Group purposes | Baseline | Creation/validation tests |
 | Identity | Login includes username, email and phone paths | Baseline; spike required | Auth flow and account-enumeration tests |
 | Verification | Phone/email verification part of account trust | Baseline; exact MVP policy open | Verification-state tests |
 | Membership | Invitations, lifecycle and roles are auditable | Baseline | Expiry, replay, removal and access tests |
 | Governance | Independent approvals precede withdrawal execution | Baseline; edge cases open | Invalid approval combination tests |
 | Ledger | Posted financial records are append-only and authoritative | Baseline | Constraint, adjustment and reconciliation tests |
 | Payments | Provider events authenticated and idempotent | Baseline | Signature and duplicate/retry tests |
-| Chat | Conversation contextual to a Universe | Baseline | Cross-Universe access tests |
+| Chat | Conversation contextual to a Group | Baseline | Cross-Group access tests |
 | Histories | Ledger, timeline and security audit are separate | Baseline | Domain/schema review |
 | Reports | Derived from authoritative records and permission-filtered | MVP | Report-to-ledger reconciliation |
 | Real payments | Production provider integration and money movement | Gated future milestone | Provider/compliance/operational approval |
