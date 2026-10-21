@@ -1,5 +1,5 @@
 "use client";
-import { useMemo, useState, type FormEvent } from "react";
+import { useMemo, useState, type FormEvent, type ReactNode } from "react";
 
 type Universe = { id:string; name:string; purpose:"Event"|"Goal"; detail:string; members:number; amount:string; progress:number; initials:string[]; color:string };
 const seed:Universe[]=[
@@ -7,7 +7,7 @@ const seed:Universe[]=[
 {id:"2",name:"Class of 2027",purpose:"Goal",detail:"Graduation trip",members:12,amount:"KES 32,000",progress:42,initials:["AM","SK","PO"],color:"lavender"},
 {id:"3",name:"The Wanjiku Family",purpose:"Goal",detail:"Family home project",members:9,amount:"KES 126,000",progress:81,initials:["NW","JW","EW"],color:"sand"}];
 const activity=[{initials:"AM",name:"Amina Mwangi",action:"recorded a contribution in",target:"Class of 2027",amount:"+ KES 4,000",time:"12 min ago",tone:"lavender"},{initials:"JO",name:"Joseph Otieno",action:"shared an update in",target:"Miriam & Daniel",amount:"",time:"48 min ago",tone:"sage"},{initials:"NW",name:"Njeri Wanjiku",action:"posted a milestone in",target:"The Wanjiku Family",amount:"",time:"2 hours ago",tone:"sand"}];
-function Glyph({children}:{children:React.ReactNode}){return <span aria-hidden="true" className="glyph">{children}</span>}
+function Glyph({children}:{children:ReactNode}){return <span aria-hidden="true" className="glyph">{children}</span>}
 function Mark(){return <span className="mark"><i/><i/><i/></span>}
 function Stack({items}:{items:string[]}){return <span className="stack">{items.map((x,i)=><i key={x} style={{zIndex:4-i}}>{x}</i>)}</span>}
 export default function HomePage(){
