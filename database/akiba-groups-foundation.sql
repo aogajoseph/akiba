@@ -72,7 +72,7 @@ returns trigger
 language plpgsql
 security definer
 set search_path = ''
-as $
+as $akiba_fn$
 begin
   if new.created_by is distinct from (select auth.uid()) then
     raise exception 'Group creator must be the authenticated user';
@@ -82,7 +82,7 @@ begin
   values (new.id, new.created_by, 'admin', 'active');
   return new;
 end;
-$;
+$akiba_fn$;
 revoke all on function akiba_private.create_group_owner_membership() from public, anon, authenticated;
 create trigger akiba_group_owner_membership
 after insert on public.akiba_groups
