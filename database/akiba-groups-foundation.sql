@@ -93,7 +93,7 @@ create policy "read groups as active member or creator"
   using (
     exists (
       select 1 from public.akiba_group_memberships m
-      where m.group_id = id and m.user_id = (select auth.uid()) and m.status = 'active'
+      where m.group_id = akiba_groups.id and m.user_id = (select auth.uid()) and m.status = 'active'
     )
   );
 
