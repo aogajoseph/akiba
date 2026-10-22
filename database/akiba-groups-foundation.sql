@@ -108,7 +108,7 @@ create policy "active members read messages"
   using (
     exists (
       select 1 from public.akiba_group_memberships m
-      where m.group_id = group_id and m.user_id = (select auth.uid()) and m.status = 'active'
+      where m.group_id = akiba_group_messages.group_id and m.user_id = (select auth.uid()) and m.status = 'active'
     )
   );
 create policy "active members post own messages"
@@ -117,7 +117,7 @@ create policy "active members post own messages"
     author_id = (select auth.uid())
     and exists (
       select 1 from public.akiba_group_memberships m
-      where m.group_id = group_id and m.user_id = (select auth.uid()) and m.status = 'active'
+      where m.group_id = akiba_group_messages.group_id and m.user_id = (select auth.uid()) and m.status = 'active'
     )
   );
 
@@ -128,7 +128,7 @@ create policy "active members read activity"
   using (
     exists (
       select 1 from public.akiba_group_memberships m
-      where m.group_id = group_id and m.user_id = (select auth.uid()) and m.status = 'active'
+      where m.group_id = akiba_group_activity.group_id and m.user_id = (select auth.uid()) and m.status = 'active'
     )
   );
 
