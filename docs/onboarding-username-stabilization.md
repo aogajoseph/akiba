@@ -1,10 +1,8 @@
 # Akiba onboarding stabilization
 Production target: https://akiba-kappa.vercel.app
 
-## Required Supabase email template configuration
-Authentication > Email Templates > Confirm signup: replace the confirmation CTA href with:
-`{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup`
-The code-exchange callback also remains supported for PKCE links containing `?code=...`. The default `{{ .ConfirmationURL }}` may land at the Site URL instead of the app callback, and can leave the browser without a session.
+## Supabase email confirmation configuration
+Do not edit the default Confirm signup email template or configure custom SMTP just to fix redirects. Keep the default `{{ .ConfirmationURL }}` link. Signup passes `emailRedirectTo: https://akiba-kappa.vercel.app/auth/callback`; allowlist that exact callback URL in Authentication > URL Configuration. Supabase's confirmation endpoint should verify the email and redirect to the callback with a PKCE `code`, which the callback exchanges for a session. The callback also accepts `token_hash` links if a custom template is configured later.
 
 ## Flow
 Sign up → confirm once → /onboarding → choose unique @username → /onboarding/complete → optionally create Group or open workspace. Existing authenticated users with a profile go straight to workspace.
