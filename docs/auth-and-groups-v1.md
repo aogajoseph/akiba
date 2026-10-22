@@ -21,9 +21,9 @@ In Supabase Authentication URL configuration, set the Site URL to the deployed A
 
 ## Security checks already completed
 - Four application tables have RLS enabled.
-- Message select/insert and activity select policies explicitly correlate membership to the current row's Group.
+- Group reads, message select/insert and activity select policies explicitly correlate membership to the current row's Group.
 - Security advisors returned no findings after the RLS correction.
-- Migration history contains both the initial schema and RLS correction.
+- Migration history contains the initial schema plus two RLS-correction migrations.
 
 ## Still required
 - Run install, lint, typecheck, and production build in CI/Vercel.
