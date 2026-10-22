@@ -6,7 +6,9 @@ import { createClient } from "@/lib/supabase/server";
 export default async function WorkspacePage() {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) redirect("/login");\n  const { data: profile } = await supabase.from("akiba_profiles").select("username").eq("user_id", user.id).maybeSingle();\n  if (!profile) redirect("/onboarding");
+  if (authError || !user) redirect("/login");
+  const { data: profile } = await supabase.from("akiba_profiles").select("username").eq("user_id", user.id).maybeSingle();
+  if (!profile) redirect("/onboarding");
   const { data: groups, error } = await supabase.from("akiba_groups").select("id,name,purpose,description,currency_code,created_at").order("created_at", { ascending: false });
   return <main className="real-workspace"><header className="real-topbar"><Link href="/" className="auth-brand"><span className="workspace-mark">a</span> akiba</Link><div><span className="real-user">{user.email}</span><form action={signOut}><button className="text-btn" type="submit">Sign out</button></form></div></header>
     <section className="real-content"><div className="workspace-eyebrow">YOUR COLLECTIVE SPACES</div><h1>Your Groups</h1><p className="auth-description">Groups you create or join will appear here.</p>
