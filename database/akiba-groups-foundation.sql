@@ -77,7 +77,10 @@ create policy "creator establishes own membership"
 create policy "read groups as active member or creator"
   on public.akiba_groups for select to authenticated
   using (
-    created_by = (select auth.uid())
+    (created_by = (select auth.uid()) and not exists (
+      select 1 from public.akiba_group_memberships own
+      where own.group_id = id and own.user_id = (select auth.uid())
+    ))
     or exists (
       select 1 from public.akiba_group_memberships m
       where m.group_id = id and m.user_id = (select auth.uid()) and m.status = 'active'
