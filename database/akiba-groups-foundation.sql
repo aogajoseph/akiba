@@ -1,6 +1,6 @@
 -- Akiba Groups persistence foundation.
--- REVIEW ONLY: do not apply to Globe HQ. Run in a dedicated Akiba Supabase project.
--- This file is a reviewed schema proposal, not an applied migration.
+-- Initial Akiba schema baseline. Apply only to the dedicated Akiba project.
+-- The atomic creator-membership trigger is installed in the same transaction.
 create extension if not exists pgcrypto;
 
 create table if not exists public.akiba_groups (
@@ -62,26 +62,36 @@ create policy "memberships read own"
   on public.akiba_group_memberships for select to authenticated
   using (user_id = (select auth.uid()));
 
--- A creator can establish their own admin membership, but not create membership for others.
--- Invite acceptance and role management will use separately audited server workflows later.
-create policy "creator establishes own membership"
-  on public.akiba_group_memberships for insert to authenticated
-  with check (
-    user_id = (select auth.uid()) and role = 'admin' and status = 'active'
-    and exists (
-      select 1 from public.akiba_groups g
-      where g.id = group_id and g.created_by = (select auth.uid())
-    )
-  );
+-- Membership changes are deliberately unavailable through the public Data API.
+-- A restricted trigger creates the initial admin membership atomically.
+create schema if not exists akiba_private;
+revoke all on schema akiba_private from public, anon, authenticated;
+
+create or replace function akiba_private.create_group_owner_membership()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $akiba_fn$
+begin
+  if new.created_by is distinct from (select auth.uid()) then
+    raise exception 'Group creator must be the authenticated user';
+  end if;
+  insert into public.akiba_group_memberships
+    (group_id, user_id, role, status)
+  values (new.id, new.created_by, 'admin', 'active');
+  return new;
+end;
+$akiba_fn$;
+revoke all on function akiba_private.create_group_owner_membership() from public, anon, authenticated;
+create trigger akiba_group_owner_membership
+after insert on public.akiba_groups
+for each row execute function akiba_private.create_group_owner_membership();
 
 create policy "read groups as active member or creator"
   on public.akiba_groups for select to authenticated
   using (
-    (created_by = (select auth.uid()) and not exists (
-      select 1 from public.akiba_group_memberships own
-      where own.group_id = id and own.user_id = (select auth.uid())
-    ))
-    or exists (
+    exists (
       select 1 from public.akiba_group_memberships m
       where m.group_id = id and m.user_id = (select auth.uid()) and m.status = 'active'
     )
@@ -126,10 +136,10 @@ create policy "active members read activity"
 revoke all on public.akiba_groups, public.akiba_group_memberships,
   public.akiba_group_messages, public.akiba_group_activity from anon;
 grant select, insert on public.akiba_groups to authenticated;
-grant select, insert on public.akiba_group_memberships to authenticated;
+grant select on public.akiba_group_memberships to authenticated;
 grant select, insert on public.akiba_group_messages to authenticated;
 grant select on public.akiba_group_activity to authenticated;
 
--- Important: creator + admin membership currently require two client requests.
--- This is NOT an atomic production create-group flow. Before launch, replace
--- with an audited transactional workflow that cannot leave orphaned groups.
+-- Group and creator membership are inserted in one database transaction.
+-- Future invitations, membership transitions and admin succession need
+-- separately authorized and audited workflows.
