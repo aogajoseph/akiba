@@ -19,6 +19,8 @@ declare module '@mui/material/styles' {
     900: string;
   }
 
+  // MUI palette module augmentation intentionally adds ColorRange fields.
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   interface PaletteColor extends ColorRange {}
 
   interface Palette {
