@@ -30,4 +30,4 @@ export async function signUp(formData: FormData) {
  if(data.session) redirect("/onboarding");
  redirect("/login?message="+encodeURIComponent("Check your email to confirm your Akiba account once. After confirmation, you'll set up your username."));
 }
-export async function signOut(){const supabase=await createClient();await supabase.auth.signOut();redirect("/login?message=You%20have%20signed%20out.");}
+export async function signOut(){const supabase=await createClient();await supabase.auth.signOut();await markReturning();redirect("/login?message=You%20have%20signed%20out.");}
