@@ -1,4 +1,6 @@
 import * as React from 'react';
+
+type CSSVariables = React.CSSProperties & { [key: `--${string}`]: string };
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Card from '@mui/material/Card';
@@ -113,7 +115,7 @@ export function MobileLayout({
               ? ({
                   '--items-imageLight': items[selectedItemIndex].imageLight,
                   '--items-imageDark': items[selectedItemIndex].imageDark,
-                } as any)
+                } as CSSVariables)
               : {}
           }
         />
