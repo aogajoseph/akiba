@@ -22,7 +22,7 @@ function Copyright() {
           color: 'text.secondary',
         }}
       >
-        Sitemark
+        Akiba
       </Link>
       {new Date().getFullYear()}
     </Typography>
