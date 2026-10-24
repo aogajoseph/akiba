@@ -1,144 +1,23 @@
 import * as React from 'react';
-import { styled, alpha } from '@mui/material/styles';
-import Box from '@mui/material/Box';
-import AppBar from '@mui/material/AppBar';
-import Toolbar from '@mui/material/Toolbar';
-import Button from '@mui/material/Button';
-import IconButton from '@mui/material/IconButton';
-import Container from '@mui/material/Container';
-import Divider from '@mui/material/Divider';
-import MenuItem from '@mui/material/MenuItem';
-import Drawer from '@mui/material/Drawer';
+import { AppBar, Box, Button, Container, Drawer, IconButton, MenuItem, Toolbar } from '@mui/material';
 import MenuIcon from '@mui/icons-material/Menu';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
+import CloseIcon from '@mui/icons-material/Close';
 import ColorModeIconDropdown from '../shared-theme/ColorModeIconDropdown';
 import Sitemark from './SitemarkIcon';
-
-const StyledToolbar = styled(Toolbar)(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  flexShrink: 0,
-  borderRadius: `calc(${theme.shape.borderRadius}px + 8px)`,
-  backdropFilter: 'blur(24px)',
-  border: '1px solid',
-  borderColor: (theme.vars || theme).palette.divider,
-  backgroundColor: theme.vars
-    ? `rgba(${theme.vars.palette.background.defaultChannel} / 0.4)`
-    : alpha(theme.palette.background.default, 0.4),
-  boxShadow: (theme.vars || theme).shadows[1],
-  padding: '8px 12px',
-}));
-
+const links = [["About","#hero"],["Features","#features"],["How it works","#how-it-works"],["Getting Started","#getting-started"],["Pricing","#pricing"],["FAQs","#faq"]];
 export default function AppAppBar() {
-  const [open, setOpen] = React.useState(false);
-
-  const toggleDrawer = (newOpen: boolean) => () => {
-    setOpen(newOpen);
-  };
-
-  return (
-    <AppBar
-      position="fixed"
-      enableColorOnDark
-      sx={{
-        boxShadow: 0,
-        bgcolor: 'transparent',
-        backgroundImage: 'none',
-        mt: 'calc(var(--template-frame-height, 0px) + 28px)',
-      }}
-    >
-      <Container maxWidth="lg">
-        <StyledToolbar variant="dense" disableGutters>
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', px: 0 }}>
-            <Sitemark />
-            <Box sx={{ display: { xs: 'none', md: 'flex' } }}>
-              <Button component="a" href="#features" variant="text" color="info" size="small">
-                Features
-              </Button>
-              <Button component="a" href="#testimonials" variant="text" color="info" size="small">
-                Testimonials
-              </Button>
-              <Button component="a" href="#highlights" variant="text" color="info" size="small">
-                Highlights
-              </Button>
-              <Button component="a" href="#pricing" variant="text" color="info" size="small">
-                Pricing
-              </Button>
-              <Button component="a" href="#faq" variant="text" color="info" size="small" sx={{ minWidth: 0 }}>
-                FAQ
-              </Button>
-              <Button component="a" href="#footer" variant="text" color="info" size="small" sx={{ minWidth: 0 }}>
-                Blog
-              </Button>
-            </Box>
-          </Box>
-          <Box
-            sx={{
-              display: { xs: 'none', md: 'flex' },
-              gap: 1,
-              alignItems: 'center',
-            }}
-          >
-            <Button component="a" href="/login" color="primary" variant="text" size="small">
-              Sign in
-            </Button>
-            <Button component="a" href="/signup" color="primary" variant="contained" size="small">
-              Sign up
-            </Button>
-            <ColorModeIconDropdown />
-          </Box>
-          <Box sx={{ display: { xs: 'flex', md: 'none' }, gap: 1 }}>
-            <ColorModeIconDropdown size="medium" />
-            <IconButton aria-label="Menu button" onClick={toggleDrawer(true)}>
-              <MenuIcon />
-            </IconButton>
-            <Drawer
-              anchor="top"
-              open={open}
-              onClose={toggleDrawer(false)}
-              slotProps={{
-                paper: {
-                  sx: {
-                    top: 'var(--template-frame-height, 0px)',
-                  },
-                },
-              }}
-            >
-              <Box sx={{ p: 2, backgroundColor: 'background.default' }}>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    justifyContent: 'flex-end',
-                  }}
-                >
-                  <IconButton onClick={toggleDrawer(false)}>
-                    <CloseRoundedIcon />
-                  </IconButton>
-                </Box>
-
-                <MenuItem component="a" href="#features">Features</MenuItem>
-                <MenuItem component="a" href="#testimonials">Testimonials</MenuItem>
-                <MenuItem component="a" href="#highlights">Highlights</MenuItem>
-                <MenuItem component="a" href="#pricing">Pricing</MenuItem>
-                <MenuItem component="a" href="#faq">FAQ</MenuItem>
-                <MenuItem component="a" href="#footer">Blog</MenuItem>
-                <Divider sx={{ my: 3 }} />
-                <MenuItem>
-                  <Button component="a" href="/signup" color="primary" variant="contained" fullWidth>
-                    Sign up
-                  </Button>
-                </MenuItem>
-                <MenuItem>
-                  <Button component="a" href="/login" color="primary" variant="outlined" fullWidth>
-                    Sign in
-                  </Button>
-                </MenuItem>
-              </Box>
-            </Drawer>
-          </Box>
-        </StyledToolbar>
-      </Container>
-    </AppBar>
-  );
+ const [open,setOpen]=React.useState(false);
+ return <AppBar position="fixed" color="transparent" elevation={0} sx={{mt:3,backgroundImage:'none'}}>
+ <Container maxWidth="xl"><Toolbar sx={{border:1,borderColor:'divider',borderRadius:3,backdropFilter:'blur(20px)',bgcolor:'background.paper',gap:2,py:1}}>
+ <Box sx={{flex:1}}><Sitemark/></Box>
+ <Box component="nav" sx={{display:{xs:'none',lg:'flex'},justifyContent:'center',gap:0.5,flex:3}}>
+ {links.map(([label,href])=><Button key={href} href={href} color="inherit" size="small" sx={{textTransform:'none',whiteSpace:'nowrap'}}>{label}</Button>)}
+ </Box>
+ <Box sx={{flex:1,display:{xs:'none',lg:'flex'},justifyContent:'flex-end',alignItems:'center',gap:1}}>
+ <Button href="/login" size="small">Sign In</Button><Button href="/signup" variant="contained" size="small">Create Account</Button><ColorModeIconDropdown/>
+ </Box>
+ <Box sx={{display:{xs:'flex',lg:'none'},alignItems:'center'}}><ColorModeIconDropdown/><IconButton aria-label="Open navigation" onClick={()=>setOpen(true)}><MenuIcon/></IconButton></Box>
+ </Toolbar></Container>
+ <Drawer anchor="top" open={open} onClose={()=>setOpen(false)}><Box sx={{p:3,pt:5}}><IconButton aria-label="Close navigation" onClick={()=>setOpen(false)}><CloseIcon/></IconButton>{links.map(([label,href])=><MenuItem key={href} component="a" href={href} onClick={()=>setOpen(false)}>{label}</MenuItem>)}<Button fullWidth href="/login">Sign In</Button><Button fullWidth href="/signup" variant="contained">Create Account</Button></Box></Drawer>
+ </AppBar>;
 }
