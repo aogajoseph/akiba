@@ -23,11 +23,23 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 }));
 export default function AppAppBar() {
  const [open,setOpen]=React.useState(false);
+ const [activeSection,setActiveSection]=React.useState('hero');
+ React.useEffect(()=>{
+  const ids=links.map(([,href])=>href.slice(1));
+  const sections=ids.map(id=>document.getElementById(id)).filter(Boolean) as HTMLElement[];
+  if(!sections.length)return;
+  const observer=new IntersectionObserver(entries=>{
+   const visible=entries.filter(entry=>entry.isIntersecting).sort((a,b)=>b.intersectionRatio-a.intersectionRatio);
+   if(visible[0])setActiveSection(visible[0].target.id);
+  },{rootMargin:'-20% 0px -65% 0px',threshold:[0,0.1,0.25,0.5]});
+  sections.forEach(section=>observer.observe(section));
+  return()=>observer.disconnect();
+ },[]);
  return <AppBar position="fixed" enableColorOnDark sx={{boxShadow:0,bgcolor:'transparent',backgroundImage:'none',mt:'calc(var(--template-frame-height, 0px) + 28px)'}}>
  <Container maxWidth="lg"><StyledToolbar variant="dense" disableGutters sx={{gap:1,minHeight:48,'&.MuiToolbar-root':{minHeight:48}}}>
  <Box sx={{flex:1,display:'flex',alignItems:'center',minWidth:0}}><Sitemark/></Box>
  <Box component="nav" sx={{display:{xs:'none',lg:'flex'},justifyContent:'center',gap:0,flex:3}}>
- {links.map(([label,href])=><Button key={href} href={href} color="inherit" size="small" sx={{textTransform:'none',whiteSpace:'nowrap',px:1,minWidth:0}}>{label}</Button>)}
+ {links.map(([label,href])=><Button key={href} href={href} color="inherit" size="small" sx={{textTransform:'none',whiteSpace:'nowrap',px:1,minWidth:0,position:'relative',borderRadius:0,'&::after':{content:'\"\"',position:'absolute',left:0,bottom:0,height:'2px',width:activeSection===href.slice(1)?'100%':'0%',bgcolor:'#3979ED',transition:'width 240ms ease'},'&:hover::after':{width:'100%'}}}>{label}</Button>)}
  </Box>
  <Box sx={{flex:1,display:{xs:'none',lg:'flex'},justifyContent:'flex-end',alignItems:'center',gap:1}}>
  <Button href="/login" size="small" sx={{whiteSpace:'nowrap',minWidth:'max-content'}}>Sign In</Button><Button href="/signup" variant="contained" size="small" sx={{whiteSpace:'nowrap',minWidth:'max-content'}}>Sign Up</Button><ColorModeIconDropdown/>
