@@ -1,152 +1,18 @@
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Container from '@mui/material/Container';
-import InputLabel from '@mui/material/InputLabel';
-import Link from '@mui/material/Link';
-import Stack from '@mui/material/Stack';
-import TextField from '@mui/material/TextField';
-import Typography from '@mui/material/Typography';
-import visuallyHidden from '@mui/utils/visuallyHidden';
-import { styled } from '@mui/material/styles';
-
-const StyledBox = styled('div')(({ theme }) => ({
-  alignSelf: 'center',
-  width: '100%',
-  height: 400,
-  marginTop: theme.spacing(8),
-  borderRadius: (theme.vars || theme).shape.borderRadius,
-  outline: '6px solid',
-  outlineColor: 'hsla(220, 25%, 80%, 0.2)',
-  border: '1px solid',
-  borderColor: (theme.vars || theme).palette.grey[200],
-  boxShadow: '0 0 12px 8px hsla(220, 25%, 80%, 0.2)',
-  backgroundImage: `url(${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/screenshots/material-ui/getting-started/templates/dashboard.jpg)`,
-  backgroundSize: 'cover',
-  [theme.breakpoints.up('sm')]: {
-    marginTop: theme.spacing(10),
-    height: 700,
-  },
-  ...theme.applyStyles('dark', {
-    boxShadow: '0 0 24px 12px hsla(210, 100%, 25%, 0.2)',
-    backgroundImage: `url(${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/screenshots/material-ui/getting-started/templates/dashboard-dark.jpg)`,
-    outlineColor: 'hsla(220, 20%, 42%, 0.1)',
-    borderColor: (theme.vars || theme).palette.grey[700],
-  }),
-}));
-
+import { Box, Button, Container, Link, Paper, Stack, Typography, Chip } from '@mui/material';
 export default function Hero() {
-  return (
-    <Box
-      id="hero"
-      sx={(theme) => ({
-        width: '100%',
-        backgroundRepeat: 'no-repeat',
-
-        backgroundImage:
-          'radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 90%), transparent)',
-        ...theme.applyStyles('dark', {
-          backgroundImage:
-            'radial-gradient(ellipse 80% 50% at 50% -20%, hsl(210, 100%, 16%), transparent)',
-        }),
-      })}
-    >
-      <Container
-        sx={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          pt: { xs: 14, sm: 20 },
-          pb: { xs: 8, sm: 12 },
-        }}
-      >
-        <Stack
-          spacing={2}
-          useFlexGap
-          sx={{ alignItems: 'center', width: { xs: '100%', sm: '70%' } }}
-        >
-          <Typography
-            variant="h1"
-            sx={{
-              display: 'flex',
-              flexDirection: { xs: 'column', sm: 'row' },
-              alignItems: 'center',
-              fontSize: 'clamp(3rem, 10vw, 3.5rem)',
-            }}
-          >
-            Our&nbsp;latest&nbsp;
-            <Typography
-              component="span"
-              variant="h1"
-              sx={(theme) => ({
-                fontSize: 'inherit',
-                color: 'primary.main',
-                ...theme.applyStyles('dark', {
-                  color: 'primary.light',
-                }),
-              })}
-            >
-              products
-            </Typography>
-          </Typography>
-          <Typography
-            sx={{
-              textAlign: 'center',
-              color: 'text.secondary',
-              width: { sm: '100%', md: '80%' },
-            }}
-          >
-            Explore our cutting-edge dashboard, delivering high-quality solutions
-            tailored to your needs. Elevate your experience with top-tier features
-            and services.
-          </Typography>
-          <Stack
-            direction={{ xs: 'column', sm: 'row' }}
-            spacing={1}
-            useFlexGap
-            sx={{ pt: 2, width: { xs: '100%', sm: '350px' } }}
-          >
-            <InputLabel htmlFor="email-hero" sx={visuallyHidden}>
-              Email
-            </InputLabel>
-            <TextField
-              id="email-hero"
-              hiddenLabel
-              size="small"
-              variant="outlined"
-              aria-label="Enter your email address"
-              placeholder="Your email address"
-              fullWidth
-              slotProps={{
-                htmlInput: {
-                  autoComplete: 'off',
-                  'aria-label': 'Enter your email address',
-                },
-              }}
-            />
-            <Button
-              component="a"
-              href="/signup"
-              variant="contained"
-              color="primary"
-              size="small"
-              sx={{ minWidth: 'fit-content' }}
-            >
-              Start now
-            </Button>
-          </Stack>
-          <Typography
-            variant="caption"
-            sx={{ color: 'text.secondary', textAlign: 'center' }}
-          >
-            By clicking &quot;Start now&quot; you agree to our&nbsp;
-            <Link href="#" color="primary">
-              Terms & Conditions
-            </Link>
-            .
-          </Typography>
-        </Stack>
-        <StyledBox id="image" />
-      </Container>
-    </Box>
-  );
+ return <Box id="hero" sx={{scrollMarginTop:110,background:'radial-gradient(ellipse at 50% 0%,rgba(236,30,123,.09),transparent 65%)'}}>
+ <Container maxWidth="lg" sx={{pt:{xs:17,md:22},pb:9,textAlign:'center'}}>
+ <Typography variant="h1" sx={{fontWeight:800,fontSize:{xs:'3.2rem',md:'5.5rem'},letterSpacing:'-.055em',lineHeight:1.1}}>Do more <Box component="span" sx={{color:'#E91E78'}}>together</Box></Typography>
+ <Typography sx={{maxWidth:790,mx:'auto',mt:3,color:'text.secondary',fontSize:{xs:'1.1rem',md:'1.3rem'}}}>Akiba is a finance coordination platform that helps people contribute and spend money as a team to plan events or achieve shared goals.</Typography>
+ <Stack direction={{xs:'column',sm:'row'}} spacing={2} justifyContent="center" sx={{mt:4,maxWidth:450,mx:'auto'}}>
+ <Button href="/login" size="large" variant="outlined" fullWidth sx={{py:1.6}}>Sign In</Button><Button href="/signup" size="large" variant="contained" fullWidth sx={{py:1.6,bgcolor:'#E91E78','&:hover':{bgcolor:'#C21863'}}}>Create Account</Button></Stack>
+ <Typography variant="caption" color="text.secondary" sx={{display:'block',mt:2}}>By signing up to Akiba, you agree to our <Link href="/terms">Terms of Service</Link>.</Typography>
+ <Paper variant="outlined" sx={{mt:9,p:{xs:2,md:4},borderRadius:4,textAlign:'left',boxShadow:'0 25px 70px rgba(26,38,65,.12)'}}>
+ <Stack direction="row" justifyContent="space-between" alignItems="center"><Box><Typography variant="overline" color="text.secondary">Illustrative dashboard preview</Typography><Typography variant="h5" fontWeight={700}>Family Celebration</Typography></Box><Chip label="Demo data" color="secondary"/></Stack>
+ <Stack direction={{xs:'column',md:'row'}} spacing={2} sx={{mt:3}}>
+ {[[ 'Group balance','KES 248,500'],['Total contributed','KES 312,000'],['Pending approval','KES 18,000']].map(([name,value])=><Paper key={name} variant="outlined" sx={{p:3,flex:1,borderRadius:3}}><Typography variant="body2" color="text.secondary">{name}</Typography><Typography variant="h4" fontWeight={750}>{value}</Typography></Paper>)}</Stack>
+ <Stack direction={{xs:'column',md:'row'}} spacing={3} sx={{mt:3}}>
+ <Paper variant="outlined" sx={{p:3,flex:2,borderRadius:3}}><Typography variant="h6">Recent group activity</Typography>{[['Mary contributed','+ KES 15,000'],['Venue payment approved','− KES 24,000'],['James contributed','+ KES 8,500']].map(([a,b])=><Stack key={a} direction="row" justifyContent="space-between" sx={{py:2,borderBottom:'1px solid',borderColor:'divider'}}><Typography>{a}</Typography><Typography fontWeight={700}>{b}</Typography></Stack>)}</Paper>
+ <Paper variant="outlined" sx={{p:3,flex:1,borderRadius:3}}><Typography variant="h6">Group chat</Typography><Typography sx={{mt:2}}>Mary: Venue deposit confirmed! 🎉</Typography><Typography sx={{mt:2,color:'text.secondary'}}>James: Great, I’ve contributed.</Typography><Typography sx={{mt:2}}>Admin: Thanks, everyone!</Typography></Paper></Stack></Paper>
+ </Container></Box>;
 }
