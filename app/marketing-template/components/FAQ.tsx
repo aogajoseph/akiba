@@ -1,3 +1,4 @@
+import Box from '@mui/material/Box';
 import { Accordion, AccordionDetails, AccordionSummary, Container, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 const questions=[
@@ -7,4 +8,5 @@ const questions=[
  ['What happens if I find myself in the wrong group?','Membership is invitation-driven. You may decline an invitation to a suspicious group. If you joined by mistake, you may leave. Sub-admins must transfer their role before leaving; group creators cannot leave as admin and can delete only eligible groups.'],
  ['What if I contributed money to the wrong group, or contributed by mistake?','Request a reversal as soon as you notice the error or contact Akiba support. Reversals will be subject to transaction status, payment-provider rules and applicable law; they cannot be guaranteed.']
 ];
-export default function FAQ(){return <Container id="faq" sx={{py:{xs:9,md:14},scrollMarginTop:100}}><Typography variant="h4" sx={{mb:5}}>Frequently asked questions</Typography>{questions.map(([q,a])=><Accordion key={q} disableGutters sx={{py:1}}><AccordionSummary expandIcon={<ExpandMoreIcon/>}><Typography component="span" variant="subtitle2">{q}</Typography></AccordionSummary><AccordionDetails><Typography variant="body2" color="text.secondary" sx={{maxWidth:850}}>{a}</Typography></AccordionDetails></Accordion>)}</Container>}
+export default function FAQ(){return <Container id="faq" sx={{py:{xs:9,md:14},scrollMarginTop:100}}><Typography component="p" variant="overline" sx={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-start', textAlign: 'left', color: 'text.secondary', fontWeight: 600, letterSpacing: '0.08em', mb: 1 }}>06<Box component="span" sx={{ mx: 1, color: 'primary.main' }}>·</Box>Frequently Asked Questions</Typography>
+      <Typography variant="h4" sx={{mb:5}}>Frequently asked questions</Typography>{questions.map(([q,a])=><Accordion key={q} disableGutters sx={{py:1}}><AccordionSummary expandIcon={<ExpandMoreIcon/>}><Typography component="span" variant="subtitle2">{q}</Typography></AccordionSummary><AccordionDetails><Typography variant="body2" color="text.secondary" sx={{maxWidth:850}}>{a}</Typography></AccordionDetails></Accordion>)}</Container>}
