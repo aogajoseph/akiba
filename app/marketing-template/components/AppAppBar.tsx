@@ -30,10 +30,10 @@ export default function AppAppBar() {
  {links.map(([label,href])=><Button key={href} href={href} color="inherit" size="small" sx={{textTransform:'none',whiteSpace:'nowrap',px:1,minWidth:0}}>{label}</Button>)}
  </Box>
  <Box sx={{flex:1,display:{xs:'none',lg:'flex'},justifyContent:'flex-end',alignItems:'center',gap:1}}>
- <Button href="/login" size="small">Sign In</Button><Button href="/signup" variant="contained" size="small">Create Account</Button><ColorModeIconDropdown/>
+ <Button href="/login" size="small" sx={{whiteSpace:'nowrap',minWidth:'max-content'}}>Sign In</Button><Button href="/signup" variant="contained" size="small" sx={{whiteSpace:'nowrap',minWidth:'max-content'}}>Sign Up</Button><ColorModeIconDropdown/>
  </Box>
  <Box sx={{display:{xs:'flex',lg:'none'},alignItems:'center'}}><ColorModeIconDropdown/><IconButton aria-label="Open navigation" onClick={()=>setOpen(true)}><MenuIcon/></IconButton></Box>
  </StyledToolbar></Container>
- <Drawer anchor="top" open={open} onClose={()=>setOpen(false)}><Box sx={{p:3,pt:5}}><IconButton aria-label="Close navigation" onClick={()=>setOpen(false)}><CloseIcon/></IconButton>{links.map(([label,href])=><MenuItem key={href} component="a" href={href} onClick={()=>setOpen(false)}>{label}</MenuItem>)}<Button fullWidth href="/login">Sign In</Button><Button fullWidth href="/signup" variant="contained">Create Account</Button></Box></Drawer>
+ <Drawer anchor="top" open={open} onClose={()=>setOpen(false)}><Box sx={{p:3,pt:5}}><IconButton aria-label="Close navigation" onClick={()=>setOpen(false)}><CloseIcon/></IconButton>{links.map(([label,href])=><MenuItem key={href} component="a" href={href} onClick={()=>setOpen(false)}>{label}</MenuItem>)}<Button fullWidth href="/login" sx={{whiteSpace:'nowrap'}}>Sign In</Button><Button fullWidth href="/signup" variant="contained" sx={{whiteSpace:'nowrap'}}>Sign Up</Button></Box></Drawer>
  </AppBar>;
 }
