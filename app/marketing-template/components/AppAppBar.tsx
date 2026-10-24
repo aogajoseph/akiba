@@ -24,7 +24,7 @@ const StyledToolbar = styled(Toolbar)(({ theme }) => ({
 export default function AppAppBar() {
  const [open,setOpen]=React.useState(false);
  return <AppBar position="fixed" enableColorOnDark sx={{boxShadow:0,bgcolor:'transparent',backgroundImage:'none',mt:'calc(var(--template-frame-height, 0px) + 28px)'}}>
- <Container maxWidth="lg"><StyledToolbar variant="dense" disableGutters sx={{gap:1}}>
+ <Container maxWidth="lg"><StyledToolbar variant="dense" disableGutters sx={{gap:1,minHeight:48,'&.MuiToolbar-root':{minHeight:48}}}>
  <Box sx={{flex:1}}><Sitemark/></Box>
  <Box component="nav" sx={{display:{xs:'none',lg:'flex'},justifyContent:'center',gap:0,flex:3}}>
  {links.map(([label,href])=><Button key={href} href={href} color="inherit" size="small" sx={{textTransform:'none',whiteSpace:'nowrap',px:1,minWidth:0}}>{label}</Button>)}
