@@ -1,15 +1,16 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import Grid from '@mui/material/Grid';
+import Tooltip from '@mui/material/Tooltip';
 
-// Target payment-provider logos. Keep this section hidden until formal partnerships are confirmed.
+// Target payment-provider logos for future partnerships; no current partnership is implied.
 const providers = [
-  { name: 'M-Pesa', logo: 'https://cdn.simpleicons.org/mpesa' },
-  { name: 'Visa', logo: 'https://cdn.simpleicons.org/visa' },
-  { name: 'Network International', logo: 'https://logo.clearbit.com/network.ae' },
-  { name: 'Mastercard', logo: 'https://cdn.simpleicons.org/mastercard' },
-  { name: 'Flutterwave', logo: 'https://logo.clearbit.com/flutterwave.com' },
-  { name: 'PayPal', logo: 'https://cdn.simpleicons.org/paypal' },
+  { name: 'M-Pesa', logo: 'https://akaunting.com/public/assets/media/4-akaunting-inc/m-pesa/m-pesa-logo_1.png' },
+  { name: 'Visa', logo: 'https://cdn.simpleicons.org/visa/1A1F71' },
+  { name: 'Network International', logo: 'https://www.google.com/s2/favicons?domain=network.ae&sz=128' },
+  { name: 'Mastercard', logo: 'https://cdn.simpleicons.org/mastercard/EB001B' },
+  { name: 'Flutterwave', logo: 'https://www.google.com/s2/favicons?domain=flutterwave.com&sz=128' },
+  { name: 'PayPal', logo: 'https://cdn.simpleicons.org/paypal/003087' },
 ];
 
 export default function LogoCollection() {
@@ -21,7 +22,27 @@ export default function LogoCollection() {
       <Grid container sx={{ justifyContent: 'center', alignItems: 'center', mt: 0.5, gap: 2 }}>
         {providers.map(({ name, logo }) => (
           <Grid key={name} sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minWidth: 120, height: 80 }}>
-            <Box component="img" src={logo} alt={name} loading="lazy" sx={{ maxWidth: 110, maxHeight: 48, objectFit: 'contain' }} />
+            <Tooltip title={name} arrow>
+              <Box
+                component="span"
+                sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 120, height: 56, cursor: 'inherit' }}
+              >
+                <Box
+                  component="img"
+                  src={logo}
+                  alt={name}
+                  loading="lazy"
+                  sx={{
+                    display: 'block',
+                    maxWidth: name === 'M-Pesa' ? 120 : name === 'Flutterwave' || name === 'PayPal' ? 80 : 110,
+                    maxHeight: name === 'M-Pesa' ? 52 : name === 'Flutterwave' || name === 'PayPal' ? 36 : 48,
+                    width: 'auto',
+                    height: 'auto',
+                    objectFit: 'contain',
+                  }}
+                />
+              </Box>
+            </Tooltip>
           </Grid>
         ))}
       </Grid>
