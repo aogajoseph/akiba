@@ -34,8 +34,8 @@ export default function LogoCollection() {
                   loading="lazy"
                   sx={{
                     display: 'block',
-                    maxWidth: name === 'M-Pesa' ? 120 : 110,
-                    maxHeight: name === 'M-Pesa' ? 52 : 48,
+                    maxWidth: name === 'M-Pesa' ? 120 : name === 'Flutterwave' || name === 'PayPal' ? 80 : 110,
+                    maxHeight: name === 'M-Pesa' ? 52 : name === 'Flutterwave' || name === 'PayPal' ? 36 : 48,
                     width: 'auto',
                     height: 'auto',
                     objectFit: 'contain',
