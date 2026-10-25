@@ -113,7 +113,7 @@ export function MobileLayout({
               ? ({
                   '--items-imageLight': items[selectedItemIndex].imageLight,
                   '--items-imageDark': items[selectedItemIndex].imageDark,
-                } as any)
+                } as React.CSSProperties & { '--items-imageLight': string; '--items-imageDark': string })
               : {}
           }
         />
@@ -260,7 +260,7 @@ export default function Features() {
                   ? ({
                       '--items-imageLight': items[selectedItemIndex].imageLight,
                       '--items-imageDark': items[selectedItemIndex].imageDark,
-                    } as any)
+                    } as React.CSSProperties & { '--items-imageLight': string; '--items-imageDark': string })
                   : {}
               }
             />
