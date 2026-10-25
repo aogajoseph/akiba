@@ -34,6 +34,6 @@ export default function Hero() {
  <Stack direction={{xs:'column',sm:'row'}} spacing={2} justifyContent="center" sx={{mt:4,maxWidth:370,mx:'auto'}}>
  <Button href="/login" size="medium" variant="outlined" fullWidth sx={{py:1.1}}>Sign In</Button><Button href="/signup" size="medium" variant="contained" fullWidth sx={{py:1.1,bgcolor:'#E91E78','&:hover':{bgcolor:'#C21863'}}}>Create Account</Button></Stack>
  <Typography variant="caption" color="text.secondary" sx={{display:'block',mt:2}}>By signing up to Akiba, you agree to our <Link href="/terms">Terms of Service</Link>.</Typography>
- <StyledBox id="image" />
+ <Box component="img" src="/akiba-dashboard-screenshot.png" alt="Akiba dashboard showing groups, contributions, chats, and pending approvals" sx={{mt:9,width:"100%",height:"auto",display:"block",borderRadius:4,boxShadow:"0 25px 70px rgba(26,38,65,.12)"}} />
  </Container></Box>;
 }
