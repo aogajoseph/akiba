@@ -25,14 +25,21 @@ export default function LogoCollection() {
             <Tooltip title={name} arrow>
               <Box
                 component="span"
-                sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 110, height: 56, cursor: 'inherit' }}
+                sx={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 120, height: 56, cursor: 'inherit' }}
               >
                 <Box
                   component="img"
                   src={logo}
                   alt={name}
                   loading="lazy"
-                  sx={{ display: 'block', maxWidth: 110, maxHeight: 48, width: 'auto', height: 'auto', objectFit: 'contain' }}
+                  sx={{
+                    display: 'block',
+                    maxWidth: name === 'M-Pesa' ? 120 : 110,
+                    maxHeight: name === 'M-Pesa' ? 52 : 48,
+                    width: 'auto',
+                    height: 'auto',
+                    objectFit: 'contain',
+                  }}
                 />
               </Box>
             </Tooltip>
