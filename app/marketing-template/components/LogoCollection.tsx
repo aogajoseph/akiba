@@ -5,9 +5,9 @@ import Tooltip from '@mui/material/Tooltip';
 
 // Target payment-provider logos for future partnerships; no current partnership is implied.
 const providers = [
-  { name: 'M-Pesa', logo: 'https://akaunting.com/public/assets/media/4-akaunting-inc/m-pesa/m-pesa-logo_1.png' },
+  { name: 'M-Pesa', logo: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/M-PESA_LOGO-01.svg' },
   { name: 'Visa', logo: 'https://cdn.simpleicons.org/visa/1A1F71' },
-  { name: 'Network International', logo: 'https://www.google.com/s2/favicons?domain=network.ae&sz=128' },
+  { name: 'Network International', logo: 'https://commons.wikimedia.org/wiki/Special:Redirect/file/Network_International_logo.svg' },
   { name: 'Mastercard', logo: 'https://cdn.simpleicons.org/mastercard/EB001B' },
   { name: 'Flutterwave', logo: 'https://www.google.com/s2/favicons?domain=flutterwave.com&sz=128' },
   { name: 'PayPal', logo: 'https://cdn.simpleicons.org/paypal/003087' },
