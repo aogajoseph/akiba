@@ -11,4 +11,4 @@ import GettingStarted from './components/GettingStarted';
 import Pricing from './components/Pricing';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
-export default function MarketingPage(props:{disableCustomTheme?:boolean}){return <AppTheme {...props}><CssBaseline enableColorScheme/><AppAppBar/><Hero/><LogoCollection/><Features/><Divider/><HowItWorks/><GettingStarted/><Divider/><Pricing/><Divider/><FAQ/><Divider/><Footer/></AppTheme>}
+export default function MarketingPage(props:{disableCustomTheme?:boolean}){return <AppTheme {...props}><CssBaseline enableColorScheme/><AppAppBar/><Hero/>{/* Enable <LogoCollection/> only after formal provider partnerships are confirmed. */}<Features/><Divider/><HowItWorks/><GettingStarted/><Divider/><Pricing/><Divider/><FAQ/><Divider/><Footer/></AppTheme>}
