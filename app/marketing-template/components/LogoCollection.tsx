@@ -51,19 +51,19 @@ export default function LogoCollection() {
         align="center"
         sx={{ color: 'text.secondary' }}
       >
-        Trusted by the best companies
+        Partners
       </Typography>
       <Grid container sx={{ justifyContent: 'center', mt: 0.5, opacity: 0.6 }}>
         {logos.map((logo, index) => (
           <Grid key={index}>
             <img
               src={logo}
-              alt={`Fake company number ${index + 1}`}
+              alt={`Illustrative partner placeholder ${index + 1}`}
               style={logoStyle}
             />
           </Grid>
         ))}
-      </Grid>
+      </Grid><Typography variant="caption" align="center" sx={{display:'block',color:'text.secondary'}}>Illustrative logos from the template; no partnership is implied.</Typography>
     </Box>
   );
 }
