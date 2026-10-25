@@ -1,4 +1,31 @@
-import { Box, Button, Container, Link, Paper, Stack, Typography, Chip } from '@mui/material';
+import { Box, Button, Container, Link, Stack, Typography } from '@mui/material';
+import { styled } from '@mui/material/styles';
+const StyledBox = styled('div')(({ theme }) => ({
+  alignSelf: 'center',
+  width: '100%',
+  height: 400,
+  marginTop: theme.spacing(8),
+  borderRadius: (theme.vars || theme).shape.borderRadius,
+  outline: '6px solid',
+  outlineColor: 'hsla(220, 25%, 80%, 0.2)',
+  border: '1px solid',
+  borderColor: (theme.vars || theme).palette.grey[200],
+  boxShadow: '0 0 12px 8px hsla(220, 25%, 80%, 0.2)',
+  backgroundImage: `url(${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/screenshots/material-ui/getting-started/templates/dashboard.jpg)`,
+  backgroundSize: 'cover',
+  [theme.breakpoints.up('sm')]: {
+    marginTop: theme.spacing(10),
+    height: 700,
+  },
+  ...theme.applyStyles('dark', {
+    boxShadow: '0 0 24px 12px hsla(210, 100%, 25%, 0.2)',
+    backgroundImage: `url(${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/screenshots/material-ui/getting-started/templates/dashboard-dark.jpg)`,
+    outlineColor: 'hsla(220, 20%, 42%, 0.1)',
+    borderColor: (theme.vars || theme).palette.grey[700],
+  }),
+}));
+
+
 export default function Hero() {
  return <Box id="hero" sx={{scrollMarginTop:110,background:'radial-gradient(ellipse at 50% 0%,rgba(236,30,123,.09),transparent 65%)'}}>
  <Container maxWidth="lg" sx={{pt:{xs:17,md:22},pb:9,textAlign:'center'}}>
@@ -7,12 +34,6 @@ export default function Hero() {
  <Stack direction={{xs:'column',sm:'row'}} spacing={2} justifyContent="center" sx={{mt:4,maxWidth:370,mx:'auto'}}>
  <Button href="/login" size="medium" variant="outlined" fullWidth sx={{py:1.1}}>Sign In</Button><Button href="/signup" size="medium" variant="contained" fullWidth sx={{py:1.1,bgcolor:'#E91E78','&:hover':{bgcolor:'#C21863'}}}>Create Account</Button></Stack>
  <Typography variant="caption" color="text.secondary" sx={{display:'block',mt:2}}>By signing up to Akiba, you agree to our <Link href="/terms">Terms of Service</Link>.</Typography>
- <Paper variant="outlined" sx={{mt:9,p:{xs:2,md:4},borderRadius:4,textAlign:'left',boxShadow:'0 25px 70px rgba(26,38,65,.12)'}}>
- <Stack direction="row" justifyContent="space-between" alignItems="center"><Box><Typography variant="overline" color="text.secondary">Illustrative dashboard preview</Typography><Typography variant="h5">Family Celebration</Typography></Box><Chip label="Demo data" color="secondary"/></Stack>
- <Stack direction={{xs:'column',md:'row'}} spacing={2} sx={{mt:3}}>
- {[[ 'Group balance','KES 248,500'],['Total contributed','KES 312,000'],['Pending approval','KES 18,000']].map(([name,value])=><Paper key={name} variant="outlined" sx={{p:3,flex:1,borderRadius:3}}><Typography variant="body2" color="text.secondary">{name}</Typography><Typography variant="h4">{value}</Typography></Paper>)}</Stack>
- <Stack direction={{xs:'column',md:'row'}} spacing={3} sx={{mt:3}}>
- <Paper variant="outlined" sx={{p:3,flex:2,borderRadius:3}}><Typography variant="h6">Recent group activity</Typography>{[['Mary contributed','+ KES 15,000'],['Venue payment approved','− KES 24,000'],['James contributed','+ KES 8,500']].map(([a,b])=><Stack key={a} direction="row" justifyContent="space-between" sx={{py:2,borderBottom:'1px solid',borderColor:'divider'}}><Typography>{a}</Typography><Typography fontWeight={700}>{b}</Typography></Stack>)}</Paper>
- <Paper variant="outlined" sx={{p:3,flex:1,borderRadius:3}}><Typography variant="h6">Group chat</Typography><Typography sx={{mt:2}}>Mary: Venue deposit confirmed! 🎉</Typography><Typography sx={{mt:2,color:'text.secondary'}}>James: Great, I’ve contributed.</Typography><Typography sx={{mt:2}}>Admin: Thanks, everyone!</Typography></Paper></Stack></Paper>
+ <StyledBox id="image" />
  </Container></Box>;
 }
