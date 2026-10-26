@@ -17,24 +17,24 @@ const items = [
     title: 'Real money handling',
     description:
       'Move money from your personal wallet into your group’s finances through supported payment service providers.',
-    imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-light.png")`,
-    imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/dash-dark.png")`,
+    imageLight: 'url("/features/money.svg")',
+    imageDark: 'url("/features/money.svg")',
   },
   {
     icon: <ChatRoundedIcon />,
     title: 'Communication',
     description:
       'Bring every plan into one group chat. Discuss events, coordinate goals, and keep everyone moving together.',
-    imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-light.png")`,
-    imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/mobile-dark.png")`,
+    imageLight: 'url("/features/communication.svg")',
+    imageDark: 'url("/features/communication.svg")',
   },
   {
     icon: <HistoryRoundedIcon />,
     title: 'History',
     description:
       'Keep track of conversations, financial transactions, and real-time updates—all in one place.',
-    imageLight: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-light.png")`,
-    imageDark: `url("${process.env.TEMPLATE_IMAGE_URL || 'https://mui.com'}/static/images/templates/templates-images/devices-dark.png")`,
+    imageLight: 'url("/features/history.svg")',
+    imageDark: 'url("/features/history.svg")',
   },
 ];
 
@@ -158,7 +158,7 @@ export default function Features() {
           sx={{ color: 'text.secondary', mb: { xs: 2, sm: 4 } }}
         >
           The Akiba platform is designed around finance coordination among friends,
-          families and communities that plan events or share a financial goal.
+          families and communities that plan events or share financial goals.
         </Typography>
       </Box>
       <Box
@@ -213,7 +213,7 @@ export default function Features() {
                     },
                   ]}
                 >
-                  {icon}
+                  <Box sx={{ color: 'primary.main', display: 'flex' }}>{icon}</Box>
 
                   <Typography variant="h6">{title}</Typography>
                   <Typography variant="body2">{description}</Typography>
