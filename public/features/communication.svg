@@ -18,9 +18,6 @@
 <text x="675" y="366" text-anchor="end" font-size="16" fill="#718096" font-family="Arial,sans-serif">Admin</text>
 <text x="205" y="407" font-size="18" fill="#243E60" font-family="Arial,sans-serif">Thank you guys, let's keep going</text>
 <!-- You message -->
-<circle cx="720" cy="520" r="25" fill="#B9D7FF"/>
-<circle cx="720" cy="511" r="9" fill="#375D91"/>
-<path d="M703 533Q720 513 737 533" fill="#375D91"/>
 <rect x="205" y="465" width="495" height="118" rx="20" fill="#087AF5"/>
 <text x="230" y="504" font-size="21" fill="#FFFFFF" font-weight="700" font-family="Arial,sans-serif">You</text>
 <text x="675" y="504" text-anchor="end" font-size="16" fill="#DCEBFF" font-family="Arial,sans-serif">Member</text>
