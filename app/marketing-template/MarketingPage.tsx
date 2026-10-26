@@ -8,7 +8,8 @@ import LogoCollection from './components/LogoCollection';
 import Features from './components/Features';
 import HowItWorks from './components/HowItWorks';
 import GettingStarted from './components/GettingStarted';
+import RolesAndProtocols from './components/RolesAndProtocols';
 import Pricing from './components/Pricing';
 import FAQ from './components/FAQ';
 import Footer from './components/Footer';
-export default function MarketingPage(props:{disableCustomTheme?:boolean}){return <AppTheme {...props}><CssBaseline enableColorScheme/><AppAppBar/><Hero/><LogoCollection/><Features/><Divider/><HowItWorks/><GettingStarted/><Divider/><Pricing/><Divider/><FAQ/><Divider/><Footer/></AppTheme>}
+export default function MarketingPage(props:{disableCustomTheme?:boolean}){return <AppTheme {...props}><CssBaseline enableColorScheme/><AppAppBar/><Hero/><LogoCollection/><Features/><Divider/><HowItWorks/><GettingStarted/><RolesAndProtocols/><Divider/><Pricing/><Divider/><FAQ/><Divider/><Footer/></AppTheme>}
