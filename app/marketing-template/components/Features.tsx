@@ -32,7 +32,7 @@ const items = [
     icon: <HistoryRoundedIcon />,
     title: 'History',
     description:
-      'Keep track of conversations, financial transactions, and real-time updates—all in one place.',
+      'Real-time updates on financial transactions and group activities, preserved for future reference.',
     imageLight: 'url("/features/history.svg")',
     imageDark: 'url("/features/history.svg")',
   },
