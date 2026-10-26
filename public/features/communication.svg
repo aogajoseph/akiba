@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="1000" viewBox="0 0 840 1000" role="img" aria-labelledby="title desc">
+<title id="title">Akiba group communication</title>
+<desc id="desc">Angela's Birthday Party group chat with 30 members, showing messages from Angie, You, and Brian with their group roles.</desc>
+<rect width="840" height="1000" rx="32" fill="#F0F6FF"/>
+<circle cx="730" cy="130" r="210" fill="#DCEBFF"/>
+<circle cx="95" cy="860" r="210" fill="#E1EFFF"/>
+<rect x="95" y="95" width="650" height="810" rx="28" fill="#FFFFFF" stroke="#C9DCF8" stroke-width="3"/>
+<path d="M123 95H717Q745 95 745 123V170H95V123Q95 95 123 95Z" fill="#087AF5"/>
+<text x="135" y="145" font-size="29" font-weight="700" font-family="Arial,sans-serif" fill="#FFFFFF">Akiba</text>
+<text x="145" y="238" font-size="30" font-weight="700" fill="#142D51" font-family="Arial,sans-serif">Angela's Birthday Party</text>
+<text x="145" y="278" font-size="21" fill="#62758D" font-family="Arial,sans-serif">30 members · Group chat</text>
+<!-- Angie message -->
+<circle cx="145" cy="378" r="25" fill="#F4B8A5"/>
+<circle cx="145" cy="369" r="9" fill="#8E5948"/>
+<path d="M128 391Q145 371 162 391" fill="#8E5948"/>
+<rect x="180" y="327" width="520" height="118" rx="20" fill="#EAF3FF"/>
+<text x="205" y="366" font-size="21" fill="#087AF5" font-weight="700" font-family="Arial,sans-serif">Angie</text>
+<text x="675" y="366" text-anchor="end" font-size="16" fill="#718096" font-family="Arial,sans-serif">Admin</text>
+<text x="205" y="407" font-size="18" fill="#243E60" font-family="Arial,sans-serif">Thank you guys, let's keep going</text>
+<!-- You message -->
+<rect x="205" y="465" width="495" height="118" rx="20" fill="#087AF5"/>
+<text x="230" y="504" font-size="21" fill="#FFFFFF" font-weight="700" font-family="Arial,sans-serif">You</text>
+<text x="675" y="504" text-anchor="end" font-size="16" fill="#DCEBFF" font-family="Arial,sans-serif">Member</text>
+<text x="230" y="545" font-size="18" fill="#FFFFFF" font-family="Arial,sans-serif">I'll send my contributions in the evening.</text>
+<!-- Brian message -->
+<circle cx="145" cy="660" r="25" fill="#C9E5CE"/>
+<circle cx="145" cy="651" r="9" fill="#477B55"/>
+<path d="M128 673Q145 653 162 673" fill="#477B55"/>
+<rect x="180" y="603" width="520" height="118" rx="20" fill="#EAF3FF"/>
+<text x="205" y="642" font-size="21" fill="#087AF5" font-weight="700" font-family="Arial,sans-serif">Brian</text>
+<text x="675" y="642" text-anchor="end" font-size="16" fill="#718096" font-family="Arial,sans-serif">Sub-admin</text>
+<text x="205" y="683" font-size="19" fill="#243E60" font-family="Arial,sans-serif">Loving the vibe. We have to keep pushing.</text>
+<rect x="140" y="764" width="560" height="75" rx="20" fill="#F3F7FC" stroke="#C9DCF8"/>
+<text x="168" y="811" font-size="22" fill="#8C9DB0" font-family="Arial,sans-serif">Message your group...</text>
+<circle cx="656" cy="801" r="24" fill="#087AF5"/>
+<path d="m645 801h22m-9-9 9 9-9 9" stroke="#FFFFFF" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
