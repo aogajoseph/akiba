@@ -8,7 +8,7 @@
 <path d="M123 95H717Q745 95 745 123V170H95V123Q95 95 123 95Z" fill="#087AF5"/>
 <text x="135" y="145" font-size="29" font-weight="700" font-family="Arial,sans-serif" fill="#FFFFFF">Akiba</text>
 <text x="140" y="228" font-size="24" font-weight="700" font-family="Arial,sans-serif" fill="#142D51">Jane Doe</text>
-<text x="140" y="255" font-size="18" font-family="Arial,sans-serif" fill="#718096">Personal wallet</text>
+<text x="700" y="228" text-anchor="end" font-size="18" font-family="Arial,sans-serif" fill="#718096">Personal wallet</text>
 <rect x="140" y="263" width="560" height="182" rx="20" fill="#F0FBF5" stroke="#B9E8CC" stroke-width="2"/>
 <circle cx="191" cy="322" r="24" fill="#16A56A"/>
 <path d="M179 322l9 9 17-19" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -18,10 +18,10 @@
 <line x1="140" y1="510" x2="700" y2="510" stroke="#D8E3F1" stroke-width="3"/>
 <text x="140" y="590" font-size="22" font-family="Arial,sans-serif" fill="#52647A">Group name</text>
 <text x="140" y="637" font-size="33" font-weight="700" font-family="Arial,sans-serif" fill="#142D51">Angela's Birthday Party</text>
-<rect x="140" y="688" width="560" height="145" rx="19" fill="#EAF3FF" stroke="#C9DCF8" stroke-width="2"/>
+<rect x="140" y="688" width="560" height="165" rx="19" fill="#EAF3FF" stroke="#C9DCF8" stroke-width="2"/>
 <text x="177" y="742" font-size="23" font-family="Arial,sans-serif" fill="#37577D">Total Contributions</text>
 <text x="177" y="790" font-size="43" font-weight="700" font-family="Arial,sans-serif" fill="#087AF5">$1,400</text>
-<text x="177" y="817" font-size="17" font-family="Arial,sans-serif" fill="#718096">$200 received from Jane Doe, 2 mins ago</text>
+<text x="177" y="830" font-size="17" font-family="Arial,sans-serif" fill="#718096">$200 received from Jane Doe, 2 mins ago</text>
 <path d="M670 454V675" fill="none" stroke="#087AF5" stroke-width="8" stroke-linecap="round"/>
 <path d="M650 655L670 678L690 655" fill="none" stroke="#087AF5" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>
