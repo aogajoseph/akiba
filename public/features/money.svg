@@ -1,1 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="840" height="1000" viewBox="0 0 840 1000"><rect width="840" height="1000" rx="32" fill="#F0F6FF"/><circle cx="730" cy="130" r="210" fill="#DCEBFF"/><circle cx="95" cy="860" r="210" fill="#E1EFFF"/><rect x="95" y="95" width="650" height="810" rx="28" fill="#fff" stroke="#C9DCF8" stroke-width="3"/><rect x="95" y="95" width="650" height="75" rx="28" fill="#087AF5"/><rect x="95" y="143" width="650" height="27" fill="#087AF5"/><text x="135" y="145" font-size="29" font-weight="700" font-family="Arial,sans-serif" fill="white">Akiba</text><text x="145" y="235" font-size="24" fill="#52647A" font-family="Arial">Group wallet</text><text x="145" y="302" font-size="49" font-weight="bold" fill="#142D51" font-family="Arial">KES 85,000</text><rect x="140" y="345" width="560" height="150" rx="18" fill="#EAF3FF"/><text x="175" y="390" font-size="22" fill="#37577D" font-family="Arial">Personal wallet</text><text x="175" y="449" font-size="34" font-weight="bold" fill="#0A68D3" font-family="Arial">KES 12,500</text><path d="M420 515 v95 m-22 -22 22 22 22 -22" fill="none" stroke="#087AF5" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><rect x="140" y="635" width="560" height="150" rx="18" fill="#087AF5"/><text x="175" y="683" font-size="22" fill="#DCEBFF" font-family="Arial">Contribute to group</text><text x="175" y="746" font-size="36" font-weight="bold" fill="white" font-family="Arial">KES 2,000</text><circle cx="650" cy="715" r="28" fill="#fff"/><path d="m638 714 9 10 18 -21" fill="none" stroke="#087AF5" stroke-width="6" stroke-linecap="round"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="840" height="1000" viewBox="0 0 840 1000" role="img" aria-labelledby="title desc">
+<title id="title">Real money handling</title>
+<desc id="desc">A successful 200 dollar contribution to Angela's Birthday Party flows into the group's total contributions of 1400 dollars.</desc>
+<rect width="840" height="1000" rx="32" fill="#F0F6FF"/>
+<circle cx="730" cy="130" r="210" fill="#DCEBFF"/>
+<circle cx="95" cy="860" r="210" fill="#E1EFFF"/>
+<rect x="95" y="95" width="650" height="810" rx="28" fill="#FFFFFF" stroke="#C9DCF8" stroke-width="3"/>
+<path d="M123 95H717Q745 95 745 123V170H95V123Q95 95 123 95Z" fill="#087AF5"/>
+<text x="135" y="145" font-size="29" font-weight="700" font-family="Arial,sans-serif" fill="#FFFFFF">Akiba</text>
+<text x="140" y="228" font-size="24" font-weight="700" font-family="Arial,sans-serif" fill="#142D51">Payment confirmation</text>
+<rect x="140" y="263" width="560" height="182" rx="20" fill="#F0FBF5" stroke="#B9E8CC" stroke-width="2"/>
+<circle cx="191" cy="322" r="24" fill="#16A56A"/>
+<path d="M179 322l9 9 17-19" fill="none" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<text x="230" y="317" font-size="26" font-weight="700" font-family="Arial,sans-serif" fill="#126743">$200 sent successfully</text>
+<text x="230" y="352" font-size="22" font-family="Arial,sans-serif" fill="#355C4B">to Angela's Birthday Party</text>
+<text x="181" y="408" font-size="18" font-family="Arial,sans-serif" fill="#52715E">Contribution confirmed</text>
+<line x1="140" y1="510" x2="700" y2="510" stroke="#D8E3F1" stroke-width="3"/>
+<text x="140" y="590" font-size="22" font-family="Arial,sans-serif" fill="#52647A">Group name</text>
+<text x="140" y="637" font-size="33" font-weight="700" font-family="Arial,sans-serif" fill="#142D51">Angela's Birthday Party</text>
+<rect x="140" y="688" width="560" height="145" rx="19" fill="#EAF3FF" stroke="#C9DCF8" stroke-width="2"/>
+<text x="177" y="742" font-size="23" font-family="Arial,sans-serif" fill="#37577D">Total Contributions</text>
+<text x="177" y="803" font-size="43" font-weight="700" font-family="Arial,sans-serif" fill="#087AF5">$1,400</text>
+<path d="M670 445C755 479 758 592 708 661C699 674 687 681 672 685" fill="none" stroke="#087AF5" stroke-width="8" stroke-linecap="round"/>
+<path d="M690 665L670 688L665 659" fill="none" stroke="#087AF5" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
