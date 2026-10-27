@@ -7,12 +7,12 @@ import SavingsRoundedIcon from '@mui/icons-material/SavingsRounded';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 
 const steps = [
-  { title: 'Join the platform', desc: 'Create an Akiba account using your email or phone number. Keep your sign-in details secure and never share them with anyone, including Akiba staff.', Icon: PersonAddAlt1RoundedIcon },
-  { title: 'Set up your profile', desc: 'Add a profile picture and choose a unique username so other Akiba users can recognize you.', Icon: AccountCircleRoundedIcon },
-  { title: 'Create or join a group', desc: 'Create a group or accept an invitation to join one. Understand its purpose, expectations, leadership, and members before participating.', Icon: CreateNewFolderRoundedIcon },
-  { title: 'Set up the group', desc: 'If you create a group, provide its details, invite participants, and appoint the required administrative roles. Agree on the group’s purpose and expectations.', Icon: SettingsRoundedIcon },
-  { title: 'Participate in group activities', desc: 'Join discussions, contribute according to agreed arrangements, and review financial updates and activity records. Receive real-time notifications as group activities occur.', Icon: SavingsRoundedIcon },
-  { title: 'Leave when appropriate', desc: 'You can leave a group according to your role and Akiba’s group protocols. Group Admins cannot leave groups they created, while Sub-admins must transfer their role before leaving.', Icon: LogoutRoundedIcon },
+  { title: 'Join the platform', desc: 'Create your Akiba account using your email address or phone number.', Icon: PersonAddAlt1RoundedIcon },
+  { title: 'Set up your profile', desc: 'Create your profile and choose a unique username so other Akiba users can recognize you.', Icon: AccountCircleRoundedIcon },
+  { title: 'Create or join a group', desc: 'Create a group or accept an invitation to join one.', Icon: CreateNewFolderRoundedIcon },
+  { title: 'Set up the group', desc: 'Describe your group, invite participants, and appoint two Sub-admins.', Icon: SettingsRoundedIcon },
+  { title: 'Participate in group activities', desc: 'Contribute toward your group's purpose, join discussions, and review updates.', Icon: SavingsRoundedIcon },
+  { title: 'Leave when appropriate', desc: 'Leave a group according to your role and Akiba’s group protocols.', Icon: LogoutRoundedIcon },
 ];
 
 export default function GettingStarted() {
