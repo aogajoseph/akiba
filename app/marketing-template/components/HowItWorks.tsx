@@ -21,7 +21,7 @@ export default function HowItWorks() {
       <Container maxWidth="lg">
         <Typography variant="h4" component="h2">How Akiba Works</Typography>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 2, mb: 5, maxWidth: 800 }}>
-          Akiba brings group conversations, contributions, financial activity, and shared progress together, helping everyone stay informed and work toward a common goal.
+          Akiba brings group activities together, helping everyone stay informed and work toward a common purpose.
         </Typography>
         <Grid container spacing={2}>
           {stages.map(({ num, title, desc, Icon }) => (
