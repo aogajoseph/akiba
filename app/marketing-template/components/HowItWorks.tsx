@@ -7,12 +7,12 @@ import HistoryRoundedIcon from '@mui/icons-material/HistoryRounded';
 import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 
 const stages = [
-  { num: '01', title: 'Create a group around a purpose', desc: 'Start a group for an event, shared expense, trip, or another common goal.', Icon: GroupsRoundedIcon },
-  { num: '02', title: 'Bring your people together', desc: 'Invite participants and give everyone a shared space to coordinate plans and activities.', Icon: PersonAddAlt1RoundedIcon },
-  { num: '03', title: 'Coordinate contributions', desc: 'Track contributions and financial progress. Use integrated payment services to move money from your personal digital wallet into your group’s finances.', Icon: AccountBalanceWalletRoundedIcon },
-  { num: '04', title: 'Keep the group connected', desc: 'Discuss plans, coordinate activities, share decisions, and keep everyone informed through the group chat.', Icon: ChatRoundedIcon },
-  { num: '05', title: 'Track progress and preserve history', desc: 'Review financial updates, group activities, and shared records in one place.', Icon: HistoryRoundedIcon },
-  { num: '06', title: 'Closure', desc: 'Review the outcome, reconcile outstanding issues, and follow the appropriate process to close the group or retain it for future use.', Icon: FactCheckRoundedIcon },
+  { num: '01', title: 'Group Creation', desc: 'The Admin creates a group for an event or shared goal.', Icon: GroupsRoundedIcon },
+  { num: '02', title: 'Participants', desc: "The Admin invites people to join and participate in the group's purpose.", Icon: PersonAddAlt1RoundedIcon },
+  { num: '03', title: 'Governance', desc: "The Admin appoints two Sub-admins from among the group's members.", Icon: AccountBalanceWalletRoundedIcon },
+  { num: '04', title: 'Group Activity', desc: 'Group members contribute toward the shared purpose and communicate through the group chat.', Icon: ChatRoundedIcon },
+  { num: '05', title: 'Progress Tracking', desc: 'Everyone reviews financial updates, group activities, and shared records in one place.', Icon: HistoryRoundedIcon },
+  { num: '06', title: 'Closure', desc: 'Once the group has fulfilled its purpose, the Admin can close it or retain it for future use.', Icon: FactCheckRoundedIcon },
 ];
 
 export default function HowItWorks() {
