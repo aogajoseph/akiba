@@ -20,7 +20,7 @@ export default function GettingStarted() {
     <Container id="getting-started" maxWidth="lg" sx={{ py: { xs: 9, md: 12 }, scrollMarginTop: 100 }}>
       <Typography variant="h4" component="h2">Getting Started with Akiba</Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mt: 2, mb: 5, maxWidth: 800 }}>
-        Organizing an event or shared financial goal, or joining a group? Get started in six simple steps.
+        Are you organizing an upcoming event or working toward a shared financial goal? Get started with Akiba in six simple steps.
       </Typography>
       <Grid container spacing={2}>
         {steps.map(({ title, desc, Icon }, i) => (
