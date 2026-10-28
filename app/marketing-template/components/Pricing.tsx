@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { Box, Container, Grid, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
+import { Box, Chip, Container, Grid, Paper, Stack, ToggleButton, ToggleButtonGroup, Typography } from '@mui/material';
 import CheckCircleRoundedIcon from '@mui/icons-material/CheckCircleRounded';
-import StarRoundedIcon from '@mui/icons-material/StarRounded';
 import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
 import GroupsOutlinedIcon from '@mui/icons-material/GroupsOutlined';
 import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOutlined';
@@ -14,8 +13,8 @@ type Plan = { name: string; price: string; capacity: string; description: string
 
 const plans: Record<Scope, Plan[]> = {
   personal: [
-    { name: 'Free', price: '0', capacity: '3 groups', description: 'For organizers of small groups', features: ['Create and manage up to 3 groups', 'Access basic activities', 'Free forever'] },
-    { name: 'Plus', price: '499', capacity: '10 groups', description: 'For organizers of medium-sized groups', features: ['Create and manage up to 10 groups', '7 additional groups', 'All basic activities'] },
+    { name: 'Free', price: '0', capacity: '3 groups', description: 'For organizers of small groups', features: ['Create and manage up to 3 groups', 'Access basic group activities', 'Free forever'] },
+    { name: 'Plus', price: '499', capacity: '10 groups', description: 'For basic community organizers', features: ['Create and manage up to 10 groups', '7 additional groups', 'All basic group activities'] },
     { name: 'Premium', price: '999', capacity: '25 groups', description: 'For active community organizers', features: ['Create and manage up to 25 groups', '15 more groups above Plus', 'Highest group allowance'] },
   ],
   group: [
@@ -27,7 +26,7 @@ const plans: Record<Scope, Plan[]> = {
 
 const guidance = [
   'Personal plans determine how many groups you can create and manage.',
-  'Group plans determine membership capacity and available group features.',
+  'Group plans determine group membership capacity and available group features.',
   'Withdrawal charges apply to all plans.',
 ];
 
@@ -36,9 +35,8 @@ export default function Pricing() {
   return (
     <Box id="pricing" sx={{ py: { xs: 9, md: 14 }, scrollMarginTop: 100 }}>
       <Container maxWidth="lg">
-        <Stack alignItems="center" textAlign="center" spacing={1.5} sx={{ mb: 4 }}>
+        <Stack alignItems="flex-start" textAlign="left" spacing={1.5} sx={{ mb: 4 }}>
           <Typography variant="h4" component="h2" fontWeight={750}>Akiba Pricing</Typography>
-          <Typography variant="h6" color="text.secondary" fontWeight={600}>Simple pricing. More possibilities together.</Typography>
           <Typography variant="body1" color="text.secondary">Start for free. Upgrade as your groups and communities grow.</Typography>
           <ToggleButtonGroup
             exclusive value={scope}
@@ -60,16 +58,14 @@ export default function Pricing() {
             return (
               <Grid key={plan.name} size={{ xs: 12, md: 4 }}>
                 <Paper variant="outlined" sx={{ position: 'relative', height: '100%', p: { xs: 3, sm: 3.5 }, borderRadius: 3, border: recommended ? '2px solid #E91E78' : undefined, boxShadow: recommended ? '0 12px 36px rgba(233,30,120,0.09)' : 'none', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
-                  {recommended && (
-                    <Box sx={{ position: 'absolute', top: -14, left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'center', gap: 0.4, bgcolor: '#E91E78', color: 'white', borderRadius: 8, px: 1.5, py: 0.5, whiteSpace: 'nowrap', fontSize: 12, fontWeight: 700 }}>
-                      <StarRoundedIcon sx={{ fontSize: 15, color: '#FFE26A' }} />Recommended<StarRoundedIcon sx={{ fontSize: 15, color: '#FFE26A' }} />
-                    </Box>
-                  )}
-                  <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2.5 }}>
-                    <Box sx={{ width: 44, height: 44, display: 'grid', placeItems: 'center', borderRadius: '50%', bgcolor: recommended ? 'rgba(233,30,120,0.10)' : 'action.hover', color: recommended ? '#E91E78' : 'primary.main' }}>
-                      {plan.name === 'Premium' ? <WorkspacePremiumOutlinedIcon /> : scope === 'group' ? <GroupsOutlinedIcon /> : <PersonOutlineRoundedIcon />}
-                    </Box>
-                    <Typography variant="h6" component="h3" fontWeight={700}>{plan.name}</Typography>
+                  <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
+                    <Stack direction="row" alignItems="center" spacing={1.5}>
+                      <Box sx={{ width: 44, height: 44, display: 'grid', placeItems: 'center', borderRadius: '50%', bgcolor: recommended ? 'rgba(233,30,120,0.10)' : 'action.hover', color: recommended ? '#E91E78' : 'primary.main' }}>
+                        {plan.name === 'Premium' ? <WorkspacePremiumOutlinedIcon /> : scope === 'group' ? <GroupsOutlinedIcon /> : <PersonOutlineRoundedIcon />}
+                      </Box>
+                      <Typography variant="h6" component="h3" fontWeight={700}>{plan.name}</Typography>
+                    </Stack>
+                    {recommended && <Chip color="secondary" label="Recommended" />}
                   </Stack>
                   <Typography variant="h4" fontWeight={750} sx={{ whiteSpace: 'nowrap' }}>KSh {plan.price}</Typography>
                   <Typography variant="body2" color="text.secondary">{plan.name === 'Free' ? 'Free forever' : 'per month'}</Typography>
@@ -91,14 +87,14 @@ export default function Pricing() {
         </Grid>
 
         <Paper variant="outlined" sx={{ mt: 4, p: { xs: 2.5, md: 3.5 }, borderRadius: 3, bgcolor: 'action.hover' }}>
-          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 2, sm: 4 }} alignItems="flex-start">
-            <Stack direction="row" alignItems="center" spacing={1.2} sx={{ minWidth: { sm: 185 } }}>
+          <Stack direction={{ xs: 'column', sm: 'row' }} spacing={{ xs: 2.5, sm: 0 }} alignItems="stretch">
+            <Stack direction="row" alignItems="center" spacing={1.2} sx={{ minWidth: { sm: 210 }, pr: { sm: 3 }, pb: { xs: 2, sm: 0 }, borderRight: { sm: 1 }, borderBottom: { xs: 1, sm: 0 }, borderColor: 'divider' }}>
               <InfoOutlinedIcon color="primary" />
-              <Typography variant="h6" fontWeight={700}>Good to know</Typography>
+              <Typography variant="h6" fontWeight={700} whiteSpace="nowrap">Good to know</Typography>
             </Stack>
-            <Box component="ul" sx={{ m: 0, pl: 2.5, color: 'text.secondary' }}>
+            <Box component="ul" sx={{ m: 0, pl: 4, color: 'text.secondary', flex: 1, '& li::marker': { color: 'primary.main' } }}>
               {guidance.map((item) => (
-                <Typography component="li" variant="body2" key={item} sx={{ display: 'list-item', mb: 1, lineHeight: 1.7, '&:last-child': { mb: 0 } }}>{item}</Typography>
+                <Typography component="li" variant="body2" key={item} sx={{ display: 'list-item', listStyleType: 'disc', pl: 0.5, mb: 1, lineHeight: 1.7, '&:last-child': { mb: 0 } }}>{item}</Typography>
               ))}
             </Box>
           </Stack>
