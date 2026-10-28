@@ -43,7 +43,7 @@ export default function Pricing() {
               exclusive value={scope}
               onChange={(_, next: Scope | null) => { if (next) setScope(next); }}
               aria-label="Subscription type"
-              sx={{ p: 0.5, border: 1, borderColor: 'divider', borderRadius: 10, gap: 0.5, '& .MuiToggleButtonGroup-grouped': { border: 0, borderRadius: '999px !important', px: { xs: 2, sm: 3 }, py: 1.2, textTransform: 'none', fontWeight: 650 }, '& .Mui-selected': { bgcolor: '#087AF5 !important', color: '#fff !important', '&:hover': { bgcolor: '#0066d6 !important' } }}
+              sx={{ p: 0.5, border: 1, borderColor: 'divider', borderRadius: 10, gap: 0.5, '& .MuiToggleButtonGroup-grouped': { border: 0, borderRadius: '999px !important', px: { xs: 2, sm: 3 }, py: 1.2, textTransform: 'none', fontWeight: 650 }, '& .Mui-selected': { bgcolor: '#087AF5 !important', color: '#fff !important', '&:hover': { bgcolor: '#0066d6 !important' } } }}
             >
               <ToggleButton value="personal" aria-label="Personal plans"><PersonOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />Personal plans</ToggleButton>
               <ToggleButton value="group" aria-label="Group plans"><GroupsOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Group plans</ToggleButton>
