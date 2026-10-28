@@ -38,18 +38,20 @@ export default function Pricing() {
         <Stack alignItems="flex-start" textAlign="left" spacing={1.5} sx={{ mb: 4 }}>
           <Typography variant="h4" component="h2" fontWeight={750}>Akiba Pricing</Typography>
           <Typography variant="body1" color="text.secondary">Start for free. Upgrade as your groups and communities grow.</Typography>
-          <ToggleButtonGroup
-            exclusive value={scope}
-            onChange={(_, next: Scope | null) => { if (next) setScope(next); }}
-            aria-label="Subscription type"
-            sx={{ mt: 2, p: 0.5, border: 1, borderColor: 'divider', borderRadius: 10, gap: 0.5, '& .MuiToggleButtonGroup-grouped': { border: 0, borderRadius: '999px !important', px: { xs: 2, sm: 3 }, py: 1.2, textTransform: 'none', fontWeight: 650 }, '& .Mui-selected': { bgcolor: '#087AF5 !important', color: '#fff !important', '&:hover': { bgcolor: '#0066d6 !important' } } }}
-          >
-            <ToggleButton value="personal" aria-label="Personal plans"><PersonOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />Personal plans</ToggleButton>
-            <ToggleButton value="group" aria-label="Group plans"><GroupsOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Group plans</ToggleButton>
-          </ToggleButtonGroup>
-          <Typography variant="body2" color="text.secondary" aria-live="polite">
-            {scope === 'personal' ? 'Choose how many groups you can create and manage.' : 'Choose how many people your group can bring together.'}
-          </Typography>
+          <Stack alignItems="center" textAlign="center" spacing={1.5} sx={{ width: '100%', mt: 2 }}>
+            <ToggleButtonGroup
+              exclusive value={scope}
+              onChange={(_, next: Scope | null) => { if (next) setScope(next); }}
+              aria-label="Subscription type"
+              sx={{ p: 0.5, border: 1, borderColor: 'divider', borderRadius: 10, gap: 0.5, '& .MuiToggleButtonGroup-grouped': { border: 0, borderRadius: '999px !important', px: { xs: 2, sm: 3 }, py: 1.2, textTransform: 'none', fontWeight: 650 }, '& .Mui-selected': { bgcolor: '#087AF5 !important', color: '#fff !important', '&:hover': { bgcolor: '#0066d6 !important' } }}
+            >
+              <ToggleButton value="personal" aria-label="Personal plans"><PersonOutlineRoundedIcon fontSize="small" sx={{ mr: 1 }} />Personal plans</ToggleButton>
+              <ToggleButton value="group" aria-label="Group plans"><GroupsOutlinedIcon fontSize="small" sx={{ mr: 1 }} />Group plans</ToggleButton>
+            </ToggleButtonGroup>
+            <Typography variant="body2" color="text.secondary" aria-live="polite">
+              {scope === 'personal' ? 'Choose how many groups you can create and manage.' : 'Choose how many people your group can bring together.'}
+            </Typography>
+          </Stack>
         </Stack>
 
         <Grid container spacing={2.5} alignItems="stretch">
