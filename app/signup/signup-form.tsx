@@ -36,15 +36,17 @@ export default function SignupForm() {
       });
       if (signupError) {
         setError(signupError.code === "user_already_exists"
-          ? "Unable to create an account. If you have already registered, please sign in."
+          ? "An account with this email already exists. Please sign in."
           : "Unable to create account. Please try again.");
       } else if (data.session) {
         window.location.assign("/onboarding");
         return;
+      } else if (data.user?.identities?.length === 0) {
+        // With email confirmation enabled, Supabase returns an obfuscated user
+        // with no identities for an already-registered email.
+        setError("An account with this email already exists. Please sign in.");
       } else {
-        // Supabase may return a non-error response for existing accounts.
-        // Never promise a message was sent or expose account existence.
-        setMessage("If this address is eligible for confirmation, an email will arrive shortly. Already registered? Sign in instead.");
+        setMessage("Your Akiba account has been created. Check your email and click the confirmation link to activate your account before signing in.");
       }
     } catch {
       setError("Unable to create account. Please try again.");
