@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { signUp } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
+import SignupForm from "./signup-form";
 
 type Props = { searchParams: Promise<{ error?: string }> };
 
@@ -15,7 +15,7 @@ export default async function SignupPage({ searchParams }: Props) {
     <div className="workspace-eyebrow">Do more, together.</div><h1>Create your account</h1>
     <p className="auth-description">Set up your Akiba account to create and manage Groups.</p>
     {params.error && <p className="auth-error" role="alert">{params.error}</p>}
-    <form action={signUp} className="auth-form"><label>Email address<input name="email" type="email" autoComplete="email" required /></label><label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required /><small>Use at least 8 characters.</small></label><button className="workspace-primary" type="submit">Create account</button></form>
+    <SignupForm />
     <p className="auth-switch">Already registered? <Link href="/login">Sign in</Link></p>
   </section></main>;
 }
