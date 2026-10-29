@@ -5,7 +5,7 @@ import MenuIcon from '@mui/icons-material/Menu';
 import CloseIcon from '@mui/icons-material/Close';
 import ColorModeIconDropdown from '../shared-theme/ColorModeIconDropdown';
 import Sitemark from './SitemarkIcon';
-const links = [["About","#hero"],["Features","#features"],["How it works","#how-it-works"],["Getting Started","#getting-started"],["Pricing","#pricing"],["FAQs","#faq"]];
+const links = [["About","#hero"],["Features","#features"],["How It Works","#how-it-works"],["Getting Started","#getting-started"],["Pricing","#pricing"],["FAQs","#faq"]];
 const StyledToolbar = styled(Toolbar)(({ theme }) => ({
  display: 'flex',
  alignItems: 'center',
