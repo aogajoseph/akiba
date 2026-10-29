@@ -1,10 +1,37 @@
 import { Accordion, AccordionDetails, AccordionSummary, Container, Typography } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-const questions=[
- ['Why Akiba?','Group finances often live across separate apps: chat in one place, contributions in another, and records somewhere else. Akiba is designed to bring contributions, communication, approvals and records into one coordinated group experience.'],
- ['Who is Akiba meant for?','Akiba is for friends, families and communities planning events or pursuing shared financial goals. You may create and administer a group, help oversee it as a sub-admin, or participate as a member.'],
- ['How does Akiba ensure transparency and accountability in collaborative finance?','Every group has a creator who is its admin. The admin initiates withdrawals, but both appointed sub-admins must approve before completion. No withdrawal can be initiated until two sub-admins are appointed. Before contributing, members should review the group leadership and be comfortable with its stated purpose. These controls are part of the intended product design, not a guarantee against every risk.'],
- ['What happens if I find myself in the wrong group?','Membership is invitation-driven. You may decline an invitation to a suspicious group. If you joined by mistake, you may leave. Sub-admins must transfer their role before leaving; group creators cannot leave as admin and can delete only eligible groups.'],
- ['What if I contributed money to the wrong group, or contributed by mistake?','Request a reversal as soon as you notice the error or contact Akiba support. Reversals will be subject to transaction status, payment-provider rules and applicable law; they cannot be guaranteed.']
+
+const questions = [
+  [
+    'How does Akiba keep group funds secure and ensure financial accountability?',
+    'Group funds are held by authorized financial institutions, not Akiba. Akiba only serves as a coordination platform, providing transparent financial records and requiring approval from both appointed Sub-admins before releasing funds.',
+  ],
+  [
+    'Who controls group funds, and what happens when members disagree?',
+    "Group Admins initiate withdrawals or transfers, subject to approval by both Sub-admins. Members are responsible for carefully evaluating a group's purpose and leadership before joining or contributing. Akiba provides reversal requests and customer support and cooperates with law enforcement when disputes escalate to criminal investigations.",
+  ],
+  [
+    'How does Akiba make money, and what fees do users and groups pay?',
+    'Akiba earns revenue through Personal and Group subscriptions and transaction charges. Personal plans determine group creation limits, while Group plans determine membership capacity and group features. All applicable transaction charges are transparently displayed before withdrawals.',
+  ],
 ];
-export default function FAQ(){return <Container id="faq" sx={{py:{xs:9,md:14},scrollMarginTop:100}}><Typography variant="h4" sx={{mb:5}}>Frequently asked questions</Typography>{questions.map(([q,a])=><Accordion key={q} disableGutters sx={{py:1}}><AccordionSummary expandIcon={<ExpandMoreIcon/>}><Typography component="span" variant="subtitle2">{q}</Typography></AccordionSummary><AccordionDetails><Typography variant="body2" color="text.secondary" sx={{maxWidth:850}}>{a}</Typography></AccordionDetails></Accordion>)}</Container>}
+
+export default function FAQ() {
+  return (
+    <Container id="faq" sx={{ py: { xs: 9, md: 14 }, scrollMarginTop: 100 }}>
+      <Typography variant="h4" sx={{ mb: 5 }}>Frequently asked questions</Typography>
+      {questions.map(([question, answer]) => (
+        <Accordion key={question} disableGutters sx={{ py: 1 }}>
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography component="span" variant="subtitle2">{question}</Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <Typography variant="body2" color="text.secondary" sx={{ maxWidth: 850 }}>
+              {answer}
+            </Typography>
+          </AccordionDetails>
+        </Accordion>
+      ))}
+    </Container>
+  );
+}
