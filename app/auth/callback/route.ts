@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
 
   // Persist session cookies on the redirect response itself.
   // Writing to next/headers cookies alone can lose Set-Cookie on redirects.
-  let response = NextResponse.redirect(new URL("/onboarding", origin));
+  const response = NextResponse.redirect(new URL("/onboarding", origin));
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
