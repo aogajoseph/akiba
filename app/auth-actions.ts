@@ -24,7 +24,7 @@ export async function signIn(formData: FormData) {
        : "Unable to sign in. Please try again.";
    if (error.code === "invalid_credentials") {
      const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-     const secret = process.env.SUPABASE_SERVICE_ROLE_KEY;
+     const secret = process.env.SUPABASE_SECRET_KEY;
      if (url && secret) {
        try {
          // The lookup RPC is restricted to service_role and is called only
