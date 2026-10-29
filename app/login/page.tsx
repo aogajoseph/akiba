@@ -11,7 +11,7 @@ export default async function LoginPage({ searchParams }: Props) {
   if (user) redirect("/workspace");
   const params = await searchParams;
   return <main className="auth-shell"><section className="auth-card">
-    <Link href="/" className="auth-brand"><span className="workspace-mark">a</span> akiba</Link>
+    <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
     <div className="workspace-eyebrow">WELCOME BACK</div><h1>Sign in to Akiba</h1>
     <p className="auth-description">Sign in to see your Groups and continue with your people.</p>
     {params.error && <p className="auth-error" role="alert">{params.error}</p>}
