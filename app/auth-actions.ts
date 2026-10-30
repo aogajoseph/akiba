@@ -58,3 +58,38 @@ export async function signUp(formData: FormData) {
  redirect("/login?message="+encodeURIComponent("Check your email to confirm your Akiba account once. After confirmation, you'll set up your username."));
 }
 export async function signOut(){const supabase=await createClient();await supabase.auth.signOut();await markReturning();redirect("/login?message=You%20have%20signed%20out.");}
+
+export async function requestPasswordReset(formData: FormData) {
+ const email = field(formData, "email").toLowerCase();
+ if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) redirect("/forgot-password?error=" + encodeURIComponent("Enter a valid email address."));
+ const site = process.env.NEXT_PUBLIC_SITE_URL;
+ if (!site) {
+   console.error("Akiba NEXT_PUBLIC_SITE_URL is missing for password recovery");
+   redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
+ }
+ const supabase = await createClient();
+ const callback = new URL("/auth/callback", site);
+ callback.searchParams.set("type", "recovery");
+ callback.searchParams.set("flow", "recovery");
+ const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: callback.toString() });
+ if (error) console.error("Akiba password recovery request failed", { code: error.code });
+ // Do not reveal whether an email address is registered.
+ redirect("/forgot-password?message=" + encodeURIComponent("If an Akiba account exists for that email, a password reset link will be sent. Check your inbox and spam folder."));
+}
+
+export async function updatePassword(formData: FormData) {
+ const password = String(formData.get("password") ?? "");
+ const confirmation = String(formData.get("confirmPassword") ?? "");
+ if (password.length < 8) redirect("/reset-password?error=" + encodeURIComponent("Use at least 8 characters."));
+ if (password !== confirmation) redirect("/reset-password?error=" + encodeURIComponent("Passwords do not match."));
+ const supabase = await createClient();
+ const { data: { user }, error: userError } = await supabase.auth.getUser();
+ if (userError || !user) redirect("/forgot-password?error=" + encodeURIComponent("Your reset link has expired. Request another."));
+ const { error } = await supabase.auth.updateUser({ password });
+ if (error) {
+   console.error("Akiba password update failed", { code: error.code });
+   redirect("/reset-password?error=" + encodeURIComponent("Unable to update your password. Request a new reset link if this continues."));
+ }
+ await supabase.auth.signOut();
+ redirect("/login?message=" + encodeURIComponent("Password updated. Sign in with your new password."));
+}

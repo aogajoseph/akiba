@@ -18,6 +18,7 @@ export default async function LoginPage({ searchParams }: Props) {
     {params.error && <p className="auth-error" role="alert">{params.error}</p>}
     {params.message && <p className="auth-message" role="status">{params.message}</p>}
     <form action={signIn} className="auth-form"><label>Email address<input name="email" type="email" autoComplete="email" required /></label><label>Password<input name="password" type="password" autoComplete="current-password" required /></label><SignInButton /></form>
+    <p className="auth-switch"><Link href="/forgot-password">Forgot your password?</Link></p>
     <p className="auth-switch">New to Akiba? <Link href="/signup">Create an account</Link></p>
   </section></main>;
 }
