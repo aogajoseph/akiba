@@ -8,13 +8,40 @@ async function markReturning() {
 }
 
 import { createClient } from "@/lib/supabase/server";
+import { createClient as createAdminClient } from "@supabase/supabase-js";
 function field(formData: FormData, name: string) { return String(formData.get(name) ?? "").trim(); }
 export async function signIn(formData: FormData) {
  const email=field(formData,"email").toLowerCase(), password=String(formData.get("password")??"");
  if(!email||!password) redirect("/login?error=Enter%20your%20email%20and%20password");
  const supabase=await createClient();
  const {error}=await supabase.auth.signInWithPassword({email,password});
- if(error){console.error("Akiba sign-in failure",{code:error.code,message:error.message});redirect("/login?error="+encodeURIComponent(error.code==="email_not_confirmed"?"Please confirm your email before signing in.":error.code==="invalid_credentials"?"Incorrect email or password.":"Unable to sign in. Please try again."));}
+ if(error){
+   console.error("Akiba sign-in failure",{code:error.code,message:error.message});
+   let message = error.code === "email_not_confirmed"
+     ? "Please confirm your email before signing in."
+     : error.code === "invalid_credentials"
+       ? "Incorrect email or password."
+       : "Unable to sign in. Please try again.";
+   if (error.code === "invalid_credentials") {
+     const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+     const secret = process.env.SUPABASE_SECRET_KEY;
+     if (url && secret) {
+       try {
+         // The lookup RPC is restricted to service_role and is called only
+         // after a failed password sign-in, never from the browser.
+         const admin = createAdminClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
+         const { data: exists, error: lookupError } = await admin.rpc("akiba_email_exists", { check_email: email });
+         if (lookupError) console.error("Akiba account lookup failed", { code: lookupError.code });
+         else if (exists === false) message = "No account exists with this email. Please create an account.";
+       } catch {
+         console.error("Akiba account lookup unavailable");
+       }
+     } else {
+       console.error("Akiba account lookup not configured");
+     }
+   }
+   redirect("/login?error=" + encodeURIComponent(message));
+ }
  await markReturning();
  redirect("/workspace");
 }

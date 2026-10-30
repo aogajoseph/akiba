@@ -14,5 +14,5 @@ export async function saveUsername(formData: FormData) {
     console.error("Akiba profile creation failed", { code: error.code, message: error.message });
     redirect("/onboarding?error=" + encodeURIComponent(error.code === "23505" ? "That username was just claimed. Choose another." : "Unable to save your profile. Please try again."));
   }
-  redirect("/onboarding/complete");
+  redirect("/workspace");
 }
