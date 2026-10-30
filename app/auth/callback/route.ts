@@ -42,8 +42,9 @@ export async function GET(request: NextRequest) {
         : "Email confirmation failed. Please request a new confirmation link.");
   }
 
-  if (tokenHash && (type === "signup" || type === "recovery")) {
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
+  if (tokenHash && (type === "signup" || isRecovery)) {
+    const otpType = isRecovery ? "recovery" : "signup";
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: otpType });
     if (!error) return response;
     console.error("Akiba email verification failed", { code: error.code, message: error.message });
     return failure(isRecovery ? "Password reset link expired or invalid. Request another." : "Email confirmation failed. Please request a new confirmation link.");
