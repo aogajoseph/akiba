@@ -9,6 +9,8 @@ export default async function NewGroupPage({ searchParams }: Props) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const { data: profile } = await supabase.from("akiba_profiles").select("username").eq("user_id", user.id).maybeSingle();
+  if (!profile) redirect("/onboarding");
   const params = await searchParams;
   return <main className="auth-shell"><section className="auth-card auth-card-wide"><Link href="/workspace" className="back-link">← Back to Groups</Link><div className="workspace-eyebrow">A SHARED PURPOSE</div><h1>Create a Group</h1><p className="auth-description">Choose a name, purpose and currency for this Group. You’ll become its first administrator.</p>
     {params.error && <p className="auth-error" role="alert">{params.error}</p>}
