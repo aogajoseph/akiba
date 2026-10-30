@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
 
   // Persist session cookies on the redirect response itself.
   // Writing to next/headers cookies alone can lose Set-Cookie on redirects.
-  const response = NextResponse.redirect(new URL("/onboarding", origin));
+  const isRecovery = type === "recovery";
+  const response = NextResponse.redirect(new URL(isRecovery ? "/reset-password" : "/onboarding", origin));
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),
@@ -38,11 +39,11 @@ export async function GET(request: NextRequest) {
       : "Email confirmation failed. Please request a new confirmation link.");
   }
 
-  if (tokenHash && type === "signup") {
-    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type: "signup" });
+  if (tokenHash && (type === "signup" || type === "recovery")) {
+    const { error } = await supabase.auth.verifyOtp({ token_hash: tokenHash, type });
     if (!error) return response;
     console.error("Akiba email verification failed", { code: error.code, message: error.message });
-    return failure("Email confirmation failed. Please request a new confirmation link.");
+    return failure(isRecovery ? "Password reset link expired or invalid. Request another." : "Email confirmation failed. Please request a new confirmation link.");
   }
 
   return failure("This confirmation link is invalid. Please request a new confirmation link.");
