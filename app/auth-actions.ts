@@ -70,6 +70,7 @@ export async function requestPasswordReset(formData: FormData) {
  const supabase = await createClient();
  const callback = new URL("/auth/callback", site);
  callback.searchParams.set("type", "recovery");
+ callback.searchParams.set("flow", "recovery");
  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: callback.toString() });
  if (error) console.error("Akiba password recovery request failed", { code: error.code });
  // Do not reveal whether an email address is registered.
