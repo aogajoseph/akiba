@@ -6,6 +6,7 @@ export async function GET(request: NextRequest) {
   const code = request.nextUrl.searchParams.get("code");
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type");
+  const flow = request.nextUrl.searchParams.get("flow");
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
@@ -16,7 +17,7 @@ export async function GET(request: NextRequest) {
 
   // Persist session cookies on the redirect response itself.
   // Writing to next/headers cookies alone can lose Set-Cookie on redirects.
-  const isRecovery = type === "recovery";
+  const isRecovery = type === "recovery" || flow === "recovery";
   const response = NextResponse.redirect(new URL(isRecovery ? "/reset-password" : "/onboarding", origin));
   const supabase = createServerClient(url, key, {
     cookies: {
@@ -34,9 +35,11 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) return response;
     console.error("Akiba code exchange failed", { code: error.code, message: error.message });
-    return failure(error.code === "bad_code_verifier"
-      ? "Confirmation could not complete in this browser. Please sign up or request a new confirmation link in the same browser."
-      : "Email confirmation failed. Please request a new confirmation link.");
+    return failure(isRecovery
+      ? "Password reset link expired or invalid. Please request another."
+      : error.code === "bad_code_verifier"
+        ? "Confirmation could not complete in this browser. Please sign up or request a new confirmation link in the same browser."
+        : "Email confirmation failed. Please request a new confirmation link.");
   }
 
   if (tokenHash && (type === "signup" || type === "recovery")) {
