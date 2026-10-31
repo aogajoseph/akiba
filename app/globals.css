@@ -143,3 +143,65 @@
 .profile-username-input:focus-within{border-color:#E91E78;box-shadow:0 0 0 3px #f9d5e5}
 .profile-submit-button{border-color:#E91E78;background:#E91E78;color:#fff}
 .profile-submit-button:hover:not(:disabled){background:#c81764;border-color:#c81764}
+
+
+/* Profile setup: centered brand lockup and Kenyan phone input */
+.profile-setup-topbar .auth-brand{
+  align-items:center;
+  gap:9px;
+  margin:0;
+  line-height:1;
+}
+.profile-setup-topbar .auth-brand-logo{
+  display:block;
+  width:34px;
+  height:34px;
+  flex:0 0 34px;
+  object-fit:contain;
+}
+.profile-phone-input{
+  display:flex;
+  align-items:stretch;
+  width:100%;
+  min-width:0;
+  overflow:hidden;
+  border:1px solid #dfe7e0;
+  border-radius:8px;
+  background:#fff;
+  transition:border-color .15s,box-shadow .15s;
+}
+.profile-phone-input:focus-within{
+  border-color:#E91E78;
+  box-shadow:0 0 0 3px #f9d5e5;
+}
+.profile-country-code{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  flex:0 0 auto;
+  min-height:44px;
+  padding:0 12px;
+  border:0;
+  border-right:1px solid #e8ece8;
+  background:#fafbfa;
+  color:#304438;
+  font-size:12px;
+  font-weight:700;
+  white-space:nowrap;
+  cursor:default;
+}
+.profile-country-chevron{color:#8a978f;font-size:14px;font-weight:400}
+.profile-phone-input input{
+  flex:1;
+  min-width:0;
+  width:100%;
+  border:0;
+  border-radius:0;
+  box-shadow:none!important;
+  outline:none;
+}
+.profile-phone-input input:focus{border:0;box-shadow:none!important}
+@media(max-width:380px){
+  .profile-country-code{gap:5px;padding:0 9px}
+}
