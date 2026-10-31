@@ -19,10 +19,10 @@ export default async function CompletePage() {
   return (
     <main className="auth-shell">
       <section className="auth-card">
-        <div className="workspace-eyebrow">WELCOME TO AKIBA</div>
+        <div className="workspace-eyebrow">Welcome to Akiba</div>
         <h1>You&apos;re @{profile.username}</h1>
         <p className="auth-description">
-          Your profile is ready. Start a Group now or explore your workspace first.
+          Your Akiba profile is ready. Create a Group to organize contributions with others, or head to your workspace to see what&apos;s happening.
         </p>
         <div className="real-actions">
           <Link className="workspace-primary" href="/workspace/new">Create a Group</Link>
