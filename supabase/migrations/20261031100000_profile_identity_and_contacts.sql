@@ -52,14 +52,12 @@ returns trigger
 language plpgsql
 security definer
 set search_path = public
-as $
-begin
+as 'begin
   if old.phone_number is distinct from new.phone_number then
     new.phone_verified_at := null;
   end if;
   return new;
-end;
-$;
+end;';
 
 revoke all on function public.akiba_clear_phone_verification_on_change() from public, anon, authenticated;
 
