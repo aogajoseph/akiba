@@ -61,7 +61,7 @@ export async function signOut(){const supabase=await createClient();await supaba
 
 export async function requestPasswordReset(formData: FormData) {
  const email = field(formData, "email").toLowerCase();
- if (!email || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) redirect("/forgot-password?error=" + encodeURIComponent("Enter a valid email address."));
+ if (!email || email.indexOf("@") < 1 || email.lastIndexOf(".") < email.indexOf("@") + 2 || email.endsWith(".")) redirect("/forgot-password?error=" + encodeURIComponent("Enter a valid email address."));
  const site = process.env.NEXT_PUBLIC_SITE_URL;
  if (!site) {
    console.error("Akiba NEXT_PUBLIC_SITE_URL is missing for password recovery");
