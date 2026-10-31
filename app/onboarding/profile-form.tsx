@@ -25,8 +25,8 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
   const [phoneNumber, setPhoneNumber] = useState(() => {
     const stored = initial.phoneNumber.trim();
     return stored.startsWith("+254")
-      ? stored.slice(4).replace(/\\D/g, "").replace(/^0/, "")
-      : stored.replace(/\\D/g, "").replace(/^0/, "");
+      ? stored.slice(4).replace(/\D/g, "").replace(/^0/, "")
+      : stored.replace(/\D/g, "").replace(/^0/, "");
   });
   const [avatarPath, setAvatarPath] = useState(initial.avatarPath ?? "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -205,7 +205,7 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
             <span>+254</span>
             <span className="profile-country-chevron" aria-hidden="true">⌄</span>
           </button>
-          <input id="profile-phone" name="phone_number" type="tel" inputMode="numeric" autoComplete="tel-national" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value.replace(/\\D/g, "").slice(0, 9))} placeholder="7XX XXX XXX" />
+          <input id="profile-phone" name="phone_number" type="tel" inputMode="numeric" autoComplete="tel-national" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="7XX XXX XXX" />
         </div>
       </div>
 
