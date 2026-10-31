@@ -46,10 +46,7 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
   }, [previewUrl]);
 
   useEffect(() => {
-    if (!usernameValid) {
-      setAvailability(null);
-      return;
-    }
+    if (!usernameValid) return;
     const controller = new AbortController();
     const timer = window.setTimeout(async () => {
       try {
