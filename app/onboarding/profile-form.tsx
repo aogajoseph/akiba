@@ -47,10 +47,16 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
     setInitialAvatarUrl(supabase.storage.from("avatars").getPublicUrl(avatarPath).data.publicUrl);
   }, [avatarPath]);
 
-  const previewUrl = selectedFile ? URL.createObjectURL(selectedFile) : "";
-  useEffect(() => () => {
-    if (previewUrl) URL.revokeObjectURL(previewUrl);
-  }, [previewUrl]);
+  const [previewUrl, setPreviewUrl] = useState("");
+  useEffect(() => {
+    if (!selectedFile) {
+      setPreviewUrl("");
+      return;
+    }
+    const url = URL.createObjectURL(selectedFile);
+    setPreviewUrl(url);
+    return () => URL.revokeObjectURL(url);
+  }, [selectedFile]);
 
   useEffect(() => {
     if (!usernameValid) {
