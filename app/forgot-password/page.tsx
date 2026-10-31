@@ -9,7 +9,7 @@ export default async function ForgotPasswordPage({ searchParams }: Props) {
  return <main className="auth-shell"><section className="auth-card">
    <Link href="/" className="auth-brand">Akiba</Link>
    <h1>Reset your password</h1>
-   <p className="auth-description">Enter your account email to request a reset link.</p>
+   <p className="auth-description">Enter the email address associated with your Akiba account to request a reset link.</p>
    {params.error && <p className="auth-error" role="alert">{params.error}</p>}
    {params.message && <p className="auth-message" role="status">{params.message}</p>}
    <form action={requestPasswordReset} className="auth-form">
