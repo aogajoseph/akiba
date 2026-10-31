@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import { saveProfile } from "./actions";
 import { createClient } from "@/lib/supabase/client";
 
@@ -35,26 +35,15 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
   const usernameValid = USERNAME_PATTERN.test(username);
   const usernameAvailable = usernameValid && currentAvailability?.available === true;
 
-  const [initialAvatarUrl, setInitialAvatarUrl] = useState("");
-  useEffect(() => {
-    if (!avatarPath) {
-      setInitialAvatarUrl("");
-      return;
-    }
-    const supabase = createClient();
-    setInitialAvatarUrl(supabase.storage.from("avatars").getPublicUrl(avatarPath).data.publicUrl);
+  const initialAvatarUrl = useMemo(() => {
+    if (!avatarPath) return "";
+    return createClient().storage.from("avatars").getPublicUrl(avatarPath).data.publicUrl;
   }, [avatarPath]);
 
   const [previewUrl, setPreviewUrl] = useState("");
-  useEffect(() => {
-    if (!selectedFile) {
-      setPreviewUrl("");
-      return;
-    }
-    const url = URL.createObjectURL(selectedFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [selectedFile]);
+  useEffect(() => () => {
+    if (previewUrl) URL.revokeObjectURL(previewUrl);
+  }, [previewUrl]);
 
   useEffect(() => {
     if (!usernameValid) {
@@ -104,6 +93,7 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
       return;
     }
     setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
     setRemoveAvatar(false);
   }
 
@@ -181,6 +171,7 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
             {(avatarPath || selectedFile) && (
               <button type="button" className="profile-remove-button" onClick={() => {
                 setSelectedFile(null);
+                setPreviewUrl("");
                 setAvatarPath("");
                 setRemoveAvatar(true);
                 if (fileInput.current) fileInput.current.value = "";
