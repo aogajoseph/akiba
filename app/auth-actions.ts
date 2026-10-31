@@ -32,7 +32,7 @@ export async function signIn(formData: FormData) {
          const admin = createAdminClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
          const { data: exists, error: lookupError } = await admin.rpc("akiba_email_exists", { check_email: email });
          if (lookupError) console.error("Akiba account lookup failed", { code: lookupError.code });
-         else if (exists === false) message = "No account exists with this email. Please create an account.";
+         else if (exists === false) message = "No account found for this email address. Please create an account.";
        } catch {
          console.error("Akiba account lookup unavailable");
        }
@@ -55,26 +55,58 @@ export async function signUp(formData: FormData) {
  if(error){console.error("Akiba signup failure",{code:error.code,message:error.message});redirect("/signup?error="+encodeURIComponent(error.code==="user_already_exists"?"An account with this email already exists. Please sign in.":"Unable to create account. Please try again."));}
  await markReturning();
  if(data.session) redirect("/onboarding");
- redirect("/login?message="+encodeURIComponent("Check your email to confirm your Akiba account once. After confirmation, you'll set up your username."));
+ redirect("/login?message="+encodeURIComponent("We've sent you a confirmation email. Verify your email address to continue."));
 }
 export async function signOut(){const supabase=await createClient();await supabase.auth.signOut();await markReturning();redirect("/login?message=You%20have%20signed%20out.");}
 
 export async function requestPasswordReset(formData: FormData) {
  const email = field(formData, "email").toLowerCase();
- if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) redirect("/forgot-password?error=" + encodeURIComponent("Enter a valid email address."));
+ if (!email || email.indexOf("@") < 1 || email.lastIndexOf(".") < email.indexOf("@") + 2 || email.endsWith(".")) redirect("/forgot-password?error=" + encodeURIComponent("Enter a valid email address."));
  const site = process.env.NEXT_PUBLIC_SITE_URL;
  if (!site) {
    console.error("Akiba NEXT_PUBLIC_SITE_URL is missing for password recovery");
    redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
  }
  const supabase = await createClient();
+ const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+ const secret = process.env.SUPABASE_SECRET_KEY;
+ let accountExists: boolean | null = null;
+
+ // This server-side lookup supports the requested explicit account feedback.
+ // Never expose the privileged key to the browser. If lookup is unavailable,
+ // fall back to privacy-preserving copy rather than guessing.
+ if (url && secret) {
+   try {
+     const admin = createAdminClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
+     const { data, error: lookupError } = await admin.rpc("akiba_email_exists", { check_email: email });
+     if (lookupError) console.error("Akiba password recovery account lookup failed", { code: lookupError.code });
+     else if (typeof data === "boolean") accountExists = data;
+   } catch {
+     console.error("Akiba password recovery account lookup unavailable");
+   }
+ } else {
+   console.error("Akiba password recovery account lookup not configured");
+ }
+
+ if (accountExists === false) {
+   redirect("/forgot-password?message=" + encodeURIComponent("No account found for this email address. Check the address or create an Akiba account."));
+ }
+
  const callback = new URL("/auth/callback", site);
  callback.searchParams.set("type", "recovery");
  callback.searchParams.set("flow", "recovery");
  const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: callback.toString() });
- if (error) console.error("Akiba password recovery request failed", { code: error.code });
- // Do not reveal whether an email address is registered.
- redirect("/forgot-password?message=" + encodeURIComponent("If an Akiba account exists for that email, a password reset link will be sent. Check your inbox and spam folder."));
+ if (error) {
+   console.error("Akiba password recovery request failed", { code: error.code });
+   redirect("/forgot-password?error=" + encodeURIComponent("We couldn't send a password reset link. Please try again."));
+ }
+
+ if (accountExists === true) {
+   redirect("/forgot-password?message=" + encodeURIComponent("Password reset link sent. Check your inbox and spam folder."));
+ }
+
+ // Preserve privacy if the account lookup was unavailable or inconclusive.
+ redirect("/forgot-password?message=" + encodeURIComponent("If an account is registered with this email address, you'll receive instructions to reset your password. Check your inbox and spam folder."));
 }
 
 export async function updatePassword(formData: FormData) {
