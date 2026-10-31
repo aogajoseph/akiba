@@ -40,7 +40,9 @@ create policy "users delete own contact details"
   on public.akiba_user_contacts for delete to authenticated
   using (user_id = (select auth.uid()));
 
+-- Reset default privileges first, then grant only the contact operations needed by the app.
 -- The authenticated role must not be able to set or forge phone verification state.
+revoke all on public.akiba_user_contacts from anon, authenticated;
 grant select, delete on public.akiba_user_contacts to authenticated;
 grant insert (user_id, phone_number, updated_at) on public.akiba_user_contacts to authenticated;
 grant update (phone_number, updated_at) on public.akiba_user_contacts to authenticated;
