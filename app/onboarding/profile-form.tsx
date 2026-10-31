@@ -22,7 +22,12 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
   const [username, setUsername] = useState(initial.username);
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [bio, setBio] = useState(initial.bio);
-  const [phoneNumber, setPhoneNumber] = useState(initial.phoneNumber);
+  const [phoneNumber, setPhoneNumber] = useState(() => {
+    const stored = initial.phoneNumber.trim();
+    return stored.startsWith("+254")
+      ? stored.slice(4).replace(/\\D/g, "").replace(/^0/, "")
+      : stored.replace(/\\D/g, "").replace(/^0/, "");
+  });
   const [avatarPath, setAvatarPath] = useState(initial.avatarPath ?? "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
@@ -193,7 +198,14 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
 
       <div className="profile-field">
         <label htmlFor="profile-phone">Phone <span className="profile-optional">(Optional)</span></label>
-        <input id="profile-phone" name="phone_number" type="tel" inputMode="tel" autoComplete="tel" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value.slice(0, 30))} placeholder="+254 7XX XXX XXX" />
+        <div className="profile-phone-input">
+          <button type="button" className="profile-country-code" aria-label="Country code: Kenya, plus 254" title="Kenya">
+            <span aria-hidden="true">🇰🇪</span>
+            <span>+254</span>
+            <span className="profile-country-chevron" aria-hidden="true">⌄</span>
+          </button>
+          <input id="profile-phone" name="phone_number" type="tel" inputMode="numeric" autoComplete="tel-national" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value.replace(/\\D/g, "").slice(0, 9))} placeholder="7XX XXX XXX" />
+        </div>
       </div>
 
       {error && <p className="profile-form-error" role="alert">{error}</p>}
