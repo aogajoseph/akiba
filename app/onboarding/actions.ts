@@ -65,18 +65,9 @@ export async function saveProfile(formData: FormData) {
   }
 
   if (phoneNumber) {
-    const { data: existingContact } = await supabase
-      .from("akiba_user_contacts")
-      .select("phone_number, phone_verified_at")
-      .eq("user_id", user.id)
-      .maybeSingle();
-    const phoneVerifiedAt = existingContact?.phone_number === phoneNumber
-      ? existingContact.phone_verified_at
-      : null;
     const { error: contactError } = await supabase.from("akiba_user_contacts").upsert({
       user_id: user.id,
       phone_number: phoneNumber,
-      phone_verified_at: phoneVerifiedAt,
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
     if (contactError) {
