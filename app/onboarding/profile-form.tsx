@@ -110,9 +110,10 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
       setError("Choose a valid, available username before continuing.");
       return;
     }
-    const normalizedPhone = phoneNumber.trim().replace(/[\s()-]/g, "");
-    if (normalizedPhone && !/^\+[1-9][0-9]{7,14}$/.test(normalizedPhone)) {
-      setError("Enter an international phone number, including + and the country code.");
+    const localPhone = phoneNumber.replace(/\D/g, "").replace(/^0/, "");
+    const normalizedPhone = localPhone ? "+254" + localPhone : "";
+    if (localPhone && !/^[17][0-9]{8}$/.test(localPhone)) {
+      setError("Enter a valid Kenyan phone number.");
       return;
     }
 
