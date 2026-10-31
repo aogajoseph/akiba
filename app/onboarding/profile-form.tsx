@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { saveProfile } from "./actions";
 import { createClient } from "@/lib/supabase/client";
 
@@ -19,7 +18,6 @@ const USERNAME_PATTERN = /^[a-z][a-z0-9_]{2,19}$/;
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
 
 export default function ProfileForm({ initial }: { initial: ProfileValues }) {
-  const router = useRouter();
   const fileInput = useRef<HTMLInputElement>(null);
   const [username, setUsername] = useState(initial.username);
   const [displayName, setDisplayName] = useState(initial.displayName);
