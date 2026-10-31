@@ -10,6 +10,10 @@ async function markReturning() {
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 function field(formData: FormData, name: string) { return String(formData.get(name) ?? "").trim(); }
+function isValidEmail(email: string) {
+ const at = email.indexOf("@");
+ return email.length <= 320 && !email.includes(" ") && at > 0 && at === email.lastIndexOf("@") && email.lastIndexOf(".") > at + 1 && !email.endsWith(".");
+}
 export async function signIn(formData: FormData) {
  const email=field(formData,"email").toLowerCase(), password=String(formData.get("password")??"");
  if(!email||!password) redirect("/login?error=Enter%20your%20email%20and%20password");
@@ -47,7 +51,7 @@ export async function signIn(formData: FormData) {
 }
 export async function signUp(formData: FormData) {
  const email=field(formData,"email").toLowerCase(),password=String(formData.get("password")??"");
- if(!email||password.length<8) redirect("/signup?error=Enter%20a%20valid%20email%20and%20a%20password%20of%20at%20least%208%20characters");
+ if(!isValidEmail(email)||password.length<8) redirect("/signup?error=Enter%20a%20valid%20email%20and%20a%20password%20of%20at%20least%208%20characters");
  const supabase=await createClient();
  const site=process.env.NEXT_PUBLIC_SITE_URL;
  if(!site){console.error("Akiba NEXT_PUBLIC_SITE_URL is missing");redirect("/signup?error=Signup%20is%20temporarily%20unavailable");}
@@ -61,7 +65,7 @@ export async function signOut(){const supabase=await createClient();await supaba
 
 export async function requestPasswordReset(formData: FormData) {
  const email = field(formData, "email").toLowerCase();
- if (!email || email.indexOf("@") < 1 || email.lastIndexOf(".") < email.indexOf("@") + 2 || email.endsWith(".")) redirect("/forgot-password?error=" + encodeURIComponent("Enter a valid email address."));
+ if (!isValidEmail(email)) redirect("/forgot-password?error=" + encodeURIComponent("Enter a valid email address."));
  const site = process.env.NEXT_PUBLIC_SITE_URL;
  if (!site) {
    console.error("Akiba NEXT_PUBLIC_SITE_URL is missing for password recovery");
@@ -70,22 +74,40 @@ export async function requestPasswordReset(formData: FormData) {
  const supabase = await createClient();
  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
  const secret = process.env.SUPABASE_SECRET_KEY;
+ if (!url || !secret) {
+   console.error("Akiba password recovery admin configuration is missing");
+   redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
+ }
+ const admin = createAdminClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
  let accountExists: boolean | null = null;
 
- // This server-side lookup supports the requested explicit account feedback.
- // Never expose the privileged key to the browser. If lookup is unavailable,
- // fall back to privacy-preserving copy rather than guessing.
- if (url && secret) {
-   try {
-     const admin = createAdminClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
-     const { data, error: lookupError } = await admin.rpc("akiba_email_exists", { check_email: email });
-     if (lookupError) console.error("Akiba password recovery account lookup failed", { code: lookupError.code });
-     else if (typeof data === "boolean") accountExists = data;
-   } catch {
-     console.error("Akiba password recovery account lookup unavailable");
+ // Apply a server-side per-email limit before account lookup or email delivery.
+ // Supabase Auth's own endpoint/IP limits should remain enabled as a second layer.
+ try {
+   const { data: allowed, error: limitError } = await admin.rpc("akiba_consume_password_reset_limit", { check_email: email });
+   if (limitError) {
+     console.error("Akiba password recovery rate limit failed", { code: limitError.code });
+     redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
    }
- } else {
-   console.error("Akiba password recovery account lookup not configured");
+   if (allowed !== true) {
+     redirect("/forgot-password?error=" + encodeURIComponent("Too many reset requests for this email. Please wait 15 minutes before trying again."));
+   }
+ } catch (error) {
+   // Next.js redirect() throws a control-flow exception; preserve it.
+   if (error && typeof error === "object" && "digest" in error) throw error;
+   console.error("Akiba password recovery rate limit unavailable");
+   redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
+ }
+
+ // This privileged lookup supports the explicit account feedback requested.
+ // The service key remains server-only; inconclusive lookup falls back to
+ // privacy-preserving copy rather than guessing.
+ try {
+   const { data, error: lookupError } = await admin.rpc("akiba_email_exists", { check_email: email });
+   if (lookupError) console.error("Akiba password recovery account lookup failed", { code: lookupError.code });
+   else if (typeof data === "boolean") accountExists = data;
+ } catch {
+   console.error("Akiba password recovery account lookup unavailable");
  }
 
  if (accountExists === false) {
