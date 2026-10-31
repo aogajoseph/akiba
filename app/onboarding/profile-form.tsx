@@ -201,9 +201,16 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
         <label htmlFor="profile-phone">Phone <span className="profile-optional">(Optional)</span></label>
         <div className="profile-phone-input">
           <button type="button" className="profile-country-code" aria-label="Country code: Kenya, plus 254" title="Kenya">
-            <span aria-hidden="true">🇰🇪</span>
+            <svg className="profile-kenya-flag" viewBox="0 0 30 20" role="img" aria-label="Kenyan flag">
+              <rect width="30" height="20" rx="1.5" fill="#fff" />
+              <rect x="1" y="1" width="28" height="5.4" fill="#111" />
+              <rect x="1" y="7.3" width="28" height="5.4" fill="#bb1728" />
+              <rect x="1" y="14" width="28" height="5" fill="#087a42" />
+              <path d="M1 6.1h28M1 13.3h28" stroke="#fff" strokeWidth="1.2" />
+              <path d="M15 3.5c-2.7 3.2-3.8 6.3 0 13 3.8-6.7 2.7-9.8 0-13Z" fill="#bb1728" stroke="#fff" strokeWidth=".8" />
+              <path d="M15 4.2c-1.8 3-2.2 6.1 0 11.2 2.2-5.1 1.8-8.2 0-11.2Z" fill="#111" />
+            </svg>
             <span>+254</span>
-            <span className="profile-country-chevron" aria-hidden="true">⌄</span>
           </button>
           <input id="profile-phone" name="phone_number" type="tel" inputMode="numeric" autoComplete="tel-national" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="7XX XXX XXX" />
         </div>
