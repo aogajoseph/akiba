@@ -159,8 +159,7 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
           {avatarUrl ? <img src={avatarUrl} alt="Your profile preview" /> : <span>{initials}</span>}
         </div>
         <div className="profile-avatar-copy">
-          <strong>Your profile picture</strong>
-          <p>Help friends recognise you. JPG, PNG or WebP, up to 3 MB.</p>
+          <strong>Photo <span className="profile-optional">(Optional)</span></strong>
           <div className="profile-avatar-actions">
             <button type="button" className="profile-secondary-button" onClick={() => fileInput.current?.click()}>
               {avatarPath || selectedFile ? "Change picture" : "Upload picture"}
@@ -180,36 +179,27 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
       </section>
 
       <div className="profile-field">
-        <label htmlFor="display-name">Display name <span>Required</span></label>
-        <input id="display-name" name="display_name" value={displayName} onChange={(event) => setDisplayName(event.target.value.slice(0, 60))} maxLength={60} autoComplete="name" placeholder="What should people call you?" required />
-        <small>This is the name people will see across Akiba.</small>
+        <label htmlFor="display-name">Display name</label>
+        <input id="display-name" name="display_name" value={displayName} onChange={(event) => setDisplayName(event.target.value.slice(0, 60))} maxLength={60} autoComplete="name" placeholder="Your name" required />
       </div>
 
       <div className="profile-field">
-        <label htmlFor="profile-username">Unique username <span>Required</span></label>
-        <div className="profile-username-input"><span>@</span><input id="profile-username" name="username" value={username} onChange={(event) => setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20))} minLength={3} maxLength={20} autoComplete="username" required /></div>
+        <label htmlFor="profile-username">Username</label>
+        <div className="profile-username-input"><span>@</span><input id="profile-username" name="username" value={username} onChange={(event) => setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20))} minLength={3} maxLength={20} autoComplete="username" placeholder="Choose a username" required /></div>
         <small className={usernameValid && currentAvailability ? (currentAvailability.available ? "profile-field-success" : "profile-field-error") : ""} role="status" aria-live="polite">
           {!usernameValid ? "3–20 characters. Start with a letter; use letters, numbers or underscores." : currentAvailability?.message ?? "Checking username availability…"}
         </small>
       </div>
 
       <div className="profile-field">
-        <label htmlFor="profile-bio">About you <span>Optional</span></label>
-        <textarea id="profile-bio" name="bio" value={bio} onChange={(event) => setBio(event.target.value.slice(0, 160))} maxLength={160} rows={3} placeholder="A little about yourself…" />
-        <small className="profile-character-count">{bio.length}/160</small>
-      </div>
-
-      <div className="profile-field">
-        <label htmlFor="profile-phone">Phone number <span>Optional</span></label>
+        <label htmlFor="profile-phone">Phone <span className="profile-optional">(Optional)</span></label>
         <input id="profile-phone" name="phone_number" type="tel" inputMode="tel" autoComplete="tel" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value.slice(0, 30))} placeholder="+254 7XX XXX XXX" />
-        <small>Include your country code. Your number is private and is not yet used for sign-in or verification.</small>
       </div>
 
       {error && <p className="profile-form-error" role="alert">{error}</p>}
       <div className="profile-form-footer">
-        <p>You can add more details later in Profile Settings.</p>
         <button type="submit" className="profile-submit-button" disabled={pending || uploading || !usernameAvailable}>
-          {uploading ? "Uploading picture…" : pending ? "Saving profile…" : "Complete profile"}
+          {uploading ? "Uploading…" : pending ? "Saving…" : "Continue"}
           {!pending && !uploading && <span aria-hidden="true">→</span>}
         </button>
       </div>
