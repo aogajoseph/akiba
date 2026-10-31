@@ -144,8 +144,8 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
       setUploading(false);
     }
 
-    startTransition(() => {
-      void saveProfile(formData);
+    startTransition(async () => {
+      await saveProfile(formData);
     });
   }
 
