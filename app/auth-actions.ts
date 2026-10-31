@@ -83,20 +83,22 @@ export async function requestPasswordReset(formData: FormData) {
 
  // Apply a server-side per-email limit before account lookup or email delivery.
  // Supabase Auth's own endpoint/IP limits should remain enabled as a second layer.
+ let rateLimitAllowed: boolean | null = null;
  try {
-   const { data: allowed, error: limitError } = await admin.rpc("akiba_consume_password_reset_limit", { check_email: email });
+   const { data, error: limitError } = await admin.rpc("akiba_consume_password_reset_limit", { check_email: email });
    if (limitError) {
      console.error("Akiba password recovery rate limit failed", { code: limitError.code });
-     redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
+   } else if (typeof data === "boolean") {
+     rateLimitAllowed = data;
    }
-   if (allowed !== true) {
-     redirect("/forgot-password?error=" + encodeURIComponent("Too many reset requests for this email. Please wait 15 minutes before trying again."));
-   }
- } catch (error) {
-   // Next.js redirect() throws a control-flow exception; preserve it.
-   if (error && typeof error === "object" && "digest" in error) throw error;
+ } catch {
    console.error("Akiba password recovery rate limit unavailable");
+ }
+ if (rateLimitAllowed === null) {
    redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
+ }
+ if (!rateLimitAllowed) {
+   redirect("/forgot-password?error=" + encodeURIComponent("Too many reset requests for this email. Please wait 15 minutes before trying again."));
  }
 
  // This privileged lookup supports the explicit account feedback requested.
