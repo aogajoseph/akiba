@@ -65,11 +65,22 @@ export async function saveProfile(formData: FormData) {
   }
 
   if (phoneNumber) {
-    const { error: contactError } = await supabase.from("akiba_user_contacts").upsert({
-      user_id: user.id,
-      phone_number: phoneNumber,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "user_id" });
+    const { data: existingContact, error: contactLookupError } = await supabase
+      .from("akiba_user_contacts")
+      .select("user_id")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (contactLookupError) {
+      console.error("Akiba contact lookup failed", { code: contactLookupError.code });
+      fail("Your profile was saved, but we couldn't save the phone number. Please try again.");
+    }
+    const contactWrite = existingContact
+      ? await supabase.from("akiba_user_contacts")
+          .update({ phone_number: phoneNumber, updated_at: new Date().toISOString() })
+          .eq("user_id", user.id)
+      : await supabase.from("akiba_user_contacts")
+          .insert({ user_id: user.id, phone_number: phoneNumber, updated_at: new Date().toISOString() });
+    const contactError = contactWrite.error;
     if (contactError) {
       console.error("Akiba contact save failed", { code: contactError.code });
       fail("Your profile was saved, but we couldn't save the phone number. Please try again.");
