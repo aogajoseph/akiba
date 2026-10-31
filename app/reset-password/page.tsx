@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { updatePassword } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
+import ResetPasswordForm from "./reset-password-form";
 
 type Props = { searchParams: Promise<{ error?: string }> };
 
@@ -15,10 +15,6 @@ export default async function ResetPasswordPage({ searchParams }: Props) {
    <h1>Choose a new password</h1>
    <p className="auth-description">Use at least 8 characters.</p>
    {params.error && <p className="auth-error" role="alert">{params.error}</p>}
-   <form action={updatePassword} className="auth-form">
-     <label>New password<input name="password" type="password" autoComplete="new-password" minLength={8} required /></label>
-     <label>Confirm new password<input name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required /></label>
-     <button type="submit">Update password</button>
-   </form>
+   <ResetPasswordForm />
  </section></main>;
 }
