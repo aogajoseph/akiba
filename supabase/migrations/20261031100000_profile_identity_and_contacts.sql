@@ -10,7 +10,7 @@ alter table public.akiba_profiles
   add constraint akiba_bio_length
     check (bio is null or char_length(bio) <= 160),
   add constraint akiba_avatar_path_user_scoped
-    check (avatar_path is null or avatar_path !~ '^/');
+    check (avatar_path is null or split_part(avatar_path, '/', 1) = user_id::text);
 
 create table if not exists public.akiba_user_contacts (
   user_id uuid primary key references auth.users(id) on delete cascade,
@@ -40,7 +40,31 @@ create policy "users delete own contact details"
   on public.akiba_user_contacts for delete to authenticated
   using (user_id = (select auth.uid()));
 
-grant select, insert, update, delete on public.akiba_user_contacts to authenticated;
+-- The authenticated role must not be able to set or forge phone verification state.
+grant select, delete on public.akiba_user_contacts to authenticated;
+grant insert (user_id, phone_number, updated_at) on public.akiba_user_contacts to authenticated;
+grant update (phone_number, updated_at) on public.akiba_user_contacts to authenticated;
+
+create or replace function public.akiba_clear_phone_verification_on_change()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $
+begin
+  if old.phone_number is distinct from new.phone_number then
+    new.phone_verified_at := null;
+  end if;
+  return new;
+end;
+$;
+
+revoke all on function public.akiba_clear_phone_verification_on_change() from public, anon, authenticated;
+
+create trigger akiba_clear_phone_verification_on_change
+before update of phone_number on public.akiba_user_contacts
+for each row execute function public.akiba_clear_phone_verification_on_change();
+
 revoke all on public.akiba_user_contacts from anon;
 
 -- Avatars are intended to be visible wherever a user's public identity appears.
