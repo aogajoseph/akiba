@@ -35,7 +35,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
   return (
     <main className="profile-setup-shell">
       <header className="profile-setup-topbar">
-        <Link href="/" className="profile-setup-brand"><span className="workspace-mark">a</span> akiba</Link>
+        <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
       </header>
       <section className="profile-setup-layout">
         <section className="profile-setup-card" aria-labelledby="profile-setup-title">
