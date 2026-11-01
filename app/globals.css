@@ -687,3 +687,206 @@
  .ak-workspace-app .ak-workspace-summary-card{padding:11px 13px}
  .ak-workspace-app .ak-workspace-card{padding:15px}
 }
+
+
+/* Reference-led group workspace: preserve the existing dashboard shell, rebuild only its content. */
+.ak-workspace-app .ak-workspace-content{
+  max-width:none;
+  padding:22px 28px 28px;
+  background:#f7f7fb;
+}
+.ak-workspace-app .ak-workspace-banner{
+  position:relative;
+  isolation:isolate;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:24px;
+  min-height:218px;
+  overflow:hidden;
+  padding:24px 26px;
+  border:1px solid #e8e5ef;
+  border-radius:14px;
+  background:#272044;
+}
+.ak-workspace-app .ak-workspace-banner-image{
+  position:absolute;
+  inset:0;
+  z-index:-2;
+  background-image:url("/akiba-banner.png");
+  background-position:center;
+  background-size:cover;
+  transform:none;
+}
+.ak-workspace-app .ak-workspace-banner-shade{
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  background:linear-gradient(90deg,rgba(23,20,51,.48),rgba(23,20,51,.2) 60%,rgba(23,20,51,.1));
+}
+.ak-workspace-hero-content{
+  display:flex;
+  align-items:center;
+  gap:20px;
+  min-width:0;
+  flex:1;
+}
+.ak-workspace-app .ak-workspace-group-image{
+  position:relative;
+  inset:auto;
+  display:grid;
+  place-items:center;
+  width:104px;
+  height:104px;
+  flex:0 0 104px;
+  overflow:hidden;
+  border:3px solid #fff;
+  border-radius:18px;
+  background:#fff;
+  box-shadow:0 6px 22px #17132c35;
+}
+.ak-workspace-app .ak-workspace-group-image img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:cover;
+}
+.ak-workspace-app .ak-workspace-group-image span{
+  color:#bd2b79;
+  font-size:30px;
+  font-weight:800;
+}
+.ak-workspace-app .ak-workspace-banner-copy{
+  min-width:0;
+  max-width:760px;
+  color:#fff;
+}
+.ak-workspace-app .ak-workspace-banner h1{
+  margin:0 0 7px;
+  color:#fff;
+  font-size:clamp(25px,2.7vw,36px);
+  line-height:1.12;
+  letter-spacing:-.9px;
+}
+.ak-workspace-app .ak-workspace-banner-copy>p{
+  margin:0;
+  color:#ffffffed;
+  font-size:12px;
+  line-height:1.55;
+}
+.ak-workspace-app .ak-workspace-banner-meta{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+  margin-top:13px;
+}
+.ak-workspace-app .ak-workspace-banner-meta span{
+  display:inline-flex;
+  align-items:center;
+  min-height:26px;
+  padding:5px 10px;
+  border:1px solid #ffffff75;
+  border-radius:999px;
+  background:#ffffffeb;
+  color:#5b3150;
+  font-size:9px;
+  font-weight:700;
+  line-height:1.2;
+  white-space:nowrap;
+}
+.ak-workspace-hero-actions{
+  position:relative;
+  z-index:2;
+  align-self:flex-start;
+  flex:0 0 auto;
+}
+.ak-workspace-hero-actions .ak-workspace-action-wrap{gap:8px}
+.ak-workspace-hero-actions .ak-workspace-share,
+.ak-workspace-hero-actions .ak-workspace-more{
+  min-height:38px;
+  border:1px solid #ffffffa8;
+  border-radius:9px;
+  background:#fff;
+  color:#41334f;
+}
+.ak-workspace-app .ak-group-tabs{
+  display:flex;
+  align-items:center;
+  gap:5px;
+  min-height:58px;
+  margin:14px 0 15px;
+  padding:6px 9px;
+  overflow-x:auto;
+  border:1px solid #e8e8ef;
+  border-radius:11px;
+  background:#fff;
+  box-shadow:0 2px 10px #29244b08;
+}
+.ak-workspace-app .ak-group-tabs>span{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:42px;
+  padding:10px 16px;
+  border-radius:8px;
+  color:#77758e;
+  font-size:11px;
+  font-weight:700;
+  white-space:nowrap;
+}
+.ak-workspace-app .ak-group-tabs>span svg{
+  width:17px;
+  height:17px;
+  font-size:17px;
+}
+.ak-workspace-app .ak-group-tabs>span.active{
+  background:#fff0f7;
+  color:#c51d70;
+}
+.ak-workspace-app .ak-workspace-summary-card,
+.ak-workspace-app .ak-workspace-card{
+  border-color:#e8e8ef;
+  background:#fff;
+}
+.ak-workspace-app .ak-workspace-progress{
+  background:#fff;
+}
+.ak-workspace-app .ak-progress-empty{
+  border:1px solid #f0d8e5;
+  background:#fff9fc;
+}
+@media(max-width:900px){
+  .ak-workspace-app .ak-workspace-content{padding:18px 22px 26px}
+  .ak-workspace-app .ak-workspace-banner{min-height:205px;padding:20px}
+  .ak-workspace-hero-content{gap:15px}
+  .ak-workspace-app .ak-workspace-group-image{width:86px;height:86px;flex-basis:86px}
+  .ak-workspace-hero-actions .ak-workspace-share span{display:none}
+  .ak-workspace-hero-actions .ak-workspace-share{width:39px;padding:0}
+}
+@media(max-width:640px){
+  .ak-workspace-app .ak-workspace-content{padding:15px 14px 24px}
+  .ak-workspace-app .ak-workspace-banner{
+    align-items:flex-start;
+    min-height:0;
+    padding:17px;
+    border-radius:12px;
+  }
+  .ak-workspace-hero-content{align-items:flex-start;gap:12px}
+  .ak-workspace-app .ak-workspace-group-image{
+    width:62px;height:62px;flex-basis:62px;border-width:2px;border-radius:12px
+  }
+  .ak-workspace-app .ak-workspace-banner h1{
+    max-width:none;margin:0 0 6px;font-size:23px
+  }
+  .ak-workspace-app .ak-workspace-banner-copy>p{font-size:10px}
+  .ak-workspace-app .ak-workspace-banner-meta{gap:6px;margin-top:10px}
+  .ak-workspace-app .ak-workspace-banner-meta span{min-height:23px;padding:4px 8px;font-size:8px}
+  .ak-workspace-hero-actions{position:absolute;top:12px;right:12px}
+  .ak-workspace-hero-actions .ak-workspace-share,
+  .ak-workspace-hero-actions .ak-workspace-more{width:32px;min-height:32px}
+  .ak-workspace-hero-actions .ak-workspace-share span{display:none}
+  .ak-workspace-app .ak-group-tabs{min-height:51px;margin:11px 0 12px;padding:4px}
+  .ak-workspace-app .ak-group-tabs>span{min-height:39px;padding:8px 11px;font-size:10px}
+  .ak-workspace-app .ak-group-tabs>span svg{width:15px;height:15px}
+}
