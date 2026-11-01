@@ -205,3 +205,37 @@
 @media(max-width:380px){
   .profile-country-code{gap:5px;padding:0 9px}
 }
+
+
+/* Onboarding brand lockup and tagline */
+.profile-setup-topbar{
+  justify-content:space-between;
+}
+.profile-setup-brand-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  width:100%;
+  min-width:0;
+}
+.profile-setup-brand-row .auth-brand{
+  flex:0 0 auto;
+}
+.profile-setup-tagline{
+  margin-left:20px;
+  color:#87938a;
+  font-size:12px;
+  font-weight:500;
+  letter-spacing:.1px;
+  white-space:nowrap;
+}
+.profile-kenya-flag{
+  display:block;
+  width:24px;
+  height:16px;
+  flex:0 0 24px;
+  object-fit:contain;
+}
+@media(max-width:420px){
+  .profile-setup-tagline{font-size:10px;margin-left:12px}
+}
