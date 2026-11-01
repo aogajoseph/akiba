@@ -19,6 +19,8 @@ function initials(value: string) {
   return value.trim().split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "A";
 }
 
+const frequencyLabels: Record<string, string> = { one_time: "One-time", weekly: "Weekly", biweekly: "Every two weeks", monthly: "Monthly", quarterly: "Quarterly", annually: "Annually" };
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", { day: "numeric", month: "long", year: "numeric" }).format(new Date(value));
 }
@@ -161,7 +163,7 @@ export default async function GroupDetailPage({ params }: Props) {
                 {group.target_amount !== null && <div><dt>Target amount</dt><dd>{Number(group.target_amount).toLocaleString("en", { maximumFractionDigits: 2 }) + " " + group.currency_code}</dd></div>}
                 {group.event_date && <div><dt>Event date</dt><dd>{formatDate(group.event_date)}</dd></div>}
                 {group.deadline && <div><dt>Deadline</dt><dd>{formatDate(group.deadline)}</dd></div>}
-                {group.contribution_frequency && <div><dt>Frequency</dt><dd>{{ one_time: "One-time", weekly: "Weekly", biweekly: "Every two weeks", monthly: "Monthly", quarterly: "Quarterly", annually: "Annually" }[group.contribution_frequency] ?? group.contribution_frequency}</dd></div>}
+                {group.contribution_frequency && <div><dt>Frequency</dt><dd>{frequencyLabels[String(group.contribution_frequency)] ?? String(group.contribution_frequency)}</dd></div>}
                 <div><dt>Base currency</dt><dd>{group.currency_code}</dd></div>
                 <div><dt>You joined</dt><dd>{formatDate(membership.joined_at)}</dd></div>
                 <div><dt>Group created</dt><dd>{formatDate(group.created_at)}</dd></div>
