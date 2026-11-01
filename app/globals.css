@@ -457,3 +457,57 @@
  .ak-category-option{min-height:94px;padding:8px}
  .ak-create-navigation{padding-top:8px}
 }
+
+
+/* Compact field metadata and calm, high-contrast category choices */
+.ak-create-form label .ak-field-meta{
+  display:inline-flex;
+  align-items:center;
+  width:max-content;
+  margin:0 0 0 6px;
+  padding:2px 6px;
+  border:1px solid #e8e2e7;
+  border-radius:999px;
+  background:#f7f5f7;
+  color:#73717a;
+  font-size:8px;
+  font-style:normal;
+  font-weight:650;
+  line-height:1.35;
+  letter-spacing:.15px;
+  text-transform:none;
+  vertical-align:middle;
+}
+.ak-create-form label .ak-field-meta.required{
+  border-color:#f3d5e4;
+  background:#fff2f8;
+  color:#b52d70;
+}
+.ak-category-option,
+.ak-category-option:visited{
+  border-color:#e8e5eb;
+  background:#fff;
+  color:#263044;
+  transition:background .16s ease,border-color .16s ease,box-shadow .16s ease;
+}
+.ak-category-option strong{color:#263044}
+.ak-category-option small{color:#687487}
+.ak-category-option .ak-category-symbol{
+  background:#f5eaf0;
+  color:#b83275;
+}
+.ak-category-option:hover{
+  border-color:#e7a9c8;
+  background:#fffafd;
+}
+.ak-category-option.selected{
+  border-color:#d96a9e;
+  background:#fff5fa;
+  box-shadow:0 0 0 2px #d96a9e18;
+}
+.ak-category-option.selected strong{color:#7d2851}
+.ak-category-option.selected small{color:#665968}
+.ak-category-option.selected .ak-category-symbol{
+  background:#f4dce9;
+  color:#9d2c66;
+}
