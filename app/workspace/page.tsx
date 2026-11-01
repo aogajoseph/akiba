@@ -6,7 +6,8 @@ import { createClient } from "@/lib/supabase/server";
 type Group = {
   id: string;
   name: string;
-  purpose: string;\n  group_type: string;
+  purpose: string;
+  group_type: string;
   description: string | null;
   currency_code: string;
   created_at: string;
