@@ -42,22 +42,28 @@ export default async function WorkspacePage() {
 
   const groupRows = (groups ?? []) as Group[];
   const groupIds = groupRows.map((group) => group.id);
-  const [messageCountResult, activityResult] = groupIds.length
-    ? await Promise.all([
-        supabase.from("akiba_group_messages").select("id", { count: "exact", head: true }).in("group_id", groupIds),
-        supabase.from("akiba_group_activity").select("id,group_id,event_type,summary,occurred_at").in("group_id", groupIds).order("occurred_at", { ascending: false }).limit(5),
-      ])
-    : [{ count: 0, error: null }, { data: [], error: null }];
+  let messageCount: number | null = 0;
+  let messageError = false;
+  let activities: Activity[] = [];
+  let activityError = false;
+
+  if (groupIds.length > 0) {
+    const [messageCountResult, activityResult] = await Promise.all([
+      supabase.from("akiba_group_messages").select("id", { count: "exact", head: true }).in("group_id", groupIds),
+      supabase.from("akiba_group_activity").select("id,group_id,event_type,summary,occurred_at").in("group_id", groupIds).order("occurred_at", { ascending: false }).limit(5),
+    ]);
+    messageCount = messageCountResult.count;
+    messageError = Boolean(messageCountResult.error);
+    activities = (activityResult.data ?? []) as Activity[];
+    activityError = Boolean(activityResult.error);
+  }
 
   const avatarUrl = profile.avatar_path
     ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl
     : null;
   const displayName = profile.display_name;
   const groupNameById = new Map(groupRows.map((group) => [group.id, group.name]));
-  const activities = (activityResult.data ?? []) as Activity[];
-  const activityError = Boolean(activityResult.error);
-  const messageError = Boolean(messageCountResult.error);
-  const firstName = displayName.trim().split(/\s+/)[0];
+   const firstName = displayName.trim().split(/\s+/)[0];
 
   return (
     <main className="ak-dashboard">
@@ -99,7 +105,7 @@ export default async function WorkspacePage() {
 
           <div className="ak-metrics">
             <article className="ak-metric"><span className="ak-metric-icon pink">♧</span><span className="ak-metric-label">My Groups</span><strong>{groupsError ? "—" : groupRows.length}</strong><small>{groupRows.length === 1 ? "1 group to organise" : "Your shared spaces"}</small></article>
-            <article className="ak-metric"><span className="ak-metric-icon violet">▤</span><span className="ak-metric-label">Group Messages</span><strong>{messageError ? "—" : messageCountResult.count ?? 0}</strong><small>{messageError ? "Couldn't load messages" : "Messages across your groups"}</small></article>
+            <article className="ak-metric"><span className="ak-metric-icon violet">▤</span><span className="ak-metric-label">Group Messages</span><strong>{messageError ? "—" : messageCount ?? 0}</strong><small>{messageError ? "Couldn't load messages" : "Messages across your groups"}</small></article>
             <article className="ak-metric"><span className="ak-metric-icon green">↗</span><span className="ak-metric-label">Group Updates</span><strong>{activityError ? "—" : activities.length}</strong><small>{activityError ? "Couldn't load updates" : "Recent recorded updates"}</small></article>
             <article className="ak-metric"><span className="ak-metric-icon amber">✓</span><span className="ak-metric-label">Profile</span><strong className="ak-metric-status">Complete</strong><small>Your account is ready</small></article>
           </div>
