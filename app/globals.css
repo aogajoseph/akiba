@@ -511,3 +511,20 @@
   background:#f4dce9;
   color:#9d2c66;
 }
+
+
+/* Keep field label text and its status badge in one inline row */
+.ak-create-form label .ak-field-heading{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:6px;
+  min-height:16px;
+  width:100%;
+}
+.ak-create-form label .ak-field-heading .ak-field-meta{
+  display:inline-flex;
+  width:max-content;
+  margin:0;
+  flex:0 0 auto;
+}
