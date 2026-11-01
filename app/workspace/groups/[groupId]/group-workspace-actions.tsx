@@ -1,0 +1,47 @@
+"use client";
+
+import { useState } from "react";
+
+export default function GroupWorkspaceActions({ groupName }: { groupName: string }) {
+  const [message, setMessage] = useState("");
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  async function shareGroup() {
+    const url = window.location.href;
+    const title = groupName + " · Akiba";
+    const text = "You're viewing " + groupName + " on Akiba. Only active group members can access this page.";
+    try {
+      if (navigator.share) await navigator.share({ title, text, url });
+      else {
+        await navigator.clipboard.writeText(url);
+        setMessage("Group link copied. Only active members can access it.");
+      }
+    } catch (error) {
+      if (error instanceof Error && error.name !== "AbortError") setMessage("Couldn't share the link. Please try again.");
+    }
+  }
+
+  async function copyLink() {
+    try {
+      await navigator.clipboard.writeText(window.location.href);
+      setMessage("Group link copied. Only active members can access it.");
+      setMenuOpen(false);
+    } catch {
+      setMessage("Couldn't copy the link. Please try again.");
+    }
+  }
+
+  return (
+    <div className="ak-workspace-action-wrap">
+      <button type="button" className="ak-workspace-share" onClick={shareGroup}>↗ <span>Share group</span></button>
+      <div className="ak-workspace-more-wrap">
+        <button type="button" className="ak-workspace-more" aria-expanded={menuOpen} aria-haspopup="menu" onClick={() => setMenuOpen((open) => !open)}>••• <span className="sr-only">More group actions</span></button>
+        {menuOpen && <div className="ak-workspace-more-menu" role="menu">
+          <button type="button" role="menuitem" onClick={copyLink}>Copy group link</button>
+          <a role="menuitem" href="/workspace">Back to dashboard</a>
+        </div>}
+      </div>
+      {message && <div className="ak-workspace-action-message" role="status">{message}<button type="button" aria-label="Dismiss" onClick={() => setMessage("")}>×</button></div>}
+    </div>
+  );
+}
