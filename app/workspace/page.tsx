@@ -97,11 +97,11 @@ export default async function WorkspacePage() {
 
         <div className="ak-dashboard-content">
           <div className="ak-welcome">
-            <div><div className="ak-eyebrow">YOUR DASHBOARD</div><h1>Welcome back, {firstName} <span aria-hidden="true">👋</span></h1><p>Here's what's happening across your groups.</p></div>
+            <div><div className="ak-eyebrow">YOUR DASHBOARD</div><h1>Welcome back, {firstName} <span aria-hidden="true">👋</span></h1><p>Here&apos;s what&apos;s happening across your groups.</p></div>
             <Link href="/workspace/new" className="ak-primary"><span>＋</span> Create New Group</Link>
           </div>
 
-          {groupsError && <div className="ak-alert" role="alert">We couldn't load your groups. Please refresh the page and try again.</div>}
+          {groupsError && <div className="ak-alert" role="alert">We couldn&apos;t load your groups. Please refresh the page and try again.</div>}
 
           <div className="ak-metrics">
             <article className="ak-metric"><span className="ak-metric-icon pink">♧</span><span className="ak-metric-label">My Groups</span><strong>{groupsError ? "—" : groupRows.length}</strong><small>{groupRows.length === 1 ? "1 group to organise" : "Your shared spaces"}</small></article>
@@ -113,8 +113,8 @@ export default async function WorkspacePage() {
           <div className="ak-dashboard-grid">
             <div className="ak-dashboard-primary">
               <section className="ak-panel" id="your-groups">
-                <div className="ak-panel-heading"><div><h2>Your Groups</h2><p>Shared plans and purposes you're part of.</p></div>{groupRows.length > 0 && <span className="ak-panel-count">{groupRows.length} total</span>}</div>
-                {groupsError ? <div className="ak-inline-error">Your groups couldn't be loaded. <a href="/workspace">Try again</a>.</div> : groupRows.length === 0 ? (
+                <div className="ak-panel-heading"><div><h2>Your Groups</h2><p>Shared plans and purposes you&apos;re part of.</p></div>{groupRows.length > 0 && <span className="ak-panel-count">{groupRows.length} total</span>}</div>
+                {groupsError ? <div className="ak-inline-error">Your groups couldn&apos;t be loaded. <a href="/workspace">Try again</a>.</div> : groupRows.length === 0 ? (
                   <div className="ak-empty"><span className="ak-empty-icon">♧</span><h3>Your first group starts here</h3><p>Create a group for a celebration, a family goal, a trip or anything you want to organise together.</p><Link href="/workspace/new" className="ak-primary">＋ Create your first Group</Link></div>
                 ) : (
                   <div className="ak-group-list">{groupRows.slice(0, 5).map((group) => <Link href={"/workspace/groups/" + group.id} className="ak-group-row" key={group.id}><span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span><span className="ak-group-copy"><strong>{group.name}</strong><small>{group.purpose === "event" ? "Event" : "Goal"} · {group.currency_code}{group.description ? " · " + group.description : ""}</small></span><span className="ak-group-date">{shortDate(group.created_at)}</span><span className="ak-chevron">›</span></Link>)}</div>
@@ -125,14 +125,14 @@ export default async function WorkspacePage() {
               <section className="ak-purpose-banner"><div className="ak-banner-logo"><img src="/akiba-logo.png" alt="" /></div><div><h2>Do more, together</h2><p>Create a group, bring people together, and turn your plans into reality.</p></div><Link href="/workspace/new" className="ak-primary">＋ Create Group</Link></section>
 
               <section className="ak-panel ak-activity-panel">
-                <div className="ak-panel-heading"><div><h2>Recent Activity</h2><p>Updates from the groups you're part of.</p></div></div>
+                <div className="ak-panel-heading"><div><h2>Recent Activity</h2><p>Updates from the groups you&apos;re part of.</p></div></div>
                 {activityError ? <div className="ak-inline-error">Recent activity couldn't be loaded.</div> : activities.length === 0 ? <div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">◷</span><h3>No activity yet</h3><p>Group updates will appear here as things happen.</p></div> : <div className="ak-activity-list">{activities.map((item) => <div className="ak-activity-row" key={item.id}><span className="ak-activity-icon">✳</span><div><strong>{groupNameById.get(item.group_id) ?? "Your group"}</strong><p>{item.summary || item.event_type}</p><small>{shortDate(item.occurred_at)}</small></div></div>)}</div>}
               </section>
             </div>
 
             <aside className="ak-dashboard-aside">
               <section className="ak-panel ak-quick-panel"><div className="ak-panel-heading"><h2>Quick Actions</h2></div><Link href="/workspace/new" className="ak-quick-action"><span className="ak-quick-icon pink">♧</span><span><strong>Create New Group</strong><small>Start organising together</small></span><b>›</b></Link><a href="#your-groups" className="ak-quick-action"><span className="ak-quick-icon violet">▤</span><span><strong>Explore My Groups</strong><small>Return to your shared spaces</small></span><b>›</b></a></section>
-              <section className="ak-panel ak-upcoming-panel"><div className="ak-panel-heading"><h2>Upcoming &amp; Pending</h2></div><div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">▦</span><h3>Nothing scheduled yet</h3><p>Events, contribution schedules and approvals will appear here as those features become available.</p></div><div className="ak-feature-note">Scheduling and approvals aren't enabled in this release.</div></section>
+              <section className="ak-panel ak-upcoming-panel"><div className="ak-panel-heading"><h2>Upcoming &amp; Pending</h2></div><div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">▦</span><h3>Nothing scheduled yet</h3><p>Events, contribution schedules and approvals will appear here as those features become available.</p></div><div className="ak-feature-note">Scheduling and approvals aren&apos;t enabled in this release.</div></section>
               <section className="ak-note-card"><span>✳</span><strong>Do more, together</strong><p>Akiba helps people organise shared plans and purposes in one place.</p></section>
             </aside>
           </div>
