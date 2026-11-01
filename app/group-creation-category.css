@@ -47,3 +47,49 @@
   outline: 3px solid #e6a7c5;
   outline-offset: 3px;
 }
+
+
+/* Explicitly override shared form/button theme styles for category cards. */
+.ak-create-form button.ak-category-option:not(.selected),
+.ak-create-form button.ak-category-option:not(.selected):visited {
+  background-color: #f7f8fa !important;
+  color: #273044 !important;
+  border-color: #e6e8ed !important;
+}
+
+.ak-create-form button.ak-category-option:not(.selected) strong {
+  color: #273044 !important;
+}
+
+.ak-create-form button.ak-category-option:not(.selected) small {
+  color: #566176 !important;
+}
+
+.ak-create-form button.ak-category-option:not(.selected) .ak-category-symbol {
+  background-color: #f0edf1 !important;
+  color: #963762 !important;
+}
+
+.ak-create-form button.ak-category-option:not(.selected):hover {
+  background-color: #f1f2f5 !important;
+  border-color: #d9b4c8 !important;
+}
+
+.ak-create-form button.ak-category-option.selected {
+  background-color: #fff9fc !important;
+  color: #273044 !important;
+  border-color: #d96a9e !important;
+}
+
+.ak-create-form button.ak-category-option.selected strong {
+  color: #702b4e !important;
+}
+
+.ak-create-form button.ak-category-option.selected small {
+  color: #535466 !important;
+}
+
+.ak-create-form button.ak-category-option.selected .ak-category-symbol {
+  background-color: #f4e6ed !important;
+  color: #963762 !important;
+}
