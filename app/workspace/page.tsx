@@ -126,7 +126,7 @@ export default async function WorkspacePage() {
 
               <section className="ak-panel ak-activity-panel">
                 <div className="ak-panel-heading"><div><h2>Recent Activity</h2><p>Updates from the groups you&apos;re part of.</p></div></div>
-                {activityError ? <div className="ak-inline-error">Recent activity couldn't be loaded.</div> : activities.length === 0 ? <div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">◷</span><h3>No activity yet</h3><p>Group updates will appear here as things happen.</p></div> : <div className="ak-activity-list">{activities.map((item) => <div className="ak-activity-row" key={item.id}><span className="ak-activity-icon">✳</span><div><strong>{groupNameById.get(item.group_id) ?? "Your group"}</strong><p>{item.summary || item.event_type}</p><small>{shortDate(item.occurred_at)}</small></div></div>)}</div>}
+                {activityError ? <div className="ak-inline-error">Recent activity couldn&apos;t be loaded.</div> : activities.length === 0 ? <div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">◷</span><h3>No activity yet</h3><p>Group updates will appear here as things happen.</p></div> : <div className="ak-activity-list">{activities.map((item) => <div className="ak-activity-row" key={item.id}><span className="ak-activity-icon">✳</span><div><strong>{groupNameById.get(item.group_id) ?? "Your group"}</strong><p>{item.summary || item.event_type}</p><small>{shortDate(item.occurred_at)}</small></div></div>)}</div>}
               </section>
             </div>
 
