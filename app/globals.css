@@ -632,3 +632,58 @@
  .ak-workspace-side-column{grid-template-columns:1fr}
  .ak-workspace-card{padding:16px}
 }
+
+
+/* Group workspace refresh: use the existing Akiba app shell and dashboard rhythm. */
+.ak-workspace-app{min-height:100vh;background:#f8f8fb;color:#24233f}
+.ak-workspace-app .ak-main{min-width:0}
+.ak-workspace-app .ak-workspace-content{max-width:none;padding-top:22px}
+.ak-workspace-top-crumb{display:flex;align-items:center;gap:10px;min-width:0;color:#9694a8;font-size:11px}
+.ak-workspace-top-crumb a{color:#88869b;text-decoration:none}
+.ak-workspace-top-crumb strong{overflow:hidden;color:#393650;font-weight:650;text-overflow:ellipsis;white-space:nowrap}
+.ak-workspace-toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:14px}
+.ak-workspace-back{color:#77768c;text-decoration:none;font-size:11px;font-weight:650}
+.ak-workspace-back:hover{color:#c52a78}
+.ak-workspace-banner{position:relative;isolation:isolate;display:flex;align-items:flex-end;min-height:255px;overflow:hidden;padding:28px 30px;border:1px solid #e9e5ef;border-radius:16px;background:#272044}
+.ak-workspace-banner-image{position:absolute;inset:0;z-index:-2;background-image:url("/akiba-group-cover.svg");background-size:cover;background-position:center 47%;transform:scale(1.01)}
+.ak-workspace-banner-shade{position:absolute;inset:0;z-index:-1;background:linear-gradient(90deg,rgba(21,23,53,.88) 0%,rgba(31,27,61,.62) 54%,rgba(31,27,61,.08) 100%),linear-gradient(0deg,rgba(18,20,47,.45),transparent 65%)}
+.ak-workspace-banner-copy{max-width:760px;color:#fff}
+.ak-workspace-overline{display:inline-flex;align-items:center;margin-bottom:10px;padding:6px 10px;border:1px solid #ffffff45;border-radius:99px;background:#ffffff1b;color:#fff;font-size:9px;font-weight:750;letter-spacing:.7px;text-transform:uppercase}
+.ak-workspace-banner h1{margin:0 0 8px;color:#fff;font-size:clamp(27px,3.2vw,40px);line-height:1.1;letter-spacing:-1.2px;overflow-wrap:anywhere}
+.ak-workspace-banner-copy>p{max-width:650px;margin:0;color:#ffffffdc;font-size:12px;line-height:1.65}
+.ak-workspace-banner-meta{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:15px}
+.ak-workspace-banner-meta span{color:#ffffffd0;font-size:10px}
+.ak-workspace-group-image{position:absolute;right:28px;bottom:26px;display:grid;place-items:center;width:88px;height:88px;overflow:hidden;border:3px solid #ffffffd9;border-radius:20px;background:#fff;box-shadow:0 9px 30px #11152f30}
+.ak-workspace-group-image img{width:100%;height:100%;object-fit:cover}
+.ak-workspace-group-image span{color:#a52d6c;font-size:26px;font-weight:800}
+.ak-workspace-app .ak-group-tabs{margin:14px 0 15px;padding:5px 8px;border-radius:11px;box-shadow:0 2px 10px #29244b08}
+.ak-workspace-app .ak-group-tabs>span{padding:11px 16px;color:#77758e}
+.ak-workspace-app .ak-group-tabs>span.active{background:#fff0f7;color:#c51d70}
+.ak-workspace-app .ak-workspace-summary{gap:12px;margin-bottom:14px}
+.ak-workspace-app .ak-workspace-summary-card{padding:15px 17px;border-radius:11px;box-shadow:0 2px 10px #29244b06}
+.ak-workspace-app .ak-workspace-card{padding:19px;border-radius:12px;box-shadow:0 2px 12px #29244b06}
+.ak-workspace-app .ak-workspace-card-heading{margin-bottom:14px}
+.ak-workspace-app .ak-workspace-card-heading h2,.ak-workspace-app .ak-workspace-invite h2{font-size:16px}
+.ak-workspace-app .ak-progress-empty{border-style:solid;background:#fbf9fc}
+.ak-workspace-app .ak-workspace-invite{background:linear-gradient(145deg,#fff8fc,#fff 78%)}
+.ak-workspace-app .ak-footer{margin-top:22px}
+@media(max-width:900px){
+ .ak-workspace-app .ak-workspace-content{padding:18px 22px 26px}
+ .ak-workspace-banner{min-height:230px}
+}
+@media(max-width:640px){
+ .ak-workspace-app .ak-workspace-content{padding:15px 14px 24px}
+ .ak-workspace-toolbar{align-items:flex-start;flex-direction:column;margin-bottom:12px}
+ .ak-workspace-banner{min-height:230px;padding:20px 17px 22px;border-radius:13px}
+ .ak-workspace-banner-shade{background:linear-gradient(90deg,rgba(21,23,53,.88),rgba(31,27,61,.42)),linear-gradient(0deg,rgba(18,20,47,.58),transparent 75%)}
+ .ak-workspace-banner h1{max-width:calc(100% - 65px);font-size:25px}
+ .ak-workspace-banner-copy>p{max-width:calc(100% - 5px);font-size:10px}
+ .ak-workspace-banner-meta{gap:7px 12px;margin-top:11px}
+ .ak-workspace-banner-meta span{font-size:9px}
+ .ak-workspace-group-image{right:15px;top:16px;bottom:auto;width:54px;height:54px;border-radius:14px}
+ .ak-workspace-app .ak-group-tabs{margin:11px 0 12px}
+ .ak-workspace-app .ak-group-tabs>span{padding:10px 12px;font-size:10px}
+ .ak-workspace-app .ak-workspace-summary{grid-template-columns:1fr;gap:8px}
+ .ak-workspace-app .ak-workspace-summary-card{padding:11px 13px}
+ .ak-workspace-app .ak-workspace-card{padding:15px}
+}
