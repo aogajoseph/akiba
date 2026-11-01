@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
+import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 
 export default function GroupWorkspaceActions({ groupName }: { groupName: string }) {
   const [message, setMessage] = useState("");
@@ -33,9 +35,9 @@ export default function GroupWorkspaceActions({ groupName }: { groupName: string
 
   return (
     <div className="ak-workspace-action-wrap">
-      <button type="button" className="ak-workspace-share" onClick={shareGroup}>↗ <span>Share group</span></button>
+      <button type="button" className="ak-workspace-share" onClick={shareGroup}><ShareOutlinedIcon fontSize="small" /> <span>Share</span></button>
       <div className="ak-workspace-more-wrap">
-        <button type="button" className="ak-workspace-more" aria-expanded={menuOpen} aria-haspopup="menu" onClick={() => setMenuOpen((open) => !open)}>••• <span className="sr-only">More group actions</span></button>
+        <button type="button" className="ak-workspace-more" aria-expanded={menuOpen} aria-haspopup="menu" onClick={() => setMenuOpen((open) => !open)}><MoreHorizIcon fontSize="small" /> <span className="sr-only">More group actions</span></button>
         {menuOpen && <div className="ak-workspace-more-menu" role="menu">
           <button type="button" role="menuitem" onClick={copyLink}>Copy group link</button>
           <a role="menuitem" href="/workspace">Back to dashboard</a>
