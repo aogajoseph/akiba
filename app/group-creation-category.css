@@ -1,0 +1,95 @@
+/* Calm, neutral category cards with readable descriptions */
+.ak-category-option,
+.ak-category-option:visited {
+  background: #f7f8fa;
+  border-color: #e6e8ed;
+  color: #273044;
+}
+
+.ak-category-option strong {
+  color: #273044;
+}
+
+.ak-category-option small {
+  color: #566176;
+}
+
+.ak-category-option .ak-category-symbol {
+  background: #f0edf1;
+  color: #a33c70;
+}
+
+.ak-category-option:hover {
+  background: #f3f4f7;
+  border-color: #d9b4c8;
+}
+
+.ak-category-option.selected {
+  background: #fff9fc;
+  border-color: #d96a9e;
+  box-shadow: 0 0 0 1px #d96a9e20;
+}
+
+.ak-category-option.selected strong {
+  color: #702b4e;
+}
+
+.ak-category-option.selected small {
+  color: #535466;
+}
+
+.ak-category-option.selected .ak-category-symbol {
+  background: #f4e6ed;
+  color: #963762;
+}
+
+.ak-category-option:focus-visible {
+  outline: 3px solid #e6a7c5;
+  outline-offset: 3px;
+}
+
+
+/* Explicitly override shared form/button theme styles for category cards. */
+.ak-create-form button.ak-category-option:not(.selected),
+.ak-create-form button.ak-category-option:not(.selected):visited {
+  background-color: #f7f8fa !important;
+  color: #273044 !important;
+  border-color: #e6e8ed !important;
+}
+
+.ak-create-form button.ak-category-option:not(.selected) strong {
+  color: #273044 !important;
+}
+
+.ak-create-form button.ak-category-option:not(.selected) small {
+  color: #566176 !important;
+}
+
+.ak-create-form button.ak-category-option:not(.selected) .ak-category-symbol {
+  background-color: #f0edf1 !important;
+  color: #963762 !important;
+}
+
+.ak-create-form button.ak-category-option:not(.selected):hover {
+  background-color: #f1f2f5 !important;
+  border-color: #d9b4c8 !important;
+}
+
+.ak-create-form button.ak-category-option.selected {
+  background-color: #fff9fc !important;
+  color: #273044 !important;
+  border-color: #d96a9e !important;
+}
+
+.ak-create-form button.ak-category-option.selected strong {
+  color: #702b4e !important;
+}
+
+.ak-create-form button.ak-category-option.selected small {
+  color: #535466 !important;
+}
+
+.ak-create-form button.ak-category-option.selected .ak-category-symbol {
+  background-color: #f4e6ed !important;
+  color: #963762 !important;
+}
