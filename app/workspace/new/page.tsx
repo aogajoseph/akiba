@@ -17,7 +17,6 @@ export default async function NewGroupPage({ searchParams }: Props) {
     <main className="auth-shell ak-create-shell">
       <section className="auth-card auth-card-wide ak-create-card">
         <Link href="/workspace" className="back-link">← Back to Groups</Link>
-        <div className="workspace-eyebrow">A SHARED PURPOSE</div>
         <h1>Create a Group</h1>
         <p className="auth-description">Choose how you want to bring people together. Akiba will shape your group around its purpose.</p>
         <GroupCreationForm error={params.error} />
