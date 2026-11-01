@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { createGroup } from "@/app/workspace/actions";
 
 const catalogue = {
@@ -65,6 +65,8 @@ const steps = [
 
 export function GroupCreationForm({ error }: { error?: string }) {
   const [step, setStep] = useState(0);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const submissionLocked = useRef(false);
   const [category, setCategory] = useState<Category>("event");
   const [groupType, setGroupType] = useState<string>("birthday");
   const [groupName, setGroupName] = useState("");
@@ -104,7 +106,21 @@ export function GroupCreationForm({ error }: { error?: string }) {
   }
 
   return (
-    <form action={createGroup} noValidate className="auth-form ak-create-form">
+    <form
+      action={createGroup}
+      noValidate
+      className="auth-form ak-create-form"
+      onSubmit={(event) => {
+        // The wizard shares one form across all steps. Never let Enter or an
+        // implicit submit create a group before the user reaches Review.
+        if (step !== steps.length - 1 || submissionLocked.current) {
+          event.preventDefault();
+          return;
+        }
+        submissionLocked.current = true;
+        setIsSubmitting(true);
+      }}
+    >
       {error && <p className="auth-error" role="alert">{error}</p>}
 
       <div className="ak-create-progress" aria-label={`Step ${step + 1} of 4`}>
@@ -170,7 +186,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
         {step > 0 ? <button className="ak-create-back" type="button" onClick={() => setStep((current) => current - 1)}>← Back</button> : <span />}
         {step < steps.length - 1
           ? <button className="workspace-primary" type="button" onClick={continueToNextStep}>Continue <span aria-hidden="true">→</span></button>
-          : <button className="workspace-primary" type="submit">Create Group <span aria-hidden="true">→</span></button>}
+          : <button className="workspace-primary" type="submit" disabled={isSubmitting}>{isSubmitting ? "Creating Group…" : "Create Group"} <span aria-hidden="true">→</span></button>}
       </div>
     </form>
   );
