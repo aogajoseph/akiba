@@ -360,3 +360,25 @@
 .ak-create-footnote{margin:0;color:#929d96;font-size:10px;line-height:1.7;text-align:center}
 .ak-group-hero-image{width:118px;height:118px;flex:0 0 118px;border:4px solid #ffffffb8;border-radius:24px;object-fit:cover;box-shadow:0 8px 25px #253c7a12}
 @media(max-width:640px){.ak-create-shell{padding:16px 10px}.ak-create-card{padding:23px 18px}.ak-category-options{grid-template-columns:1fr}.ak-category-option{min-height:0;display:grid;grid-template-columns:34px 1fr;column-gap:10px;align-items:center}.ak-category-option .ak-category-symbol{grid-row:span 2}.ak-category-option small{grid-column:2}.ak-group-hero-image{width:60px;height:60px;flex-basis:60px;border-radius:15px}}
+
+/* Four-step group creation */
+.ak-create-progress{display:grid;gap:9px;padding:19px 0 21px;border-bottom:1px solid #edf1ee}
+.ak-create-progress-top{display:flex;align-items:center;justify-content:space-between;color:#89958d;font-size:9px;font-weight:700;letter-spacing:.7px}
+.ak-create-progress-top strong{color:#d92786;font-size:11px;letter-spacing:0}
+.ak-create-progress-track{height:5px;overflow:hidden;border-radius:99px;background:#f0e9ed}
+.ak-create-progress-track span{display:block;height:100%;border-radius:99px;background:#e52b89;transition:width .2s ease}
+.ak-create-step-labels{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.ak-create-step-labels span{color:#a0aaa3;font-size:10px;font-weight:600}
+.ak-create-step-labels span.active{color:#34483b}
+.ak-create-progress>p{margin:0;color:#89958d;font-size:11px}
+.ak-create-form [hidden]{display:none!important}
+.ak-create-navigation{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:20px}
+.ak-create-navigation .workspace-primary{min-width:150px;margin:0}
+.ak-create-back{padding:11px 15px;border:1px solid #e5ebe6;border-radius:9px;background:#fff;color:#53645a;font-size:12px;font-weight:700;cursor:pointer}
+.ak-create-review{display:grid;gap:0;border:1px solid #e9eee9;border-radius:11px;overflow:hidden}
+.ak-create-review>div{display:grid;gap:5px;padding:12px 14px;border-bottom:1px solid #edf1ee}
+.ak-create-review>div:last-child{border-bottom:0}
+.ak-create-review small{color:#8c9890;font-size:9px;font-weight:700;letter-spacing:.6px}
+.ak-create-review strong{color:#263b30;font-size:12px}
+.ak-create-review span{color:#64736a;font-size:11px;line-height:1.5}
+@media(max-width:640px){.ak-create-progress{padding:15px 0 17px}.ak-create-step-labels span{font-size:9px}.ak-create-navigation .workspace-primary{min-width:135px}}
