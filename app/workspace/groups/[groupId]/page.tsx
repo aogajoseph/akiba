@@ -31,7 +31,7 @@ export default async function GroupDetailPage({ params }: Props) {
 
   const { data: group, error: groupError } = await supabase
     .from("akiba_groups")
-    .select("id,name,purpose,description,currency_code,created_at")
+    .select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,deadline,contribution_frequency,group_image_path,created_at")
     .eq("id", groupId)
     .maybeSingle();
 
@@ -70,7 +70,10 @@ export default async function GroupDetailPage({ params }: Props) {
     }));
   }
 
-  const purposeLabel = group.purpose === "event" ? "Event group" : "Goal group";
+  const purposeLabel = group.purpose === "event" ? "Event group" : group.purpose === "chama" ? "Chama group" : "Goal group";
+  const groupTypeLabels: Record<string, string> = { birthday: "Birthday", wedding: "Wedding", graduation: "Graduation", funeral_bereavement: "Funeral & Bereavement", party_celebration: "Party & Celebration", trip_vacation: "Trip & Vacation", community_event: "Community Event", fundraiser: "Fundraiser", other_event: "Other Event", rent_housing: "Rent & Housing", education: "Education", business_investment: "Business & Investment", land_property: "Land & Property", vehicle_purchase: "Vehicle Purchase", family_support: "Family Support", shared_savings: "Shared Savings", community_project: "Community Project", other_goal: "Other Goal", rotating_savings: "Rotating Savings (Merry-Go-Round)", table_banking: "Table Banking", accumulating_savings: "Accumulating Savings", investment_chama: "Investment Chama", other_chama: "Other Chama" };
+  const groupTypeLabel = groupTypeLabels[group.group_type] ?? "Group";
+  const groupImageUrl = group.group_image_path ? supabase.storage.from("group-images").getPublicUrl(group.group_image_path).data.publicUrl : null;
   const currentMember = members.find((member) => member.user_id === user.id);
   const avatarUrl = (path: string | null | undefined) =>
     path ? supabase.storage.from("avatars").getPublicUrl(path).data.publicUrl : null;
@@ -96,10 +99,11 @@ export default async function GroupDetailPage({ params }: Props) {
             <p>{group.description?.trim() || "A shared space for people to come together and make things happen."}</p>
             <div className="ak-group-meta">
               <span><b>◎</b>{group.currency_code} base currency</span>
+              <span><b>✳</b>{groupTypeLabel}</span>
               <span><b>◷</b>Created {formatDate(group.created_at)}</span>
             </div>
           </div>
-          <div className="ak-group-hero-mark" aria-hidden="true">{group.purpose === "event" ? "▦" : "◎"}</div>
+          {groupImageUrl ? <img className="ak-group-hero-image" src={groupImageUrl} alt="" /> : <div className="ak-group-hero-mark" aria-hidden="true">{group.purpose === "event" ? "▦" : group.purpose === "chama" ? "↻" : "◎"}</div>}
         </section>
 
         <section className="ak-group-overview-grid" aria-label="Group overview">
@@ -152,7 +156,12 @@ export default async function GroupDetailPage({ params }: Props) {
             <section className="ak-group-panel">
               <div className="ak-group-panel-heading"><div><h2>About this group</h2><p>Group details at a glance.</p></div></div>
               <dl className="ak-group-details">
-                <div><dt>Purpose</dt><dd>{group.purpose === "event" ? "Event" : "Goal"}</dd></div>
+                <div><dt>Category</dt><dd>{group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal"}</dd></div>
+                <div><dt>Group type</dt><dd>{groupTypeLabel}</dd></div>
+                {group.target_amount !== null && <div><dt>Target amount</dt><dd>{new Intl.NumberFormat("en", { style: "currency", currency: group.currency_code, maximumFractionDigits: 2 }).format(Number(group.target_amount))}</dd></div>}
+                {group.event_date && <div><dt>Event date</dt><dd>{formatDate(group.event_date)}</dd></div>}
+                {group.deadline && <div><dt>Deadline</dt><dd>{formatDate(group.deadline)}</dd></div>}
+                {group.contribution_frequency && <div><dt>Frequency</dt><dd>{{ one_time: "One-time", weekly: "Weekly", biweekly: "Every two weeks", monthly: "Monthly", quarterly: "Quarterly", annually: "Annually" }[group.contribution_frequency] ?? group.contribution_frequency}</dd></div>}
                 <div><dt>Base currency</dt><dd>{group.currency_code}</dd></div>
                 <div><dt>You joined</dt><dd>{formatDate(membership.joined_at)}</dd></div>
                 <div><dt>Group created</dt><dd>{formatDate(group.created_at)}</dd></div>
