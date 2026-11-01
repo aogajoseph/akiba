@@ -3,6 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
 import GroupWorkspaceActions from "./group-workspace-actions";
+import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
+import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
+import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
+import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
+import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 
 type Props = { params: Promise<{ groupId: string }> };
 type Member = {
@@ -110,35 +115,36 @@ export default async function GroupDetailPage({ params }: Props) {
         </header>
 
         <div className="ak-dashboard-content ak-workspace-content">
-          <div className="ak-workspace-toolbar">
-            <Link href="/workspace" className="ak-workspace-back">← All groups</Link>
-            <GroupWorkspaceActions groupName={group.name} />
-          </div>
-
           <section className="ak-workspace-banner">
             <div className="ak-workspace-banner-image" aria-hidden="true" />
             <div className="ak-workspace-banner-shade" />
-            <div className="ak-workspace-banner-copy">
-              <span className="ak-workspace-overline">{purpose} · {typeLabel}</span>
-              <h1>{group.name}</h1>
-              <p>{group.description?.trim() || "A shared space for people to come together and make things happen."}</p>
-              <div className="ak-workspace-banner-meta">
-                <span>{group.currency_code} base currency</span>
-                {dateMeta && <span>{dateMeta.label}: {dateMeta.value}</span>}
-                {group.contribution_frequency && <span>{frequencyLabels[String(group.contribution_frequency)] ?? String(group.contribution_frequency)} contributions</span>}
+            <div className="ak-workspace-hero-content">
+              <div className="ak-workspace-group-image">
+                {groupImageUrl ? <img src={groupImageUrl} alt={group.name + " group"} /> : <span>{initials(group.name)}</span>}
+              </div>
+              <div className="ak-workspace-banner-copy">
+                <h1>{group.name}</h1>
+                <p>{group.description?.trim() || "A shared space for people to come together and make things happen."}</p>
+                <div className="ak-workspace-banner-meta">
+                  <span>{purpose}</span>
+                  <span>{typeLabel}</span>
+                  {dateMeta && <span>{dateMeta.label}: {dateMeta.value}</span>}
+                  {group.deadline && dateMeta?.label !== "Deadline" && <span>Deadline: {formatDate(group.deadline)}</span>}
+                  {group.contribution_frequency && <span>{frequencyLabels[String(group.contribution_frequency)] ?? String(group.contribution_frequency)}</span>}
+                  <span>{group.currency_code}</span>
+                  {target !== null && <span>Target: {money(target, group.currency_code)}</span>}
+                </div>
               </div>
             </div>
-            <div className="ak-workspace-group-image">
-              {groupImageUrl ? <img src={groupImageUrl} alt={group.name + " group"} /> : <span>{initials(group.name)}</span>}
-            </div>
+            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} /></div>
           </section>
 
           <nav className="ak-group-tabs" aria-label="Group workspace">
-            <span className="active" aria-current="page">Overview</span>
-            <span aria-disabled="true" title="Financial tools are being developed">Finances</span>
-            <span aria-disabled="true" title="Member management improvements are coming soon">Members</span>
-            <span aria-disabled="true" title="Group chat is coming soon">Chat</span>
-            <span aria-disabled="true" title="Group settings are coming soon">Settings</span>
+            <span className="active" aria-current="page"><DashboardOutlinedIcon />Overview</span>
+            <span aria-disabled="true" title="Financial tools are being developed"><AccountBalanceWalletOutlinedIcon />Finances</span>
+            <span aria-disabled="true" title="Member management improvements are coming soon"><GroupsOutlinedIcon />Members</span>
+            <span aria-disabled="true" title="Group chat is coming soon"><ChatBubbleOutlineOutlinedIcon />Chat</span>
+            <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
           </nav>
 
           <section className="ak-workspace-summary" aria-label="Group summary">
