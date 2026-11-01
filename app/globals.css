@@ -528,3 +528,9 @@
   margin:0;
   flex:0 0 auto;
 }
+
+
+/* Add a small visual pause before each field label without increasing form height significantly. */
+.ak-create-form > section:not([hidden]) > label {
+  padding-top: 3px;
+}
