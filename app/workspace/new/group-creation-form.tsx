@@ -119,9 +119,9 @@ export function GroupCreationForm({ error }: { error?: string }) {
 
       <section id="ak-create-step-0" className="ak-create-section" hidden={step !== 0}>
         <div className="ak-create-section-heading"><span>01</span><div><h2>Give your group an identity</h2><p>Choose a name and tell people what this group is about.</p></div></div>
-        <label>Group name <em className="ak-field-meta required">Required</em><input name="name" value={groupName} onChange={(event) => setGroupName(event.target.value)} maxLength={80} required placeholder="e.g. John's 30th Birthday" /></label>
-        <label>About this group <small className="ak-field-meta">Optional</small><textarea name="description" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} rows={3} placeholder="Tell members what this group is about..." /></label>
-        <label>Group image <small className="ak-field-meta">Optional · JPG, PNG or WebP · up to 5 MB</small><input name="group_image" type="file" accept="image/png,image/jpeg,image/webp" /></label>
+        <label><span className="ak-field-heading">Group name <em className="ak-field-meta required">Required</em></span><input name="name" value={groupName} onChange={(event) => setGroupName(event.target.value)} maxLength={80} required placeholder="e.g. John's 30th Birthday" /></label>
+        <label><span className="ak-field-heading">About this group <small className="ak-field-meta">Optional</small></span><textarea name="description" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} rows={3} placeholder="Tell members what this group is about..." /></label>
+        <label><span className="ak-field-heading">Group image <small className="ak-field-meta">Optional</small></span><small>JPG, PNG or WebP · up to 5 MB</small><input name="group_image" type="file" accept="image/png,image/jpeg,image/webp" /></label>
       </section>
 
       <section id="ak-create-step-1" className="ak-create-section" hidden={step !== 1}>
@@ -136,18 +136,18 @@ export function GroupCreationForm({ error }: { error?: string }) {
             </button>
           ))}
         </div>
-        <label>Group type <em className="ak-field-meta required">Required</em><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); setFrequency(""); }} required>
+        <label><span className="ak-field-heading">Group type <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); setFrequency(""); }} required>
           {types.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
         </select><small>{selectedType?.[2]}</small></label>
       </section>
 
       <section id="ak-create-step-2" className="ak-create-section" hidden={step !== 2}>
         <div className="ak-create-section-heading"><span>03</span><div><h2>Contributions & timing</h2><p>Only add the details that make sense for this group. You can update optional details later.</p></div></div>
-        <label>Group currency <em className="ak-field-meta required">Required</em><input name="currency_code" value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} minLength={3} maxLength={3} pattern="[A-Za-z]{3}" required placeholder="e.g. KES" autoCapitalize="characters" /><small>Three-letter currency code, such as KES, USD or GBP.</small></label>
-        <label>Target amount <small className="ak-field-meta">Optional</small><input name="target_amount" type="number" min="0.01" step="0.01" value={targetAmount} onChange={(event) => setTargetAmount(event.target.value)} placeholder="e.g. 100000" /><small>A shared target, not an amount each member is automatically required to pay.</small></label>
-        {isEvent && <label>Event date <small className="ak-field-meta">Optional</small><input name="event_date" type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>}
-        <label>{isEvent ? "Contribution deadline" : "Goal deadline"} <small className="ak-field-meta">Optional</small><input name="deadline" type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} /><small>{isEvent ? "When you would ideally like contributions completed. This can differ from the event date." : "When you hope to achieve this goal."}</small></label>
-        {showFrequency && <label>Contribution frequency {frequencyRequired && <em className="ak-field-meta required">Required</em>}<select name="contribution_frequency" value={frequency} onChange={(event) => setFrequency(event.target.value)} required={frequencyRequired}><option value="">Choose a frequency</option>{frequencies.filter(([value]) => !frequencyRequired || value !== "one_time").map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><small>{isChama ? "How often members are expected to contribute under the group's arrangement." : "If contributions will be made regularly, select the expected interval."}</small></label>}
+        <label><span className="ak-field-heading">Group currency <em className="ak-field-meta required">Required</em></span><input name="currency_code" value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} minLength={3} maxLength={3} pattern="[A-Za-z]{3}" required placeholder="e.g. KES" autoCapitalize="characters" /><small>Three-letter currency code, such as KES, USD or GBP.</small></label>
+        <label><span className="ak-field-heading">Target amount <small className="ak-field-meta">Optional</small></span><input name="target_amount" type="number" min="0.01" step="0.01" value={targetAmount} onChange={(event) => setTargetAmount(event.target.value)} placeholder="e.g. 100000" /><small>A shared target, not an amount each member is automatically required to pay.</small></label>
+        {isEvent && <label><span className="ak-field-heading">Event date <small className="ak-field-meta">Optional</small></span><input name="event_date" type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>}
+        <label><span className="ak-field-heading">{isEvent ? "Contribution deadline" : "Goal deadline"} <small className="ak-field-meta">Optional</small></span><input name="deadline" type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} /><small>{isEvent ? "When you would ideally like contributions completed. This can differ from the event date." : "When you hope to achieve this goal."}</small></label>
+        {showFrequency && <label><span className="ak-field-heading">Contribution frequency {frequencyRequired && <em className="ak-field-meta required">Required</em>}</span><select name="contribution_frequency" value={frequency} onChange={(event) => setFrequency(event.target.value)} required={frequencyRequired}><option value="">Choose a frequency</option>{frequencies.filter(([value]) => !frequencyRequired || value !== "one_time").map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><small>{isChama ? "How often members are expected to contribute under the group's arrangement." : "If contributions will be made regularly, select the expected interval."}</small></label>}
       </section>
 
       <section id="ak-create-step-3" className="ak-create-section ak-create-access" hidden={step !== 3}>
