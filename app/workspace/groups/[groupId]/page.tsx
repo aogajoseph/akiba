@@ -158,7 +158,7 @@ export default async function GroupDetailPage({ params }: Props) {
               <dl className="ak-group-details">
                 <div><dt>Category</dt><dd>{group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal"}</dd></div>
                 <div><dt>Group type</dt><dd>{groupTypeLabel}</dd></div>
-                {group.target_amount !== null && <div><dt>Target amount</dt><dd>{new Intl.NumberFormat("en", { style: "currency", currency: group.currency_code, maximumFractionDigits: 2 }).format(Number(group.target_amount))}</dd></div>}
+                {group.target_amount !== null && <div><dt>Target amount</dt><dd>{Number(group.target_amount).toLocaleString("en", { maximumFractionDigits: 2 }) + " " + group.currency_code}</dd></div>}
                 {group.event_date && <div><dt>Event date</dt><dd>{formatDate(group.event_date)}</dd></div>}
                 {group.deadline && <div><dt>Deadline</dt><dd>{formatDate(group.deadline)}</dd></div>}
                 {group.contribution_frequency && <div><dt>Frequency</dt><dd>{{ one_time: "One-time", weekly: "Weekly", biweekly: "Every two weeks", monthly: "Monthly", quarterly: "Quarterly", annually: "Annually" }[group.contribution_frequency] ?? group.contribution_frequency}</dd></div>}
