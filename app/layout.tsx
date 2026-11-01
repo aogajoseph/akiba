@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
 import "./globals.css";
+import "./group-creation-category.css";
 
 export const metadata: Metadata = {
   title: "Akiba — Groups, together",
