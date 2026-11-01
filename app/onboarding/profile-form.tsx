@@ -22,7 +22,12 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
   const [username, setUsername] = useState(initial.username);
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [bio, setBio] = useState(initial.bio);
-  const [phoneNumber, setPhoneNumber] = useState(initial.phoneNumber);
+  const [phoneNumber, setPhoneNumber] = useState(() => {
+    const stored = initial.phoneNumber.trim();
+    return stored.startsWith("+254")
+      ? stored.slice(4).replace(/\D/g, "").replace(/^0/, "")
+      : stored.replace(/\D/g, "").replace(/^0/, "");
+  });
   const [avatarPath, setAvatarPath] = useState(initial.avatarPath ?? "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
@@ -105,9 +110,10 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
       setError("Choose a valid, available username before continuing.");
       return;
     }
-    const normalizedPhone = phoneNumber.trim().replace(/[\s()-]/g, "");
-    if (normalizedPhone && !/^\+[1-9][0-9]{7,14}$/.test(normalizedPhone)) {
-      setError("Enter an international phone number, including + and the country code.");
+    const localPhone = phoneNumber.replace(/\D/g, "").replace(/^0/, "");
+    const normalizedPhone = localPhone ? "+254" + localPhone : "";
+    if (localPhone && !/^[17][0-9]{8}$/.test(localPhone)) {
+      setError("Enter a valid Kenyan phone number.");
       return;
     }
 
@@ -159,8 +165,7 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
           {avatarUrl ? <img src={avatarUrl} alt="Your profile preview" /> : <span>{initials}</span>}
         </div>
         <div className="profile-avatar-copy">
-          <strong>Your profile picture</strong>
-          <p>Help friends recognise you. JPG, PNG or WebP, up to 3 MB.</p>
+          <strong>Photo <span className="profile-optional">(Optional)</span></strong>
           <div className="profile-avatar-actions">
             <button type="button" className="profile-secondary-button" onClick={() => fileInput.current?.click()}>
               {avatarPath || selectedFile ? "Change picture" : "Upload picture"}
@@ -180,36 +185,41 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
       </section>
 
       <div className="profile-field">
-        <label htmlFor="display-name">Display name <span>Required</span></label>
-        <input id="display-name" name="display_name" value={displayName} onChange={(event) => setDisplayName(event.target.value.slice(0, 60))} maxLength={60} autoComplete="name" placeholder="What should people call you?" required />
-        <small>This is the name people will see across Akiba.</small>
+        <label htmlFor="display-name">Display name</label>
+        <input id="display-name" name="display_name" value={displayName} onChange={(event) => setDisplayName(event.target.value.slice(0, 60))} maxLength={60} autoComplete="name" placeholder="Your name" required />
       </div>
 
       <div className="profile-field">
-        <label htmlFor="profile-username">Unique username <span>Required</span></label>
-        <div className="profile-username-input"><span>@</span><input id="profile-username" name="username" value={username} onChange={(event) => setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20))} minLength={3} maxLength={20} autoComplete="username" required /></div>
+        <label htmlFor="profile-username">Username</label>
+        <div className="profile-username-input"><span>@</span><input id="profile-username" name="username" value={username} onChange={(event) => setUsername(event.target.value.toLowerCase().replace(/[^a-z0-9_]/g, "").slice(0, 20))} minLength={3} maxLength={20} autoComplete="username" placeholder="Choose a username" required /></div>
         <small className={usernameValid && currentAvailability ? (currentAvailability.available ? "profile-field-success" : "profile-field-error") : ""} role="status" aria-live="polite">
           {!usernameValid ? "3–20 characters. Start with a letter; use letters, numbers or underscores." : currentAvailability?.message ?? "Checking username availability…"}
         </small>
       </div>
 
       <div className="profile-field">
-        <label htmlFor="profile-bio">About you <span>Optional</span></label>
-        <textarea id="profile-bio" name="bio" value={bio} onChange={(event) => setBio(event.target.value.slice(0, 160))} maxLength={160} rows={3} placeholder="A little about yourself…" />
-        <small className="profile-character-count">{bio.length}/160</small>
-      </div>
-
-      <div className="profile-field">
-        <label htmlFor="profile-phone">Phone number <span>Optional</span></label>
-        <input id="profile-phone" name="phone_number" type="tel" inputMode="tel" autoComplete="tel" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value.slice(0, 30))} placeholder="+254 7XX XXX XXX" />
-        <small>Include your country code. Your number is private and is not yet used for sign-in or verification.</small>
+        <label htmlFor="profile-phone">Phone <span className="profile-optional">(Optional)</span></label>
+        <div className="profile-phone-input">
+          <button type="button" className="profile-country-code" aria-label="Country code: Kenya, plus 254" title="Kenya">
+            <svg className="profile-kenya-flag" width="24" height="16" viewBox="0 0 30 20" role="img" aria-label="Kenyan flag">
+              <rect width="30" height="20" rx="1.5" fill="#fff" />
+              <rect x="1" y="1" width="28" height="5.4" fill="#111" />
+              <rect x="1" y="7.3" width="28" height="5.4" fill="#bb1728" />
+              <rect x="1" y="14" width="28" height="5" fill="#087a42" />
+              <path d="M1 6.1h28M1 13.3h28" stroke="#fff" strokeWidth="1.2" />
+              <path d="M15 3.5c-2.7 3.2-3.8 6.3 0 13 3.8-6.7 2.7-9.8 0-13Z" fill="#bb1728" stroke="#fff" strokeWidth=".8" />
+              <path d="M15 4.2c-1.8 3-2.2 6.1 0 11.2 2.2-5.1 1.8-8.2 0-11.2Z" fill="#111" />
+            </svg>
+            <span>+254</span>
+          </button>
+          <input id="profile-phone" name="phone_number" type="tel" inputMode="numeric" autoComplete="tel-national" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="7XX XXX XXX" />
+        </div>
       </div>
 
       {error && <p className="profile-form-error" role="alert">{error}</p>}
       <div className="profile-form-footer">
-        <p>You can add more details later in Profile Settings.</p>
         <button type="submit" className="profile-submit-button" disabled={pending || uploading || !usernameAvailable}>
-          {uploading ? "Uploading picture…" : pending ? "Saving profile…" : "Complete profile"}
+          {uploading ? "Uploading…" : pending ? "Saving…" : "Continue"}
           {!pending && !uploading && <span aria-hidden="true">→</span>}
         </button>
       </div>
