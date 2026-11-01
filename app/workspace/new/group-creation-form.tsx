@@ -104,7 +104,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
   }
 
   return (
-    <form action={createGroup} className="auth-form ak-create-form">
+    <form action={createGroup} noValidate className="auth-form ak-create-form">
       {error && <p className="auth-error" role="alert">{error}</p>}
 
       <div className="ak-create-progress" aria-label={`Step ${step + 1} of 4`}>
@@ -163,7 +163,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
           {frequency && <div><small>CONTRIBUTION FREQUENCY</small><strong>{frequencies.find(([value]) => value === frequency)?.[1] ?? frequency}</strong></div>}
         </div>
         <div className="ak-private-note"><span>♙</span><div><strong>Private group</strong><small>Only people you invite will be able to access this group. You can invite members after creating it.</small></div></div>
-        <p className="ak-create-footnote">You’ll become the group administrator. Creating a group does not move or hold money. Contributions, payments and invitations are separate features.</p>
+        <p className="ak-create-footnote">You’ll become the group administrator. Creating a group alone does not move or hold money. Contributions, payments and invitations happen separately.</p>
       </section>
 
       <div className="ak-create-navigation">
