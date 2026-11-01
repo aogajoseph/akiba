@@ -201,7 +201,7 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
         <label htmlFor="profile-phone">Phone <span className="profile-optional">(Optional)</span></label>
         <div className="profile-phone-input">
           <button type="button" className="profile-country-code" aria-label="Country code: Kenya, plus 254" title="Kenya">
-            <svg className="profile-kenya-flag" viewBox="0 0 30 20" role="img" aria-label="Kenyan flag">
+            <svg className="profile-kenya-flag" width="24" height="16" viewBox="0 0 30 20" role="img" aria-label="Kenyan flag">
               <rect width="30" height="20" rx="1.5" fill="#fff" />
               <rect x="1" y="1" width="28" height="5.4" fill="#111" />
               <rect x="1" y="7.3" width="28" height="5.4" fill="#bb1728" />
