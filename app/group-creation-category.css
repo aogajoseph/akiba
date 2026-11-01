@@ -1,0 +1,49 @@
+/* Calm, neutral category cards with readable descriptions */
+.ak-category-option,
+.ak-category-option:visited {
+  background: #f7f8fa;
+  border-color: #e6e8ed;
+  color: #273044;
+}
+
+.ak-category-option strong {
+  color: #273044;
+}
+
+.ak-category-option small {
+  color: #566176;
+}
+
+.ak-category-option .ak-category-symbol {
+  background: #f0edf1;
+  color: #a33c70;
+}
+
+.ak-category-option:hover {
+  background: #f3f4f7;
+  border-color: #d9b4c8;
+}
+
+.ak-category-option.selected {
+  background: #fff9fc;
+  border-color: #d96a9e;
+  box-shadow: 0 0 0 1px #d96a9e20;
+}
+
+.ak-category-option.selected strong {
+  color: #702b4e;
+}
+
+.ak-category-option.selected small {
+  color: #535466;
+}
+
+.ak-category-option.selected .ak-category-symbol {
+  background: #f4e6ed;
+  color: #963762;
+}
+
+.ak-category-option:focus-visible {
+  outline: 3px solid #e6a7c5;
+  outline-offset: 3px;
+}
