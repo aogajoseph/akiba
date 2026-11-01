@@ -6,7 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 type Group = {
   id: string;
   name: string;
-  purpose: string;
+  purpose: string;\n  group_type: string;
   description: string | null;
   currency_code: string;
   created_at: string;
@@ -35,7 +35,7 @@ export default async function WorkspacePage() {
 
   const [{ data: profile, error: profileError }, { data: groups, error: groupsError }] = await Promise.all([
     supabase.from("akiba_profiles").select("username, display_name, avatar_path").eq("user_id", user.id).maybeSingle(),
-    supabase.from("akiba_groups").select("id,name,purpose,description,currency_code,created_at").order("created_at", { ascending: false }),
+    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at").order("created_at", { ascending: false }),
   ]);
 
   if (profileError || !profile?.display_name?.trim()) redirect("/onboarding");
@@ -117,7 +117,7 @@ export default async function WorkspacePage() {
                 {groupsError ? <div className="ak-inline-error">Your groups couldn&apos;t be loaded. <a href="/workspace">Try again</a>.</div> : groupRows.length === 0 ? (
                   <div className="ak-empty"><span className="ak-empty-icon">♧</span><h3>Your first group starts here</h3><p>Create a group for a celebration, a family goal, a trip or anything you want to organise together.</p><Link href="/workspace/new" className="ak-primary">＋ Create your first Group</Link></div>
                 ) : (
-                  <div className="ak-group-list">{groupRows.slice(0, 5).map((group) => <Link href={"/workspace/groups/" + group.id} className="ak-group-row" key={group.id}><span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span><span className="ak-group-copy"><strong>{group.name}</strong><small>{group.purpose === "event" ? "Event" : "Goal"} · {group.currency_code}{group.description ? " · " + group.description : ""}</small></span><span className="ak-group-date">{shortDate(group.created_at)}</span><span className="ak-chevron">›</span></Link>)}</div>
+                  <div className="ak-group-list">{groupRows.slice(0, 5).map((group) => <Link href={"/workspace/groups/" + group.id} className="ak-group-row" key={group.id}><span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span><span className="ak-group-copy"><strong>{group.name}</strong><small>{group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal"} · {group.group_type.replaceAll("_", " ")} · {group.currency_code}{group.description ? " · " + group.description : ""}</small></span><span className="ak-group-date">{shortDate(group.created_at)}</span><span className="ak-chevron">›</span></Link>)}</div>
                 )}
                 {groupRows.length > 5 && <Link className="ak-panel-footer" href="#your-groups">Showing your 5 most recent groups</Link>}
               </section>
