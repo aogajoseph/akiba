@@ -920,55 +920,32 @@
 }
 
 
-/* Keep group actions reachable while scrolling the workspace. */
+/* Keep the group action buttons anchored in the hero. The menu itself is portaled to the document body so it can float above the banner without being clipped. */
+.ak-workspace-app .ak-workspace-banner{position:relative}
 .ak-workspace-hero-actions{
-  position:fixed !important;
-  top:82px;
-  right:24px;
-  z-index:1000;
+  position:absolute;
+  top:20px;
+  right:22px;
+  z-index:5;
 }
-.ak-workspace-hero-actions .ak-workspace-action-wrap{
-  position:relative;
-}
+.ak-workspace-hero-actions .ak-workspace-action-wrap{position:relative}
 .ak-workspace-more-menu{
   position:fixed;
-  top:130px;
-  right:24px;
   z-index:1001;
   width:min(240px,calc(100vw - 24px));
-  max-height:calc(100vh - 150px);
+  max-height:calc(100vh - 24px);
   overflow-y:auto;
   overscroll-behavior:contain;
 }
-.ak-workspace-more-menu button{
-  display:block;
-  width:100%;
-}
-.ak-workspace-more-menu .ak-menu-item-danger{
-  color:#c43d58;
-}
-.ak-workspace-more-menu button:hover{
-  background:#f6f4f8;
-}
+.ak-workspace-more-menu button{display:block;width:100%}
+.ak-workspace-more-menu .ak-menu-item-danger{color:#c43d58}
+.ak-workspace-more-menu button:hover{background:#f6f4f8}
 .ak-workspace-action-message{
-  position:fixed;
-  top:130px;
-  right:24px;
-  z-index:1002;
+  position:absolute;
+  top:calc(100% + 8px);
+  right:0;
+  z-index:6;
 }
-@media (max-width:760px){
-  .ak-workspace-hero-actions{
-    top:72px;
-    right:12px;
-  }
-  .ak-workspace-more-menu{
-    top:116px;
-    right:12px;
-    width:min(240px,calc(100vw - 24px));
-    max-height:calc(100vh - 132px);
-  }
-  .ak-workspace-action-message{
-    top:116px;
-    right:12px;
-  }
+@media(max-width:640px){
+  .ak-workspace-hero-actions{top:12px;right:12px}
 }
