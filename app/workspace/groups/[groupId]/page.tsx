@@ -80,9 +80,12 @@ export default async function GroupDetailPage({ params }: Props) {
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const target = group.target_amount === null ? null : Number(group.target_amount);
   const firstName = profile.display_name.trim().split(/\\s+/)[0];
-  const dateMeta = group.event_date
+  const primaryDateMeta = group.event_date
     ? { label: "Event date", value: formatDate(group.event_date) }
-    : group.deadline ? { label: "Deadline", value: formatDate(group.deadline) } : null;
+    : null;
+  const deadlineMeta = group.deadline
+    ? { label: "Contribution deadline", value: formatDate(group.deadline) }
+    : null;
 
   return (
     <main className="ak-dashboard ak-workspace-app">
@@ -125,14 +128,17 @@ export default async function GroupDetailPage({ params }: Props) {
               <div className="ak-workspace-banner-copy">
                 <h1>{group.name}</h1>
                 <p>{group.description?.trim() || "A shared space for people to come together and make things happen."}</p>
-                <div className="ak-workspace-banner-meta">
-                  <span>{purpose}</span>
-                  <span>{typeLabel}</span>
-                  {dateMeta && <span>{dateMeta.label}: {dateMeta.value}</span>}
-                  {group.deadline && dateMeta?.label !== "Deadline" && <span>Deadline: {formatDate(group.deadline)}</span>}
-                  {group.contribution_frequency && <span>{frequencyLabels[String(group.contribution_frequency)] ?? String(group.contribution_frequency)}</span>}
-                  <span>{group.currency_code}</span>
-                  {target !== null && <span>Target: {money(target, group.currency_code)}</span>}
+                <div className="ak-workspace-banner-meta" aria-label="Group details">
+                  <div className="ak-workspace-banner-meta-row">
+                    {primaryDateMeta && <span>{primaryDateMeta.label}: {primaryDateMeta.value}</span>}
+                    {deadlineMeta && <span>{deadlineMeta.label}: {deadlineMeta.value}</span>}
+                    {group.contribution_frequency && <span>Frequency: {frequencyLabels[String(group.contribution_frequency)] ?? String(group.contribution_frequency)}</span>}
+                  </div>
+                  <div className="ak-workspace-banner-meta-row">
+                    <span>{typeLabel}</span>
+                    <span>{group.currency_code}</span>
+                    {target !== null && <span>Target: {money(target, group.currency_code)}</span>}
+                  </div>
                 </div>
               </div>
             </div>
@@ -182,7 +188,7 @@ export default async function GroupDetailPage({ params }: Props) {
               <section className="ak-workspace-card"><div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">AT A GLANCE</span><h2>About this group</h2></div></div><dl className="ak-workspace-details">
                 <div><dt>Category</dt><dd>{purpose}</dd></div><div><dt>Group type</dt><dd>{typeLabel}</dd></div>
                 {group.event_date && <div><dt>Event date</dt><dd>{formatDate(group.event_date)}</dd></div>}
-                {group.deadline && <div><dt>Deadline</dt><dd>{formatDate(group.deadline)}</dd></div>}
+                {group.deadline && <div><dt>Contribution deadline</dt><dd>{formatDate(group.deadline)}</dd></div>}
                 {group.contribution_frequency && <div><dt>Frequency</dt><dd>{frequencyLabels[String(group.contribution_frequency)] ?? String(group.contribution_frequency)}</dd></div>}
                 <div><dt>Currency</dt><dd>{group.currency_code}</dd></div><div><dt>Created</dt><dd>{formatDate(group.created_at)}</dd></div>
               </dl></section>
