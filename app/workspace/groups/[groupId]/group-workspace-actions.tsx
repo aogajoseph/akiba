@@ -1,12 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 
 export default function GroupWorkspaceActions({ groupName, isAdmin }: { groupName: string; isAdmin: boolean }) {
   const [message, setMessage] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function handlePointerDown(event: PointerEvent) {
+      if (event.target instanceof Node && !menuRef.current?.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setMenuOpen(false);
+    }
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [menuOpen]);
 
   async function shareGroup() {
     const url = window.location.href;
@@ -34,18 +53,17 @@ export default function GroupWorkspaceActions({ groupName, isAdmin }: { groupNam
   }
 
   return (
-    <div className="ak-workspace-action-wrap">
+    <div className="ak-workspace-action-wrap" ref={menuRef}>
       <button type="button" className="ak-workspace-share" onClick={shareGroup}><ShareOutlinedIcon fontSize="small" /> <span>Share Group</span></button>
       <div className="ak-workspace-more-wrap">
-        <button type="button" className="ak-workspace-more" aria-expanded={menuOpen} aria-haspopup="menu" onClick={() => setMenuOpen((open) => !open)}><MoreHorizIcon fontSize="small" /> <span className="sr-only">More group actions</span></button>
+        <button type="button" className="ak-workspace-more" aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More group actions" onClick={() => setMenuOpen((open) => !open)}><MoreHorizIcon fontSize="small" /></button>
         {menuOpen && <div className="ak-workspace-more-menu" role="menu">
           <button type="button" role="menuitem" onClick={copyLink}>Copy group link</button>
-          <button type="button" role="menuitem" disabled aria-disabled="true">Report group <span className="ak-menu-item-note">Soon</span></button>
-          <button type="button" role="menuitem" disabled aria-disabled="true">Leave group <span className="ak-menu-item-note">Soon</span></button>
-          {isAdmin && <button type="button" role="menuitem" disabled aria-disabled="true">Edit group <span className="ak-menu-item-note">Soon</span></button>}
-          {isAdmin && <button type="button" role="menuitem" className="ak-menu-item-danger" disabled aria-disabled="true">Delete group <span className="ak-menu-item-note">Soon</span></button>}
-          <div className="ak-menu-divider" />
-          <button type="button" role="menuitem" disabled aria-disabled="true">Notification settings <span className="ak-menu-item-note">Soon</span></button>
+          <button type="button" role="menuitem">Notification settings</button>
+          {isAdmin && <button type="button" role="menuitem">Edit group</button>}
+          <button type="button" role="menuitem">Report group</button>
+          <button type="button" role="menuitem">Leave group</button>
+          {isAdmin && <><div className="ak-menu-divider" /><button type="button" role="menuitem" className="ak-menu-item-danger">Delete group</button></>}
         </div>}
       </div>
       {message && <div className="ak-workspace-action-message" role="status">{message}<button type="button" aria-label="Dismiss" onClick={() => setMessage("")}>×</button></div>}
