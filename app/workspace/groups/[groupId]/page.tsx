@@ -141,7 +141,7 @@ export default async function GroupDetailPage({ params }: Props) {
                 </div>
               </div>
             </div>
-            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} /></div>
+            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} isAdmin={membership.role === "admin"} /></div>
           </section>
 
           <nav className="ak-group-tabs" aria-label="Group workspace">
