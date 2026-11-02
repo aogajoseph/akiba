@@ -892,3 +892,29 @@
   .ak-workspace-app .ak-group-tabs>span{min-height:39px;padding:8px 11px;font-size:10px}
   .ak-workspace-app .ak-group-tabs>span svg{width:15px;height:15px}
 }
+
+
+/* Group metadata: two intentional rows, with no more than three pills per row. */
+.ak-workspace-app .ak-workspace-banner-meta{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:7px;
+  margin-top:13px;
+}
+.ak-workspace-app .ak-workspace-banner-meta-row{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+}
+.ak-workspace-app .ak-workspace-banner-meta-row > span{
+  flex:0 0 auto;
+}
+@media(max-width:640px){
+  .ak-workspace-app .ak-workspace-banner-meta{
+    gap:6px;
+    margin-top:10px;
+  }
+  .ak-workspace-app .ak-workspace-banner-meta-row{gap:6px}
+}
