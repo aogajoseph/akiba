@@ -559,7 +559,7 @@
 .ak-workspace-more-wrap{position:relative}
 .ak-workspace-more-menu{position:absolute;top:45px;right:0;z-index:5;display:grid;min-width:175px;padding:6px;border:1px solid #e8e8f0;border-radius:10px;background:#fff;box-shadow:0 12px 35px #15173520}
 .ak-workspace-more-menu button,.ak-workspace-more-menu a{padding:10px;border:0;border-radius:6px;background:transparent;color:#333653;text-align:left;text-decoration:none;font-size:11px;cursor:pointer}
-.ak-workspace-more-menu button:hover,.ak-workspace-more-menu a:hover{background:#f6f4f8}
+.ak-workspace-more-menu button:hover,.ak-workspace-more-menu a:hover{background:#f6f4f8}.ak-workspace-more-menu button:disabled{display:flex;align-items:center;justify-content:space-between;gap:14px;color:#9a9caf;cursor:not-allowed;opacity:.8}.ak-workspace-more-menu button:disabled:hover{background:transparent}.ak-menu-item-note{color:#a4a7b6;font-size:9px;font-weight:600}.ak-menu-item-danger{color:#c43d58!important}.ak-menu-divider{height:1px;margin:4px 2px;background:#ececf2}
 .ak-workspace-action-message{position:absolute;top:47px;right:0;z-index:6;display:flex;align-items:center;gap:12px;width:max-content;max-width:min(330px,80vw);padding:9px 11px;border:1px solid #e5e8f0;border-radius:8px;background:#fff;color:#49516c;font-size:10px;box-shadow:0 8px 25px #15173518}
 .ak-workspace-action-message button{border:0;background:none;color:#7b8297;font-size:16px;cursor:pointer}
 .ak-group-tabs{display:flex;align-items:center;gap:6px;min-height:58px;margin:14px 0 15px;padding:6px 10px;border:1px solid #e9ebf2;border-radius:12px;background:#fff;box-shadow:0 3px 12px #242b5705}
