@@ -932,7 +932,7 @@
 .ak-workspace-more-menu{
   position:fixed;
   z-index:1001;
-  width:min(240px,calc(100vw - 24px));
+  width:min(190px,calc(100vw - 24px));
   max-height:calc(100vh - 24px);
   overflow-y:auto;
   overscroll-behavior:contain;
