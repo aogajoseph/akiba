@@ -62,7 +62,8 @@ create table public.akiba_financial_ledger_entries (
 create index akiba_financial_ledger_group_account_idx
   on public.akiba_financial_ledger_entries(group_id, currency_code, account_code, created_at);
 
--- Ledger entries are append-only. Corrections must be new compensating entries.
+-- Both journal headers and lines are append-only. Corrections must be posted as
+-- new compensating transactions; historical accounting facts are never rewritten.
 create or replace function akiba_private.prevent_financial_ledger_mutation()
 returns trigger
 language plpgsql
@@ -70,16 +71,20 @@ security invoker
 set search_path = ''
 as $akiba_fn$
 begin
-  raise exception 'Financial ledger entries are immutable; post a compensating transaction';
+  raise exception 'Financial journal records are immutable; post a compensating transaction';
 end;
 $akiba_fn$;
+
+create trigger akiba_financial_transactions_immutable
+before update or delete on public.akiba_financial_transactions
+for each row execute function akiba_private.prevent_financial_ledger_mutation();
 
 create trigger akiba_financial_ledger_entries_immutable
 before update or delete on public.akiba_financial_ledger_entries
 for each row execute function akiba_private.prevent_financial_ledger_mutation();
 
--- Validate the complete journal at transaction commit. Each posted transaction
--- must contain at least two lines and total debits must equal total credits.
+-- Validate at commit, including the header itself. This rejects both unbalanced
+-- journals and headers accidentally committed without any ledger lines.
 create or replace function akiba_private.validate_financial_journal()
 returns trigger
 language plpgsql
@@ -87,32 +92,44 @@ security invoker
 set search_path = ''
 as $akiba_fn$
 declare
+  target_transaction_id uuid;
   entry_count bigint;
   debit_total numeric;
   credit_total numeric;
 begin
+  if tg_table_name = 'akiba_financial_transactions' then
+    target_transaction_id := new.id;
+  else
+    target_transaction_id := new.transaction_id;
+  end if;
+
   select
     count(*),
     coalesce(sum(amount_minor) filter (where direction = 'debit'), 0),
     coalesce(sum(amount_minor) filter (where direction = 'credit'), 0)
   into entry_count, debit_total, credit_total
   from public.akiba_financial_ledger_entries
-  where transaction_id = new.transaction_id;
+  where transaction_id = target_transaction_id;
 
   if entry_count < 2 or debit_total <> credit_total then
-    raise exception 'Unbalanced financial journal for transaction %', new.transaction_id;
+    raise exception 'Unbalanced or empty financial journal for transaction %', target_transaction_id;
   end if;
   return null;
 end;
 $akiba_fn$;
+
+create constraint trigger akiba_financial_transaction_has_balanced_journal
+after insert on public.akiba_financial_transactions
+deferrable initially deferred
+for each row execute function akiba_private.validate_financial_journal();
 
 create constraint trigger akiba_financial_journal_balanced
 after insert on public.akiba_financial_ledger_entries
 deferrable initially deferred
 for each row execute function akiba_private.validate_financial_journal();
 
--- The journal header and its entries are read-only to clients. Only trusted
--- server-side workflows (service role) may post accounting events.
+-- The journal is read-only to clients. Only trusted server-side workflows
+-- (service role) may post accounting events.
 alter table public.akiba_financial_transactions enable row level security;
 alter table public.akiba_financial_ledger_entries enable row level security;
 
