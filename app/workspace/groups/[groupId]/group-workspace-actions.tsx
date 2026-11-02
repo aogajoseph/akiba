@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 
@@ -8,14 +9,23 @@ export default function GroupWorkspaceActions({ groupName, isAdmin }: { groupNam
   const [message, setMessage] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
 
   useEffect(() => {
     if (!menuOpen) return;
     function handlePointerDown(event: PointerEvent) {
-      if (event.target instanceof Node && !menuRef.current?.contains(event.target)) {
+      if (event.target instanceof Node && !menuRef.current?.contains(event.target) && !triggerRef.current?.contains(event.target)) {
         setMenuOpen(false);
       }
     }
+    function updateMenuPosition() {
+      const rect = triggerRef.current?.getBoundingClientRect();
+      if (rect) setMenuPosition({ top: rect.bottom + 8, right: Math.max(12, window.innerWidth - rect.right) });
+    }
+    updateMenuPosition();
+    window.addEventListener("resize", updateMenuPosition);
+    window.addEventListener("scroll", updateMenuPosition, true);
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") setMenuOpen(false);
     }
@@ -24,6 +34,8 @@ export default function GroupWorkspaceActions({ groupName, isAdmin }: { groupNam
     return () => {
       document.removeEventListener("pointerdown", handlePointerDown);
       document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("resize", updateMenuPosition);
+      window.removeEventListener("scroll", updateMenuPosition, true);
     };
   }, [menuOpen]);
 
@@ -57,7 +69,7 @@ export default function GroupWorkspaceActions({ groupName, isAdmin }: { groupNam
       <button type="button" className="ak-workspace-share" onClick={shareGroup}><ShareOutlinedIcon fontSize="small" /> <span>Share Group</span></button>
       <div className="ak-workspace-more-wrap">
         <button type="button" className="ak-workspace-more" aria-expanded={menuOpen} aria-haspopup="menu" aria-label="More group actions" onClick={() => setMenuOpen((open) => !open)}><MoreHorizIcon fontSize="small" /></button>
-        {menuOpen && <div className="ak-workspace-more-menu" role="menu">
+        {menuOpen && menuPosition && typeof document !== "undefined" && createPortal(<div ref={menuRef} className="ak-workspace-more-menu" style={menuPosition} role="menu">
           <button type="button" role="menuitem" onClick={copyLink}>Copy group link</button>
           <button type="button" role="menuitem">Notification settings</button>
           {isAdmin && <button type="button" role="menuitem">Edit group</button>}
