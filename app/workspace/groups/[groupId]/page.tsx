@@ -136,7 +136,6 @@ export default async function GroupDetailPage({ params }: Props) {
                   </div>
                   <div className="ak-workspace-banner-meta-row">
                     <span>{typeLabel}</span>
-                    <span>{group.currency_code}</span>
                     {target !== null && <span>Target: {money(target, group.currency_code)}</span>}
                   </div>
                 </div>
