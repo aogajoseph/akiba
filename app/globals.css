@@ -714,7 +714,7 @@
   inset:0;
   z-index:-2;
   background-image:url("/akiba-banner.png");
-  background-position:center;
+  background-position:center top;
   background-size:cover;
   transform:none;
 }
