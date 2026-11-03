@@ -261,6 +261,8 @@ as $fn$
 declare
   active_sub_admin_count integer;
   group_currency text;
+  posted_group_funds numeric;
+  active_reservations numeric;
 begin
   perform 1 from public.akiba_groups where id = new.group_id for update;
   if not found then
@@ -292,6 +294,24 @@ begin
 
   if active_sub_admin_count < 2 then
     raise exception 'At least two active sub-admins are required before a withdrawal can be requested';
+  end if;
+
+  select coalesce(sum(case when e.direction = 'credit' then e.amount_minor else -e.amount_minor end), 0)
+    into posted_group_funds
+  from public.akiba_financial_ledger_entries e
+  where e.group_id = new.group_id
+    and e.currency_code = new.currency_code
+    and e.account_code = 'group_funds';
+
+  select coalesce(sum(r.amount_minor), 0)
+    into active_reservations
+  from public.akiba_financial_reservations r
+  where r.group_id = new.group_id
+    and r.currency_code = new.currency_code
+    and r.status = 'active';
+
+  if posted_group_funds - active_reservations < new.total_debit_minor then
+    raise exception 'Insufficient available group funds for this withdrawal and its fees';
   end if;
 
   return new;
@@ -371,6 +391,74 @@ create trigger akiba_withdrawal_approval_guard
 before insert on public.akiba_withdrawal_approvals
 for each row execute function akiba_private.guard_withdrawal_approval_insert();
 
+
+-- Once the request row exists, reserve its full group deduction in the same
+-- transaction. The group-row lock acquired by the BEFORE trigger serializes
+-- competing requests and balance checks for this group.
+create or replace function akiba_private.create_withdrawal_reservation()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $fn$
+begin
+  insert into public.akiba_financial_reservations
+    (group_id, withdrawal_request_id, currency_code, amount_minor)
+  values
+    (new.group_id, new.id, new.currency_code, new.total_debit_minor);
+  return new;
+end;
+$fn$;
+
+create trigger akiba_withdrawal_reservation_create
+after insert on public.akiba_withdrawal_requests
+for each row execute function akiba_private.create_withdrawal_reservation();
+
+-- Each rejection terminates the request immediately. Two distinct approvals
+-- of the current terms/version authorize payout execution, but do not mark it
+-- paid. Provider-confirmed success remains the only completion signal.
+create or replace function akiba_private.apply_withdrawal_approval_decision()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $fn$
+declare
+  approved_count integer;
+begin
+  if new.decision = 'rejected' then
+    update public.akiba_withdrawal_requests
+      set status = 'rejected',
+          resolved_at = new.decided_at,
+          resolution_note = new.rejection_reason,
+          updated_at = now()
+    where id = new.withdrawal_request_id
+      and status = 'pending_approval';
+  else
+    select count(distinct a.approver_id) into approved_count
+    from public.akiba_withdrawal_approvals a
+    where a.withdrawal_request_id = new.withdrawal_request_id
+      and a.approval_version = new.approval_version
+      and a.decision = 'approved';
+
+    if approved_count >= 2 then
+      update public.akiba_withdrawal_requests
+        set status = 'approved',
+            approved_at = now(),
+            updated_at = now()
+      where id = new.withdrawal_request_id
+        and status = 'pending_approval';
+    end if;
+  end if;
+
+  return new;
+end;
+$fn$;
+
+create trigger akiba_withdrawal_approval_apply
+after insert on public.akiba_withdrawal_approvals
+for each row execute function akiba_private.apply_withdrawal_approval_decision();
+
 -- All workflow data is server-written. Active members may read group-scoped
 -- records, but authenticated clients receive no INSERT/UPDATE/DELETE privileges.
 do $rls$
@@ -408,5 +496,7 @@ revoke all on public.akiba_payment_providers, public.akiba_payment_attempts,
 revoke all on function akiba_private.enforce_finance_workflow_currency() from public, anon, authenticated;
 revoke all on function akiba_private.guard_withdrawal_request_insert() from public, anon, authenticated;
 revoke all on function akiba_private.guard_withdrawal_approval_insert() from public, anon, authenticated;
+revoke all on function akiba_private.create_withdrawal_reservation() from public, anon, authenticated;
+revoke all on function akiba_private.apply_withdrawal_approval_decision() from public, anon, authenticated;
 
 commit;
