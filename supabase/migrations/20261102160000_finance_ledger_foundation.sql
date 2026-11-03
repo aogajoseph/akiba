@@ -83,6 +83,46 @@ create trigger akiba_financial_ledger_entries_immutable
 before update or delete on public.akiba_financial_ledger_entries
 for each row execute function akiba_private.prevent_financial_ledger_mutation();
 
+-- TRUNCATE does not fire row-level UPDATE/DELETE triggers, so reject it explicitly.
+create trigger akiba_financial_transactions_no_truncate
+before truncate on public.akiba_financial_transactions
+for each statement execute function akiba_private.prevent_financial_ledger_mutation();
+
+create trigger akiba_financial_ledger_entries_no_truncate
+before truncate on public.akiba_financial_ledger_entries
+for each statement execute function akiba_private.prevent_financial_ledger_mutation();
+
+-- Every group journal must use the currency configured for that group.
+create or replace function akiba_private.enforce_group_financial_currency()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $akiba_fn$
+declare
+  group_currency text;
+begin
+  select g.currency_code into group_currency
+  from public.akiba_groups as g
+  where g.id = new.group_id
+  for key share;
+
+  if group_currency is null then
+    raise exception 'Financial transaction group does not exist';
+  end if;
+
+  if new.currency_code <> group_currency then
+    raise exception 'Financial transaction currency must match the group currency (%)', group_currency;
+  end if;
+
+  return new;
+end;
+$akiba_fn$;
+
+create trigger akiba_financial_transaction_currency_guard
+before insert on public.akiba_financial_transactions
+for each row execute function akiba_private.enforce_group_financial_currency();
+
 -- Validate at commit, including the header itself. This rejects both unbalanced
 -- journals and headers accidentally committed without any ledger lines.
 create or replace function akiba_private.validate_financial_journal()
@@ -150,5 +190,6 @@ grant select on public.akiba_financial_transactions,
 
 revoke all on function akiba_private.prevent_financial_ledger_mutation() from public, anon, authenticated;
 revoke all on function akiba_private.validate_financial_journal() from public, anon, authenticated;
+revoke all on function akiba_private.enforce_group_financial_currency() from public, anon, authenticated;
 
 commit;
