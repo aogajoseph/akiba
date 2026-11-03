@@ -129,6 +129,7 @@ create index akiba_withdrawal_requests_group_time_idx
 create table public.akiba_withdrawal_approvals (
   id uuid primary key default gen_random_uuid(),
   withdrawal_request_id uuid not null references public.akiba_withdrawal_requests(id) on delete restrict,
+  group_id uuid not null references public.akiba_groups(id) on delete restrict,
   approver_id uuid not null references auth.users(id) on delete restrict,
   decision text not null check (decision in ('approved','rejected')),
   approval_version integer not null check (approval_version > 0),
@@ -322,6 +323,10 @@ begin
     raise exception 'Withdrawal request not found';
   end if;
 
+  if new.group_id <> request_row.group_id then
+    raise exception 'Approval group does not match the withdrawal request';
+  end if;
+
   if request_row.status <> 'pending_approval'
      or new.approval_version <> request_row.approval_version then
     raise exception 'Withdrawal request is not accepting approvals for this version';
@@ -342,7 +347,7 @@ begin
   end if;
 
   if new.terms_fingerprint is distinct from encode(
-    sha256(convert_to(concat_ws('|',
+    digest(convert_to(concat_ws('|',
       request_row.id::text,
       request_row.group_id::text,
       request_row.currency_code,
@@ -353,7 +358,7 @@ begin
       coalesce(request_row.destination_fingerprint, ''),
       request_row.fee_schedule_version,
       request_row.provider_id::text
-    ), 'UTF8')), 'hex'
+    ), 'UTF8'), 'sha256'), 'hex'
   ) then
     raise exception 'Approval terms do not match the current withdrawal request';
   end if;
