@@ -25,6 +25,12 @@ This migration adds provider-independent workflow persistence on top of the immu
 - A failed payout remains unresolved in failed_pending_reconciliation; it continues to block a new withdrawal until reconciliation resolves it.
 - Client roles have read-only access to group-scoped workflow records. Provider configuration, provider attempts, payout attempts, and raw provider event records remain server-only.
 
+## Withdrawal approval RPC (v1)
+
+The follow-up migration `20261104100000_finance_withdrawal_server_workflows_v1.sql` adds the authenticated `akiba_decide_withdrawal_request` RPC. It derives the actor from `auth.uid()`, locks the request, rechecks current active sub-admin membership and initiator exclusion, calculates the approval terms fingerprint inside PostgreSQL, and inserts the immutable decision. Existing database triggers perform the approval/rejection state transition and activity event creation.
+
+A rejection now releases the associated active reservation in the same transaction. The RPC cannot create withdrawal requests, quote fees, initiate payouts, post ledger entries, or call a provider. Request creation remains withheld until trusted provider fee quoting and destination handling are implemented; accepting client-supplied fee quotes would be unsafe.
+
 ## Deliberate boundaries
 
 This is a schema and database-invariant foundation, not a live payment integration. It does not:
@@ -35,8 +41,8 @@ This is a schema and database-invariant foundation, not a live payment integrati
 - implement the complete authenticated webhook processor, reconciliation worker, or notification publisher;
 - apply this migration to production.
 
-The trusted server layer still needs to own state transitions, provider request signing, callback authentication, replay handling, reconciliation, ledger posting, reservation consumption/release, and event publication. In particular, a provider-confirmed contribution/payout must be correlated and posted exactly once before its workflow is considered financially complete.
+The trusted server layer still needs to own withdrawal request creation after trusted fee quoting, provider request signing, callback authentication, replay handling, reconciliation, ledger posting, reservation consumption on confirmed completion, and event publication. In particular, a provider-confirmed contribution/payout must be correlated and posted exactly once before its workflow is considered financially complete.
 
 ## Verification status
 
-The migration has been reviewed against the current production table/column inventory and repository migration conventions. It has **not** been applied to production and has **not** been executed against an isolated PostgreSQL/Supabase test database in this work session. Treat it as review-ready draft, not production-ready.
+The initial workflow schema migration is applied in production. The approval RPC follow-up is on a feature branch and has not yet been applied to production or verified against an isolated PostgreSQL/Supabase preview database. Do not treat the approval RPC as production-ready until the preview migration check passes.
