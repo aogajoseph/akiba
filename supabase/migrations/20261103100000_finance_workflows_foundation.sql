@@ -367,7 +367,7 @@ begin
   end if;
 
   if new.terms_fingerprint is distinct from encode(
-    digest(convert_to(concat_ws('|',
+    extensions.digest(convert_to(concat_ws('|',
       request_row.id::text,
       request_row.group_id::text,
       request_row.currency_code,
