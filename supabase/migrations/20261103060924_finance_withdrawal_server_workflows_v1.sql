@@ -1,0 +1,6 @@
+-- Historical compatibility marker for remote migration version 20261103060924.
+-- The remote migration history confirms this version contains the same SQL as
+-- 20261104100000_finance_withdrawal_server_workflows_v1.sql.
+-- Keep this earlier version as a no-op because the approval RPC depends on
+-- tables created by 20261103100000_finance_workflows_foundation.sql.
+-- The executable definition remains in the correctly ordered 20261104100000 migration.
