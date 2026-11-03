@@ -406,6 +406,16 @@ begin
     (group_id, withdrawal_request_id, currency_code, amount_minor)
   values
     (new.group_id, new.id, new.currency_code, new.total_debit_minor);
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (new.group_id, new.initiator_id, 'withdrawal_requested', 'withdrawal_request', new.id,
+     jsonb_build_object('currency_code', new.currency_code,
+       'recipient_amount_minor', new.recipient_amount_minor,
+       'akiba_fee_minor', new.akiba_fee_minor,
+       'provider_fee_minor', new.provider_fee_minor,
+       'total_debit_minor', new.total_debit_minor));
   return new;
 end;
 $fn$;
@@ -451,6 +461,17 @@ begin
     end if;
   end if;
 
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  select r.group_id, new.approver_id,
+    case when new.decision = 'approved' then 'withdrawal_approved' else 'withdrawal_rejected' end,
+    'withdrawal_approval', new.id,
+    jsonb_build_object('withdrawal_request_id', new.withdrawal_request_id,
+      'decision', new.decision, 'approval_version', new.approval_version,
+      'rejection_reason', new.rejection_reason)
+  from public.akiba_withdrawal_requests r
+  where r.id = new.withdrawal_request_id;
+
   return new;
 end;
 $fn$;
@@ -458,6 +479,55 @@ $fn$;
 create trigger akiba_withdrawal_approval_apply
 after insert on public.akiba_withdrawal_approvals
 for each row execute function akiba_private.apply_withdrawal_approval_decision();
+
+
+-- A payout attempt may be created only after the request has received two
+-- distinct approvals for the current version. This still does not assert that
+-- a provider has accepted or completed the payout.
+create or replace function akiba_private.guard_payout_attempt_insert()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $fn$
+declare
+  request_row public.akiba_withdrawal_requests%rowtype;
+  approved_count integer;
+begin
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = new.withdrawal_request_id
+  for update;
+
+  if not found or request_row.status <> 'approved' then
+    raise exception 'Payout execution requires an approved withdrawal request';
+  end if;
+
+  if new.provider_id <> request_row.provider_id then
+    raise exception 'Payout provider must match the approved withdrawal provider';
+  end if;
+
+  select count(distinct a.approver_id) into approved_count
+  from public.akiba_withdrawal_approvals a
+  where a.withdrawal_request_id = request_row.id
+    and a.approval_version = request_row.approval_version
+    and a.decision = 'approved';
+
+  if approved_count < 2 then
+    raise exception 'Two distinct approvals are required before payout execution';
+  end if;
+
+  return new;
+end;
+$fn$;
+
+create trigger akiba_payout_attempt_guard
+before insert on public.akiba_payout_attempts
+for each row execute function akiba_private.guard_payout_attempt_insert();
+
+create unique index akiba_one_live_payout_attempt_per_request
+  on public.akiba_payout_attempts(withdrawal_request_id)
+  where status in ('queued','submitted','processing','unknown');
 
 -- All workflow data is server-written. Active members may read group-scoped
 -- records, but authenticated clients receive no INSERT/UPDATE/DELETE privileges.
@@ -498,5 +568,6 @@ revoke all on function akiba_private.guard_withdrawal_request_insert() from publ
 revoke all on function akiba_private.guard_withdrawal_approval_insert() from public, anon, authenticated;
 revoke all on function akiba_private.create_withdrawal_reservation() from public, anon, authenticated;
 revoke all on function akiba_private.apply_withdrawal_approval_decision() from public, anon, authenticated;
+revoke all on function akiba_private.guard_payout_attempt_insert() from public, anon, authenticated;
 
 commit;
