@@ -63,7 +63,7 @@ export async function GET(request: NextRequest) {
   const now = new Date().toISOString();
   const { data: dueEvents, error: eventsError } = await service
     .from("akiba_provider_events")
-    .select("id,provider_event_ref,provider_result_code,amount_minor,currency_code,provider_receipt_number,attempt_count")
+    .select("id,provider_event_ref,source_reference,provider_result_code,amount_minor,currency_code,provider_receipt_number,attempt_count")
     .eq("provider_id", provider.id)
     .eq("event_type", "mpesa_stk_callback")
     .eq("retryable", true)
@@ -120,6 +120,20 @@ export async function GET(request: NextRequest) {
         processing_status: "failed",
         retryable: false,
         processing_note: "Stored callback no longer matches a payment attempt; manual review required.",
+      }).eq("id", event.id);
+      manualReview += 1;
+      continue;
+    }
+
+    if (
+      event.source_reference &&
+      attempt.provider_merchant_ref &&
+      event.source_reference !== attempt.provider_merchant_ref
+    ) {
+      await service.from("akiba_provider_events").update({
+        processing_status: "failed",
+        retryable: false,
+        processing_note: "Stored callback merchant reference did not match the payment attempt; manual review required.",
       }).eq("id", event.id);
       manualReview += 1;
       continue;
