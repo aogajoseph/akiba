@@ -78,7 +78,10 @@ export async function POST(request: NextRequest) {
   }
 
   const amountKes = Number(metadata.Amount);
-  const amountMinor = Number.isSafeInteger(amountKes) && amountKes > 0 ? amountKes * 100 : null;
+  const amountMinorCandidate = amountKes * 100;
+  const amountMinor = Number.isSafeInteger(amountKes) && amountKes > 0 && Number.isSafeInteger(amountMinorCandidate)
+    ? amountMinorCandidate
+    : null;
   const receipt = typeof metadata.MpesaReceiptNumber === "string" ? metadata.MpesaReceiptNumber : null;
   const digest = createHash("sha256").update(rawBody).digest("hex");
 
@@ -126,7 +129,6 @@ export async function POST(request: NextRequest) {
     source_reference: merchantId,
     payload_digest: digest,
     provider_result_code: callbackResultCode,
-    provider_result_description: callbackDescription,
     amount_minor: amountMinor,
     currency_code: amountMinor === null ? null : "KES",
     provider_receipt_number: receipt,
