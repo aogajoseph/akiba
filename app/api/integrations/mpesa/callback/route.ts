@@ -42,6 +42,9 @@ function callbackMetadata(items: unknown): Record<string, unknown> {
 
 export async function POST(request: NextRequest) {
   if (!validCallbackToken(request.nextUrl.searchParams.get("token"))) {
+    console.warn("[payments][daraja][callback] Callback authorization rejected", {
+      tokenParameterPresent: request.nextUrl.searchParams.has("token"),
+    });
     return json({ ResultCode: 1, ResultDesc: "Not authorized" }, 401);
   }
   const contentLength = Number(request.headers.get("content-length") || "0");
@@ -141,6 +144,15 @@ export async function POST(request: NextRequest) {
     return json({ ResultCode: 1, ResultDesc: "Could not record callback" }, 503);
   }
   if (!eventId) return json({ ResultCode: 1, ResultDesc: "Could not record callback" }, 503);
+
+  console.info("[payments][daraja][callback] Callback accepted for reconciliation", {
+    providerEventId: eventId,
+    paymentAttemptId: attempt.id,
+    checkoutRequestIdSuffix: checkoutId.slice(-6),
+    callbackResultCode,
+    merchantRequestReferencePresent: merchantId !== null,
+    callbackMetadataItemCount: Object.keys(metadata).length,
+  });
 
   try {
     // Daraja callbacks are not cryptographically signed. Treat the callback as
