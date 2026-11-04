@@ -1,0 +1,7 @@
+-- Historical migration-history reconciliation.
+-- This version was applied directly to the linked Supabase project before
+-- the canonical, source-controlled migration was committed. The actual,
+-- idempotent STK contribution schema/function is maintained in:
+-- 20261104140000_mpesa_stk_contribution_posting.sql
+-- Intentionally no-op so fresh preview databases can replay the historical
+-- version without applying the same schema/function change twice.
