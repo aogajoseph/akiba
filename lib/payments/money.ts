@@ -1,7 +1,12 @@
 import { PaymentError } from "./errors";
 
 export function assertPositiveMinorAmount(amountMinor: bigint): void {
-  if (typeof amountMinor !== "bigint" || amountMinor <= 0n) {
+  // String validation avoids BigInt literal syntax, keeping this module
+  // compatible with the repository's pre-ES2020 TypeScript target.
+  if (
+    typeof amountMinor !== "bigint" ||
+    !/^[1-9]\d*$/.test(amountMinor.toString())
+  ) {
     throw new PaymentError(
       "INVALID_AMOUNT",
       "Amount must be a positive integer in the currency's minor unit.",
