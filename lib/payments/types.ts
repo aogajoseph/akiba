@@ -68,6 +68,7 @@ export interface ProviderCollectionRequest {
 
 export interface ProviderCollectionResult {
   providerRequestReference: string;
+  providerMerchantReference?: string;
   customerMessage?: string;
 }
 
