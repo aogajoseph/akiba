@@ -3,6 +3,7 @@ import { createClient as createUserClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
+import { PaymentError } from "@/lib/payments/errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -98,7 +99,18 @@ export async function GET(
       paymentStatus: "pending",
       message: "Safaricom has not returned a final result yet.",
     }, 202);
-  } catch {
+  } catch (error) {
+    // Keep provider diagnostics in server logs only. Never log credentials,
+    // access tokens, callback URLs, phone numbers, or raw provider responses.
+    const diagnostic = error instanceof PaymentError
+      ? { errorCode: error.code, retryable: error.retryable }
+      : { errorType: error instanceof Error ? error.name : typeof error };
+    console.error("[payments][daraja][stk-query] Provider status query failed", {
+      intentId,
+      paymentAttemptId: attempt.id,
+      checkoutRequestIdSuffix: attempt.provider_attempt_ref.slice(-6),
+      ...diagnostic,
+    });
     return json({
       ok: true,
       status: intent.status,
