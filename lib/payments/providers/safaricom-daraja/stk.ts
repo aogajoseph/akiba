@@ -14,7 +14,6 @@ interface DarajaResponse {
 
 type ProviderErrorDiagnostics = {
   errorCode?: string;
-  requestId?: string;
   errorType?: string;
 };
 
@@ -42,12 +41,6 @@ function getProviderErrorDiagnostics(value: unknown): ProviderErrorDiagnostics {
     safeDiagnosticValue(nestedError.error_code) ??
     safeDiagnosticValue(nestedError.code);
 
-  const requestId =
-    safeDiagnosticValue(body.requestId) ??
-    safeDiagnosticValue(body.request_id) ??
-    safeDiagnosticValue(nestedError.requestId) ??
-    safeDiagnosticValue(nestedError.request_id);
-
   const errorType =
     safeDiagnosticValue(body.errorType) ??
     safeDiagnosticValue(body.error_type) ??
@@ -56,7 +49,6 @@ function getProviderErrorDiagnostics(value: unknown): ProviderErrorDiagnostics {
 
   return {
     ...(errorCode ? { errorCode } : {}),
-    ...(requestId ? { requestId } : {}),
     ...(errorType ? { errorType } : {}),
   };
 }
