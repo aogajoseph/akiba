@@ -52,7 +52,11 @@ export async function POST(request: NextRequest) {
 
   let body: Record<string, unknown>;
   try {
-    body = await request.json() as Record<string, unknown>;
+    const parsedBody: unknown = await request.json();
+    if (!parsedBody || typeof parsedBody !== "object" || Array.isArray(parsedBody)) {
+      return json({ ok: false, error: "Request body must be a JSON object." }, 400);
+    }
+    body = parsedBody as Record<string, unknown>;
   } catch {
     return json({ ok: false, error: "Request body must be valid JSON." }, 400);
   }
