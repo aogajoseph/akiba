@@ -96,12 +96,15 @@ export async function POST(request: NextRequest) {
 
   const { data: attempt, error: attemptError } = await service
     .from("akiba_payment_attempts")
-    .select("id,contribution_intent_id,amount_minor,currency_code,status,provider_attempt_ref")
+    .select("id,contribution_intent_id,amount_minor,currency_code,status,provider_attempt_ref,provider_merchant_ref")
     .eq("provider_id", provider.id)
     .eq("provider_attempt_ref", checkoutId)
     .maybeSingle();
   if (attemptError || !attempt) {
     return json({ ResultCode: 1, ResultDesc: "Unknown payment reference" }, 404);
+  }
+  if (attempt.provider_merchant_ref && merchantId !== attempt.provider_merchant_ref) {
+    return json({ ResultCode: 1, ResultDesc: "Merchant request reference mismatch" }, 409);
   }
 
   const digest = createHash("sha256").update(rawBody).digest("hex");
@@ -142,8 +145,13 @@ export async function POST(request: NextRequest) {
     // Daraja callbacks are not cryptographically signed. Treat the callback as
     // a notification only; query Safaricom independently before changing money.
     const providerStatus = await queryStkPush(checkoutId, configResult.config);
-    if (providerStatus.checkoutRequestId !== checkoutId) {
-      throw new Error("Provider status reference did not match the callback.");
+    if (
+      providerStatus.checkoutRequestId !== checkoutId ||
+      (providerStatus.merchantRequestId &&
+        attempt.provider_merchant_ref &&
+        providerStatus.merchantRequestId !== attempt.provider_merchant_ref)
+    ) {
+      throw new Error("Provider status reference did not match the stored payment attempt.");
     }
 
     if (callbackResultCode === "0" && providerStatus.resultCode === "0") {

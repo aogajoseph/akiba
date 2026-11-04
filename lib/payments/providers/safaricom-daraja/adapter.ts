@@ -60,7 +60,7 @@ export const safaricomDarajaAdapter: PaymentProviderAdapter = {
         amountKes: Number(request.amountMinor / BigInt(100)),
         phoneNumber: request.phoneNumber,
         accountReference: request.accountReference.slice(0, 12),
-        transactionDescription: "Akiba group contribution",
+        transactionDescription: "Akiba",
       },
       config,
     );
