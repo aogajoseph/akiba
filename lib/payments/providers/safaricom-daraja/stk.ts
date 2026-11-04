@@ -12,6 +12,47 @@ interface DarajaResponse {
   ResultDesc?: unknown;
 }
 
+type ProviderErrorDiagnostics = {
+  errorCode?: string;
+  errorType?: string;
+};
+
+function safeDiagnosticValue(value: unknown): string | undefined {
+  if (typeof value !== "string" || value.length === 0 || value.length > 96) {
+    return undefined;
+  }
+  return /^[A-Za-z0-9._:-]+$/.test(value) ? value : undefined;
+}
+
+function getProviderErrorDiagnostics(value: unknown): ProviderErrorDiagnostics {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  const body = value as Record<string, unknown>;
+  const nestedError =
+    body.error && typeof body.error === "object" && !Array.isArray(body.error)
+      ? (body.error as Record<string, unknown>)
+      : {};
+
+  const errorCode =
+    safeDiagnosticValue(body.errorCode) ??
+    safeDiagnosticValue(body.error_code) ??
+    safeDiagnosticValue(body.code) ??
+    safeDiagnosticValue(nestedError.errorCode) ??
+    safeDiagnosticValue(nestedError.error_code) ??
+    safeDiagnosticValue(nestedError.code);
+
+  const errorType =
+    safeDiagnosticValue(body.errorType) ??
+    safeDiagnosticValue(body.error_type) ??
+    safeDiagnosticValue(nestedError.errorType) ??
+    safeDiagnosticValue(nestedError.error_type);
+
+  return {
+    ...(errorCode ? { errorCode } : {}),
+    ...(errorType ? { errorType } : {}),
+  };
+}
+
 function getTimestamp(): string {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Africa/Nairobi",
@@ -52,6 +93,10 @@ async function darajaPost(
       signal: AbortSignal.timeout(15_000),
     });
   } catch (error) {
+    console.error("[payments][daraja] Provider request could not be reached", {
+      path,
+      errorType: error instanceof Error ? error.name : typeof error,
+    });
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
       "Safaricom could not be reached. The payment outcome may be unknown; do not submit another request yet.",
@@ -61,6 +106,13 @@ async function darajaPost(
 
   const result = (await response.json().catch(() => null)) as DarajaResponse | null;
   if (!response.ok || !result) {
+    console.error("[payments][daraja] Provider API returned an unsuccessful response", {
+      path,
+      httpStatus: response.status,
+      responseBodyPresent: Boolean(result),
+      responseContentType: response.headers.get("content-type") ?? "unknown",
+      ...getProviderErrorDiagnostics(result),
+    });
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
       "Safaricom returned an unsuccessful response.",

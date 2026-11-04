@@ -3,6 +3,7 @@ import { createClient as createUserClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
+import { PaymentError } from "@/lib/payments/errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,7 +35,7 @@ export async function GET(
 
   const { data: attempt, error: attemptError } = await service
     .from("akiba_payment_attempts")
-    .select("id,status,provider_attempt_ref,provider_merchant_ref")
+    .select("id,status,provider_attempt_ref,provider_merchant_ref,updated_at")
     .eq("contribution_intent_id", intentId)
     .maybeSingle();
   if (attemptError || !attempt) return json({ ok: false, error: "Payment attempt not found." }, 404);
@@ -51,11 +52,29 @@ export async function GET(
     }, 202);
   }
 
+  // Avoid repeatedly hitting Daraja when its sandbox status endpoint is
+  // unavailable or a transaction is still settling. The timestamp is advanced
+  // after every query attempt, including transport/provider errors.
+  const lastCheckedAt = Date.parse(attempt.updated_at);
+  const retryAfterMs = 15_000;
+  if (Number.isFinite(lastCheckedAt) && Date.now() - lastCheckedAt < retryAfterMs) {
+    return json({
+      ok: true,
+      status: intent.status,
+      paymentStatus: "unknown",
+      retryAfterSeconds: Math.ceil((retryAfterMs - (Date.now() - lastCheckedAt)) / 1000),
+      message: "The provider was checked recently. Please wait before checking again; the contribution remains unposted.",
+    }, 202);
+  }
+
   const configResult = readDarajaCollectionConfig();
   if (!configResult.ok) return json({ ok: false, error: configResult.error }, 503);
 
   try {
     const result = await queryStkPush(attempt.provider_attempt_ref, configResult.config);
+    await service.from("akiba_payment_attempts").update({
+      updated_at: new Date().toISOString(),
+    }).eq("id", attempt.id);
     if (result.resultCode === "1032") {
       await service.from("akiba_payment_attempts").update({
         status: "cancelled",
@@ -98,7 +117,21 @@ export async function GET(
       paymentStatus: "pending",
       message: "Safaricom has not returned a final result yet.",
     }, 202);
-  } catch {
+  } catch (error) {
+    // Keep provider diagnostics in server logs only. Never log credentials,
+    // access tokens, callback URLs, phone numbers, or raw provider responses.
+    const diagnostic = error instanceof PaymentError
+      ? { errorCode: error.code, retryable: error.retryable }
+      : { errorType: error instanceof Error ? error.name : typeof error };
+    console.error("[payments][daraja][stk-query] Provider status query failed", {
+      intentId,
+      paymentAttemptId: attempt.id,
+      checkoutRequestIdSuffix: attempt.provider_attempt_ref.slice(-6),
+      ...diagnostic,
+    });
+    await service.from("akiba_payment_attempts").update({
+      updated_at: new Date().toISOString(),
+    }).eq("id", attempt.id);
     return json({
       ok: true,
       status: intent.status,

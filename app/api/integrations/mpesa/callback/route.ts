@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
+import { PaymentError } from "@/lib/payments/errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +42,9 @@ function callbackMetadata(items: unknown): Record<string, unknown> {
 
 export async function POST(request: NextRequest) {
   if (!validCallbackToken(request.nextUrl.searchParams.get("token"))) {
+    console.warn("[payments][daraja][callback] Callback authorization rejected", {
+      tokenParameterPresent: request.nextUrl.searchParams.has("token"),
+    });
     return json({ ResultCode: 1, ResultDesc: "Not authorized" }, 401);
   }
   const contentLength = Number(request.headers.get("content-length") || "0");
@@ -79,6 +83,15 @@ export async function POST(request: NextRequest) {
     return json({ ResultCode: 1, ResultDesc: "Missing callback transaction reference" }, 400);
   }
 
+  // Log the authenticated callback before database matching so diagnostics can
+  // distinguish "callback never arrived" from "callback reference was unknown".
+  console.info("[payments][daraja][callback] Authenticated callback received", {
+    checkoutRequestIdSuffix: checkoutId.slice(-6),
+    callbackResultCode: /^\d{1,4}$/.test(callbackResultCode) ? callbackResultCode : "non_numeric",
+    merchantRequestReferencePresent: merchantId !== null,
+    callbackMetadataItemCount: Object.keys(metadata).length,
+  });
+
   const configResult = readDarajaCollectionConfig();
   if (!configResult.ok) {
     return json({ ResultCode: 1, ResultDesc: "Provider configuration unavailable" }, 503);
@@ -101,6 +114,10 @@ export async function POST(request: NextRequest) {
     .eq("provider_attempt_ref", checkoutId)
     .maybeSingle();
   if (attemptError || !attempt) {
+    console.warn("[payments][daraja][callback] Callback reference did not match a payment attempt", {
+      checkoutRequestIdSuffix: checkoutId.slice(-6),
+      databaseLookupFailed: Boolean(attemptError),
+    });
     return json({ ResultCode: 1, ResultDesc: "Unknown payment reference" }, 404);
   }
   if (attempt.provider_merchant_ref && merchantId !== attempt.provider_merchant_ref) {
@@ -140,6 +157,15 @@ export async function POST(request: NextRequest) {
     return json({ ResultCode: 1, ResultDesc: "Could not record callback" }, 503);
   }
   if (!eventId) return json({ ResultCode: 1, ResultDesc: "Could not record callback" }, 503);
+
+  console.info("[payments][daraja][callback] Callback accepted for reconciliation", {
+    providerEventId: eventId,
+    paymentAttemptId: attempt.id,
+    checkoutRequestIdSuffix: checkoutId.slice(-6),
+    callbackResultCode: /^\d{1,4}$/.test(callbackResultCode) ? callbackResultCode : "non_numeric",
+    merchantRequestReferencePresent: merchantId !== null,
+    callbackMetadataItemCount: Object.keys(metadata).length,
+  });
 
   try {
     // Daraja callbacks are not cryptographically signed. Treat the callback as
@@ -215,7 +241,16 @@ export async function POST(request: NextRequest) {
     }).eq("id", eventId);
 
     return json({ ResultCode: 0, ResultDesc: "Callback processed" });
-  } catch {
+  } catch (error) {
+    const diagnostic = error instanceof PaymentError
+      ? { errorCode: error.code, retryable: error.retryable }
+      : { errorType: error instanceof Error ? error.name : typeof error };
+    console.error("[payments][daraja][callback] Callback reconciliation failed", {
+      providerEventId: eventId,
+      paymentAttemptId: attempt.id,
+      checkoutRequestIdSuffix: checkoutId.slice(-6),
+      ...diagnostic,
+    });
     await service.from("akiba_provider_events").update({
       processing_status: "failed",
       processing_note: "Callback could not be reconciled with the provider status API.",
