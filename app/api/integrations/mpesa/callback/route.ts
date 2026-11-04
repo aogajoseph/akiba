@@ -149,7 +149,7 @@ export async function POST(request: NextRequest) {
     providerEventId: eventId,
     paymentAttemptId: attempt.id,
     checkoutRequestIdSuffix: checkoutId.slice(-6),
-    callbackResultCode,
+    callbackResultCode: /^\d{1,4}$/.test(callbackResultCode) ? callbackResultCode : "non_numeric",
     merchantRequestReferencePresent: merchantId !== null,
     callbackMetadataItemCount: Object.keys(metadata).length,
   });
