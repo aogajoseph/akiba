@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
 import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
+import { PaymentError } from "@/lib/payments/errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -215,7 +216,16 @@ export async function POST(request: NextRequest) {
     }).eq("id", eventId);
 
     return json({ ResultCode: 0, ResultDesc: "Callback processed" });
-  } catch {
+  } catch (error) {
+    const diagnostic = error instanceof PaymentError
+      ? { errorCode: error.code, retryable: error.retryable }
+      : { errorType: error instanceof Error ? error.name : typeof error };
+    console.error("[payments][daraja][callback] Callback reconciliation failed", {
+      providerEventId: eventId,
+      paymentAttemptId: attempt.id,
+      checkoutRequestIdSuffix: checkoutId.slice(-6),
+      ...diagnostic,
+    });
     await service.from("akiba_provider_events").update({
       processing_status: "failed",
       processing_note: "Callback could not be reconciled with the provider status API.",
