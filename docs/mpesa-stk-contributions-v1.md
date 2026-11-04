@@ -18,6 +18,7 @@ Set these server-only deployment variables:
 - MPESA_STK_PASSKEY (or MPESA_PASSKEY)
 - MPESA_TRANSACTION_TYPE=CustomerPayBillOnline (or CustomerBuyGoodsOnline for a configured Till)
 - MPESA_CALLBACK_TOKEN: generate a long random secret; never reuse a user password
+- CRON_SECRET: a separate long random secret used only by the internal reconciliation worker
 - MPESA_CALLBACK_URL: public HTTPS URL ending in /api/integrations/mpesa/callback?token=THE_SAME_RANDOM_SECRET
 - MPESA_SANDBOX_COLLECTION_ENABLED=true only on the sandbox deployment intended for testing
 
@@ -50,8 +51,7 @@ POST /api/integrations/mpesa/callback?token=...
 
 Public webhook route protected by the configured random callback token. The callback is treated as an untrusted notification. The server correlates the CheckoutRequestID to a previously created attempt and calls the Daraja STK Query API. Only a matching successful provider query plus callback receipt and amount details can post a contribution.
 
-### Check contribution status
-
+### Automatic callback reconciliation\n\nThe callback stores only the minimal reconciliation facts (provider result code, KES amount, receipt reference, and a payload digest); it does not retain the raw callback body or phone number. If the immediate Safaricom status query fails or is not final, the event remains in a durable retry queue with bounded exponential backoff. A protected worker at `GET /api/internal/payments/mpesa/reconcile` processes due events in small batches. It requires `Authorization: Bearer $CRON_SECRET`, re-queries Safaricom, checks checkout/merchant references and amount/currency/receipt, and only then calls the same idempotent ledger-posting RPC. Expired worker claims can be recovered; exhausted or conflicting events are flagged for manual review and never posted.\n\nConfigure a trusted scheduler to call this endpoint every 5 minutes and set `CRON_SECRET` only in the server environment. Do not expose it as a `NEXT_PUBLIC_` variable. Vercel Cron can invoke the endpoint, but Hobby plans allow only one run per day, which is too slow for payment reconciliation; use a Pro schedule or an external scheduler for a 5-minute cadence. Vercel Cron does not retry failed invocations, so the worker itself is idempotent and scans all due records on each run.\n\n### Check contribution status\n
 GET /api/contributions/{intentId}/status
 
 Authenticated contributor only. Queries Daraja for a final result. A successful status query without receipt metadata does not post the ledger; the route waits for the callback receipt details. Failed and cancelled final outcomes are recorded without affecting group funds.
