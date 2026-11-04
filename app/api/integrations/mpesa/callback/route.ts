@@ -208,6 +208,7 @@ export async function POST(request: NextRequest) {
       if (
         !receipt ||
         amountMinor === null ||
+        !Number.isSafeInteger(amountMinor) ||
         amountMinor !== expectedMinor ||
         attempt.currency_code !== "KES"
       ) {
