@@ -98,7 +98,7 @@ export async function GET(request: NextRequest) {
       .eq("id", event.id)
       .eq("retryable", true)
       .is("processed_at", null)
-      .in("processing_status", ["received", "failed"])
+      .in("processing_status", ["received", "failed", "processing"])
       .lte("next_retry_at", now)
       .select("id")
       .maybeSingle();
