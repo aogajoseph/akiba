@@ -73,8 +73,9 @@ export async function createContributionIntent(
   assertCurrencyCode(input.currencyCode);
 
   if (
-    input.idempotencyKey.trim().length < 8 ||
-    input.idempotencyKey.trim().length > 160
+    input.idempotencyKey !== input.idempotencyKey.trim() ||
+    input.idempotencyKey.length < 8 ||
+    input.idempotencyKey.length > 160
   ) {
     throw new PaymentError(
       "INVALID_IDEMPOTENCY_KEY",

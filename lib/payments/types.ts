@@ -56,3 +56,42 @@ export interface CreateContributionInput {
   amountMinor: bigint;
   idempotencyKey: string;
 }
+
+export interface ProviderCollectionRequest {
+  requestReference: string;
+  amountMinor: bigint;
+  currencyCode: string;
+  phoneNumber: string;
+  callbackUrl: string;
+  accountReference: string;
+}
+
+export interface ProviderCollectionResult {
+  providerRequestReference: string;
+  customerMessage?: string;
+}
+
+export type ProviderCollectionStatus =
+  | "pending"
+  | "succeeded"
+  | "failed"
+  | "cancelled"
+  | "unknown";
+
+export interface ProviderCollectionStatusResult {
+  status: ProviderCollectionStatus;
+  providerRequestReference: string;
+  providerReceiptNumber?: string;
+  amountMinor?: bigint;
+  currencyCode?: string;
+}
+
+export interface ProviderCallbackVerification {
+  authenticated: boolean;
+  eventReference: string;
+  requestReference: string;
+  status: ProviderCollectionStatus;
+  providerReceiptNumber?: string;
+  amountMinor?: bigint;
+  currencyCode?: string;
+}
