@@ -12,6 +12,55 @@ interface DarajaResponse {
   ResultDesc?: unknown;
 }
 
+type ProviderErrorDiagnostics = {
+  errorCode?: string;
+  requestId?: string;
+  errorType?: string;
+};
+
+function safeDiagnosticValue(value: unknown): string | undefined {
+  if (typeof value !== "string" || value.length === 0 || value.length > 96) {
+    return undefined;
+  }
+  return /^[A-Za-z0-9._:-]+$/.test(value) ? value : undefined;
+}
+
+function getProviderErrorDiagnostics(value: unknown): ProviderErrorDiagnostics {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+
+  const body = value as Record<string, unknown>;
+  const nestedError =
+    body.error && typeof body.error === "object" && !Array.isArray(body.error)
+      ? (body.error as Record<string, unknown>)
+      : {};
+
+  const errorCode =
+    safeDiagnosticValue(body.errorCode) ??
+    safeDiagnosticValue(body.error_code) ??
+    safeDiagnosticValue(body.code) ??
+    safeDiagnosticValue(nestedError.errorCode) ??
+    safeDiagnosticValue(nestedError.error_code) ??
+    safeDiagnosticValue(nestedError.code);
+
+  const requestId =
+    safeDiagnosticValue(body.requestId) ??
+    safeDiagnosticValue(body.request_id) ??
+    safeDiagnosticValue(nestedError.requestId) ??
+    safeDiagnosticValue(nestedError.request_id);
+
+  const errorType =
+    safeDiagnosticValue(body.errorType) ??
+    safeDiagnosticValue(body.error_type) ??
+    safeDiagnosticValue(nestedError.errorType) ??
+    safeDiagnosticValue(nestedError.error_type);
+
+  return {
+    ...(errorCode ? { errorCode } : {}),
+    ...(requestId ? { requestId } : {}),
+    ...(errorType ? { errorType } : {}),
+  };
+}
+
 function getTimestamp(): string {
   const parts = new Intl.DateTimeFormat("en-GB", {
     timeZone: "Africa/Nairobi",
@@ -69,6 +118,8 @@ async function darajaPost(
       path,
       httpStatus: response.status,
       responseBodyPresent: Boolean(result),
+      responseContentType: response.headers.get("content-type") ?? "unknown",
+      ...getProviderErrorDiagnostics(result),
     });
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
