@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { readDarajaConfig } from "@/lib/payments/providers/safaricom-daraja/config";
+import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
 
 export const runtime = "nodejs";
@@ -79,7 +79,7 @@ export async function POST(request: NextRequest) {
     return json({ ResultCode: 1, ResultDesc: "Missing callback transaction reference" }, 400);
   }
 
-  const configResult = readDarajaConfig();
+  const configResult = readDarajaCollectionConfig();
   if (!configResult.ok) {
     return json({ ResultCode: 1, ResultDesc: "Provider configuration unavailable" }, 503);
   }

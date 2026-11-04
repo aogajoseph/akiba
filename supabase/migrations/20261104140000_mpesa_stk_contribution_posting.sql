@@ -7,6 +7,9 @@ alter table public.akiba_payment_attempts
   add column if not exists provider_receipt_number text,
   add column if not exists provider_result_code text;
 
+create unique index if not exists akiba_one_payment_attempt_per_contribution
+  on public.akiba_payment_attempts(contribution_intent_id);
+
 create unique index if not exists akiba_payment_attempts_mpesa_receipt_unique
   on public.akiba_payment_attempts(provider_id, provider_receipt_number)
   where provider_receipt_number is not null;
@@ -63,6 +66,9 @@ begin
   end if;
 
   if v_intent.status = 'succeeded' and v_intent.financial_transaction_id is not null then
+    if v_attempt.provider_receipt_number <> p_provider_receipt_number then
+      raise exception 'A repeated success callback supplied a different receipt number';
+    end if;
     return v_intent.financial_transaction_id;
   end if;
 
@@ -88,14 +94,8 @@ begin
   end if;
 
   insert into public.akiba_financial_transactions (
-    group_id,
-    currency_code,
-    transaction_type,
-    reference,
-    description,
-    effective_at,
-    created_by,
-    metadata
+    group_id, currency_code, transaction_type, reference,
+    description, effective_at, created_by, metadata
   )
   values (
     v_intent.group_id,
@@ -114,8 +114,6 @@ begin
   )
   returning id into v_transaction_id;
 
-  -- Debit provider clearing and credit the group's funds. The balanced journal
-  -- is committed atomically with the intent and attempt state transitions.
   insert into public.akiba_financial_ledger_entries (
     transaction_id, group_id, currency_code, line_number,
     account_code, direction, amount_minor

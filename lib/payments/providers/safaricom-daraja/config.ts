@@ -16,10 +16,30 @@ export function readDarajaConfig(
       error: "M-Pesa is restricted to the Daraja sandbox in this release.",
     };
   }
+  const consumerKey = env.MPESA_CONSUMER_KEY;
+  const consumerSecret = env.MPESA_CONSUMER_SECRET;
+  if (!consumerKey || !consumerSecret) {
+    return {
+      ok: false,
+      error: "Daraja Consumer Key or Consumer Secret is not configured.",
+    };
+  }
+  return {
+    ok: true,
+    config: {
+      environment: "sandbox" as ProviderEnvironment,
+      credentials: { consumerKey, consumerSecret },
+    },
+  };
+}
+
+export function readDarajaCollectionConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): DarajaConfigResult {
+  const base = readDarajaConfig(env);
+  if (!base.ok) return base;
 
   const required: Record<string, string | undefined> = {
-    consumerKey: env.MPESA_CONSUMER_KEY,
-    consumerSecret: env.MPESA_CONSUMER_SECRET,
     businessShortCode: env.MPESA_BUSINESS_SHORT_CODE,
     passkey: env.MPESA_PASSKEY,
     callbackUrl: env.MPESA_CALLBACK_URL,
@@ -29,7 +49,7 @@ export function readDarajaConfig(
   if (missing.length) {
     return {
       ok: false,
-      error: "Daraja sandbox configuration is incomplete: " +
+      error: "Daraja collection configuration is incomplete: " +
         missing.map((entry) => entry[0]).join(", ") + ".",
     };
   }
@@ -61,10 +81,9 @@ export function readDarajaConfig(
   return {
     ok: true,
     config: {
-      environment: "sandbox" as ProviderEnvironment,
+      environment: "sandbox",
       credentials: {
-        consumerKey: required.consumerKey as string,
-        consumerSecret: required.consumerSecret as string,
+        ...base.config.credentials,
         businessShortCode: required.businessShortCode as string,
         passkey: required.passkey as string,
         callbackUrl: callbackUrl.toString(),

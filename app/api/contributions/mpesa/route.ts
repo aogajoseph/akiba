@@ -5,7 +5,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { createContributionIntent } from "@/lib/payments/orchestration/create-contribution";
 import { PaymentError } from "@/lib/payments/errors";
 import { getPaymentProviderAdapter } from "@/lib/payments/registry";
-import { readDarajaConfig } from "@/lib/payments/providers/safaricom-daraja/config";
+import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import type {
   ContributionIntent,
   CreateContributionInput,
@@ -98,7 +98,7 @@ export async function POST(request: NextRequest) {
     return json({ ok: false, error: "M-Pesa sandbox collections are not enabled for this deployment." }, 503);
   }
 
-  const configResult = readDarajaConfig();
+  const configResult = readDarajaCollectionConfig();
   if (!configResult.ok) return json({ ok: false, error: configResult.error }, 503);
   const adapter = getPaymentProviderAdapter("safaricom_daraja");
   if (!adapter?.createCollection) {
@@ -234,6 +234,21 @@ export async function POST(request: NextRequest) {
       })
       .select("id")
       .single();
+    if (attemptError?.code === "23505") {
+      const { data: racedAttempt } = await service
+        .from("akiba_payment_attempts")
+        .select("id,status,provider_attempt_ref")
+        .eq("contribution_intent_id", intent.id)
+        .maybeSingle();
+      return json({
+        ok: true,
+        created: false,
+        intentId: intent.id,
+        paymentStatus: racedAttempt?.status ?? "unknown",
+        checkoutRequestId: racedAttempt?.provider_attempt_ref ?? null,
+        message: "A payment attempt already exists for this contribution. No additional STK prompt was sent.",
+      }, 200);
+    }
     if (attemptError || !attempt) throw attemptError ?? new Error("Could not create payment attempt.");
 
     await service

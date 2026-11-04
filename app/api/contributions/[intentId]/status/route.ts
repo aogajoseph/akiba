@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient as createUserClient } from "@/lib/supabase/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { readDarajaConfig } from "@/lib/payments/providers/safaricom-daraja/config";
+import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
 
 export const runtime = "nodejs";
@@ -51,7 +51,7 @@ export async function GET(
     }, 202);
   }
 
-  const configResult = readDarajaConfig();
+  const configResult = readDarajaCollectionConfig();
   if (!configResult.ok) return json({ ok: false, error: configResult.error }, 503);
 
   try {
@@ -85,9 +85,6 @@ export async function GET(
       return json({ ok: true, status: "failed", paymentStatus: "failed" });
     }
     if (result.resultCode === "0") {
-      // STK Query confirms completion, but does not consistently return the
-      // receipt metadata needed for the immutable transaction reference.
-      // Wait for the authenticated callback details before posting the ledger.
       return json({
         ok: true,
         status: intent.status,
