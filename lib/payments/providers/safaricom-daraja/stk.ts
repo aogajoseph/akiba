@@ -52,6 +52,10 @@ async function darajaPost(
       signal: AbortSignal.timeout(15_000),
     });
   } catch (error) {
+    console.error("[payments][daraja] Provider request could not be reached", {
+      path,
+      errorType: error instanceof Error ? error.name : typeof error,
+    });
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
       "Safaricom could not be reached. The payment outcome may be unknown; do not submit another request yet.",
@@ -61,6 +65,11 @@ async function darajaPost(
 
   const result = (await response.json().catch(() => null)) as DarajaResponse | null;
   if (!response.ok || !result) {
+    console.error("[payments][daraja] Provider API returned an unsuccessful response", {
+      path,
+      httpStatus: response.status,
+      responseBodyPresent: Boolean(result),
+    });
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
       "Safaricom returned an unsuccessful response.",
