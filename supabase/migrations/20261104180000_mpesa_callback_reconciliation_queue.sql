@@ -4,7 +4,6 @@ begin;
 
 alter table public.akiba_provider_events
   add column if not exists provider_result_code text,
-  add column if not exists provider_result_description text,
   add column if not exists amount_minor bigint,
   add column if not exists currency_code text,
   add column if not exists provider_receipt_number text,
