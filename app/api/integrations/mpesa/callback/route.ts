@@ -83,6 +83,15 @@ export async function POST(request: NextRequest) {
     return json({ ResultCode: 1, ResultDesc: "Missing callback transaction reference" }, 400);
   }
 
+  // Log the authenticated callback before database matching so diagnostics can
+  // distinguish "callback never arrived" from "callback reference was unknown".
+  console.info("[payments][daraja][callback] Authenticated callback received", {
+    checkoutRequestIdSuffix: checkoutId.slice(-6),
+    callbackResultCode: /^\d{1,4}$/.test(callbackResultCode) ? callbackResultCode : "non_numeric",
+    merchantRequestReferencePresent: merchantId !== null,
+    callbackMetadataItemCount: Object.keys(metadata).length,
+  });
+
   const configResult = readDarajaCollectionConfig();
   if (!configResult.ok) {
     return json({ ResultCode: 1, ResultDesc: "Provider configuration unavailable" }, 503);
@@ -105,6 +114,10 @@ export async function POST(request: NextRequest) {
     .eq("provider_attempt_ref", checkoutId)
     .maybeSingle();
   if (attemptError || !attempt) {
+    console.warn("[payments][daraja][callback] Callback reference did not match a payment attempt", {
+      checkoutRequestIdSuffix: checkoutId.slice(-6),
+      databaseLookupFailed: Boolean(attemptError),
+    });
     return json({ ResultCode: 1, ResultDesc: "Unknown payment reference" }, 404);
   }
   if (attempt.provider_merchant_ref && merchantId !== attempt.provider_merchant_ref) {
