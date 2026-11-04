@@ -1,0 +1,7 @@
+-- Historical migration-history reconciliation.
+-- This version was applied directly to the linked Supabase project before
+-- the canonical, source-controlled migration was committed. The actual,
+-- idempotent provider seed is maintained in:
+-- 20261104120000_seed_safaricom_daraja_payment_provider.sql
+-- Intentionally no-op so fresh preview databases can replay the historical
+-- version without applying the same schema/data change twice.
