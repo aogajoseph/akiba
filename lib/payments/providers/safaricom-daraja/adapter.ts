@@ -49,22 +49,26 @@ export const safaricomDarajaAdapter: PaymentProviderAdapter = {
   },
 
   async createCollection(request, config) {
-    const amountMinor = request.amountMinor;
-    if (request.currencyCode !== "KES" || amountMinor % BigInt(100) !== BigInt(0)) {
+    if (request.currencyCode !== "KES" || request.amountMinor % BigInt(100) !== BigInt(0)) {
       throw new PaymentError(
         "INVALID_AMOUNT",
         "M-Pesa STK Push accepts whole Kenyan shillings only.",
       );
     }
-    return createStkPush(
+    const result = await createStkPush(
       {
-        amountKes: Number(amountMinor / BigInt(100)),
+        amountKes: Number(request.amountMinor / BigInt(100)),
         phoneNumber: request.phoneNumber,
         accountReference: request.accountReference.slice(0, 12),
         transactionDescription: "Akiba group contribution",
       },
       config,
     );
+    return {
+      providerRequestReference: result.checkoutRequestId,
+      providerMerchantReference: result.merchantRequestId,
+      customerMessage: result.customerMessage ?? undefined,
+    };
   },
 
   async queryCollection(requestReference, config) {
@@ -73,9 +77,6 @@ export const safaricomDarajaAdapter: PaymentProviderAdapter = {
     if (result.resultCode === "0") status = "succeeded";
     else if (result.resultCode === "1032") status = "cancelled";
     else if (result.resultCode !== null) status = "failed";
-    return {
-      status,
-      providerRequestReference: result.checkoutRequestId,
-    };
+    return { status, providerRequestReference: result.checkoutRequestId };
   },
 };

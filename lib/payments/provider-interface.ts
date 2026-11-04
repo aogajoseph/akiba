@@ -16,8 +16,6 @@ export interface PaymentProviderAdapter {
     config: ProviderConnectionConfig,
   ): Promise<ProviderConnectionResult>;
 
-  // Optional operations are implemented only when the adapter has been
-  // integrated, tested and explicitly enabled for that capability.
   createCollection?(
     request: ProviderCollectionRequest,
     config: ProviderConnectionConfig,
