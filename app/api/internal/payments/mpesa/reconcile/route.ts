@@ -68,7 +68,7 @@ export async function GET(request: NextRequest) {
     .eq("event_type", "mpesa_stk_callback")
     .eq("retryable", true)
     .is("processed_at", null)
-    .in("processing_status", ["received", "failed"])
+    .in("processing_status", ["received", "failed", "processing"])
     .lte("next_retry_at", now)
     .order("received_at", { ascending: true })
     .limit(BATCH_SIZE);
@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
         processing_status: "processing",
         attempt_count: nextAttempt,
         last_attempt_at: new Date().toISOString(),
+        next_retry_at: new Date(Date.now() + 2 * 60_000).toISOString(),
       })
       .eq("id", event.id)
       .eq("retryable", true)
