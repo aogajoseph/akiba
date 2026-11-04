@@ -40,8 +40,8 @@ export function readDarajaCollectionConfig(
   if (!base.ok) return base;
 
   const required: Record<string, string | undefined> = {
-    businessShortCode: env.MPESA_BUSINESS_SHORT_CODE,
-    passkey: env.MPESA_PASSKEY,
+    businessShortCode: env.MPESA_BUSINESS_SHORT_CODE || env.MPESA_STK_SHORTCODE,
+    passkey: env.MPESA_PASSKEY || env.MPESA_STK_PASSKEY,
     callbackUrl: env.MPESA_CALLBACK_URL,
     callbackToken: env.MPESA_CALLBACK_TOKEN,
   };

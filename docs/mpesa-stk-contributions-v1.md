@@ -14,8 +14,8 @@ Set these server-only deployment variables:
 - MPESA_ENVIRONMENT=sandbox
 - MPESA_CONSUMER_KEY
 - MPESA_CONSUMER_SECRET
-- MPESA_BUSINESS_SHORT_CODE
-- MPESA_PASSKEY
+- MPESA_STK_SHORTCODE (or MPESA_BUSINESS_SHORT_CODE)
+- MPESA_STK_PASSKEY (or MPESA_PASSKEY)
 - MPESA_TRANSACTION_TYPE=CustomerPayBillOnline (or CustomerBuyGoodsOnline for a configured Till)
 - MPESA_CALLBACK_TOKEN: generate a long random secret; never reuse a user password
 - MPESA_CALLBACK_URL: public HTTPS URL ending in /api/integrations/mpesa/callback?token=THE_SAME_RANDOM_SECRET
