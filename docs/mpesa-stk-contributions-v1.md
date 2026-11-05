@@ -21,6 +21,7 @@ Set these server-only deployment variables:
 - CRON_SECRET: a separate long random secret used only by the internal reconciliation worker
 - MPESA_CALLBACK_URL: public HTTPS URL ending in /api/integrations/mpesa/callback?token=THE_SAME_RANDOM_SECRET
 - MPESA_SANDBOX_COLLECTION_ENABLED=true only on the sandbox deployment intended for testing
+- MPESA_SANDBOX_TEST_GROUP_ID: the UUID of the one KES Test group allowed to initiate sandbox contributions on that Preview deployment; the server rejects collection requests for every other group
 
 Do not prefix any of these variables with NEXT_PUBLIC_. Configure the callback URL in the Daraja sandbox app. The callback endpoint uses the URL token as an additional shared-secret check because Daraja STK callbacks are not cryptographically signed. It durably queues the authenticated callback facts and acknowledges only after storage succeeds; it does not call Daraja during the webhook request. The scheduled reconciliation worker independently queries Daraja and requires a matching successful provider result plus callback receipt and amount details before posting.
 
