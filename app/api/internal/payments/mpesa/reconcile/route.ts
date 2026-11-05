@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
 import { PaymentError } from "@/lib/payments/errors";
-import { hasPostableContributionEvidence } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
+import { hasPostableContributionEvidence, reconciliationRetryDelayMinutes } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -20,7 +20,7 @@ function json(body: Record<string, unknown>, status = 200) {
 }
 
 function retryAt(attemptCount: number): string {
-  const delayMinutes = Math.min(60, 2 ** Math.max(0, attemptCount - 1));
+  const delayMinutes = reconciliationRetryDelayMinutes(attemptCount);
   return new Date(Date.now() + delayMinutes * 60_000).toISOString();
 }
 
