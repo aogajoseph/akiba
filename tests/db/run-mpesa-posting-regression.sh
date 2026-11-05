@@ -13,7 +13,7 @@ PSQL=(psql "$DATABASE_URL" -X -v ON_ERROR_STOP=1)
 "${PSQL[@]}" -f "$ROOT/tests/db/mpesa-posting-regression.sql"
 
 call_rpc() {
-  "${PSQL[@]}" -Atc "select public.post_mpesa_contribution('ws_CO_CI_0001','CI-RECEIPT-0001',500,'KES','0');"
+  "${PSQL[@]}" -Atc "select public.post_mpesa_contribution('ws_CO_CI_0001','CI00000001',500,'KES','0');"
 }
 
 # Two independent database sessions race the same checkout/receipt. Row locks
