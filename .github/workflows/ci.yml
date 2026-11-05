@@ -16,6 +16,22 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: akiba_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d akiba_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/akiba_test
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -27,6 +43,8 @@ jobs:
         run: npm install
       - name: Tests
         run: npm test
+      - name: PostgreSQL M-Pesa posting regression tests
+        run: bash tests/db/run-mpesa-posting-regression.sh
       - name: Lint
         run: npm run lint
       - name: Typecheck
