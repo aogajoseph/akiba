@@ -277,7 +277,7 @@ export async function GET(request: NextRequest) {
 
       const configResult = readDarajaCollectionConfig();
       if (!configResult.ok) {
-        throw new PaymentError("PROVIDER_UNAVAILABLE", "Provider configuration unavailable", true);
+        throw new PaymentError("PROVIDER_UNAVAILABLE", "Provider configuration unavailable", { retryable: true });
       }
       const providerStatus = await queryStkPush(event.provider_event_ref, configResult.config);
       if (
