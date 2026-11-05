@@ -73,11 +73,14 @@ export async function GET(
 
   const terminal = TERMINAL_INTENT_STATUSES.has(intent.status) ||
     ["succeeded", "failed", "cancelled", "expired"].includes(attempt.status);
+  const paymentStatus = TERMINAL_INTENT_STATUSES.has(intent.status)
+    ? intent.status
+    : attempt.status;
 
   return json({
     ok: true,
     status: intent.status,
-    paymentStatus: attempt.status,
+    paymentStatus,
     currencyCode: intent.currency_code,
     amountMinor: intent.amount_minor,
     terminal,
