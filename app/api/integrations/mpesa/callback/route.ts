@@ -1,7 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { isMissingCallbackPlaceholder, normalizeMpesaReceipt } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
+import { callbackRefreshNextRetryAt, isMissingCallbackPlaceholder, normalizeMpesaReceipt } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -171,9 +171,11 @@ export async function POST(request: NextRequest) {
       .from("akiba_provider_events")
       .update({
         ...eventValues,
-        next_retry_at: nextProcessingStatus === "processing" && existingEvent.next_retry_at
-          ? existingEvent.next_retry_at
-          : eventValues.next_retry_at,
+        next_retry_at: callbackRefreshNextRetryAt(
+          nextProcessingStatus,
+          existingEvent.next_retry_at,
+          eventValues.next_retry_at,
+        ),
         processing_status: nextProcessingStatus,
         retryable: canRetry,
         processing_note: canRetry ? null : "Authenticated callback received; existing manual-review state retained.",
