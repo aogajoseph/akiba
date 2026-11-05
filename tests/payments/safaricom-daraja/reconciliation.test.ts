@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  callbackRefreshNextRetryAt,
   hasPostableContributionEvidence,
   isMissingCallbackPlaceholder,
   isRetryableDarajaHttpStatus,
@@ -78,4 +79,22 @@ describe("Daraja retry classification", () => {
     "does not retry permanent HTTP status %s",
     (status) => expect(isRetryableDarajaHttpStatus(status)).toBe(false),
   );
+});
+
+describe("callback enrichment lease handling", () => {
+  it("preserves the active worker lease when enriching a processing event", () => {
+    expect(callbackRefreshNextRetryAt(
+      "processing",
+      "2026-11-05T07:02:00.000Z",
+      "2026-11-05T07:01:00.000Z",
+    )).toBe("2026-11-05T07:02:00.000Z");
+  });
+
+  it("makes a non-processing event immediately due for reconciliation", () => {
+    expect(callbackRefreshNextRetryAt(
+      "failed",
+      "2026-11-05T08:00:00.000Z",
+      "2026-11-05T07:01:00.000Z",
+    )).toBe("2026-11-05T07:01:00.000Z");
+  });
 });
