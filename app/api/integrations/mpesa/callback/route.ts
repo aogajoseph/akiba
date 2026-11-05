@@ -143,7 +143,7 @@ export async function POST(request: NextRequest) {
   if (eventInsertError?.code === "23505") {
     const { data: existingEvent, error: existingEventError } = await service
       .from("akiba_provider_events")
-      .select("id,processing_status,retryable,payload_digest,provider_result_code,provider_receipt_number")
+      .select("id,processing_status,retryable,payload_digest,provider_result_code,provider_receipt_number,next_retry_at")
       .eq("provider_id", provider.id)
       .eq("provider_event_ref", checkoutId)
       .single();
