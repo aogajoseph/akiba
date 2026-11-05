@@ -55,8 +55,7 @@ export default async function GroupFinancesPage({ params }: Props) {
       .select("id,reference,description,currency_code,effective_at", { count: "exact" })
       .eq("group_id", group.id)
       .eq("transaction_type", "contribution")
-      .order("effective_at", { ascending: false })
-      .limit(50),
+      .order("effective_at", { ascending: false }),
     supabase.from("akiba_financial_ledger_entries")
       .select("transaction_id,amount_minor")
       .eq("group_id", group.id)
@@ -74,7 +73,7 @@ export default async function GroupFinancesPage({ params }: Props) {
       ...transaction,
       amount_minor: linesByTransaction.get(transaction.id) ?? 0,
     }));
-  const totalMinor = (ledgerLines ?? []).reduce((sum, line) => sum + Number(line.amount_minor), 0);
+  const totalMinor = history.reduce((sum, item) => sum + item.amount_minor, 0);
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const sandboxEnabled = process.env.MPESA_ENVIRONMENT === "sandbox" &&
     process.env.MPESA_SANDBOX_COLLECTION_ENABLED === "true" &&
