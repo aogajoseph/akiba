@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
 import { PaymentError } from "@/lib/payments/errors";
-import { hasPostableContributionEvidence, reconciliationRetryDelayMinutes } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
+import { hasPostableCallbackEvidence, hasPostableContributionEvidence, reconciliationRetryDelayMinutes } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -40,12 +40,6 @@ function authorized(request: NextRequest): boolean {
  */
 export async function GET(request: NextRequest) {
   if (!authorized(request)) return json({ ok: false, error: "Not authorized" }, 401);
-
-  const configResult = readDarajaCollectionConfig();
-  if (!configResult.ok) {
-    console.error("[payments][daraja][reconcile] Provider configuration unavailable");
-    return json({ ok: false, error: "Provider configuration unavailable" }, 503);
-  }
 
   const service = createServiceClient();
   const { data: provider, error: providerError } = await service
@@ -223,6 +217,68 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+      // Complete authenticated success callbacks are self-contained payment
+      // evidence. Post them before considering STK Query, so Daraja query
+      // throttling/outages cannot block a valid callback from reaching the
+      // ledger. The database RPC is atomic and idempotent.
+      if (event.provider_result_code === "0") {
+        const callbackEvidenceIsValid = hasPostableCallbackEvidence({
+          callbackResultCode: event.provider_result_code,
+          providerResultCode: event.provider_result_code,
+          receipt: event.provider_receipt_number,
+          amountMinor: Number(event.amount_minor),
+          expectedAmountMinor: Number(attempt.amount_minor),
+          eventCurrency: event.currency_code,
+          attemptCurrency: attempt.currency_code,
+        });
+
+        if (!callbackEvidenceIsValid) {
+          await service.from("akiba_provider_events").update({
+            processing_status: "failed",
+            retryable: false,
+            processing_note: "Success callback is missing a valid receipt or its amount/currency does not match the stored attempt; manual review required.",
+          }).eq("id", event.id).eq("payload_digest", event.payload_digest);
+          manualReview += 1;
+          continue;
+        }
+
+        const { data: currentCallback, error: currentCallbackError } = await service
+          .from("akiba_provider_events")
+          .select("id")
+          .eq("id", event.id)
+          .eq("payload_digest", event.payload_digest)
+          .eq("processing_status", "processing")
+          .eq("retryable", true)
+          .is("processed_at", null)
+          .maybeSingle();
+        if (currentCallbackError || !currentCallback) {
+          skipped += 1;
+          continue;
+        }
+
+        const { error: callbackPostError } = await service.rpc("post_mpesa_contribution", {
+          p_checkout_request_id: event.provider_event_ref,
+          p_provider_receipt_number: event.provider_receipt_number,
+          p_amount_minor: String(Number(event.amount_minor)),
+          p_currency_code: "KES",
+          p_provider_result_code: "0",
+        });
+        if (callbackPostError) throw callbackPostError;
+
+        await service.from("akiba_provider_events").update({
+          processing_status: "processed",
+          processed_at: new Date().toISOString(),
+          retryable: false,
+          processing_note: null,
+        }).eq("id", event.id).eq("payload_digest", event.payload_digest);
+        processed += 1;
+        continue;
+      }
+
+      const configResult = readDarajaCollectionConfig();
+      if (!configResult.ok) {
+        throw new PaymentError("PROVIDER_UNAVAILABLE", "Provider configuration unavailable", true);
+      }
       const providerStatus = await queryStkPush(event.provider_event_ref, configResult.config);
       if (
         providerStatus.checkoutRequestId !== event.provider_event_ref ||
@@ -414,7 +470,7 @@ export async function GET(request: NextRequest) {
         retryable: shouldRetry,
         next_retry_at: retryAt(nextAttempt),
         processing_note: shouldRetry
-          ? "Provider verification failed; retry scheduled."
+          ? event.provider_result_code === "0"\n            ? "Callback evidence validated but atomic ledger posting failed; retry scheduled."\n            : "Provider verification failed; retry scheduled."
           : "Provider verification could not be completed; manual review required.",
       }).eq("id", event.id).eq("payload_digest", event.payload_digest);
       if (event.provider_result_code === null) failureUpdate.is("provider_result_code", null);
