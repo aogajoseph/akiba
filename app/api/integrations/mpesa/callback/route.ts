@@ -79,7 +79,14 @@ export async function POST(request: NextRequest) {
   const amountMinor = Number.isSafeInteger(amountKes) && amountKes > 0 && Number.isSafeInteger(amountMinorCandidate)
     ? amountMinorCandidate
     : null;
-  const receipt = typeof metadata.MpesaReceiptNumber === "string" ? metadata.MpesaReceiptNumber : null;
+  const receiptCandidate = typeof metadata.MpesaReceiptNumber === "string"
+    ? metadata.MpesaReceiptNumber.trim().toUpperCase()
+    : null;
+  // Safaricom M-Pesa receipt identifiers are ten alphanumeric characters.
+  // Invalid/missing values remain null and cannot pass reconciliation.
+  const receipt = receiptCandidate && /^[A-Z0-9]{10}$/.test(receiptCandidate)
+    ? receiptCandidate
+    : null;
   const digest = createHash("sha256").update(rawBody).digest("hex");
 
   console.info("[payments][daraja][callback] Authenticated callback received", {
