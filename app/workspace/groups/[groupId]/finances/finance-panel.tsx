@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 type FinancePanelProps = {
@@ -39,7 +39,6 @@ export default function FinancePanel({ groupId, currencyCode, enabled }: Finance
   const [payment, setPayment] = useState<PaymentState | null>(null);
   const [error, setError] = useState("");
   const [idempotencyKey, setIdempotencyKey] = useState<string | null>(null);
-  const [retryAfter, setRetryAfter] = useState(0);
 
   async function submitContribution(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -56,9 +55,7 @@ export default function FinancePanel({ groupId, currencyCode, enabled }: Finance
       return;
     }
 
-    const key = idempotencyKey ?? (typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `akiba-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+    const key = idempotencyKey ?? crypto.randomUUID();
     setIdempotencyKey(key);
     setSubmitting(true);
     setError("");
@@ -105,7 +102,6 @@ export default function FinancePanel({ groupId, currencyCode, enabled }: Finance
           paymentStatus: result.paymentStatus ?? result.status ?? "unknown",
           message: result.message ?? statusLabel(result.paymentStatus ?? result.status ?? "unknown"),
         });
-        setRetryAfter(Number(result.retryAfterSeconds ?? 0));
         if (result.status === "succeeded" || result.paymentStatus === "succeeded") router.refresh();
       } else {
         setError(result.error ?? "Could not check this contribution.");
@@ -138,8 +134,8 @@ export default function FinancePanel({ groupId, currencyCode, enabled }: Finance
             <small>Contribution reference: {payment.intentId}</small>
           </div>
           {!terminal && (
-            <button type="button" className="ak-finance-secondary-button" onClick={checkStatus} disabled={checking || retryAfter > 0}>
-              {checking ? "Checking…" : retryAfter > 0 ? `Check again in ${retryAfter}s` : "Check payment status"}
+            <button type="button" className="ak-finance-secondary-button" onClick={checkStatus} disabled={checking}>
+              {checking ? "Checking…" : "Check payment status"}
             </button>
           )}
           {terminal && <p className="ak-finance-final-note">{isSuccessful ? "The confirmed contribution is included in the group ledger." : "This attempt did not add money to the group balance."}</p>}
