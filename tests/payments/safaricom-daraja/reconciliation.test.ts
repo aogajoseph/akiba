@@ -5,6 +5,7 @@ import {
   isMissingCallbackPlaceholder,
   isRetryableDarajaHttpStatus,
   normalizeMpesaReceipt,
+  reconciliationRetryDelayMinutes,
 } from "../../../lib/payments/providers/safaricom-daraja/reconciliation";
 
 describe("Safaricom callback evidence", () => {
@@ -66,6 +67,21 @@ describe("Safaricom callback evidence", () => {
       ...validEvidence,
       ...override,
     })).toBe(false);
+  });
+});
+
+describe("Daraja reconciliation retry backoff", () => {
+  it.each([
+    [1, 15],
+    [2, 30],
+    [3, 60],
+    [4, 120],
+    [5, 240],
+    [6, 360],
+    [12, 360],
+    [0, 15],
+  ])("backs off attempt %s for %s minutes", (attempt, expectedMinutes) => {
+    expect(reconciliationRetryDelayMinutes(attempt)).toBe(expectedMinutes);
   });
 });
 
