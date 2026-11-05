@@ -171,6 +171,9 @@ export async function POST(request: NextRequest) {
       .from("akiba_provider_events")
       .update({
         ...eventValues,
+        next_retry_at: nextProcessingStatus === "processing" && existingEvent.next_retry_at
+          ? existingEvent.next_retry_at
+          : eventValues.next_retry_at,
         processing_status: nextProcessingStatus,
         retryable: canRetry,
         processing_note: canRetry ? null : "Authenticated callback received; existing manual-review state retained.",
