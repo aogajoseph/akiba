@@ -1,9 +1,6 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
-import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
-import { PaymentError } from "@/lib/payments/errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -92,9 +89,6 @@ export async function POST(request: NextRequest) {
     callbackMetadataItemCount: Object.keys(metadata).length,
   });
 
-  const configResult = readDarajaCollectionConfig();
-  if (!configResult.ok) return json({ ResultCode: 1, ResultDesc: "Provider configuration unavailable" }, 503);
-
   const service = createServiceClient();
   const { data: provider, error: providerError } = await service
     .from("akiba_payment_providers")
@@ -179,7 +173,7 @@ export async function POST(request: NextRequest) {
 
   if (!eventId) return json({ ResultCode: 1, ResultDesc: "Could not record callback" }, 503);
 
-  console.info("[payments][daraja][callback] Callback accepted for reconciliation", {
+  console.info("[payments][daraja][callback] Callback durably queued for reconciliation", {
     providerEventId: eventId,
     paymentAttemptId: attempt.id,
     checkoutRequestIdSuffix: checkoutId.slice(-6),
@@ -187,114 +181,7 @@ export async function POST(request: NextRequest) {
     callbackMetadataItemCount: Object.keys(metadata).length,
   });
 
-  try {
-    // Daraja callbacks are not cryptographically signed. A callback is stored
-    // as evidence to reconcile, never as proof that money was received.
-    const providerStatus = await queryStkPush(checkoutId, configResult.config);
-    if (
-      providerStatus.checkoutRequestId !== checkoutId ||
-      (providerStatus.merchantRequestId &&
-        attempt.provider_merchant_ref &&
-        providerStatus.merchantRequestId !== attempt.provider_merchant_ref)
-    ) {
-      await service.from("akiba_provider_events").update({
-        processing_status: "failed",
-        retryable: false,
-        processing_note: "Provider response references did not match the stored attempt; manual review required.",
-      }).eq("id", eventId);
-      return json({ ResultCode: 1, ResultDesc: "Payment reference requires manual reconciliation" }, 202);
-    }
-
-    if (callbackResultCode === "0" && providerStatus.resultCode === "0") {
-      const expectedMinor = Number(attempt.amount_minor);
-      if (
-        !receipt ||
-        amountMinor === null ||
-        !Number.isSafeInteger(amountMinor) ||
-        amountMinor !== expectedMinor ||
-        attempt.currency_code !== "KES"
-      ) {
-        await service.from("akiba_provider_events").update({
-          processing_status: "failed",
-          retryable: false,
-          processing_note: "Callback amount, currency, or receipt did not match the stored attempt; manual review required.",
-        }).eq("id", eventId);
-        return json({ ResultCode: 1, ResultDesc: "Payment details require manual reconciliation" }, 202);
-      }
-
-      const { error: postError } = await service.rpc("post_mpesa_contribution", {
-        p_checkout_request_id: checkoutId,
-        p_provider_receipt_number: receipt,
-        p_amount_minor: String(amountMinor),
-        p_currency_code: "KES",
-        p_provider_result_code: callbackResultCode,
-      });
-      if (postError) throw postError;
-    } else if (
-      callbackResultCode !== "0" &&
-      providerStatus.resultCode !== null &&
-      providerStatus.resultCode !== "0"
-    ) {
-      const cancelled = callbackResultCode === "1032" || providerStatus.resultCode === "1032";
-      const nextStatus = cancelled ? "cancelled" : "failed";
-      await service.from("akiba_payment_attempts").update({
-        status: nextStatus,
-        response_code: providerStatus.resultCode,
-        response_summary: (providerStatus.resultDescription || callbackDescription || "M-Pesa payment failed.").slice(0, 500),
-        confirmed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).eq("id", attempt.id);
-      await service.from("akiba_contribution_intents").update({
-        status: nextStatus,
-        updated_at: new Date().toISOString(),
-      }).eq("id", attempt.contribution_intent_id);
-    } else if (
-      providerStatus.resultCode !== null &&
-      callbackResultCode !== providerStatus.resultCode &&
-      (providerStatus.resultCode === "0" || callbackResultCode === "0")
-    ) {
-      await service.from("akiba_provider_events").update({
-        processing_status: "failed",
-        retryable: false,
-        processing_note: "Callback and provider final results disagree; manual review required.",
-      }).eq("id", eventId);
-      return json({ ResultCode: 1, ResultDesc: "Callback and provider status disagree; manual review required" }, 202);
-    } else {
-      await service.from("akiba_provider_events").update({
-        processing_status: "failed",
-        retryable: true,
-        attempt_count: 1,
-        next_retry_at: new Date(Date.now() + 60_000).toISOString(),
-        processing_note: "Provider status is not final; automatic reconciliation is scheduled.",
-      }).eq("id", eventId);
-      return json({ ResultCode: 0, ResultDesc: "Callback received; awaiting final provider status" });
-    }
-
-    await service.from("akiba_provider_events").update({
-      processing_status: "processed",
-      processed_at: new Date().toISOString(),
-      retryable: false,
-      processing_note: null,
-    }).eq("id", eventId);
-
-    return json({ ResultCode: 0, ResultDesc: "Callback processed" });
-  } catch (error) {
-    const retryable = error instanceof PaymentError ? error.retryable : true;
-    console.error("[payments][daraja][callback] Callback reconciliation failed", {
-      providerEventId: eventId,
-      paymentAttemptId: attempt.id,
-      checkoutRequestIdSuffix: checkoutId.slice(-6),
-      errorCode: error instanceof PaymentError ? error.code : undefined,
-      errorType: error instanceof PaymentError ? undefined : error instanceof Error ? error.name : typeof error,
-      retryable,
-    });
-    await service.from("akiba_provider_events").update({
-      processing_status: "failed",
-      retryable,
-      attempt_count: 1,
-      next_retry_at: new Date(Date.now() + 60_000).toISOString(),
-      processing_note: "Callback could not be reconciled immediately; automatic retry is scheduled.",
-    }).eq("id", eventId);
-    return json({ ResultCode: 1, ResultDesc: "Callback stored; automatic reconciliation is scheduled" }, 503);
-  }
+  // Acknowledge only after callback facts are durably stored. Do not make Safaricom wait for a status query that may be rate-limited or unavailable.
+  // The scheduled worker independently verifies the event before ledger posting.
+  return json({ ResultCode: 0, ResultDesc: "Callback received and queued for reconciliation" });
 }
