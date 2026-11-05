@@ -77,6 +77,7 @@ export default async function GroupFinancesPage({ params }: Props) {
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const sandboxEnabled = process.env.MPESA_ENVIRONMENT === "sandbox" &&
     process.env.MPESA_SANDBOX_COLLECTION_ENABLED === "true" &&
+    process.env.MPESA_SANDBOX_TEST_GROUP_ID === group.id &&
     group.currency_code === "KES";
   const readError = Boolean(transactionError || ledgerError);
 
