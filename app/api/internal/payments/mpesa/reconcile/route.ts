@@ -67,22 +67,37 @@ export async function GET(request: NextRequest) {
   // is intentionally missing result code, amount, currency and receipt, so it
   // can trigger provider status checks but can never satisfy posting criteria.
   const recoveryCutoff = new Date(Date.now() - 2 * 60_000).toISOString();
-  const { data: staleAttempts, error: staleAttemptsError } = await service
-    .from("akiba_payment_attempts")
-    .select("provider_attempt_ref,provider_merchant_ref")
-    .eq("provider_id", provider.id)
-    .eq("status", "pending")
-    .not("provider_attempt_ref", "is", null)
-    .not("submitted_at", "is", null)
-    .lt("submitted_at", recoveryCutoff)
-    .order("submitted_at", { ascending: true })
-    .limit(100);
-
   let discoveredMissingCallbacks = 0;
-  if (staleAttemptsError) {
-    console.error("[payments][daraja][reconcile] Stale-attempt discovery failed");
-  } else {
-    const candidateRefs = (staleAttempts ?? [])
+  let discoveryOffset = 0;
+  const discoveryPageSize = 100;
+  let discoveryComplete = false;
+
+  // Page through the complete stale-attempt set. A fixed first-page limit
+  // would permanently starve newer attempts whenever the oldest 100 already
+  // had callback events.
+  while (!discoveryComplete && discoveredMissingCallbacks < BATCH_SIZE) {
+    const { data: staleAttempts, error: staleAttemptsError } = await service
+      .from("akiba_payment_attempts")
+      .select("id,provider_attempt_ref,provider_merchant_ref")
+      .eq("provider_id", provider.id)
+      .eq("status", "pending")
+      .not("provider_attempt_ref", "is", null)
+      .not("submitted_at", "is", null)
+      .lt("submitted_at", recoveryCutoff)
+      .order("submitted_at", { ascending: true })
+      .order("id", { ascending: true })
+      .range(discoveryOffset, discoveryOffset + discoveryPageSize - 1);
+
+    if (staleAttemptsError) {
+      console.error("[payments][daraja][reconcile] Stale-attempt discovery failed");
+      break;
+    }
+    const page = staleAttempts ?? [];
+    if (page.length < discoveryPageSize) discoveryComplete = true;
+    discoveryOffset += page.length;
+    if (!page.length) break;
+
+    const candidateRefs = page
       .map((attempt) => attempt.provider_attempt_ref)
       .filter((reference): reference is string => Boolean(reference));
     const { data: existingEvents, error: existingEventsError } = candidateRefs.length
@@ -92,42 +107,45 @@ export async function GET(request: NextRequest) {
           .eq("provider_id", provider.id)
           .in("provider_event_ref", candidateRefs)
       : { data: [], error: null };
+
     if (existingEventsError) {
       console.error("[payments][daraja][reconcile] Existing recovery-event lookup failed");
-    } else {
-      const existingRefs = new Set((existingEvents ?? []).map((event) => event.provider_event_ref));
-      const missingAttempts = (staleAttempts ?? [])
-        .filter((attempt) => attempt.provider_attempt_ref && !existingRefs.has(attempt.provider_attempt_ref))
-        .slice(0, BATCH_SIZE);
-      for (const staleAttempt of missingAttempts) {
-        if (!staleAttempt.provider_attempt_ref) continue;
-        const { error: placeholderError } = await service
-          .from("akiba_provider_events")
-          .upsert({
-            provider_id: provider.id,
-            provider_event_ref: staleAttempt.provider_attempt_ref,
-            event_type: "mpesa_stk_callback",
-            source_reference: staleAttempt.provider_merchant_ref,
-            payload_digest: `callback-missing:${staleAttempt.provider_attempt_ref}`,
-            provider_result_code: null,
-            amount_minor: null,
-            currency_code: null,
-            provider_receipt_number: null,
-            retryable: true,
-            attempt_count: 0,
-            next_retry_at: now,
-            processing_status: "received",
-            processing_note: "Awaiting authenticated callback receipt details; discovered from a stale pending attempt.",
-          }, { onConflict: "provider_id,provider_event_ref", ignoreDuplicates: true });
-        if (!placeholderError) discoveredMissingCallbacks += 1;
-        else console.error("[payments][daraja][reconcile] Could not create missing-callback recovery record");
-      }
+      break;
+    }
+
+    const existingRefs = new Set((existingEvents ?? []).map((event) => event.provider_event_ref));
+    const missingAttempts = page
+      .filter((attempt) => attempt.provider_attempt_ref && !existingRefs.has(attempt.provider_attempt_ref))
+      .slice(0, BATCH_SIZE - discoveredMissingCallbacks);
+
+    for (const staleAttempt of missingAttempts) {
+      if (!staleAttempt.provider_attempt_ref) continue;
+      const { error: placeholderError } = await service
+        .from("akiba_provider_events")
+        .upsert({
+          provider_id: provider.id,
+          provider_event_ref: staleAttempt.provider_attempt_ref,
+          event_type: "mpesa_stk_callback",
+          source_reference: staleAttempt.provider_merchant_ref,
+          payload_digest: `callback-missing:${staleAttempt.provider_attempt_ref}`,
+          provider_result_code: null,
+          amount_minor: null,
+          currency_code: null,
+          provider_receipt_number: null,
+          retryable: true,
+          attempt_count: 0,
+          next_retry_at: now,
+          processing_status: "received",
+          processing_note: "Awaiting authenticated callback receipt details; discovered from a stale pending attempt.",
+        }, { onConflict: "provider_id,provider_event_ref", ignoreDuplicates: true });
+      if (!placeholderError) discoveredMissingCallbacks += 1;
+      else console.error("[payments][daraja][reconcile] Could not create missing-callback recovery record");
     }
   }
 
   const { data: dueEvents, error: eventsError } = await service
     .from("akiba_provider_events")
-    .select("id,provider_event_ref,source_reference,provider_result_code,amount_minor,currency_code,provider_receipt_number,attempt_count")
+    .select("id,provider_event_ref,source_reference,payload_digest,provider_result_code,amount_minor,currency_code,provider_receipt_number,attempt_count")
     .eq("provider_id", provider.id)
     .eq("event_type", "mpesa_stk_callback")
     .eq("retryable", true)
@@ -160,6 +178,7 @@ export async function GET(request: NextRequest) {
         next_retry_at: new Date(Date.now() + 2 * 60_000).toISOString(),
       })
       .eq("id", event.id)
+      .eq("payload_digest", event.payload_digest)
       .eq("retryable", true)
       .is("processed_at", null)
       .in("processing_status", ["received", "failed", "processing"])
@@ -184,7 +203,7 @@ export async function GET(request: NextRequest) {
         processing_status: "failed",
         retryable: false,
         processing_note: "Stored callback no longer matches a payment attempt; manual review required.",
-      }).eq("id", event.id);
+      }).eq("id", event.id).eq("payload_digest", event.payload_digest);
       manualReview += 1;
       continue;
     }
