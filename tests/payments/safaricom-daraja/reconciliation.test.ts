@@ -4,7 +4,7 @@ import {
   isMissingCallbackPlaceholder,
   isRetryableDarajaHttpStatus,
   normalizeMpesaReceipt,
-} from "../../lib/payments/providers/safaricom-daraja/reconciliation";
+} from "../../../lib/payments/providers/safaricom-daraja/reconciliation";
 
 describe("Safaricom callback evidence", () => {
   it("normalizes a valid ten-character receipt", () => {
