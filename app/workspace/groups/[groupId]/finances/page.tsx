@@ -50,9 +50,9 @@ export default async function GroupFinancesPage({ params }: Props) {
     .select("status").eq("group_id", group.id).eq("user_id", user.id).maybeSingle();
   if (!membership || membership.status !== "active") notFound();
 
-  const [{ data: transactions, error: transactionError }, { data: ledgerLines, error: ledgerError }] = await Promise.all([
+  const [{ data: transactions, error: transactionError, count: transactionCount }, { data: ledgerLines, error: ledgerError }] = await Promise.all([
     supabase.from("akiba_financial_transactions")
-      .select("id,reference,description,currency_code,effective_at")
+      .select("id,reference,description,currency_code,effective_at", { count: "exact" })
       .eq("group_id", group.id)
       .eq("transaction_type", "contribution")
       .order("effective_at", { ascending: false })
@@ -74,7 +74,7 @@ export default async function GroupFinancesPage({ params }: Props) {
       ...transaction,
       amount_minor: linesByTransaction.get(transaction.id) ?? 0,
     }));
-  const totalMinor = history.reduce((sum, item) => sum + item.amount_minor, 0);
+  const totalMinor = (ledgerLines ?? []).reduce((sum, line) => sum + Number(line.amount_minor), 0);
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const sandboxEnabled = process.env.MPESA_ENVIRONMENT === "sandbox" &&
     process.env.MPESA_SANDBOX_COLLECTION_ENABLED === "true" &&
@@ -132,7 +132,7 @@ export default async function GroupFinancesPage({ params }: Props) {
 
           <section className="ak-finance-summary" aria-label="Group finance summary">
             <article className="ak-workspace-summary-card"><span className="ak-summary-icon target">◎</span><div><small>Confirmed contributions</small><strong>{readError ? "—" : money(totalMinor, group.currency_code)}</strong><span>Only provider-confirmed funds are counted</span></div></article>
-            <article className="ak-workspace-summary-card"><span className="ak-summary-icon members">↗</span><div><small>Posted contributions</small><strong>{readError ? "—" : history.length}</strong><span>Immutable ledger transactions</span></div></article>
+            <article className="ak-workspace-summary-card"><span className="ak-summary-icon members">↗</span><div><small>Posted contributions</small><strong>{readError ? "—" : transactionCount ?? 0}</strong><span>Immutable ledger transactions</span></div></article>
             <article className="ak-workspace-summary-card"><span className="ak-summary-icon role">◎</span><div><small>Group target</small><strong>{group.target_amount === null ? "Not set" : money(Number(group.target_amount) * 100, group.currency_code)}</strong><span>Shared group goal</span></div></article>
           </section>
 
