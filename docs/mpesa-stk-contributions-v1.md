@@ -22,7 +22,7 @@ Set these server-only deployment variables:
 - MPESA_CALLBACK_URL: public HTTPS URL ending in /api/integrations/mpesa/callback?token=THE_SAME_RANDOM_SECRET
 - MPESA_SANDBOX_COLLECTION_ENABLED=true only on the sandbox deployment intended for testing
 
-Do not prefix any of these variables with NEXT_PUBLIC_. Configure the callback URL in the Daraja sandbox app. The callback endpoint uses the URL token as an additional shared-secret check because Daraja STK callbacks are not cryptographically signed. It independently queries Daraja before accepting a callback as evidence of a payment outcome.
+Do not prefix any of these variables with NEXT_PUBLIC_. Configure the callback URL in the Daraja sandbox app. The callback endpoint uses the URL token as an additional shared-secret check because Daraja STK callbacks are not cryptographically signed. It durably queues the authenticated callback facts and acknowledges only after storage succeeds; it does not call Daraja during the webhook request. The scheduled reconciliation worker independently queries Daraja and requires a matching successful provider result plus callback receipt and amount details before posting.
 
 ## API
 
@@ -53,7 +53,7 @@ Public webhook route protected by the configured random callback token. The call
 
 ### Automatic callback reconciliation
 
-The callback stores only the minimal reconciliation facts (provider result code, KES amount, receipt reference, and a payload digest); it does not retain the raw callback body or phone number. If the immediate Safaricom status query fails or is not final, the event remains in a durable retry queue with bounded exponential backoff. A protected worker at `GET /api/internal/payments/mpesa/reconcile` processes due events in small batches. It requires `Authorization: Bearer $CRON_SECRET`, re-queries Safaricom, checks checkout/merchant references and amount/currency/receipt, and only then calls the same idempotent ledger-posting RPC. Expired worker claims can be recovered; exhausted or conflicting events are flagged for manual review and never posted.
+The callback stores only the minimal reconciliation facts (provider result code, KES amount, receipt reference, and a payload digest); it does not retain the raw callback body or phone number. When enriching an active recovery placeholder, it preserves the worker's lease. Worker writes are conditional on the callback payload digest so an older worker cannot overwrite newer callback facts, and the worker rechecks the digest immediately before ledger posting. Missing-callback discovery pages through stale attempts rather than repeatedly examining only the oldest fixed page. If the immediate Safaricom status query fails or is not final, the event remains in a durable retry queue with bounded exponential backoff. A protected worker at `GET /api/internal/payments/mpesa/reconcile` processes due events in small batches. It requires `Authorization: Bearer $CRON_SECRET`, re-queries Safaricom, checks checkout/merchant references and amount/currency/receipt, and only then calls the same idempotent ledger-posting RPC. Expired worker claims can be recovered; exhausted or conflicting events are flagged for manual review and never posted.
 
 Configure a trusted scheduler to call this endpoint every 5 minutes and set `CRON_SECRET` only in the server environment. Do not expose it as a `NEXT_PUBLIC_` variable. Vercel Cron can invoke the endpoint, but Hobby plans allow only one run per day, which is too slow for payment reconciliation; use a Pro schedule or an external scheduler for a 5-minute cadence. Vercel Cron does not retry failed invocations, so the worker itself is idempotent and scans all due records on each run.
 
@@ -87,4 +87,4 @@ Use only Daraja sandbox credentials and sandbox test numbers. Do not use a real 
 7. Idempotency conflict: reuse a key with different amount/group/provider; verify HTTP 409.
 8. Unknown provider reference, mismatched amount, missing receipt, and failed status query: verify no ledger posting and reconciliation-needed state.
 
-Repository CI validates lint, typecheck, and build. Real sandbox end-to-end tests require the deployment variables, a publicly reachable HTTPS callback URL, and a Daraja sandbox test phone configured in the developer portal.
+Repository CI validates unit tests, PostgreSQL ledger-posting regression tests (including concurrent duplicate RPC calls), lint, typecheck, and build. These database tests use a disposable CI database and do not verify the hosted Supabase runtime. Real sandbox end-to-end tests require the deployment variables, a publicly reachable HTTPS callback URL, and a Daraja sandbox test phone configured in the developer portal.
