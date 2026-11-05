@@ -46,3 +46,14 @@ export function hasPostableContributionEvidence(evidence: ContributionEvidence):
 export function isRetryableDarajaHttpStatus(status: number): boolean {
   return status === 408 || status === 425 || status === 429 || status >= 500;
 }
+
+/** Preserve an active worker lease when an authenticated callback enriches its event. */
+export function callbackRefreshNextRetryAt(
+  processingStatus: string,
+  existingNextRetryAt: string | null,
+  now: string,
+): string {
+  return processingStatus === "processing" && existingNextRetryAt
+    ? existingNextRetryAt
+    : now;
+}
