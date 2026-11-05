@@ -37,6 +37,7 @@ begin
      or length(p_provider_receipt_number) <> 10
      or p_provider_receipt_number ~ '[^A-Z0-9]'
      or p_provider_result_code <> '0' then
+    raise exception 'A confirmed M-Pesa success with provider references is required';
   end if;
 
   select id into v_provider_id
