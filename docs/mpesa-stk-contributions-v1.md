@@ -23,7 +23,7 @@ Set these server-only deployment variables:
 - MPESA_SANDBOX_COLLECTION_ENABLED=true only on the sandbox deployment intended for testing
 - MPESA_SANDBOX_TEST_GROUP_ID: the UUID of the one KES Test group allowed to initiate sandbox contributions on that Preview deployment; the server rejects collection requests for every other group
 
-Do not prefix any of these variables with NEXT_PUBLIC_. Configure the callback URL in the Daraja sandbox app. The callback endpoint uses the URL token as an additional shared-secret check because Daraja STK callbacks are not cryptographically signed. It durably queues the authenticated callback facts and acknowledges only after storage succeeds; it does not call Daraja during the webhook request. The scheduled reconciliation worker independently queries Daraja and requires a matching successful provider result plus callback receipt and amount details before posting.
+Do not prefix any of these variables with NEXT_PUBLIC_. Configure the callback URL in the Daraja sandbox app. The callback endpoint uses the URL token as a shared-secret check because Daraja STK callbacks are not cryptographically signed. It validates the checkout reference against the stored attempt and, when present, requires an exact merchant-reference match. A complete success callback (result code 0, valid ten-character receipt, exact amount and KES currency) is posted immediately through the atomic ledger RPC. It does not call STK Query. The callback is acknowledged only after its facts are durably stored; incomplete or mismatched success callbacks are retained for manual review and never credit group funds.
 
 ## API
 
@@ -50,11 +50,11 @@ The server verifies active membership, group currency, provider capability, and 
 
 POST /api/integrations/mpesa/callback?token=...
 
-Public webhook route protected by the configured random callback token. The callback is treated as an untrusted notification. The server correlates the CheckoutRequestID to a previously created attempt and calls the Daraja STK Query API. Only a matching successful provider query plus callback receipt and amount details can post a contribution.
+Public webhook route protected by the configured random callback token. The server correlates the CheckoutRequestID to a previously created attempt, validates the merchant reference when one was stored, and checks the callback's success result, ten-character receipt, exact amount and KES currency. Complete success callbacks post immediately; the flow does not depend on STK Query availability.
 
 ### Automatic callback reconciliation
 
-The callback stores only the minimal reconciliation facts (provider result code, KES amount, receipt reference, and a payload digest); it does not retain the raw callback body or phone number. When enriching an active recovery placeholder, it preserves the worker's lease. Worker writes are conditional on the callback payload digest so an older worker cannot overwrite newer callback facts, and the worker rechecks the digest immediately before ledger posting. Missing-callback discovery pages through stale attempts rather than repeatedly examining only the oldest fixed page. If the immediate Safaricom status query fails or is not final, the event remains in a durable retry queue with bounded exponential backoff. A protected worker at `GET /api/internal/payments/mpesa/reconcile` processes due events in small batches. It requires `Authorization: Bearer $CRON_SECRET`, re-queries Safaricom, checks checkout/merchant references and amount/currency/receipt, and only then calls the same idempotent ledger-posting RPC. Expired worker claims can be recovered; exhausted or conflicting events are flagged for manual review and never posted.
+The callback stores only minimal facts (provider result code, KES amount, receipt reference, and payload digest); it does not retain the raw callback body or phone number. Complete success callbacks call the same atomic, idempotent posting RPC used by recovery. If database posting is temporarily unavailable, the event remains in a durable retry queue with bounded exponential backoff. The protected worker at `GET /api/internal/payments/mpesa/reconcile` processes due events in small batches and requires `Authorization: Bearer $CRON_SECRET`. It prioritizes complete success callback evidence and posts it without calling STK Query. STK Query is reserved for missing callbacks and non-success/incomplete events where an independent provider status can help reconcile the outcome. Worker writes are conditional on the callback payload digest, and the digest is rechecked immediately before posting so stale workers cannot overwrite newer callback facts. Missing-callback discovery pages through stale attempts. Expired worker claims can be recovered; exhausted or conflicting events are flagged for manual review and never posted.
 
 Configure a trusted scheduler to call this endpoint every 5 minutes and set `CRON_SECRET` only in the server environment. Do not expose it as a `NEXT_PUBLIC_` variable. Vercel Cron can invoke the endpoint, but Hobby plans allow only one run per day, which is too slow for payment reconciliation; use a Pro schedule or an external scheduler for a 5-minute cadence. Vercel Cron does not retry failed invocations, so the worker itself is idempotent and scans all due records on each run.
 
@@ -62,7 +62,7 @@ Configure a trusted scheduler to call this endpoint every 5 minutes and set `CRO
 
 GET /api/contributions/{intentId}/status
 
-Authenticated contributor only. Queries Daraja for a final result. A successful status query without receipt metadata does not post the ledger; the route waits for the callback receipt details. Failed and cancelled final outcomes are recorded without affecting group funds.
+Authenticated contributor only. Reads Akiba's durable payment state and does not call Daraja. It reports success only after the atomic ledger posting has completed. Failed and cancelled outcomes do not affect group funds.
 
 ## Ledger behavior
 
@@ -79,14 +79,14 @@ A repeated success callback returns the already-posted transaction. The activity
 
 Use only Daraja sandbox credentials and sandbox test numbers. Do not use a real payment or production credentials.
 
-1. Successful STK authorization: callback + STK Query confirm success; verify exactly one transaction, two balanced journal lines, one activity event.
+1. Successful STK authorization: deliver a complete success callback while STK Query is unavailable or rate-limited; verify the contribution still posts exactly one transaction, two balanced journal lines, one activity event, and the correct group total.
 2. User cancellation: provider returns cancellation (commonly result code 1032); verify no transaction and no group-funds credit.
 3. Failed authorization: verify failed attempt/intent and no ledger movement.
 4. Delayed callback: initiate, poll status, verify no optimistic balance increase; deliver callback later and verify one post.
 5. Duplicate callback: replay the same callback; verify same transaction ID and no extra journal lines or activity events.
 6. Duplicate initiation request: repeat the same idempotency key and same terms; verify no second STK prompt.
 7. Idempotency conflict: reuse a key with different amount/group/provider; verify HTTP 409.
-8. Unknown provider reference, mismatched amount, missing receipt, and failed status query: verify no ledger posting and reconciliation-needed state.
+8. Unknown provider reference, mismatched amount, missing receipt, and provider-query outage: verify no unsafe ledger posting; complete callback facts must still post when STK Query is unavailable.
 
 Repository CI validates unit tests, PostgreSQL ledger-posting regression tests (including concurrent duplicate RPC calls), lint, typecheck, and build. These database tests use a disposable CI database and do not verify the hosted Supabase runtime. Real sandbox end-to-end tests require the deployment variables, a publicly reachable HTTPS callback URL, and a Daraja sandbox test phone configured in the developer portal.
 
