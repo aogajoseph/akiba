@@ -17,7 +17,7 @@ type PaymentState = {
 
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
-    pending: "Awaiting M-Pesa authorization",
+    pending: "Payment confirmation pending",
     unknown: "Payment status not yet confirmed",
     awaiting_callback_details: "Provider reports success; awaiting receipt confirmation",
     succeeded: "Contribution confirmed",
