@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
 type FinancePanelProps = {
@@ -113,7 +113,57 @@ export default function FinancePanel({ groupId, currencyCode, enabled }: Finance
     }
   }
 
-  const terminal = payment && ["succeeded", "failed", "cancelled", "expired"].includes(payment.paymentStatus);
+  const terminal = Boolean(payment && ["succeeded", "failed", "cancelled", "expired"].includes(payment.paymentStatus));
+  const activeIntentId = payment?.intentId ?? null;
+
+  // Poll Akiba's local, durable status only. Provider queries are performed by
+  // the reconciliation worker, so an open finance page cannot rate-limit Daraja.
+  useEffect(() => {
+    if (!activeIntentId || terminal) return;
+
+    let stopped = false;
+    let delayMs = 5_000;
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
+    const poll = async () => {
+      try {
+        const response = await fetch(`/api/contributions/${activeIntentId}/status`, { cache: "no-store" });
+        const result = await response.json();
+        if (!stopped && response.ok && result.ok) {
+          const nextStatus = result.paymentStatus ?? result.status ?? "unknown";
+          setPayment((current) => current?.intentId === activeIntentId
+            ? {
+                intentId: activeIntentId,
+                paymentStatus: nextStatus,
+                message: result.message ?? statusLabel(nextStatus),
+              }
+            : current);
+
+          const isTerminal = Boolean(result.terminal) ||
+            ["succeeded", "failed", "cancelled", "expired"].includes(result.status) ||
+            ["succeeded", "failed", "cancelled", "expired"].includes(nextStatus);
+          if (isTerminal) {
+            if (result.status === "succeeded" || nextStatus === "succeeded") router.refresh();
+            return;
+          }
+        }
+      } catch {
+        // Background polling is best-effort; retain the last known state and retry.
+      }
+
+      if (!stopped) {
+        timer = setTimeout(poll, delayMs);
+        delayMs = Math.min(Math.round(delayMs * 1.5), 30_000);
+      }
+    };
+
+    timer = setTimeout(poll, delayMs);
+    return () => {
+      stopped = true;
+      if (timer) clearTimeout(timer);
+    };
+  }, [activeIntentId, terminal, router]);
+
   const isSuccessful = payment?.paymentStatus === "succeeded";
 
   return (
