@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   callbackRefreshNextRetryAt,
+  hasPostableCallbackEvidence,
   hasPostableContributionEvidence,
   isMissingCallbackPlaceholder,
   isRetryableDarajaHttpStatus,
@@ -46,7 +47,7 @@ describe("Safaricom callback evidence", () => {
     expect(hasPostableContributionEvidence(validEvidence)).toBe(true);
   });
 
-  it("does not post on provider-query success without callback evidence", () => {
+  it("accepts a complete success callback without depending on STK Query", () => {\n    expect(hasPostableCallbackEvidence(validEvidence)).toBe(true);\n  });\n\n  it("rejects a success callback with a missing receipt or mismatched amount", () => {\n    expect(hasPostableCallbackEvidence({ ...validEvidence, receipt: null })).toBe(false);\n    expect(hasPostableCallbackEvidence({ ...validEvidence, amountMinor: 99 })).toBe(false);\n  });\n\n  it("does not post on provider-query success without callback evidence", () => {
     expect(hasPostableContributionEvidence({
       ...validEvidence,
       callbackResultCode: null,
