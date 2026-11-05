@@ -75,34 +75,52 @@ export async function GET(request: NextRequest) {
     .not("submitted_at", "is", null)
     .lt("submitted_at", recoveryCutoff)
     .order("submitted_at", { ascending: true })
-    .limit(BATCH_SIZE);
+    .limit(100);
 
   let discoveredMissingCallbacks = 0;
   if (staleAttemptsError) {
     console.error("[payments][daraja][reconcile] Stale-attempt discovery failed");
   } else {
-    for (const staleAttempt of staleAttempts ?? []) {
-      if (!staleAttempt.provider_attempt_ref) continue;
-      const { error: placeholderError } = await service
-        .from("akiba_provider_events")
-        .upsert({
-          provider_id: provider.id,
-          provider_event_ref: staleAttempt.provider_attempt_ref,
-          event_type: "mpesa_stk_callback",
-          source_reference: staleAttempt.provider_merchant_ref,
-          payload_digest: `callback-missing:${staleAttempt.provider_attempt_ref}`,
-          provider_result_code: null,
-          amount_minor: null,
-          currency_code: null,
-          provider_receipt_number: null,
-          retryable: true,
-          attempt_count: 0,
-          next_retry_at: now,
-          processing_status: "received",
-          processing_note: "Awaiting authenticated callback receipt details; discovered from a stale pending attempt.",
-        }, { onConflict: "provider_id,provider_event_ref", ignoreDuplicates: true });
-      if (!placeholderError) discoveredMissingCallbacks += 1;
-      else console.error("[payments][daraja][reconcile] Could not create missing-callback recovery record");
+    const candidateRefs = (staleAttempts ?? [])
+      .map((attempt) => attempt.provider_attempt_ref)
+      .filter((reference): reference is string => Boolean(reference));
+    const { data: existingEvents, error: existingEventsError } = candidateRefs.length
+      ? await service
+          .from("akiba_provider_events")
+          .select("provider_event_ref")
+          .eq("provider_id", provider.id)
+          .in("provider_event_ref", candidateRefs)
+      : { data: [], error: null };
+    if (existingEventsError) {
+      console.error("[payments][daraja][reconcile] Existing recovery-event lookup failed");
+    } else {
+      const existingRefs = new Set((existingEvents ?? []).map((event) => event.provider_event_ref));
+      const missingAttempts = (staleAttempts ?? [])
+        .filter((attempt) => attempt.provider_attempt_ref && !existingRefs.has(attempt.provider_attempt_ref))
+        .slice(0, BATCH_SIZE);
+      for (const staleAttempt of missingAttempts) {
+        if (!staleAttempt.provider_attempt_ref) continue;
+        const { error: placeholderError } = await service
+          .from("akiba_provider_events")
+          .upsert({
+            provider_id: provider.id,
+            provider_event_ref: staleAttempt.provider_attempt_ref,
+            event_type: "mpesa_stk_callback",
+            source_reference: staleAttempt.provider_merchant_ref,
+            payload_digest: `callback-missing:${staleAttempt.provider_attempt_ref}`,
+            provider_result_code: null,
+            amount_minor: null,
+            currency_code: null,
+            provider_receipt_number: null,
+            retryable: true,
+            attempt_count: 0,
+            next_retry_at: now,
+            processing_status: "received",
+            processing_note: "Awaiting authenticated callback receipt details; discovered from a stale pending attempt.",
+          }, { onConflict: "provider_id,provider_event_ref", ignoreDuplicates: true });
+        if (!placeholderError) discoveredMissingCallbacks += 1;
+        else console.error("[payments][daraja][reconcile] Could not create missing-callback recovery record");
+      }
     }
   }
 
@@ -210,11 +228,14 @@ export async function GET(request: NextRequest) {
         const exhausted = nextAttempt >= MAX_ATTEMPTS;
         await service.from("akiba_provider_events").update({
           processing_status: "failed",
-          retryable: true,
+          retryable: !exhausted,
           next_retry_at: retryAt(nextAttempt),
-          processing_note: "Safaricom reports success, but the authenticated callback receipt is still missing; waiting for callback details.",
+          processing_note: exhausted
+            ? "Safaricom reports success but the authenticated callback receipt is still missing; manual review required. A late callback can reopen this recovery record."
+            : "Safaricom reports success, but the authenticated callback receipt is still missing; waiting for callback details.",
         }).eq("id", event.id);
-        deferred += 1;
+        if (exhausted) manualReview += 1;
+        else deferred += 1;
         continue;
       }
 
