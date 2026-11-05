@@ -116,7 +116,7 @@ async function darajaPost(
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
       "Safaricom returned an unsuccessful response.",
-      { retryable: response.status >= 500 },
+      { retryable: response.status === 408 || response.status === 425 || response.status === 429 || response.status >= 500 },
     );
   }
   return result;
