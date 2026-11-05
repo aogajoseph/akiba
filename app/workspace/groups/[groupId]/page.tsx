@@ -145,8 +145,8 @@ export default async function GroupDetailPage({ params }: Props) {
           </section>
 
           <nav className="ak-group-tabs" aria-label="Group workspace">
-            <span className="active" aria-current="page"><DashboardOutlinedIcon />Overview</span>
-            <span aria-disabled="true" title="Financial tools are being developed"><AccountBalanceWalletOutlinedIcon />Finances</span>
+            <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}`}><DashboardOutlinedIcon />Overview</Link>
+            <Link href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <span aria-disabled="true" title="Member management improvements are coming soon"><GroupsOutlinedIcon />Members</span>
             <span aria-disabled="true" title="Group chat is coming soon"><ChatBubbleOutlineOutlinedIcon />Chat</span>
             <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
@@ -161,8 +161,8 @@ export default async function GroupDetailPage({ params }: Props) {
           <div className="ak-workspace-overview-grid">
             <div className="ak-workspace-primary-column">
               <section className="ak-workspace-card ak-workspace-progress">
-                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">THE SHARED GOAL</span><h2>Contribution progress</h2><p>Keep everyone connected to what the group is working towards.</p></div><span className="ak-coming-pill">Coming soon</span></div>
-                <div className="ak-progress-empty"><span>↗</span><div><strong>{target === null ? "Set a shared target when you are ready" : "Your group target is " + money(target, group.currency_code)}</strong><p>Contribution tracking will appear here when the group finance tools are introduced. Akiba does not currently hold or move group funds.</p></div></div>
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">THE SHARED GOAL</span><h2>Contribution progress</h2><p>Keep everyone connected to what the group is working towards.</p></div><Link className="ak-count-pill" href={`/workspace/groups/${group.id}/finances`}>View finances</Link></div>
+                <div className="ak-progress-empty"><span>↗</span><div><strong>{target === null ? "Set a shared target when you are ready" : "Your group target is " + money(target, group.currency_code)}</strong><p>View confirmed contributions and make a contribution from the group finances area. Akiba does not hold group funds; payments are processed by the provider.</p><Link href={`/workspace/groups/${group.id}/finances`} className="ak-finance-inline-link">Open group finances →</Link></div></div>
               </section>
 
               <section className="ak-workspace-card">
