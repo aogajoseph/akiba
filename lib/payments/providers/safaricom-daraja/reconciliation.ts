@@ -47,6 +47,18 @@ export function isRetryableDarajaHttpStatus(status: number): boolean {
   return status === 408 || status === 425 || status === 429 || status >= 500;
 }
 
+/**
+ * Back off provider verification to avoid repeatedly querying a transaction
+ * while Daraja is returning transient failures or rate limits.
+ * Attempts wait 15m, 30m, 60m, 120m, 240m, then at most 6h.
+ */
+export function reconciliationRetryDelayMinutes(attemptCount: number): number {
+  const safeAttempt = Number.isFinite(attemptCount)
+    ? Math.max(1, Math.floor(attemptCount))
+    : 1;
+  return Math.min(360, 15 * 2 ** (safeAttempt - 1));
+}
+
 /** Preserve an active worker lease when an authenticated callback enriches its event. */
 export function callbackRefreshNextRetryAt(
   processingStatus: string,
