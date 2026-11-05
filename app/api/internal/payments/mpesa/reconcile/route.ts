@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
         last_attempt_at: new Date().toISOString(),
         next_retry_at: new Date(Date.now() + 2 * 60_000).toISOString(),
       })
-      .eq("id", event.id).eq("payload_digest", event.payload_digest)
+      .eq("id", event.id)
       .eq("payload_digest", event.payload_digest)
       .eq("retryable", true)
       .is("processed_at", null)
