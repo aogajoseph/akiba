@@ -4,7 +4,7 @@
 do $$
 begin
   begin
-    perform public.post_mpesa_contribution('ws_CO_CI_0002','CI-RECEIPT-0001',700,'KES','0');
+    perform public.post_mpesa_contribution('ws_CO_CI_0002','CI00000001',700,'KES','0');
     raise exception 'receipt reuse unexpectedly succeeded';
   exception when others then
     if sqlerrm = 'receipt reuse unexpectedly succeeded' then raise; end if;
@@ -12,7 +12,15 @@ begin
   end;
 
   begin
-    perform public.post_mpesa_contribution('ws_CO_CI_0002','CI-RECEIPT-WRONG-AMOUNT',600,'KES','0');
+    perform public.post_mpesa_contribution('ws_CO_CI_0002','BAD-RECEIPT',700,'KES','0');
+    raise exception 'invalid receipt unexpectedly succeeded';
+  exception when others then
+    if sqlerrm = 'invalid receipt unexpectedly succeeded' then raise; end if;
+    if sqlerrm not like '%confirmed M-Pesa success%' then raise; end if;
+  end;
+
+  begin
+    perform public.post_mpesa_contribution('ws_CO_CI_0002','CI00000002',600,'KES','0');
     raise exception 'wrong amount unexpectedly succeeded';
   exception when others then
     if sqlerrm = 'wrong amount unexpectedly succeeded' then raise; end if;
@@ -20,7 +28,7 @@ begin
   end;
 
   begin
-    perform public.post_mpesa_contribution('ws_CO_CI_0002','CI-RECEIPT-WRONG-CURRENCY',700,'USD','0');
+    perform public.post_mpesa_contribution('ws_CO_CI_0002','CI00000003',700,'USD','0');
     raise exception 'wrong currency unexpectedly succeeded';
   exception when others then
     if sqlerrm = 'wrong currency unexpectedly succeeded' then raise; end if;
@@ -28,7 +36,7 @@ begin
   end;
 
   begin
-    perform public.post_mpesa_contribution('ws_CO_CI_0002','CI-RECEIPT-FAILED',700,'KES','1032');
+    perform public.post_mpesa_contribution('ws_CO_CI_0002','CI00000004',700,'KES','1032');
     raise exception 'non-success result unexpectedly succeeded';
   exception when others then
     if sqlerrm = 'non-success result unexpectedly succeeded' then raise; end if;
