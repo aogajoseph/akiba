@@ -142,7 +142,7 @@ export async function POST(request: NextRequest) {
   if (eventInsertError?.code === "23505") {
     const { data: existingEvent, error: existingEventError } = await service
       .from("akiba_provider_events")
-      .select("id,processing_status,retryable")
+      .select("id,processing_status,retryable,payload_digest,provider_result_code,provider_receipt_number")
       .eq("provider_id", provider.id)
       .eq("provider_event_ref", checkoutId)
       .single();
@@ -153,18 +153,32 @@ export async function POST(request: NextRequest) {
     if (existingEvent.processing_status === "processed") {
       return json({ ResultCode: 0, ResultDesc: "Duplicate callback acknowledged" });
     }
-    if (existingEvent.processing_status === "processing") {
-      return json({ ResultCode: 0, ResultDesc: "Callback is already being reconciled" }, 202);
-    }
-    if (!existingEvent.retryable) {
-      return json({ ResultCode: 0, ResultDesc: "Callback is awaiting manual reconciliation" }, 202);
-    }
+
+    // A stale-attempt recovery placeholder is deliberately incomplete: it has
+    // no callback result or receipt. A late authenticated callback must enrich
+    // it even when the worker currently holds a processing lease or exhausted
+    // its retries. Never reopen unrelated manual-review events.
+    const isRecoveryPlaceholder =
+      typeof existingEvent.payload_digest === "string" &&
+      existingEvent.payload_digest.startsWith("callback-missing:") &&
+      !existingEvent.provider_result_code &&
+      !existingEvent.provider_receipt_number;
+    const canRetry = existingEvent.retryable || isRecoveryPlaceholder;
+    const nextProcessingStatus = existingEvent.processing_status === "processing"
+      ? "processing"
+      : canRetry
+        ? "received"
+        : existingEvent.processing_status;
 
     const { error: refreshError } = await service
       .from("akiba_provider_events")
-      .update(eventValues)
-      .eq("id", existingEvent.id)
-      .in("processing_status", ["received", "failed"]);
+      .update({
+        ...eventValues,
+        processing_status: nextProcessingStatus,
+        retryable: canRetry,
+        processing_note: canRetry ? null : "Authenticated callback received; existing manual-review state retained.",
+      })
+      .eq("id", existingEvent.id);
     if (refreshError) return json({ ResultCode: 1, ResultDesc: "Could not refresh callback record" }, 503);
     eventId = existingEvent.id;
   } else if (eventInsertError) {
