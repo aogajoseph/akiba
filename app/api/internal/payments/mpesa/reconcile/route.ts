@@ -3,6 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
 import { PaymentError } from "@/lib/payments/errors";
+import { hasPostableContributionEvidence } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -249,15 +250,15 @@ export async function GET(request: NextRequest) {
           ? event.provider_receipt_number
           : "";
 
-        if (
-          !/^[A-Z0-9]{10}$/.test(receipt) ||
-          !Number.isSafeInteger(amountMinor) ||
-          !Number.isSafeInteger(expectedMinor) ||
-          amountMinor <= 0 ||
-          amountMinor !== expectedMinor ||
-          event.currency_code !== "KES" ||
-          attempt.currency_code !== "KES"
-        ) {
+        if (!hasPostableContributionEvidence({
+          callbackResultCode: callbackCode,
+          providerResultCode: providerStatus.resultCode,
+          receipt,
+          amountMinor,
+          expectedAmountMinor: expectedMinor,
+          eventCurrency: event.currency_code,
+          attemptCurrency: attempt.currency_code,
+        })) {
           await service.from("akiba_provider_events").update({
             processing_status: "failed",
             retryable: false,
