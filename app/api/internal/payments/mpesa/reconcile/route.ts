@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
         last_attempt_at: new Date().toISOString(),
         next_retry_at: new Date(Date.now() + 2 * 60_000).toISOString(),
       })
-      .eq("id", event.id)
+      .eq("id", event.id).eq("payload_digest", event.payload_digest)
       .eq("payload_digest", event.payload_digest)
       .eq("retryable", true)
       .is("processed_at", null)
@@ -217,7 +217,7 @@ export async function GET(request: NextRequest) {
         processing_status: "failed",
         retryable: false,
         processing_note: "Stored callback merchant reference did not match the payment attempt; manual review required.",
-      }).eq("id", event.id);
+      }).eq("id", event.id).eq("payload_digest", event.payload_digest);
       manualReview += 1;
       continue;
     }
@@ -234,7 +234,7 @@ export async function GET(request: NextRequest) {
           processing_status: "failed",
           retryable: false,
           processing_note: "Provider response references did not match the stored attempt; manual review required.",
-        }).eq("id", event.id);
+        }).eq("id", event.id).eq("payload_digest", event.payload_digest);
         manualReview += 1;
         continue;
       }
@@ -253,7 +253,7 @@ export async function GET(request: NextRequest) {
           processing_note: exhausted
             ? "Safaricom reports success but the authenticated callback receipt is still missing; manual review required. A late callback can reopen this recovery record."
             : "Safaricom reports success, but the authenticated callback receipt is still missing; waiting for callback details.",
-        }).eq("id", event.id).is("provider_result_code", null);
+        }).eq("id", event.id).eq("payload_digest", event.payload_digest).is("provider_result_code", null);
         // A callback may have arrived while the provider query was in flight.
         // In that case the conditional update affects no row; the next worker
         // pass will process the newly persisted callback facts.
@@ -282,7 +282,7 @@ export async function GET(request: NextRequest) {
             processing_status: "failed",
             retryable: false,
             processing_note: "Stored callback amount, currency, or receipt did not match the verified payment; manual review required.",
-          }).eq("id", event.id);
+          }).eq("id", event.id).eq("payload_digest", event.payload_digest);
           manualReview += 1;
           continue;
         }
@@ -301,7 +301,7 @@ export async function GET(request: NextRequest) {
           processed_at: new Date().toISOString(),
           retryable: false,
           processing_note: null,
-        }).eq("id", event.id);
+        }).eq("id", event.id).eq("payload_digest", event.payload_digest);
         processed += 1;
         continue;
       }
@@ -330,7 +330,7 @@ export async function GET(request: NextRequest) {
           processed_at: new Date().toISOString(),
           retryable: false,
           processing_note: null,
-        }).eq("id", event.id);
+        }).eq("id", event.id).eq("payload_digest", event.payload_digest);
         processed += 1;
         continue;
       }
@@ -346,7 +346,7 @@ export async function GET(request: NextRequest) {
           processing_status: "failed",
           retryable: false,
           processing_note: "Callback and provider final results disagree; manual review required.",
-        }).eq("id", event.id);
+        }).eq("id", event.id).eq("payload_digest", event.payload_digest);
         manualReview += 1;
         continue;
       }
@@ -359,7 +359,7 @@ export async function GET(request: NextRequest) {
         processing_note: exhausted
           ? "Reconciliation retry limit reached; manual review required."
           : "Safaricom has not returned a matching final status; retry scheduled.",
-      }).eq("id", event.id);
+      }).eq("id", event.id).eq("payload_digest", event.payload_digest);
       if (callbackCode === null) retryUpdate.is("provider_result_code", null);
       await retryUpdate;
       if (exhausted) manualReview += 1;
@@ -382,7 +382,7 @@ export async function GET(request: NextRequest) {
         processing_note: shouldRetry
           ? "Provider verification failed; retry scheduled."
           : "Provider verification could not be completed; manual review required.",
-      }).eq("id", event.id);
+      }).eq("id", event.id).eq("payload_digest", event.payload_digest);
       if (event.provider_result_code === null) failureUpdate.is("provider_result_code", null);
       await failureUpdate;
       if (shouldRetry) deferred += 1;
