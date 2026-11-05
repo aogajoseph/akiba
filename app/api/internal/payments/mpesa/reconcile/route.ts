@@ -61,6 +61,51 @@ export async function GET(request: NextRequest) {
   }
 
   const now = new Date().toISOString();
+
+  // Discover provider attempts whose callback never arrived. The placeholder
+  // is intentionally missing result code, amount, currency and receipt, so it
+  // can trigger provider status checks but can never satisfy posting criteria.
+  const recoveryCutoff = new Date(Date.now() - 2 * 60_000).toISOString();
+  const { data: staleAttempts, error: staleAttemptsError } = await service
+    .from("akiba_payment_attempts")
+    .select("provider_attempt_ref,provider_merchant_ref")
+    .eq("provider_id", provider.id)
+    .eq("status", "pending")
+    .not("provider_attempt_ref", "is", null)
+    .not("submitted_at", "is", null)
+    .lt("submitted_at", recoveryCutoff)
+    .order("submitted_at", { ascending: true })
+    .limit(BATCH_SIZE);
+
+  let discoveredMissingCallbacks = 0;
+  if (staleAttemptsError) {
+    console.error("[payments][daraja][reconcile] Stale-attempt discovery failed");
+  } else {
+    for (const staleAttempt of staleAttempts ?? []) {
+      if (!staleAttempt.provider_attempt_ref) continue;
+      const { error: placeholderError } = await service
+        .from("akiba_provider_events")
+        .upsert({
+          provider_id: provider.id,
+          provider_event_ref: staleAttempt.provider_attempt_ref,
+          event_type: "mpesa_stk_callback",
+          source_reference: staleAttempt.provider_merchant_ref,
+          payload_digest: `callback-missing:${staleAttempt.provider_attempt_ref}`,
+          provider_result_code: null,
+          amount_minor: null,
+          currency_code: null,
+          provider_receipt_number: null,
+          retryable: true,
+          attempt_count: 0,
+          next_retry_at: now,
+          processing_status: "received",
+          processing_note: "Awaiting authenticated callback receipt details; discovered from a stale pending attempt.",
+        }, { onConflict: "provider_id,provider_event_ref", ignoreDuplicates: true });
+      if (!placeholderError) discoveredMissingCallbacks += 1;
+      else console.error("[payments][daraja][reconcile] Could not create missing-callback recovery record");
+    }
+  }
+
   const { data: dueEvents, error: eventsError } = await service
     .from("akiba_provider_events")
     .select("id,provider_event_ref,source_reference,provider_result_code,amount_minor,currency_code,provider_receipt_number,attempt_count")
@@ -157,6 +202,22 @@ export async function GET(request: NextRequest) {
       }
 
       const callbackCode = event.provider_result_code;
+
+      // Provider query success without an authenticated callback receipt is
+      // not sufficient evidence to post. Keep the event recoverable so a late
+      // callback can supply the receipt and exact amount/currency facts.
+      if (callbackCode === null && providerStatus.resultCode === "0") {
+        const exhausted = nextAttempt >= MAX_ATTEMPTS;
+        await service.from("akiba_provider_events").update({
+          processing_status: "failed",
+          retryable: true,
+          next_retry_at: retryAt(nextAttempt),
+          processing_note: "Safaricom reports success, but the authenticated callback receipt is still missing; waiting for callback details.",
+        }).eq("id", event.id);
+        deferred += 1;
+        continue;
+      }
+
       if (callbackCode === "0" && providerStatus.resultCode === "0") {
         const amountMinor = Number(event.amount_minor);
         const expectedMinor = Number(attempt.amount_minor);
@@ -282,6 +343,7 @@ export async function GET(request: NextRequest) {
 
   return json({
     ok: true,
+    discoveredMissingCallbacks,
     scanned: dueEvents?.length ?? 0,
     processed,
     deferred,
