@@ -233,7 +233,10 @@ export async function GET(request: NextRequest) {
           processing_note: exhausted
             ? "Safaricom reports success but the authenticated callback receipt is still missing; manual review required. A late callback can reopen this recovery record."
             : "Safaricom reports success, but the authenticated callback receipt is still missing; waiting for callback details.",
-        }).eq("id", event.id);
+        }).eq("id", event.id).is("provider_result_code", null);
+        // A callback may have arrived while the provider query was in flight.
+        // In that case the conditional update affects no row; the next worker
+        // pass will process the newly persisted callback facts.
         if (exhausted) manualReview += 1;
         else deferred += 1;
         continue;
@@ -329,7 +332,7 @@ export async function GET(request: NextRequest) {
       }
 
       const exhausted = nextAttempt >= MAX_ATTEMPTS;
-      await service.from("akiba_provider_events").update({
+      const retryUpdate = service.from("akiba_provider_events").update({
         processing_status: "failed",
         retryable: !exhausted,
         next_retry_at: retryAt(nextAttempt),
@@ -337,6 +340,8 @@ export async function GET(request: NextRequest) {
           ? "Reconciliation retry limit reached; manual review required."
           : "Safaricom has not returned a matching final status; retry scheduled.",
       }).eq("id", event.id);
+      if (callbackCode === null) retryUpdate.is("provider_result_code", null);
+      await retryUpdate;
       if (exhausted) manualReview += 1;
       else deferred += 1;
     } catch (error) {
@@ -350,7 +355,7 @@ export async function GET(request: NextRequest) {
         errorType: error instanceof PaymentError ? undefined : error instanceof Error ? error.name : typeof error,
         retryable: shouldRetry,
       });
-      await service.from("akiba_provider_events").update({
+      const failureUpdate = service.from("akiba_provider_events").update({
         processing_status: "failed",
         retryable: shouldRetry,
         next_retry_at: retryAt(nextAttempt),
@@ -358,6 +363,8 @@ export async function GET(request: NextRequest) {
           ? "Provider verification failed; retry scheduled."
           : "Provider verification could not be completed; manual review required.",
       }).eq("id", event.id);
+      if (event.provider_result_code === null) failureUpdate.is("provider_result_code", null);
+      await failureUpdate;
       if (shouldRetry) deferred += 1;
       else manualReview += 1;
     }
