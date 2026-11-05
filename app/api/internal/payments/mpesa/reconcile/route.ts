@@ -330,6 +330,22 @@ export async function GET(request: NextRequest) {
         providerStatus.resultCode !== null &&
         providerStatus.resultCode !== "0"
       ) {
+        // Do not update the attempt or intent from stale callback facts if a
+        // newer authenticated callback arrived while STK Query was running.
+        const { data: currentFailureEvent, error: currentFailureEventError } = await service
+          .from("akiba_provider_events")
+          .select("id")
+          .eq("id", event.id)
+          .eq("payload_digest", event.payload_digest)
+          .eq("processing_status", "processing")
+          .eq("retryable", true)
+          .is("processed_at", null)
+          .maybeSingle();
+        if (currentFailureEventError || !currentFailureEvent) {
+          skipped += 1;
+          continue;
+        }
+
         const cancelled = callbackCode === "1032" || providerStatus.resultCode === "1032";
         const nextStatus = cancelled ? "cancelled" : "failed";
         await service.from("akiba_payment_attempts").update({
