@@ -1,6 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { isMissingCallbackPlaceholder, normalizeMpesaReceipt } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -79,14 +80,7 @@ export async function POST(request: NextRequest) {
   const amountMinor = Number.isSafeInteger(amountKes) && amountKes > 0 && Number.isSafeInteger(amountMinorCandidate)
     ? amountMinorCandidate
     : null;
-  const receiptCandidate = typeof metadata.MpesaReceiptNumber === "string"
-    ? metadata.MpesaReceiptNumber.trim().toUpperCase()
-    : null;
-  // Safaricom M-Pesa receipt identifiers are ten alphanumeric characters.
-  // Invalid/missing values remain null and cannot pass reconciliation.
-  const receipt = receiptCandidate && /^[A-Z0-9]{10}$/.test(receiptCandidate)
-    ? receiptCandidate
-    : null;
+  const receipt = normalizeMpesaReceipt(metadata.MpesaReceiptNumber);
   const digest = createHash("sha256").update(rawBody).digest("hex");
 
   console.info("[payments][daraja][callback] Authenticated callback received", {
@@ -165,11 +159,7 @@ export async function POST(request: NextRequest) {
     // no callback result or receipt. A late authenticated callback must enrich
     // it even when the worker currently holds a processing lease or exhausted
     // its retries. Never reopen unrelated manual-review events.
-    const isRecoveryPlaceholder =
-      typeof existingEvent.payload_digest === "string" &&
-      existingEvent.payload_digest.startsWith("callback-missing:") &&
-      !existingEvent.provider_result_code &&
-      !existingEvent.provider_receipt_number;
+    const isRecoveryPlaceholder = isMissingCallbackPlaceholder(existingEvent);
     const canRetry = existingEvent.retryable || isRecoveryPlaceholder;
     const nextProcessingStatus = existingEvent.processing_status === "processing"
       ? "processing"
