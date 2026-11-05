@@ -29,8 +29,8 @@ export function isMissingCallbackPlaceholder(event: RecoveryEventEvidence): bool
     !event.provider_receipt_number;
 }
 
-/** Provider success alone is insufficient: callback receipt and exact KES facts are mandatory. */
-export function hasPostableContributionEvidence(evidence: ContributionEvidence): boolean {
+/** A success callback is postable only when its own facts match the stored attempt. */
+export function hasPostableCallbackEvidence(evidence: ContributionEvidence): boolean {
   return evidence.callbackResultCode === "0" &&
     evidence.providerResultCode === "0" &&
     typeof evidence.receipt === "string" &&
@@ -41,6 +41,11 @@ export function hasPostableContributionEvidence(evidence: ContributionEvidence):
     evidence.amountMinor === evidence.expectedAmountMinor &&
     evidence.eventCurrency === "KES" &&
     evidence.attemptCurrency === "KES";
+}
+
+/** Retained for callers that also require independent provider-query agreement. */
+export function hasPostableContributionEvidence(evidence: ContributionEvidence): boolean {
+  return hasPostableCallbackEvidence(evidence);
 }
 
 export function isRetryableDarajaHttpStatus(status: number): boolean {
