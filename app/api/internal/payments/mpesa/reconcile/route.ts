@@ -287,6 +287,24 @@ export async function GET(request: NextRequest) {
           continue;
         }
 
+        // Callback enrichment may replace the event facts while the
+        // provider query is in flight. Re-check the version immediately
+        // before the irreversible ledger RPC; stale workers must not post
+        // from an older callback snapshot.
+        const { data: currentEvent, error: currentEventError } = await service
+          .from("akiba_provider_events")
+          .select("id")
+          .eq("id", event.id)
+          .eq("payload_digest", event.payload_digest)
+          .eq("processing_status", "processing")
+          .eq("retryable", true)
+          .is("processed_at", null)
+          .maybeSingle();
+        if (currentEventError || !currentEvent) {
+          skipped += 1;
+          continue;
+        }
+
         const { error: postError } = await service.rpc("post_mpesa_contribution", {
           p_checkout_request_id: event.provider_event_ref,
           p_provider_receipt_number: receipt,
