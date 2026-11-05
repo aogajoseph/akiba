@@ -33,8 +33,10 @@ declare
   v_transaction_id uuid;
 begin
   if p_checkout_request_id is null or length(btrim(p_checkout_request_id)) = 0
-     or p_provider_receipt_number is null or p_provider_receipt_number !~ '^[A-Z0-9]{10}
-    raise exception 'A confirmed M-Pesa success with provider references is required';
+     or p_provider_receipt_number is null
+     or length(p_provider_receipt_number) <> 10
+     or p_provider_receipt_number ~ '[^A-Z0-9]'
+     or p_provider_result_code <> '0' then
   end if;
 
   select id into v_provider_id
