@@ -89,3 +89,14 @@ Use only Daraja sandbox credentials and sandbox test numbers. Do not use a real 
 8. Unknown provider reference, mismatched amount, missing receipt, and failed status query: verify no ledger posting and reconciliation-needed state.
 
 Repository CI validates unit tests, PostgreSQL ledger-posting regression tests (including concurrent duplicate RPC calls), lint, typecheck, and build. These database tests use a disposable CI database and do not verify the hosted Supabase runtime. Real sandbox end-to-end tests require the deployment variables, a publicly reachable HTTPS callback URL, and a Daraja sandbox test phone configured in the developer portal.
+
+
+## Payment status and callback operations
+
+The contributor-facing status endpoint reads the durable Akiba contribution intent and payment-attempt state only. It must not issue STK Query requests. Provider verification is owned by the scheduled reconciliation worker so that repeated browser polling cannot increase Daraja request volume or interfere with callback processing.
+
+The finance panel polls the local status endpoint with exponential backoff while a contribution is pending. It stops polling after a terminal state and refreshes the group finance view after a confirmed contribution.
+
+For sandbox Preview deployments, the Daraja callback URL must target a publicly reachable Preview alias. Vercel deployment protection is overridden only for that callback alias; the callback route still requires the branch-scoped `MPESA_CALLBACK_TOKEN`. Keep the callback token and URL scoped to the dedicated Preview branch, and never add them to Production.
+
+The Supabase Preview reconciliation scheduler must target a deployment that contains missing-callback discovery. A successful scheduler HTTP response is not enough: monitor `discoveredMissingCallbacks`, `scanned`, `processed`, `deferred`, and `manualReview` to verify actual reconciliation work.
