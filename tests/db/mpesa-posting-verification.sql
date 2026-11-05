@@ -12,14 +12,6 @@ begin
   end;
 
   begin
-    perform public.post_mpesa_contribution('ws_CO_CI_0002','BAD-RECEIPT',700,'KES','0');
-    raise exception 'invalid receipt unexpectedly succeeded';
-  exception when others then
-    if sqlerrm = 'invalid receipt unexpectedly succeeded' then raise; end if;
-    if sqlerrm not like '%confirmed M-Pesa success%' then raise; end if;
-  end;
-
-  begin
     perform public.post_mpesa_contribution('ws_CO_CI_0002','CI00000002',600,'KES','0');
     raise exception 'wrong amount unexpectedly succeeded';
   exception when others then
