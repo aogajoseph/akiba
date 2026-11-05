@@ -247,8 +247,9 @@ export async function GET(request: NextRequest) {
           : "";
 
         if (
-          !receipt ||
+          !/^[A-Z0-9]{10}$/.test(receipt) ||
           !Number.isSafeInteger(amountMinor) ||
+          !Number.isSafeInteger(expectedMinor) ||
           amountMinor <= 0 ||
           amountMinor !== expectedMinor ||
           event.currency_code !== "KES" ||
