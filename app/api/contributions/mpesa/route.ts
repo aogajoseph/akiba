@@ -95,6 +95,11 @@ export async function POST(request: NextRequest) {
     return json({ ok: false, error: "The sandbox contribution limit is 250,000 KES." }, 400);
   }
 
+  if (!process.env.MPESA_SANDBOX_TEST_GROUP_ID ||
+      groupId !== process.env.MPESA_SANDBOX_TEST_GROUP_ID) {
+    return json({ ok: false, error: "M-Pesa sandbox contributions are restricted to the configured Test group." }, 403);
+  }
+
   if (
     process.env.MPESA_ENVIRONMENT !== "sandbox" ||
     process.env.MPESA_SANDBOX_COLLECTION_ENABLED !== "true"
