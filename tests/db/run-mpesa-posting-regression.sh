@@ -49,3 +49,4 @@ fi
   \$\$;
 "
 echo "Concurrent duplicate callback replay passed (transaction $result1)."
+"${PSQL[@]}" -f "$ROOT/tests/db/mpesa-posting-verification.sql"
