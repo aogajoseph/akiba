@@ -32,11 +32,11 @@ function authorized(request: NextRequest): boolean {
 
 /**
  * Reconcile callback facts that were durably recorded but could not be
- * independently verified during the original callback request.
+ * durably recorded by the callback endpoint or discovered as missing.
  *
- * This endpoint is intended for a trusted scheduler. It never accepts a
- * callback as proof of payment: every successful posting requires a fresh
- * Safaricom STK Query success and matching amount, currency and receipt.
+ * This endpoint is intended for a trusted scheduler. Complete authenticated
+ * success callbacks are posted from their validated receipt/amount evidence;
+ * STK Query is reserved for missing or non-success callback reconciliation.
  */
 export async function GET(request: NextRequest) {
   if (!authorized(request)) return json({ ok: false, error: "Not authorized" }, 401);
@@ -470,7 +470,9 @@ export async function GET(request: NextRequest) {
         retryable: shouldRetry,
         next_retry_at: retryAt(nextAttempt),
         processing_note: shouldRetry
-          ? event.provider_result_code === "0"\n            ? "Callback evidence validated but atomic ledger posting failed; retry scheduled."\n            : "Provider verification failed; retry scheduled."
+          ? event.provider_result_code === "0"
+            ? "Callback evidence validated but atomic ledger posting failed; retry scheduled."
+            : "Provider verification failed; retry scheduled."
           : "Provider verification could not be completed; manual review required.",
       }).eq("id", event.id).eq("payload_digest", event.payload_digest);
       if (event.provider_result_code === null) failureUpdate.is("provider_result_code", null);
