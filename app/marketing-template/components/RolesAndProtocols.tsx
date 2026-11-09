@@ -10,25 +10,27 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 const roles = [
   {
-    title: 'Group Admin',
+    title: 'Group Creator',
     Icon: ShieldOutlinedIcon,
     points: [
-      'The group creator automatically becomes the Group Admin.',
-      'Responsible for setting up the group, appointing two Sub-admins, managing group settings, initiating fund withdrawal or transfer requests, and closing the group when its purpose has been fulfilled and closure requirements are met.',
+      "Responsible for creating and setting up the group, appointing and demoting Admins, managing group settings, leading the group's purpose, requesting fund withdrawals, and deactivating the group once its purpose has been fulfilled and deactivation requirements are met.",
     ],
   },
   {
-    title: 'Sub-admins',
+    title: 'Admins',
     Icon: FactCheckOutlinedIcon,
     points: [
-      'Each Akiba group requires two Sub-admins.',
-      'Both Sub-admins review and approve or reject fund withdrawal or transfer requests initiated by the Group Admin.',
+      'Each Akiba group requires at least three Admins.',
+      'All Admins are expected to review fund withdrawal requests initiated by the Group Creator. A request proceeds only when all Admins approve it; a rejection stops the request.',
     ],
   },
   {
     title: 'Members',
     Icon: GroupsOutlinedIcon,
-    points: ['Regular participants who contribute toward the group’s purpose.'],
+    points: [
+      'Regular participants who contribute toward the group’s purpose.',
+      'Members can flag a withdrawal they believe is suspicious, even after all Admins have approved it, triggering a protective hold for review.',
+    ],
   },
 ];
 
@@ -120,7 +122,7 @@ export default function RolesAndProtocols() {
               <Typography variant="h6" component="h3">Shared Group Activities</Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, lineHeight: 1.85 }}>
-              Group Admins, Sub-admins, and Members can contribute money, chat, review group reports, and receive real-time updates on group activities.
+              Everyone in the group can contribute money, chat, review group reports, and receive real-time updates, regardless of their role.
             </Typography>
           </Box>
         </Paper>
