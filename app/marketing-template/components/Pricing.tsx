@@ -18,9 +18,9 @@ const plans: Record<Scope, Plan[]> = {
     { name: 'Premium', price: '999', capacity: '25 groups', description: 'For active community organizers', features: ['Create and manage up to 25 groups', '15 additional groups above Plus', 'Highest group allowance'], status: 'Coming Soon' },
   ],
   group: [
-    { name: 'Free', price: '0', capacity: '100 members max', description: 'For small, close-knit groups', features: ['Up to 100 members', 'Group chat and contributions', 'Basic financial reports'] },
-    { name: 'Plus', price: '999', capacity: '300 members max', description: 'For growing communities', features: ['Up to 300 members', 'Downloadable financial reports', 'Automatic reminders'], status: 'Coming Soon' },
-    { name: 'Premium', price: '2,499', capacity: '1,000 members max', description: 'For large communities', features: ['Up to 1,000 members', 'Everything in Plus', 'Advanced tools and priority support'], status: 'Coming Soon' },
+    { name: 'Free', price: '0', capacity: '100 members', description: 'For small, close-knit groups', features: ['Up to 100 members', 'Group chat and contributions', 'Basic financial reports'] },
+    { name: 'Plus', price: '999', capacity: '300 members', description: 'For growing communities', features: ['Up to 300 members', 'Downloadable financial reports', 'Automatic reminders'], status: 'Coming Soon' },
+    { name: 'Premium', price: '2,499', capacity: '1,000 members', description: 'For large communities', features: ['Up to 1,000 members', 'Everything in Plus', 'Advanced tools and priority support'], status: 'Coming Soon' },
   ],
 };
 
