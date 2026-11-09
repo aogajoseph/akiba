@@ -57,9 +57,10 @@ export default function Pricing() {
         <Grid container spacing={2.5} alignItems="stretch">
           {plans[scope].map((plan) => {
             const recommended = plan.name === 'Plus' && scope === 'group';
+            const personalPlus = plan.name === 'Plus' && scope === 'personal';
             return (
               <Grid key={plan.name} size={{ xs: 12, md: 4 }}>
-                <Paper variant="outlined" sx={{ position: 'relative', height: '100%', p: { xs: 3, sm: 3.5 }, borderRadius: 3, border: recommended ? '2px solid #E91E78' : undefined, boxShadow: recommended ? '0 12px 36px rgba(233,30,120,0.09)' : 'none', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
+                <Paper variant="outlined" sx={{ position: 'relative', height: '100%', p: { xs: 3, sm: 3.5 }, borderRadius: 3, border: recommended || personalPlus ? '2px solid #E91E78' : undefined, boxShadow: recommended ? '0 12px 36px rgba(233,30,120,0.09)' : 'none', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
                     <Stack direction="row" alignItems="center" spacing={1.5}>
                       <Box sx={{ width: 44, height: 44, display: 'grid', placeItems: 'center', borderRadius: '50%', bgcolor: recommended ? 'rgba(233,30,120,0.10)' : 'action.hover', color: recommended ? '#E91E78' : 'primary.main' }}>
