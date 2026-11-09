@@ -28,7 +28,7 @@
 <path d="M128 673Q145 653 162 673" fill="#477B55"/>
 <rect x="180" y="603" width="520" height="118" rx="20" fill="#EAF3FF"/>
 <text x="205" y="642" font-size="21" fill="#087AF5" font-weight="700" font-family="Arial,sans-serif">Brian</text>
-<text x="675" y="642" text-anchor="end" font-size="16" fill="#718096" font-family="Arial,sans-serif">Admin</text>
+<text x="675" y="642" text-anchor="end" font-size="16" fill="#718096" font-family="Arial,sans-serif">Group Admin</text>
 <text x="205" y="683" font-size="19" fill="#243E60" font-family="Arial,sans-serif">Loving the vibe. We have to keep pushing.</text>
 <rect x="140" y="764" width="560" height="75" rx="20" fill="#F3F7FC" stroke="#C9DCF8"/>
 <text x="168" y="811" font-size="22" fill="#8C9DB0" font-family="Arial,sans-serif">Message your group...</text>
