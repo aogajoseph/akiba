@@ -39,7 +39,7 @@ const protocols = [
     title: 'Leaving a group',
     Icon: LogoutOutlinedIcon,
     points: [
-      'Group Admins cannot leave groups they created.',
+      'Group Creators cannot leave groups they created.',
       'Group Admins must transfer their role to another member before leaving.',
       'Members can leave at any time.',
       'A member’s departure does not affect the group’s ongoing activities.',
@@ -49,18 +49,18 @@ const protocols = [
     title: 'Outstanding contributions and funds',
     Icon: AccountBalanceWalletOutlinedIcon,
     points: [
-      'A group cannot be closed or deleted while its account contains funds or a transaction is pending.',
-      'Once all transactions are complete and all funds have been withdrawn, the Group Admin may close or delete the group if it is no longer needed.',
+      'A group cannot be deactivated while its account contains funds or a financial transaction is pending.',
+      'Once all financial transactions are complete and all funds have been withdrawn, the Group Creator may deactivate the group if it is no longer needed.',
     ],
   },
   {
     title: 'Funds withdrawal or transfer',
     Icon: VerifiedUserOutlinedIcon,
     points: [
-      'Only the Group Admin can initiate a withdrawal or funds transfer.',
-      'The group must have two appointed Group Admins before the Group Admin can initiate a withdrawal or transfer.',
-      'Both Group Admins must approve the request before funds are released.',
-      'If either Group Admin rejects the request, the Group Admin must submit a new request.',
+      'Only the Group Creator can request a fund withdrawal.',
+      'The group must have at least three appointed Group Admins before the Group Creator can request a fund withdrawal or anyone can contribute.',
+      'All Group Admins must approve a fund withdrawal request before funds are released, provided no member has flagged the withdrawal as suspicious.',
+      'If any Group Admin rejects a fund withdrawal request, the Group Creator must submit a new request.',
     ],
   },
 ];
@@ -151,7 +151,7 @@ export default function RolesAndProtocols() {
           <Box>
             <Typography variant="h6" component="h3">Disclaimer</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.85 }}>
-              Before participating in a group or contributing money, carefully review the group’s purpose, leaders, and members. If you contribute money by mistake, request a reversal immediately or contact Akiba Support for assistance.
+              Before participating in a group or contributing money, carefully review the group’s purpose, leaders, and members. If you contribute money by mistake, request a reversal immediately or contact Akiba Support for assistance. If you suspect a withdrawal is suspicious, flag it in the group to trigger a protective hold while the concern is reviewed.
             </Typography>
           </Box>
         </Paper>
