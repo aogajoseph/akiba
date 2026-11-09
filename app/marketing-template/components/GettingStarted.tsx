@@ -10,7 +10,7 @@ const steps = [
   { title: 'Join the platform', desc: 'Create your Akiba account using your email address or phone number.', Icon: PersonAddAlt1RoundedIcon },
   { title: 'Set up your profile', desc: 'Create your profile and choose a unique username so other Akiba users can recognize you.', Icon: AccountCircleRoundedIcon },
   { title: 'Create or join a group', desc: 'Create a group or accept an invitation to join one.', Icon: CreateNewFolderRoundedIcon },
-  { title: 'Set up the group', desc: 'Describe your group, invite participants, and appoint at least three Admins.', Icon: SettingsRoundedIcon },
+  { title: 'Set up your group', desc: 'Describe your group, invite participants, and appoint at least three Admins.', Icon: SettingsRoundedIcon },
   { title: 'Participate in group activities', desc: 'Contribute toward your group\'s purpose, join discussions, and review updates.', Icon: SavingsRoundedIcon },
   { title: 'Leave when appropriate', desc: 'Leave a group according to your role and Akiba’s group protocols.', Icon: LogoutRoundedIcon },
 ];
