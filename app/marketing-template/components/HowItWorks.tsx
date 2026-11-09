@@ -9,7 +9,7 @@ import FactCheckRoundedIcon from '@mui/icons-material/FactCheckRounded';
 const stages = [
   { num: '01', title: 'Group Creation', desc: 'An Akiba user creates a group for an event or shared goal.', Icon: GroupsRoundedIcon },
   { num: '02', title: 'Participants', desc: "The Group Creator invites people to join and participate in the group's purpose.", Icon: PersonAddAlt1RoundedIcon },
-  { num: '03', title: 'Governance', desc: "The Group Creator appoints three Admins from among the group's members.", Icon: AccountBalanceWalletRoundedIcon },
+  { num: '03', title: 'Governance', desc: "The Group Creator appoints three Group Admins from among the group's members.", Icon: AccountBalanceWalletRoundedIcon },
   { num: '04', title: 'Group Activity', desc: 'Everyone contributes toward the shared purpose and communicates through the group chat.', Icon: ChatRoundedIcon },
   { num: '05', title: 'Progress Tracking', desc: 'Everyone reviews financial updates, group activities, and shared records in one place.', Icon: HistoryRoundedIcon },
   { num: '06', title: 'Closure', desc: 'Once the group has fulfilled its purpose, the Group Creator can deactivate it or retain it for future use.', Icon: FactCheckRoundedIcon },
