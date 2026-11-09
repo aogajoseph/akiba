@@ -13,15 +13,15 @@ const roles = [
     title: 'Group Creator',
     Icon: ShieldOutlinedIcon,
     points: [
-      "Responsible for creating and setting up the group, appointing and demoting Admins, managing group settings, leading the group's purpose, requesting fund withdrawals, and deactivating the group once its purpose has been fulfilled and deactivation requirements are met.",
+      "Responsible for creating and setting up the group, appointing and demoting Group Admins, managing group settings, leading the group's purpose, requesting fund withdrawals, and deactivating the group once its purpose has been fulfilled and deactivation requirements are met.",
     ],
   },
   {
-    title: 'Admins',
+    title: 'Group Admins',
     Icon: FactCheckOutlinedIcon,
     points: [
-      'Each Akiba group requires at least three Admins.',
-      'All Admins are expected to review fund withdrawal requests initiated by the Group Creator. A request proceeds only when all Admins approve it; a rejection stops the request.',
+      'Each Akiba group requires at least three Group Admins.',
+      'All Group Admins are expected to review fund withdrawal requests initiated by the Group Creator. A request proceeds only when all Group Admins approve it; a rejection from any Group Admin stops the request.',
     ],
   },
   {
@@ -29,7 +29,7 @@ const roles = [
     Icon: GroupsOutlinedIcon,
     points: [
       'Regular participants who contribute toward the group’s purpose.',
-      'Members can flag a withdrawal they believe is suspicious, even after all Admins have approved it, triggering a protective hold for review.',
+      'Members can flag a withdrawal they believe is suspicious, even after all Group Admins have approved it, triggering a protective hold for review.',
     ],
   },
 ];
@@ -39,8 +39,8 @@ const protocols = [
     title: 'Leaving a group',
     Icon: LogoutOutlinedIcon,
     points: [
-      'Group Admins cannot leave groups they created.',
-      'Sub-admins must transfer their role to another member before leaving.',
+      'Group Group Admins cannot leave groups they created.',
+      'Group Admins must transfer their role to another member before leaving.',
       'Members can leave at any time.',
       'A member’s departure does not affect the group’s ongoing activities.',
     ],
@@ -50,17 +50,17 @@ const protocols = [
     Icon: AccountBalanceWalletOutlinedIcon,
     points: [
       'A group cannot be closed or deleted while its account contains funds or a transaction is pending.',
-      'Once all transactions are complete and all funds have been withdrawn, the Group Admin may close or delete the group if it is no longer needed.',
+      'Once all transactions are complete and all funds have been withdrawn, the Group Group Admin may close or delete the group if it is no longer needed.',
     ],
   },
   {
     title: 'Funds withdrawal or transfer',
     Icon: VerifiedUserOutlinedIcon,
     points: [
-      'Only the Group Admin can initiate a withdrawal or funds transfer.',
-      'The group must have two appointed Sub-admins before the Group Admin can initiate a withdrawal or transfer.',
-      'Both Sub-admins must approve the request before funds are released.',
-      'If either Sub-admin rejects the request, the Group Admin must submit a new request.',
+      'Only the Group Group Admin can initiate a withdrawal or funds transfer.',
+      'The group must have two appointed Group Admins before the Group Group Admin can initiate a withdrawal or transfer.',
+      'Both Group Admins must approve the request before funds are released.',
+      'If either Group Admin rejects the request, the Group Group Admin must submit a new request.',
     ],
   },
 ];
