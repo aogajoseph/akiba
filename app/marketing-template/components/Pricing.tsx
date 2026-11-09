@@ -68,7 +68,7 @@ export default function Pricing() {
                       <Typography variant="h6" component="h3" fontWeight={700}>{plan.name}</Typography>
                     </Stack>
                     {plan.status && <Chip color="default" label={plan.status} />}
-                    {recommended && <Chip color="secondary" label="Recommended" />}
+
                   </Stack>
                   <Typography variant="h4" fontWeight={750} sx={{ whiteSpace: 'nowrap' }}>KSh {plan.price}</Typography>
                   <Typography variant="body2" color="text.secondary">{plan.name === 'Free' ? 'Free forever' : 'per month'}</Typography>
