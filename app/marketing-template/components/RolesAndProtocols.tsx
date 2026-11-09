@@ -10,25 +10,27 @@ import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 const roles = [
   {
-    title: 'Group Admin',
+    title: 'Group Creator',
     Icon: ShieldOutlinedIcon,
     points: [
-      'The group creator automatically becomes the Group Admin.',
-      'Responsible for setting up the group, appointing two Sub-admins, managing group settings, initiating fund withdrawal or transfer requests, and closing the group when its purpose has been fulfilled and closure requirements are met.',
+      "Responsible for creating and setting up the group, appointing and demoting Group Admins, managing group settings, leading the group's purpose, requesting fund withdrawals, and deactivating the group once its purpose has been fulfilled and deactivation requirements are met.",
     ],
   },
   {
-    title: 'Sub-admins',
+    title: 'Group Admins',
     Icon: FactCheckOutlinedIcon,
     points: [
-      'Each Akiba group requires two Sub-admins.',
-      'Both Sub-admins review and approve or reject fund withdrawal or transfer requests initiated by the Group Admin.',
+      'Each Akiba group requires at least three Group Admins.',
+      'All Group Admins are expected to review fund withdrawal requests initiated by the Group Creator. A request proceeds only when all Group Admins approve it; a rejection from any Group Admin stops the request.',
     ],
   },
   {
     title: 'Members',
     Icon: GroupsOutlinedIcon,
-    points: ['Regular participants who contribute toward the group’s purpose.'],
+    points: [
+      'Regular participants who contribute toward the group’s purpose.',
+      'Members can flag a withdrawal they believe is suspicious, even after all Group Admins have approved it, triggering a protective hold for review.',
+    ],
   },
 ];
 
@@ -37,8 +39,8 @@ const protocols = [
     title: 'Leaving a group',
     Icon: LogoutOutlinedIcon,
     points: [
-      'Group Admins cannot leave groups they created.',
-      'Sub-admins must transfer their role to another member before leaving.',
+      'Group Creators cannot leave groups they created.',
+      'Group Admins must transfer their role to another member before leaving.',
       'Members can leave at any time.',
       'A member’s departure does not affect the group’s ongoing activities.',
     ],
@@ -47,18 +49,18 @@ const protocols = [
     title: 'Outstanding contributions and funds',
     Icon: AccountBalanceWalletOutlinedIcon,
     points: [
-      'A group cannot be closed or deleted while its account contains funds or a transaction is pending.',
-      'Once all transactions are complete and all funds have been withdrawn, the Group Admin may close or delete the group if it is no longer needed.',
+      'A group cannot be deactivated while its account contains funds or a financial transaction is pending.',
+      'Once all financial transactions are complete and all funds have been withdrawn, the Group Creator may deactivate the group if it is no longer needed.',
     ],
   },
   {
     title: 'Funds withdrawal or transfer',
     Icon: VerifiedUserOutlinedIcon,
     points: [
-      'Only the Group Admin can initiate a withdrawal or funds transfer.',
-      'The group must have two appointed Sub-admins before the Group Admin can initiate a withdrawal or transfer.',
-      'Both Sub-admins must approve the request before funds are released.',
-      'If either Sub-admin rejects the request, the Group Admin must submit a new request.',
+      'Only the Group Creator can request a fund withdrawal.',
+      'The group must have at least three appointed Group Admins before the Group Creator can request a fund withdrawal or anyone can contribute.',
+      'All Group Admins must approve a fund withdrawal request before funds are released, provided no member has flagged the withdrawal as suspicious.',
+      'If any Group Admin rejects a fund withdrawal request, the Group Creator must submit a new request.',
     ],
   },
 ];
@@ -120,7 +122,7 @@ export default function RolesAndProtocols() {
               <Typography variant="h6" component="h3">Shared Group Activities</Typography>
             </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1.5, lineHeight: 1.85 }}>
-              Group Admins, Sub-admins, and Members can contribute money, chat, review group reports, and receive real-time updates on group activities.
+              Everyone in the group can contribute money, chat, review group reports, and receive real-time updates, regardless of their role.
             </Typography>
           </Box>
         </Paper>
@@ -149,7 +151,7 @@ export default function RolesAndProtocols() {
           <Box>
             <Typography variant="h6" component="h3">Disclaimer</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mt: 1, lineHeight: 1.85 }}>
-              Before participating in a group or contributing money, carefully review the group’s purpose, leaders, and members. If you contribute money by mistake, request a reversal immediately or contact Akiba Support for assistance.
+              Before participating in a group or contributing money, carefully review the group’s purpose, leaders, and members. If you contribute money by mistake, request a reversal immediately or contact Akiba Support for assistance. If you suspect a withdrawal is suspicious, flag it in the group to trigger a protective hold while the concern is reviewed.
             </Typography>
           </Box>
         </Paper>

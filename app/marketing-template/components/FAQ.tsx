@@ -3,16 +3,16 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 const questions = [
   [
-    'How does Akiba keep group funds secure and ensure financial accountability?',
-    'Group funds are held by authorized financial institutions, not Akiba. Akiba only serves as a coordination platform, providing transparent financial records and requiring approval from both appointed Sub-admins before releasing funds.',
+    'How are group funds protected?',
+    "All withdrawal requests must be approved by the group's appointed Admins. Members can flag suspicious withdrawals, triggering a protective hold for review.",
   ],
   [
-    'Who controls group funds, and what happens when members disagree?',
-    "Group Admins initiate withdrawals or transfers, subject to approval by both Sub-admins. Members are responsible for carefully evaluating a group's purpose and leadership before joining or contributing. Akiba provides reversal requests and customer support and cooperates with law enforcement when disputes escalate to criminal investigations.",
+    'What happens when a withdrawal is rejected or disputed?',
+    'If any Group Admin rejects a withdrawal request, the Group Creator must submit a new request. Members can also flag suspicious withdrawals, even after Admin approval.',
   ],
   [
-    'How does Akiba make money, and what fees do users and groups pay?',
-    'Akiba earns revenue through Personal and Group subscriptions and transaction charges. Personal plans determine group creation limits, while Group plans determine membership capacity and group features. All applicable transaction charges are transparently displayed before withdrawals.',
+    'What does it cost to use Akiba?',
+    'Akiba offers Personal and Group subscription plans with different group limits and features. Any applicable transaction charges are disclosed before a transaction is confirmed.',
   ],
 ];
 

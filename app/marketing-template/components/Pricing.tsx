@@ -9,18 +9,18 @@ import WorkspacePremiumOutlinedIcon from '@mui/icons-material/WorkspacePremiumOu
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 
 type Scope = 'personal' | 'group';
-type Plan = { name: string; price: string; capacity: string; description: string; features: string[] };
+type Plan = { name: string; price: string; capacity: string; description: string; features: string[]; status?: string };
 
 const plans: Record<Scope, Plan[]> = {
   personal: [
-    { name: 'Free', price: '0', capacity: '3 groups', description: 'For organizers of small groups', features: ['Create and manage up to 3 groups', 'Access basic group activities', 'Free forever'] },
-    { name: 'Plus', price: '499', capacity: '10 groups', description: 'For basic community organizers', features: ['Create and manage up to 10 groups', '7 additional groups', 'All basic group activities'] },
-    { name: 'Premium', price: '999', capacity: '25 groups', description: 'For active community organizers', features: ['Create and manage up to 25 groups', '15 more groups above Plus', 'Highest group allowance'] },
+    { name: 'Free', price: '0', capacity: '5 groups', description: 'For organizers of small groups', features: ['Create and manage up to 5 groups', 'Access basic group activities', 'Free forever'] },
+    { name: 'Plus', price: '499', capacity: '10 groups', description: 'For basic community organizers', features: ['Create and manage up to 10 groups', 'Up to 5 additional groups above Free', 'All basic group activities'], status: 'Coming Soon' },
+    { name: 'Premium', price: '999', capacity: '25 groups', description: 'For active community organizers', features: ['Create and manage up to 25 groups', '15 additional groups above Plus', 'Highest group allowance'], status: 'Coming Soon' },
   ],
   group: [
-    { name: 'Free', price: '0', capacity: '20 members', description: 'For small, close-knit groups', features: ['Up to 20 members', 'Group chat and contributions', 'Basic financial reports'] },
-    { name: 'Plus', price: '999', capacity: '200 members', description: 'For growing communities', features: ['Up to 200 members', 'Downloadable financial reports', 'Automatic reminders'] },
-    { name: 'Premium', price: '2,499', capacity: '2,000 members', description: 'For large communities', features: ['Up to 2,000 members', 'Everything in Plus', 'Advanced tools and priority support'] },
+    { name: 'Free', price: '0', capacity: '100 members', description: 'For small, close-knit groups', features: ['Up to 100 members', 'Group chat and contributions', 'Basic financial reports'] },
+    { name: 'Plus', price: '999', capacity: '300 members', description: 'For growing communities', features: ['Up to 300 members', 'Downloadable financial reports', 'Automatic reminders'], status: 'Coming Soon' },
+    { name: 'Premium', price: '2,499', capacity: '1,000 members', description: 'For large communities', features: ['Up to 1,000 members', 'Everything in Plus', 'Advanced tools and priority support'], status: 'Coming Soon' },
   ],
 };
 
@@ -56,10 +56,11 @@ export default function Pricing() {
 
         <Grid container spacing={2.5} alignItems="stretch">
           {plans[scope].map((plan) => {
-            const recommended = plan.name === 'Plus';
+            const recommended = plan.name === 'Plus' && scope === 'group';
+            const personalPlus = plan.name === 'Plus' && scope === 'personal';
             return (
               <Grid key={plan.name} size={{ xs: 12, md: 4 }}>
-                <Paper variant="outlined" sx={{ position: 'relative', height: '100%', p: { xs: 3, sm: 3.5 }, borderRadius: 3, border: recommended ? '2px solid #E91E78' : undefined, boxShadow: recommended ? '0 12px 36px rgba(233,30,120,0.09)' : 'none', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
+                <Paper variant="outlined" sx={{ position: 'relative', height: '100%', p: { xs: 3, sm: 3.5 }, borderRadius: 3, border: recommended || personalPlus ? '2px solid #E91E78' : undefined, boxShadow: recommended ? '0 12px 36px rgba(233,30,120,0.09)' : 'none', display: 'flex', flexDirection: 'column', bgcolor: 'background.paper' }}>
                   <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
                     <Stack direction="row" alignItems="center" spacing={1.5}>
                       <Box sx={{ width: 44, height: 44, display: 'grid', placeItems: 'center', borderRadius: '50%', bgcolor: recommended ? 'rgba(233,30,120,0.10)' : 'action.hover', color: recommended ? '#E91E78' : 'primary.main' }}>
@@ -67,7 +68,8 @@ export default function Pricing() {
                       </Box>
                       <Typography variant="h6" component="h3" fontWeight={700}>{plan.name}</Typography>
                     </Stack>
-                    {recommended && <Chip color="secondary" label="Recommended" />}
+                    {plan.status && <Chip color="default" label={plan.status} />}
+
                   </Stack>
                   <Typography variant="h4" fontWeight={750} sx={{ whiteSpace: 'nowrap' }}>KSh {plan.price}</Typography>
                   <Typography variant="body2" color="text.secondary">{plan.name === 'Free' ? 'Free forever' : 'per month'}</Typography>
