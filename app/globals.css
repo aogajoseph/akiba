@@ -1049,3 +1049,14 @@
 .password-strength-segment.is-level-2{background:#e6b65d}
 .password-strength-segment.is-level-3{background:#6da9a0}
 .password-strength-segment.is-level-4{background:#4b9b68}
+
+
+/* Group Creator / Group Admin governance controls */
+.ak-workspace-member>div.ak-workspace-member-role{display:flex;align-items:center;justify-content:flex-end;gap:8px;flex:0 0 auto;min-width:0}
+.ak-workspace-member-role>span{color:#858ca2;font-size:9px;white-space:nowrap}
+.ak-workspace-member-role>span.admin{color:#c52a78;font-weight:700}
+.ak-workspace-member-role form{margin:0}
+.ak-workspace-member-role button{padding:5px 8px;border:1px solid #eadce5;border-radius:7px;background:#fff;color:#a12b67;font-size:8px;font-weight:700;cursor:pointer}
+.ak-workspace-member-role button:disabled{opacity:.45;cursor:not-allowed}
+.ak-leadership-status{margin-bottom:18px}
+.ak-leadership-status>p{margin:0;color:#858ba2;font-size:10px;line-height:1.6}
