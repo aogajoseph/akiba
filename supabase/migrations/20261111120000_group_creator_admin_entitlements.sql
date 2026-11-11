@@ -8,6 +8,8 @@ create table if not exists public.akiba_group_plan_entitlements (
   max_members integer not null check (max_members >= 1),
   required_group_admins integer not null check (required_group_admins >= 1),
   max_group_admins integer not null check (max_group_admins >= required_group_admins),
+  constraint akiba_group_plan_entitlements_minimum_leadership_capacity
+    check (max_members >= required_group_admins + 1),
   is_active boolean not null default true,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
@@ -251,6 +253,50 @@ drop trigger if exists akiba_group_plan_entitlement_guard on public.akiba_groups
 create trigger akiba_group_plan_entitlement_guard
 before update of group_plan_code on public.akiba_groups
 for each row execute function akiba_private.guard_group_plan_change();
+
+-- Plan configuration changes cannot silently invalidate existing groups.
+create or replace function akiba_private.guard_group_plan_entitlement_update()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  group_row record;
+  member_count integer;
+  admin_count integer;
+begin
+  if not new.is_active and exists (
+    select 1 from public.akiba_groups where group_plan_code = old.plan_code
+  ) then
+    raise exception 'A group plan assigned to existing groups cannot be deactivated';
+  end if;
+
+  for group_row in
+    select id from public.akiba_groups
+    where group_plan_code = old.plan_code
+    order by id
+    for update
+  loop
+    select count(*) into member_count
+    from public.akiba_group_memberships
+    where group_id = group_row.id and status = 'active';
+    select count(*) into admin_count
+    from public.akiba_group_memberships
+    where group_id = group_row.id and status = 'active' and role = 'group_admin';
+
+    if member_count > new.max_members or admin_count > new.max_group_admins then
+      raise exception 'Updated plan limits would invalidate group %', group_row.id;
+    end if;
+  end loop;
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_group_plan_entitlement_update_guard on public.akiba_group_plan_entitlements;
+create trigger akiba_group_plan_entitlement_update_guard
+before update on public.akiba_group_plan_entitlements
+for each row execute function akiba_private.guard_group_plan_entitlement_update();
 
 -- Only the recorded Group Creator may appoint or demote an existing active
 -- member. Invitations and joining remain separate workflows.
