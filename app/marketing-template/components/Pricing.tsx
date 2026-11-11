@@ -27,7 +27,7 @@ const plans: Record<Scope, Plan[]> = {
 const guidance = [
   'Personal plans determine how many groups you can create and manage.',
   'Group plans determine group membership capacity and available group features.',
-  'Withdrawal charges apply to all plans.',
+  'Transaction charges apply to withdrawals across all plans.',
 ];
 
 export default function Pricing() {
