@@ -298,6 +298,27 @@ create trigger akiba_group_plan_entitlement_update_guard
 before update on public.akiba_group_plan_entitlements
 for each row execute function akiba_private.guard_group_plan_entitlement_update();
 
+-- Immutable audit trail for Group Admin appointment and demotion.
+create table if not exists public.akiba_group_membership_events (
+  id uuid primary key default gen_random_uuid(),
+  group_id uuid not null references public.akiba_groups(id) on delete restrict,
+  actor_id uuid not null references auth.users(id) on delete restrict,
+  subject_user_id uuid not null references auth.users(id) on delete restrict,
+  event_type text not null check (event_type in ('group_admin_appointed', 'group_admin_demoted')),
+  previous_role text not null check (previous_role in ('member', 'group_admin')),
+  new_role text not null check (new_role in ('member', 'group_admin')),
+  created_at timestamptz not null default now()
+);
+create index if not exists akiba_group_membership_events_group_time_idx
+  on public.akiba_group_membership_events(group_id, created_at desc);
+alter table public.akiba_group_membership_events enable row level security;
+drop policy if exists "active members read membership events" on public.akiba_group_membership_events;
+create policy "active members read membership events"
+  on public.akiba_group_membership_events for select to authenticated
+  using (akiba_private.is_active_group_member(group_id));
+grant select on public.akiba_group_membership_events to authenticated;
+revoke all on public.akiba_group_membership_events from anon;
+
 -- Only the recorded Group Creator may appoint or demote an existing active
 -- member. Invitations and joining remain separate workflows.
 create or replace function public.akiba_set_group_admin(
@@ -347,11 +368,17 @@ begin
     if target_role <> 'member' then raise exception 'Only an ordinary member can be appointed'; end if;
     update public.akiba_group_memberships set role = 'group_admin'
     where group_id = p_group_id and user_id = p_user_id and status = 'active';
+    insert into public.akiba_group_membership_events
+      (group_id, actor_id, subject_user_id, event_type, previous_role, new_role)
+    values (p_group_id, actor_id, p_user_id, 'group_admin_appointed', 'member', 'group_admin');
   else
     if target_role = 'member' then return; end if;
     if target_role <> 'group_admin' then raise exception 'Only a Group Admin can be demoted'; end if;
     update public.akiba_group_memberships set role = 'member'
     where group_id = p_group_id and user_id = p_user_id and status = 'active';
+    insert into public.akiba_group_membership_events
+      (group_id, actor_id, subject_user_id, event_type, previous_role, new_role)
+    values (p_group_id, actor_id, p_user_id, 'group_admin_demoted', 'group_admin', 'member');
   end if;
 end;
 $fn$;
