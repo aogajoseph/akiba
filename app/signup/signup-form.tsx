@@ -64,11 +64,10 @@ export default function SignupForm() {
 
         if (signupError.code === "user_already_exists") {
           setError("An account with this email already exists. Please sign in.");
-        } else if (
-          signupError.code === "over_email_send_rate_limit" ||
-          signupError.status === 429
-        ) {
+        } else if (signupError.code === "over_email_send_rate_limit") {
           setError("Akiba has temporarily reached its email sending limit. Please wait before trying again. If this continues, contact support.");
+        } else if (signupError.status === 429) {
+          setError("Too many signup requests have been made. Please wait a moment before trying again.");
         } else if (signupError.code === "email_address_not_authorized") {
           setError("Akiba's email service is not yet enabled for this address. Please contact support.");
         } else {
