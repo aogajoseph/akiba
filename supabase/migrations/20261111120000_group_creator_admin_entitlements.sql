@@ -316,8 +316,8 @@ drop policy if exists "active members read membership events" on public.akiba_gr
 create policy "active members read membership events"
   on public.akiba_group_membership_events for select to authenticated
   using (akiba_private.is_active_group_member(group_id));
+revoke all on public.akiba_group_membership_events from anon, authenticated;
 grant select on public.akiba_group_membership_events to authenticated;
-revoke all on public.akiba_group_membership_events from anon;
 
 -- Only the recorded Group Creator may appoint or demote an existing active
 -- member. Invitations and joining remain separate workflows.
