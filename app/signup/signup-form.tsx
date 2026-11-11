@@ -66,7 +66,7 @@ export default function SignupForm() {
         // with no identities for an already-registered email.
         setError("An account with this email already exists. Please sign in.");
       } else {
-        setMessage("Your account has been created. We've sent you an email to verify your address. Click the confirmation link to activate your Akiba account.");
+        setMessage("Success! Click the link we sent to your email address to activate your Akiba account.");
       }
     } catch {
       setError("Unable to create account. Please try again.");
