@@ -139,4 +139,25 @@ begin
 end;
 $test$;
 
+
+-- The Event catalogue's Meeting option must be accepted by the database constraint.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000103', true);
+insert into public.akiba_groups
+  (id, name, purpose, group_type, currency_code, created_by)
+values
+  ('10000000-0000-0000-0000-000000000003', 'Meeting category test', 'event', 'meeting', 'KES',
+   '00000000-0000-0000-0000-000000000103');
+
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_groups
+    where id = '10000000-0000-0000-0000-000000000003'
+      and purpose = 'event' and group_type = 'meeting'
+  ) then
+    raise exception 'Meeting Event group type was not persisted';
+  end if;
+end;
+$test$;
+
 rollback;
