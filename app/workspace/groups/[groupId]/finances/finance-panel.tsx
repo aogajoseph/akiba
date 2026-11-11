@@ -8,6 +8,7 @@ type FinancePanelProps = {
   currencyCode: string;
   enabled: boolean;
   leadershipReady: boolean;
+  requiredGroupAdmins: number;
 };
 
 type PaymentState = {
@@ -31,7 +32,7 @@ function statusLabel(status: string) {
   return labels[status] ?? status.replace(/_/g, " ");
 }
 
-export default function FinancePanel({ groupId, currencyCode, enabled, leadershipReady }: FinancePanelProps) {
+export default function FinancePanel({ groupId, currencyCode, enabled, leadershipReady, requiredGroupAdmins }: FinancePanelProps) {
   const router = useRouter();
   const [amount, setAmount] = useState("1");
   const [phoneNumber, setPhoneNumber] = useState("");
@@ -125,7 +126,7 @@ export default function FinancePanel({ groupId, currencyCode, enabled, leadershi
       </div>
 
       {!leadershipReady ? (
-        <div className="ak-finance-disabled"><strong>Group leadership is not yet established</strong><p>The Group Creator must appoint the required three active Group Admins before anyone can contribute. No payment request has been started.</p></div>
+        <div className="ak-finance-disabled"><strong>Group leadership is not yet established</strong><p>The Group Creator must appoint the required ${requiredGroupAdmins} active Group Admins before anyone can contribute. No payment request has been started.</p></div>
       ) : !enabled ? (
         <div className="ak-finance-disabled"><strong>M-Pesa sandbox collection is not enabled here</strong><p>This contribution form is available only on the configured KES sandbox Preview deployment. No live payment option is enabled.</p></div>
       ) : payment ? (
