@@ -433,14 +433,9 @@ create trigger akiba_contribution_leadership_guard
 before insert on public.akiba_contribution_intents
 for each row execute function akiba_private.guard_contribution_leadership();
 
--- Also gate the final ledger posting: an old pending STK intent cannot settle
--- after group leadership has become incomplete.
-drop trigger if exists akiba_financial_transaction_leadership_guard on public.akiba_financial_transactions;
-create trigger akiba_financial_transaction_leadership_guard
-before insert on public.akiba_financial_transactions
-for each row
-when (new.transaction_type = 'contribution')
-execute function akiba_private.guard_contribution_leadership();
+-- Readiness is checked when a contribution intent is created. Do not block
+-- settlement of an already-started provider payment: confirmed external funds
+-- must still be recorded even if leadership changes while the payment is in flight.
 
 create or replace function akiba_private.guard_withdrawal_request_insert()
 returns trigger
