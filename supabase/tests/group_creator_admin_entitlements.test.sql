@@ -38,6 +38,12 @@ select public.akiba_set_group_admin(
   'appoint'
 );
 
+insert into public.akiba_group_memberships (group_id, user_id, role, status)
+select '10000000-0000-0000-0000-000000000001',
+       ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid,
+       'member', 'active'
+from generate_series(98, 100) as n;
+
 do $test$
 declare
   message text;
@@ -52,7 +58,7 @@ begin
   where group_id = '10000000-0000-0000-0000-000000000001'
     and status = 'active' and role = 'group_admin';
 
-  if active_total <> 97 or admin_total <> 3 then
+  if active_total <> 100 or admin_total <> 3 then
     raise exception 'Unexpected leadership/member counts: total %, admins %', active_total, admin_total;
   end if;
 
@@ -71,7 +77,7 @@ begin
   begin
     insert into public.akiba_group_memberships (group_id, user_id, role, status)
     values ('10000000-0000-0000-0000-000000000001',
-      '00000000-0000-0000-0000-000000000098', 'member', 'active');
+      '00000000-0000-0000-0000-000000000101', 'member', 'active');
     raise exception 'Unexpectedly accepted member row';
   exception when others then
     get stacked diagnostics message = message_text;
@@ -83,11 +89,12 @@ end;
 $test$;
 
 -- A newly created group has its Creator only and must fail the readiness gate.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000104', true);
 insert into public.akiba_groups
   (id, name, purpose, group_type, currency_code, created_by)
 values
   ('10000000-0000-0000-0000-000000000002', 'Incomplete leadership test', 'goal', 'shared_savings', 'KES',
-   '00000000-0000-0000-0000-000000000099');
+   '00000000-0000-0000-0000-000000000104');
 
 do $test$
 declare
