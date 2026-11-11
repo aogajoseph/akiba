@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
+import { setGroupAdmin } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
 import GroupWorkspaceActions from "./group-workspace-actions";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
@@ -9,10 +10,10 @@ import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 
-type Props = { params: Promise<{ groupId: string }> };
+type Props = { params: Promise<{ groupId: string }>; searchParams?: Promise<{ membershipError?: string; membershipUpdated?: string }> };
 type Member = {
   user_id: string;
-  role: "admin" | "member";
+  role: "group_creator" | "group_admin" | "member";
   joined_at: string;
   profile?: { display_name: string | null; username: string; avatar_path: string | null };
 };
@@ -43,18 +44,23 @@ function money(value: number, currency: string) {
   catch { return currency + " " + value.toLocaleString("en"); }
 }
 
-export default async function GroupDetailPage({ params }: Props) {
+export default async function GroupDetailPage({ params, searchParams }: Props) {
   const { groupId } = await params;
+  const query = searchParams ? await searchParams : {};
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,deadline,contribution_frequency,group_image_path,created_at").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,deadline,contribution_frequency,group_image_path,group_plan_code,created_at").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
   if (!profile?.display_name?.trim()) redirect("/onboarding");
+
+  const { data: plan } = await supabase.from("akiba_group_plan_entitlements")
+    .select("max_members,required_group_admins,max_group_admins")
+    .eq("plan_code", group.group_plan_code).maybeSingle();
 
   const { data: membership } = await supabase.from("akiba_group_memberships")
     .select("role,status,joined_at").eq("group_id", group.id).eq("user_id", user.id).maybeSingle();
@@ -74,6 +80,10 @@ export default async function GroupDetailPage({ params }: Props) {
     members = memberRows.map((member) => ({ ...member, profile: byId.get(member.user_id) ?? undefined }));
   }
 
+  const activeGroupAdminCount = members.filter((member) => member.role === "group_admin").length;
+  const requiredGroupAdmins = plan?.required_group_admins ?? 3;
+  const leadershipReady = activeGroupAdminCount >= requiredGroupAdmins;
+  const isGroupCreator = membership.role === "group_creator";
   const purpose = group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal";
   const typeLabel = groupTypeLabels[group.group_type] ?? "Group";
   const groupImageUrl = group.group_image_path ? supabase.storage.from("group-images").getPublicUrl(group.group_image_path).data.publicUrl : null;
@@ -141,23 +151,29 @@ export default async function GroupDetailPage({ params }: Props) {
                 </div>
               </div>
             </div>
-            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} isAdmin={membership.role === "admin"} /></div>
+            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} isCreator={isGroupCreator} /></div>
           </section>
 
           <nav className="ak-group-tabs" aria-label="Group workspace">
             <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}`}><DashboardOutlinedIcon />Overview</Link>
             <Link href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
-            <span aria-disabled="true" title="Member management improvements are coming soon"><GroupsOutlinedIcon />Members</span>
+            <Link href={`/workspace/groups/${group.id}#members`}><GroupsOutlinedIcon />Members</Link>
             <span aria-disabled="true" title="Group chat is coming soon"><ChatBubbleOutlineOutlinedIcon />Chat</span>
             <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
           </nav>
 
           <section className="ak-workspace-summary" aria-label="Group summary">
-            <article className="ak-workspace-summary-card"><span className="ak-summary-icon members">♧</span><div><small>Active members</small><strong>{membersError ? "—" : members.length}</strong><span>{members.length === 1 ? "You are the first member" : "People in this group"}</span></div></article>
+            <article className="ak-workspace-summary-card"><span className="ak-summary-icon members">♧</span><div><small>Active members</small><strong>{membersError ? "—" : members.length + (plan ? " / " + plan.max_members : "")}</strong><span>People in this group, including leadership</span></div></article>
             <article className="ak-workspace-summary-card"><span className="ak-summary-icon target">◎</span><div><small>Group target</small><strong>{target === null ? "Not set" : money(target, group.currency_code)}</strong><span>{target === null ? "No target amount set" : "Shared group target"}</span></div></article>
-            <article className="ak-workspace-summary-card"><span className="ak-summary-icon role">♙</span><div><small>Your role</small><strong>{membership.role === "admin" ? "Administrator" : "Member"}</strong><span>Member since {formatDate(membership.joined_at)}</span></div></article>
+            <article className="ak-workspace-summary-card"><span className="ak-summary-icon role">♙</span><div><small>Your role</small><strong>{membership.role === "group_creator" ? "Group Creator" : membership.role === "group_admin" ? "Group Admin" : "Member"}</strong><span>Member since {formatDate(membership.joined_at)}</span></div></article>
           </section>
 
+          {query.membershipError && <p className="ak-finance-error" role="alert">{query.membershipError}</p>}
+          {query.membershipUpdated && <p className="ak-workspace-footnote" role="status">Group leadership updated.</p>}
+          <section className="ak-workspace-card ak-leadership-status" aria-label="Group leadership readiness">
+            <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">GROUP GOVERNANCE</span><h2>Leadership readiness</h2><p>Contributions stay disabled until the Group Creator has appointed the required Group Admins.</p></div><span className="ak-count-pill">{activeGroupAdminCount} / {requiredGroupAdmins} Group Admins</span></div>
+            <p>{leadershipReady ? "Leadership is established. Contributions may be enabled subject to payment availability." : "Leadership is not yet established. Add members, then appoint the required Group Admins to unlock contributions."}</p>
+          </section>
           <div className="ak-workspace-overview-grid">
             <div className="ak-workspace-primary-column">
               <section className="ak-workspace-card ak-workspace-progress">
@@ -165,20 +181,27 @@ export default async function GroupDetailPage({ params }: Props) {
                 <div className="ak-progress-empty"><span>↗</span><div><strong>{target === null ? "Set a shared target when you are ready" : "Your group target is " + money(target, group.currency_code)}</strong><p>View confirmed contributions and make a contribution from the group finances area. Akiba does not hold group funds; payments are processed by the provider.</p><Link href={`/workspace/groups/${group.id}/finances`} className="ak-finance-inline-link">Open group finances →</Link></div></div>
               </section>
 
-              <section className="ak-workspace-card">
+              <section className="ak-workspace-card" id="members">
                 <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">THE PEOPLE BEHIND THE PLAN</span><h2>Group members</h2><p>People who are part of this shared space.</p></div><span className="ak-count-pill">{membersError ? "—" : members.length + " members"}</span></div>
                 {membersError ? <div className="ak-workspace-empty"><strong>Members couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
                   : members.length === 0 ? <div className="ak-workspace-empty"><strong>No members to show yet</strong><p>Active group members will appear here.</p></div>
-                  : <div className="ak-workspace-member-list">{members.slice(0, 5).map((member) => {
+                  : <div className="ak-workspace-member-list">{members.map((member) => {
                     const name = member.profile?.display_name?.trim() || (member.user_id === user.id ? "You" : "Akiba member");
                     const photo = member.profile?.avatar_path ? supabase.storage.from("avatars").getPublicUrl(member.profile.avatar_path).data.publicUrl : null;
                     return <div className="ak-workspace-member" key={member.user_id}>
                       {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
                       <div><strong>{name}{member.user_id === user.id ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></div>
-                      <span className={member.role === "admin" ? "admin" : ""}>{member.role === "admin" ? "Administrator" : "Member"}</span>
+                      <div className="ak-workspace-member-role"><span className={member.role !== "member" ? "admin" : ""}>{member.role === "group_creator" ? "Group Creator" : member.role === "group_admin" ? "Group Admin" : "Member"}</span>
+                      {isGroupCreator && member.role !== "group_creator" && <form action={setGroupAdmin}>
+                        <input type="hidden" name="group_id" value={group.id} />
+                        <input type="hidden" name="user_id" value={member.user_id} />
+                        <input type="hidden" name="action" value={member.role === "group_admin" ? "demote" : "appoint"} />
+                        <button type="submit" disabled={!plan || (member.role === "member" && activeGroupAdminCount >= plan.max_group_admins)}>{member.role === "group_admin" ? "Demote" : "Appoint"}</button>
+                      </form>}</div>
                     </div>;
                   })}</div>}
                 {profilesError && !membersError && <p className="ak-workspace-footnote">Some profile details are temporarily unavailable.</p>}
+                {isGroupCreator && <p className="ak-workspace-footnote">You may appoint or demote active members as Group Admins. The launch plan allows {plan?.max_group_admins ?? "—"} Group Admins.</p>}
               </section>
             </div>
 

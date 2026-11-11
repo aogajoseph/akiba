@@ -5,7 +5,7 @@ import { createPortal } from "react-dom";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 
-export default function GroupWorkspaceActions({ groupName, isAdmin }: { groupName: string; isAdmin: boolean }) {
+export default function GroupWorkspaceActions({ groupName, isCreator }: { groupName: string; isCreator: boolean }) {
   const [message, setMessage] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
@@ -74,10 +74,10 @@ export default function GroupWorkspaceActions({ groupName, isAdmin }: { groupNam
         <div ref={menuRef} className="ak-workspace-more-menu" style={menuPosition} role="menu">
           <button type="button" role="menuitem" onClick={copyLink}>Copy group link</button>
           <button type="button" role="menuitem">Notification settings</button>
-          {isAdmin && <button type="button" role="menuitem">Edit group</button>}
+          {isCreator && <button type="button" role="menuitem">Edit group</button>}
           <button type="button" role="menuitem">Report group</button>
           <button type="button" role="menuitem">Leave group</button>
-          {isAdmin && <><div className="ak-menu-divider" /><button type="button" role="menuitem" className="ak-menu-item-danger">Delete group</button></>}
+          {isCreator && <><div className="ak-menu-divider" /><button type="button" role="menuitem" className="ak-menu-item-danger">Delete group</button></>}
         </div>,
         document.body
       )}

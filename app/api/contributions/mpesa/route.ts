@@ -333,6 +333,16 @@ export async function POST(request: NextRequest) {
       }, uncertain ? 202 : 502);
     }
   } catch (error) {
+    const databaseMessage = error && typeof error === "object" && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : "";
+    if (databaseMessage.includes("Group leadership is incomplete")) {
+      return json({
+        ok: false,
+        code: "GROUP_LEADERSHIP_INCOMPLETE",
+        error: "This group must have its required Group Admins appointed before contributions can begin.",
+      }, 409);
+    }
     if (error instanceof PaymentError) {
       const status =
         error.code === "CONTRIBUTOR_NOT_ACTIVE" ? 403 :

@@ -31,3 +31,19 @@ jobs:
         run: npm run typecheck
       - name: Build
         run: npm run build
+
+  database-migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+      - name: Set up Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Start local Supabase stack
+        run: supabase start
+      - name: Apply all migrations from a clean database
+        run: supabase db reset --local --no-seed
+      - name: Test Group Creator, Group Admin and plan entitlements
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_creator_admin_entitlements.test.sql
