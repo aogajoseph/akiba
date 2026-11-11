@@ -89,16 +89,38 @@ There is a second launch-protocol gap on contributions: the contribution orchest
 - The live database has no admin-capacity constraint or plan-linked admin allowance.
 - A literal `< 3` / `>= 3` check in multiple functions would simply recreate the same rigidity at a new number.
 
-The implementation should introduce one authoritative entitlement source. It should resolve the group's applicable plan and expose a configured `max_group_admins` (or equivalent) value. The launch/Free plan is configured to three. Future plans can increase the value in plan data/configuration. The database must enforce the entitlement at the point of appointment, not trust the UI. If product rules distinguish a minimum required admin count from a maximum allowed admin count, model both explicitly; do not conflate them.
+The implementation should introduce one authoritative entitlement source. It must resolve the group's applicable plan and expose both `max_members` and `max_group_admins`. Launch/Free is configured as 100 total active people and three appointed Group Admins. The database must enforce both entitlements transactionally at appointment/join time, not trust the UI. The three-admin leadership readiness requirement is separate from the maximum admin allowance and must be enforced before contributions are enabled.
+
+## Confirmed policy decisions (CEO direction confirmed 11 Nov 2026)
+
+The following policy inputs are now confirmed and supersede the open questions in the initial audit:
+
+1. Exactly one Group Creator per group.
+2. Exactly three appointed Group Admins for the launch/Free plan; appointed by the Group Creator.
+3. Contributions are disabled until leadership is established: the group has its one Group Creator and all three appointed Group Admins.
+4. Every appointed Group Admin must approve a withdrawal before it proceeds. The Group Creator initiates the withdrawal and is not one of the three approvers.
+5. Launch/Free group capacity is **100 people total**, counting the Group Creator and all three Group Admins. This leaves a maximum of 96 ordinary Member places.
+6. Future subscriptions increase group capacity and may increase the Group Admin allowance. Both values must be plan-configurable, not hard-coded.
+
+### Required entitlement model
+
+The implementation should resolve at least these two independent group-plan entitlements:
+
+- `max_members`: total active group membership capacity, including Creator, Group Admins and ordinary Members. Launch/Free = 100.
+- `max_group_admins`: maximum appointed Group Admins, excluding the Creator. Launch/Free = 3.
+
+The group must also satisfy the leadership readiness invariant: exactly one active Group Creator and the required three active appointed Group Admins before contributions can be enabled. The capacity check must count all active membership roles together, not add the leadership roles on top of the plan's total capacity.
+
+Future plan values remain to be set by the business when subscription tiers are finalized; the system must support those values through entitlement data/configuration without schema or code rewrites.
 
 ## Proposed implementation plan
 
 ### Phase 0 — confirm policy inputs before coding
-1. Confirm the target means **three appointed Group Admins plus one Group Creator**.
-2. Confirm the Group Creator is the only withdrawal requester and cannot approve their own request.
-3. Confirm whether every active appointed Group Admin must approve each withdrawal (as the public protocol currently states), or whether a threshold/quorum is intended. The present two-approval database rule conflicts with the public all-admins rule.
-4. Confirm whether groups may be created before all three Group Admins are appointed, and precisely when contributions/withdrawals become enabled. Public protocols currently say the group must have three Group Admins before anyone can contribute.
-5. Confirm the plan mapping and the entitlement semantics: launch/Free = three; identify future plan allowances when they are approved. Until then, higher plans should be configurable, not invented.
+1. **Confirmed:** three appointed Group Admins plus one Group Creator.
+2. **Confirmed:** the Group Creator is the withdrawal requester; all three Group Admins are approvers.
+3. **Confirmed:** every appointed Group Admin must approve each withdrawal; no two-of-three shortcut. The present two-approval database rule conflicts with the public all-admins rule.
+4. **Confirmed:** contributions remain disabled until the Creator and all three Group Admins are in place.
+5. **Confirmed:** launch/Free capacity is 100 people total, including one Creator and three Group Admins (96 ordinary Member places). Future plans must configure both total group capacity and Group Admin allowance; actual future values remain a business decision.
 
 ### Phase 1 — domain model and data migration
 1. Add a new forward-only Supabase migration; never alter applied migration files.
