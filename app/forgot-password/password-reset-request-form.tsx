@@ -33,11 +33,16 @@ export default function PasswordResetRequestForm({ initialError, initialMessage 
           return;
         }
 
-        // Initiate PKCE in the browser so the verifier is persisted in the
-        // same browser that will receive and open the recovery email link.
+        // Use the origin serving this form, not NEXT_PUBLIC_SITE_URL. This
+        // keeps the recovery callback on the same deployment/browser origin
+        // where Supabase SSR stores the PKCE verifier.
+        const callback = new URL("/auth/callback", window.location.origin);
+        callback.searchParams.set("type", "recovery");
+        callback.searchParams.set("flow", "recovery");
+
         const supabase = createClient();
         const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
-          redirectTo: prepared.redirectTo,
+          redirectTo: callback.toString(),
         });
         if (error) {
           console.error("Akiba password recovery request failed", { code: error.code });
