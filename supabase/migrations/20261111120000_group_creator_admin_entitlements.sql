@@ -155,7 +155,7 @@ begin
   select e.* into plan_row
   from public.akiba_group_plan_entitlements e
   join public.akiba_groups g on g.group_plan_code = e.plan_code
-  where g.id = new.group_id;
+  where g.id = new.group_id and e.is_active = true;
 
   if creator_id is null then
     raise exception 'Group or group plan was not found';
