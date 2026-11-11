@@ -74,3 +74,35 @@ export async function createGroup(formData: FormData) {
   revalidatePath("/workspace");
   redirect("/workspace/groups/" + groupId);
 }
+
+
+export async function setGroupAdmin(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const userId = String(formData.get("user_id") ?? "");
+  const action = String(formData.get("action") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || !/^[0-9a-f-]{36}$/i.test(userId) ||
+      (action !== "appoint" && action !== "demote")) {
+    redirect("/workspace?error=" + encodeURIComponent("Invalid Group Admin change."));
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_set_group_admin", {
+    p_group_id: groupId,
+    p_user_id: userId,
+    p_action: action,
+  });
+  if (error) {
+    const message = error.message.includes("plan Group Admin limit")
+      ? "This group has reached its Group Admin allowance."
+      : error.message.includes("unresolved")
+        ? "Group Admins cannot change while a withdrawal is being processed."
+        : "The Group Admin change could not be completed. Check that the person is an active member.";
+    redirect("/workspace/groups/" + groupId + "?membershipError=" + encodeURIComponent(message));
+  }
+
+  revalidatePath("/workspace/groups/" + groupId);
+  redirect("/workspace/groups/" + groupId + "?membershipUpdated=1");
+}
