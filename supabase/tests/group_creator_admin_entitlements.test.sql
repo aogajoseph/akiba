@@ -52,6 +52,8 @@ declare
   message text;
   active_total integer;
   admin_total integer;
+  creator_role text;
+  audit_event_total integer;
 begin
   select count(*) into active_total
   from public.akiba_group_memberships
@@ -64,6 +66,14 @@ begin
   if active_total <> 100 or admin_total <> 3 then
     raise exception 'Unexpected leadership/member counts: total %, admins %', active_total, admin_total;
   end if;
+  select role into creator_role from public.akiba_group_memberships
+  where group_id = '10000000-0000-0000-0000-000000000001'
+    and user_id = '00000000-0000-0000-0000-000000000001';
+  if creator_role <> 'group_creator' then raise exception 'Creator role was not established'; end if;
+  select count(*) into audit_event_total from public.akiba_group_membership_events
+  where group_id = '10000000-0000-0000-0000-000000000001'
+    and event_type = 'group_admin_appointed';
+  if audit_event_total <> 3 then raise exception 'Expected three immutable appointment audit events, got %', audit_event_total; end if;
 
   begin
     perform public.akiba_set_group_admin(
