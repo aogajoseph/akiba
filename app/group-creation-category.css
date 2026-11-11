@@ -93,3 +93,41 @@
   background-color: #f4e6ed !important;
   color: #963762 !important;
 }
+
+
+/* Center the explanatory copy in each group-category card. */
+.ak-create-form .ak-category-option {
+  text-align: center;
+  align-items: center;
+}
+
+.ak-create-form .ak-category-option small {
+  display: block;
+  width: 100%;
+  text-align: center;
+}
+
+.ak-create-form .ak-category-option:disabled,
+.ak-create-form .ak-category-option.coming-soon {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.ak-create-form .ak-category-option:disabled:hover {
+  background-color: #f7f8fa !important;
+  border-color: #e6e8ed !important;
+}
+
+.ak-coming-soon-label {
+  display: block;
+  width: fit-content;
+  margin: 0.5rem auto 0;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #eceff3;
+  color: #596273;
+  font-size: 0.68rem;
+  font-weight: 600;
+  vertical-align: middle;
+  white-space: nowrap;
+}

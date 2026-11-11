@@ -52,7 +52,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   if (!user) redirect("/login");
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,deadline,contribution_frequency,group_image_path,group_plan_code,created_at").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,event_location,deadline,contribution_frequency,group_image_path,group_plan_code,created_at").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
@@ -91,10 +91,10 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const target = group.target_amount === null ? null : Number(group.target_amount);
   const firstName = profile.display_name.trim().split(/\\s+/)[0];
   const primaryDateMeta = group.event_date
-    ? { label: "Event date", value: formatDate(group.event_date) }
+    ? { label: "Date", value: formatDate(group.event_date) }
     : null;
   const deadlineMeta = group.deadline
-    ? { label: "Contribution deadline", value: formatDate(group.deadline) }
+    ? { label: "Deadline", value: formatDate(group.deadline) }
     : null;
 
   return (
@@ -140,6 +140,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                 <p>{group.description?.trim() || "A shared space for people to come together and make things happen."}</p>
                 <div className="ak-workspace-banner-meta" aria-label="Group details">
                   <div className="ak-workspace-banner-meta-row">
+                    {group.event_location && <span><svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>{group.event_location}</span>}
                     {primaryDateMeta && <span>{primaryDateMeta.label}: {primaryDateMeta.value}</span>}
                     {deadlineMeta && <span>{deadlineMeta.label}: {deadlineMeta.value}</span>}
                     {group.contribution_frequency && <span>Frequency: {frequencyLabels[String(group.contribution_frequency)] ?? String(group.contribution_frequency)}</span>}
