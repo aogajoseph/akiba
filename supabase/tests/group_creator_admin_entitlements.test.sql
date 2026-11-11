@@ -8,6 +8,9 @@ select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid,
 from generate_series(1, 104) as n
 on conflict (id) do nothing;
 
+insert into public.akiba_payment_providers (id, provider_code, display_name)
+values ('20000000-0000-0000-0000-000000000001', 'governance_test', 'Governance Test');
+
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
 
 insert into public.akiba_groups
@@ -85,6 +88,11 @@ begin
   end;
 
   perform akiba_private.assert_group_leadership_ready('10000000-0000-0000-0000-000000000001');
+  insert into public.akiba_contribution_intents
+    (group_id, contributor_id, provider_id, currency_code, amount_minor, idempotency_key)
+  values ('10000000-0000-0000-0000-000000000001',
+    '00000000-0000-0000-0000-000000000001',
+    '20000000-0000-0000-0000-000000000001', 'KES', 100, 'ready-test-1');
 end;
 $test$;
 
@@ -103,6 +111,17 @@ begin
   begin
     perform akiba_private.assert_group_leadership_ready('10000000-0000-0000-0000-000000000002');
     raise exception 'Leadership readiness unexpectedly passed with no Group Admins';
+  exception when others then
+    get stacked diagnostics message = message_text;
+    if message not like '%appoint at least 3 active Group Admins%' then raise; end if;
+  end;
+  begin
+    insert into public.akiba_contribution_intents
+      (group_id, contributor_id, provider_id, currency_code, amount_minor, idempotency_key)
+    values ('10000000-0000-0000-0000-000000000002',
+      '00000000-0000-0000-0000-000000000104',
+      '20000000-0000-0000-0000-000000000001', 'KES', 100, 'not-ready-test');
+    raise exception 'Contribution intent unexpectedly succeeded before leadership readiness';
   exception when others then
     get stacked diagnostics message = message_text;
     if message not like '%appoint at least 3 active Group Admins%' then raise; end if;
