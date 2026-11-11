@@ -21,6 +21,7 @@ export async function createGroup(formData: FormData) {
   const description = String(formData.get("description") ?? "").trim();
   const targetRaw = String(formData.get("target_amount") ?? "").trim();
   const eventDate = String(formData.get("event_date") ?? "").trim();
+  const eventLocation = String(formData.get("event_location") ?? "").trim();
   const deadline = String(formData.get("deadline") ?? "").trim();
   const frequency = String(formData.get("contribution_frequency") ?? "").trim();
   const image = formData.get("group_image");
@@ -31,7 +32,7 @@ export async function createGroup(formData: FormData) {
   if (name.length < 1 || name.length > 80 || !Object.prototype.hasOwnProperty.call(allowedTypes, purpose) ||
     !allowedTypes[purpose].includes(groupType) || !/^[A-Z]{3}$/.test(currencyCode) || description.length > 500 ||
     (targetRaw !== "" && (!Number.isFinite(targetAmount) || (targetAmount ?? 0) <= 0)) ||
-    !validDate(eventDate) || !validDate(deadline) ||
+    !validDate(eventDate) || !validDate(deadline) || eventLocation.length > 200 ||
     (frequency !== "" && !allowedFrequencies.includes(frequency)) || (chamaFrequencyRequired && !frequency)) {
     redirect("/workspace/new?error=" + encodeURIComponent("Please review the required fields and make sure the group details are valid."));
   }
@@ -61,7 +62,7 @@ export async function createGroup(formData: FormData) {
 
   const { error } = await supabase.from("akiba_groups").insert({
     id: groupId, name, purpose, group_type: groupType, currency_code: currencyCode, description,
-    target_amount: targetAmount, event_date: eventDate || null, deadline: deadline || null,
+    target_amount: targetAmount, event_date: eventDate || null, event_location: purpose === "event" ? eventLocation || null : null, deadline: deadline || null,
     contribution_frequency: frequency || null, group_image_path: imagePath,
   });
 
