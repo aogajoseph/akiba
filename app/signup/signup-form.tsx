@@ -2,11 +2,31 @@
 
 import { useState, type FormEvent } from "react";
 import { createBrowserClient } from "@supabase/ssr";
+import PasswordInput from "@/app/auth-password-input";
+
+function getPasswordStrength(password: string) {
+  if (!password) return { level: 0, label: "Not entered" };
+
+  const score = [
+    password.length >= 8,
+    password.length >= 12,
+    /[a-z]/.test(password),
+    /[A-Z]/.test(password),
+    /\d/.test(password),
+    /[^A-Za-z0-9]/.test(password),
+  ].filter(Boolean).length;
+
+  if (score >= 6) return { level: 4, label: "Strong" };
+  if (score >= 4) return { level: 3, label: "Good" };
+  if (score >= 3) return { level: 2, label: "Fair" };
+  return { level: 1, label: "Weak" };
+}
 
 export default function SignupForm() {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [password, setPassword] = useState("");
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -55,12 +75,22 @@ export default function SignupForm() {
     }
   }
 
+  const strength = getPasswordStrength(password);
+
   return <>
     {error && <p className="auth-error" role="alert">{error}</p>}
     {message && <p className="auth-message" role="status">{message}</p>}
     <form onSubmit={submit} className="auth-form">
       <label>Email address<input name="email" type="email" autoComplete="email" required /></label>
-      <label>Password<input name="password" type="password" autoComplete="new-password" minLength={8} required /><small>Use at least 8 characters.</small></label>
+      <label>Password
+        <PasswordInput name="password" autoComplete="new-password" required onValueChange={setPassword} />
+        <span className="password-strength" aria-live="polite">
+          <span className="password-strength-heading">Password strength: <strong>{strength.label}</strong></span>
+          <span className="password-strength-meter" role="progressbar" aria-label="Password strength" aria-valuemin={0} aria-valuemax={4} aria-valuenow={strength.level} aria-valuetext={strength.label}>
+            {Array.from({ length: 4 }, (_, index) => <span key={index} className={index < strength.level ? `password-strength-segment is-level-${strength.level}` : "password-strength-segment"} />)}
+          </span>
+        </span>
+      </label>
       <button className="workspace-primary" type="submit" disabled={pending}>{pending ? "Creating account…" : "Create account"}</button>
     </form>
   </>;
