@@ -13,7 +13,6 @@ export default async function SignupPage({ searchParams }: Props) {
   return <main className="auth-shell"><section className="auth-card">
     <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
     <div className="workspace-eyebrow">Do more, together.</div><h1>Create your account</h1>
-    <p className="auth-description">Set up your Akiba account to create and manage Groups.</p>
     {params.error && <p className="auth-error" role="alert">{params.error}</p>}
     <SignupForm />
     <p className="auth-switch">Already registered? <Link href="/login">Sign in</Link></p>
