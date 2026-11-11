@@ -178,8 +178,8 @@ export function GroupCreationForm({ error }: { error?: string }) {
           {deadline && <div><small>CONTRIBUTION DEADLINE</small><strong>{deadline}</strong></div>}
           {frequency && <div><small>CONTRIBUTION FREQUENCY</small><strong>{frequencies.find(([value]) => value === frequency)?.[1] ?? frequency}</strong></div>}
         </div>
-        <div className="ak-private-note"><span>♙</span><div><strong>Private group</strong><small>Only people you invite will be able to access this group. You can invite members after creating it.</small></div></div>
-        <p className="ak-create-footnote">You’ll become the Group Creator. You must appoint three Group Admins before the group can receive contributions. Creating a group alone does not move or hold money.</p>
+        <div className="ak-private-note"><span>♙</span><div><strong>Private group</strong><small>Only the people invited to this group will have access.</small></div></div>
+        <p className="ak-create-footnote">As the Group Creator, you must appoint three Group Admins before the group can start receiving contributions.</p>
       </section>
 
       <div className="ak-create-navigation">
