@@ -21,21 +21,22 @@ export default function PasswordResetRequestForm({ initialError, initialMessage 
     setMessage("");
 
     startTransition(async () => {
-      const prepared = await preparePasswordReset(email);
-      if (prepared.status === "error") {
-        setErrorMessage(prepared.message);
-        return;
-      }
-      if (prepared.status === "message") {
-        setMessage(prepared.message);
-        return;
-      }
-
       try {
+        const normalizedEmail = email.trim().toLowerCase();
+        const prepared = await preparePasswordReset(normalizedEmail);
+        if (prepared.status === "error") {
+          setErrorMessage(prepared.message);
+          return;
+        }
+        if (prepared.status === "message") {
+          setMessage(prepared.message);
+          return;
+        }
+
         // Initiate PKCE in the browser so the verifier is persisted in the
         // same browser that will receive and open the recovery email link.
         const supabase = createClient();
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
           redirectTo: prepared.redirectTo,
         });
         if (error) {
