@@ -8,7 +8,7 @@ function getPasswordStrength(password: string) {
   if (!password) return { level: 0, label: "Not entered" };
 
   const score = [
-    password.length >= 8,
+    password.length >= 6,
     password.length >= 12,
     /[a-z]/.test(password),
     /[A-Z]/.test(password),
@@ -84,6 +84,7 @@ export default function SignupForm() {
       <label>Email address<input name="email" type="email" autoComplete="email" required /></label>
       <label>Password
         <PasswordInput name="password" autoComplete="new-password" required onValueChange={setPassword} />
+        <small>Use at least 6 characters.</small>
         <span className="password-strength" aria-live="polite">
           <span className="password-strength-heading">Password strength: <strong>{strength.label}</strong></span>
           <span className="password-strength-meter" role="progressbar" aria-label="Password strength" aria-valuemin={0} aria-valuemax={4} aria-valuenow={strength.level} aria-valuetext={strength.label}>
