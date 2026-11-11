@@ -111,12 +111,14 @@ begin
     end if;
   end if;
 
-  select g.created_by, e.*
-    into creator_id, plan_row
+  select g.created_by into creator_id
   from public.akiba_groups g
-  join public.akiba_group_plan_entitlements e on e.plan_code = g.group_plan_code
   where g.id = new.group_id
-  for update of g;
+  for update;
+  select e.* into plan_row
+  from public.akiba_group_plan_entitlements e
+  join public.akiba_groups g on g.group_plan_code = e.plan_code
+  where g.id = new.group_id;
 
   if creator_id is null then
     raise exception 'Group or group plan was not found';
@@ -168,7 +170,7 @@ $fn$;
 
 drop trigger if exists akiba_group_membership_entitlement_guard on public.akiba_group_memberships;
 create trigger akiba_group_membership_entitlement_guard
-before insert or update of group_id, user_id, role, status
+before insert or update
 on public.akiba_group_memberships
 for each row execute function akiba_private.guard_group_membership_entitlements();
 
@@ -231,7 +233,7 @@ declare
   target_role text;
 begin
   if actor_id is null then raise exception 'Authentication is required'; end if;
-  if p_group_id is null or p_user_id is null or p_action not in ('appoint', 'demote') then
+  if p_group_id is null or p_user_id is null or p_action is null or p_action not in ('appoint', 'demote') then
     raise exception 'Invalid Group Admin change';
   end if;
 
