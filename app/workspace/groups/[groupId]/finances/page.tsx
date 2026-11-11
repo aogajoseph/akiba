@@ -40,15 +40,20 @@ export default async function GroupFinancesPage({ params }: Props) {
   if (!user) redirect("/login");
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name,currency_code,target_amount,group_image_path").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,currency_code,target_amount,group_image_path,group_plan_code").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
   if (!profile?.display_name?.trim()) redirect("/onboarding");
 
-  const { data: membership } = await supabase.from("akiba_group_memberships")
-    .select("status").eq("group_id", group.id).eq("user_id", user.id).maybeSingle();
+  const [{ data: membership }, { data: leadershipMembers }, { data: groupPlan }] = await Promise.all([
+    supabase.from("akiba_group_memberships").select("status").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("akiba_group_memberships").select("role").eq("group_id", group.id).eq("status", "active"),
+    supabase.from("akiba_group_plan_entitlements").select("required_group_admins").eq("plan_code", group.group_plan_code).maybeSingle(),
+  ]);
   if (!membership || membership.status !== "active") notFound();
+  const activeGroupAdminCount = (leadershipMembers ?? []).filter((member) => member.role === "group_admin").length;
+  const leadershipReady = activeGroupAdminCount >= (groupPlan?.required_group_admins ?? 3);
 
   const [{ data: transactions, error: transactionError, count: transactionCount }, { data: ledgerLines, error: ledgerError }] = await Promise.all([
     supabase.from("akiba_financial_transactions")
@@ -136,7 +141,7 @@ export default async function GroupFinancesPage({ params }: Props) {
           </section>
 
           <div className="ak-finance-grid">
-            <FinancePanel groupId={group.id} currencyCode={group.currency_code} enabled={sandboxEnabled} />
+            <FinancePanel groupId={group.id} currencyCode={group.currency_code} enabled={sandboxEnabled} leadershipReady={leadershipReady} />
             <section className="ak-workspace-card ak-finance-history">
               <div className="ak-workspace-card-heading">
                 <div><span className="ak-section-eyebrow">CONFIRMED ACTIVITY</span><h2>Contribution history</h2><p>Entries appear only after the provider confirms payment and the ledger posts successfully.</p></div>
