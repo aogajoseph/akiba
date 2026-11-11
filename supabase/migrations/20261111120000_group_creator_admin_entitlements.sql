@@ -157,8 +157,8 @@ begin
   join public.akiba_groups g on g.group_plan_code = e.plan_code
   where g.id = new.group_id and e.is_active = true;
 
-  if creator_id is null then
-    raise exception 'Group or group plan was not found';
+  if creator_id is null or plan_row.plan_code is null then
+    raise exception 'Group or active group plan was not found';
   end if;
 
   if new.role = 'group_creator' and new.user_id <> creator_id then
