@@ -33,7 +33,7 @@ export default function Hero() {
  <Typography variant="body1" sx={{maxWidth:900,mx:'auto',mt:3,color:'text.secondary',textAlign:'center'}}>Akiba is a finance coordination platform that helps people contribute and spend money as a team to<Box component="br" sx={{display:{xs:'none',md:'block'}}}/> plan events or achieve shared goals.</Typography>
  <Stack direction={{xs:'column',sm:'row'}} spacing={2} justifyContent="center" sx={{mt:4,maxWidth:370,mx:'auto'}}>
  <Button href="/login" size="medium" variant="outlined" fullWidth sx={{py:1.1}}>Sign In</Button><Button href="/signup" size="medium" variant="contained" fullWidth sx={{py:1.1,bgcolor:'#E91E78','&:hover':{bgcolor:'#C21863'}}}>Create Account</Button></Stack>
- <Typography variant="caption" color="text.secondary" sx={{display:'block',mt:2}}>By signing up to Akiba, you agree to our <Link href="/terms">Terms of Service</Link>.</Typography>
+ <Typography variant="caption" color="text.secondary" sx={{display:'block',mt:2}}>By joining Akiba, you agree to our <Link href="https://akiba-kappa.vercel.app/terms" sx={{ fontWeight: 700 }}>Terms of Service</Link>.</Typography>
  <Box component="img" src="/akiba-dashboard-screenshot.png" alt="Akiba dashboard showing groups, contributions, chats, and pending approvals" sx={{mt:9,width:"100%",height:"auto",display:"block",borderRadius:4,boxShadow:"0 25px 70px rgba(26,38,65,.12)"}} />
  </Container></Box>;
 }
