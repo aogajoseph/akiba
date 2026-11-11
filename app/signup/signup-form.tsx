@@ -83,7 +83,7 @@ export default function SignupForm() {
     <form onSubmit={submit} className="auth-form">
       <label>Email address<input name="email" type="email" autoComplete="email" required /></label>
       <label>Password
-        <PasswordInput name="password" autoComplete="new-password" required onValueChange={setPassword} />
+        <PasswordInput name="password" autoComplete="new-password" required minLength={6} onValueChange={setPassword} />
         <small>Use at least 6 characters.</small>
         <span className="password-strength" aria-live="polite">
           <span className="password-strength-heading">Password strength: <strong>{strength.label}</strong></span>
