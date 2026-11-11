@@ -76,6 +76,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
   const [currency, setCurrency] = useState("KES");
   const [targetAmount, setTargetAmount] = useState("");
   const [eventDate, setEventDate] = useState("");
+  const [eventLocation, setEventLocation] = useState("");
   const [deadline, setDeadline] = useState("");
   const [frequency, setFrequency] = useState("");
   const types = catalogue[category].types;
@@ -153,6 +154,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
         <label><span className="ak-field-heading">{isEvent ? "Event type" : "Goal type"} <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); setFrequency(""); }} required>
           {types.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
         </select><small>{selectedType?.[2]}</small></label>
+        {isEvent && <label><span className="ak-field-heading">Event location <small className="ak-field-meta">Optional</small></span><input name="event_location" value={eventLocation} onChange={(event) => setEventLocation(event.target.value)} maxLength={200} placeholder="Venue or event location" /></label>}
       </section>
 
       <section id="ak-create-step-2" className="ak-create-section" hidden={step !== 2}>
