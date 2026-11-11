@@ -53,7 +53,8 @@ export default async function GroupFinancesPage({ params }: Props) {
   ]);
   if (!membership || membership.status !== "active") notFound();
   const activeGroupAdminCount = (leadershipMembers ?? []).filter((member) => member.role === "group_admin").length;
-  const leadershipReady = activeGroupAdminCount >= (groupPlan?.required_group_admins ?? 3);
+  const requiredGroupAdmins = groupPlan?.required_group_admins ?? 3;
+  const leadershipReady = activeGroupAdminCount >= requiredGroupAdmins;
 
   const [{ data: transactions, error: transactionError, count: transactionCount }, { data: ledgerLines, error: ledgerError }] = await Promise.all([
     supabase.from("akiba_financial_transactions")
@@ -141,7 +142,7 @@ export default async function GroupFinancesPage({ params }: Props) {
           </section>
 
           <div className="ak-finance-grid">
-            <FinancePanel groupId={group.id} currencyCode={group.currency_code} enabled={sandboxEnabled} leadershipReady={leadershipReady} />
+            <FinancePanel groupId={group.id} currencyCode={group.currency_code} enabled={sandboxEnabled} leadershipReady={leadershipReady} requiredGroupAdmins={requiredGroupAdmins} />
             <section className="ak-workspace-card ak-finance-history">
               <div className="ak-workspace-card-heading">
                 <div><span className="ak-section-eyebrow">CONFIRMED ACTIVITY</span><h2>Contribution history</h2><p>Entries appear only after the provider confirms payment and the ledger posts successfully.</p></div>
