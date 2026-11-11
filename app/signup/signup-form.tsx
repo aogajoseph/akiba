@@ -55,9 +55,24 @@ export default function SignupForm() {
         options: { emailRedirectTo: new URL("/auth/callback", window.location.origin).toString() },
       });
       if (signupError) {
-        setError(signupError.code === "user_already_exists"
-          ? "An account with this email already exists. Please sign in."
-          : "Unable to create account. Please try again.");
+        // Keep diagnostics useful without logging the submitted email or password.
+        console.error("Akiba signup rejected", {
+          code: signupError.code,
+          status: signupError.status,
+          name: signupError.name,
+        });
+
+        if (signupError.code === "user_already_exists") {
+          setError("An account with this email already exists. Please sign in.");
+        } else if (signupError.code === "over_email_send_rate_limit") {
+          setError("Akiba has temporarily reached its email sending limit. Please wait before trying again. If this continues, contact support.");
+        } else if (signupError.status === 429) {
+          setError("Too many signup requests have been made. Please wait a moment before trying again.");
+        } else if (signupError.code === "email_address_not_authorized") {
+          setError("Akiba's email service is not yet enabled for this address. Please contact support.");
+        } else {
+          setError("Unable to create account. Please try again.");
+        }
       } else if (data.session) {
         window.location.assign("/onboarding");
         return;
@@ -68,7 +83,11 @@ export default function SignupForm() {
       } else {
         setMessage("Success! Click the link we sent to your email address to activate your Akiba account.");
       }
-    } catch {
+    } catch (error) {
+      console.error("Akiba signup request failed unexpectedly", {
+        name: error instanceof Error ? error.name : "UnknownError",
+        message: error instanceof Error ? error.message : String(error),
+      });
       setError("Unable to create account. Please try again.");
     } finally {
       setPending(false);

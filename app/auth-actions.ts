@@ -63,20 +63,21 @@ export async function signUp(formData: FormData) {
 }
 export async function signOut(){const supabase=await createClient();await supabase.auth.signOut();await markReturning();redirect("/login?message=You%20have%20signed%20out.");}
 
-export async function requestPasswordReset(formData: FormData) {
- const email = field(formData, "email").toLowerCase();
- if (!isValidEmail(email)) redirect("/forgot-password?error=" + encodeURIComponent("Enter a valid email address."));
+export async function preparePasswordReset(emailInput: string) {
+ const email = String(emailInput ?? "").trim().toLowerCase();
+ if (!isValidEmail(email)) {
+   return { status: "error" as const, message: "Enter a valid email address." };
+ }
  const site = process.env.NEXT_PUBLIC_SITE_URL;
  if (!site) {
    console.error("Akiba NEXT_PUBLIC_SITE_URL is missing for password recovery");
-   redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
+   return { status: "error" as const, message: "Password recovery is temporarily unavailable." };
  }
- const supabase = await createClient();
  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
  const secret = process.env.SUPABASE_SECRET_KEY;
  if (!url || !secret) {
    console.error("Akiba password recovery admin configuration is missing");
-   redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
+   return { status: "error" as const, message: "Password recovery is temporarily unavailable." };
  }
  const admin = createAdminClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
  let accountExists: boolean | null = null;
@@ -95,10 +96,10 @@ export async function requestPasswordReset(formData: FormData) {
    console.error("Akiba password recovery rate limit unavailable");
  }
  if (rateLimitAllowed === null) {
-   redirect("/forgot-password?error=" + encodeURIComponent("Password recovery is temporarily unavailable."));
+   return { status: "error" as const, message: "Password recovery is temporarily unavailable." };
  }
  if (!rateLimitAllowed) {
-   redirect("/forgot-password?error=" + encodeURIComponent("Too many reset requests for this email. Please wait 15 minutes before trying again."));
+   return { status: "error" as const, message: "Too many reset requests for this email. Please wait 15 minutes before trying again." };
  }
 
  // This privileged lookup supports the explicit account feedback requested.
@@ -113,24 +114,22 @@ export async function requestPasswordReset(formData: FormData) {
  }
 
  if (accountExists === false) {
-   redirect("/forgot-password?message=" + encodeURIComponent("No account found for this email address. Check the address or create an Akiba account."));
+   return { status: "message" as const, message: "No account found for this email address. Check the address or create an Akiba account." };
  }
 
  const callback = new URL("/auth/callback", site);
  callback.searchParams.set("type", "recovery");
  callback.searchParams.set("flow", "recovery");
- const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: callback.toString() });
- if (error) {
-   console.error("Akiba password recovery request failed", { code: error.code });
-   redirect("/forgot-password?error=" + encodeURIComponent("We couldn't send a password reset link. Please try again."));
- }
 
- if (accountExists === true) {
-   redirect("/forgot-password?message=" + encodeURIComponent("Password reset link sent. Check your inbox and spam folder."));
- }
-
- // Preserve privacy if the account lookup was unavailable or inconclusive.
- redirect("/forgot-password?message=" + encodeURIComponent("If an account is registered with this email address, you'll receive instructions to reset your password. Check your inbox and spam folder."));
+ // The browser component sends the email request so @supabase/ssr stores the
+ // PKCE verifier in the user's browser cookies before the email link is opened.
+ return {
+   status: "ready" as const,
+   redirectTo: callback.toString(),
+   successMessage: accountExists === true
+     ? "Password reset link sent. Check your inbox and spam folder."
+     : "If an account is registered with this email address, you'll receive instructions to reset your password. Check your inbox and spam folder.",
+ };
 }
 
 export async function updatePassword(formData: FormData) {
