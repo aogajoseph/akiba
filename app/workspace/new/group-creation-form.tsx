@@ -83,7 +83,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
   const isChama = category === "chama";
   const isEvent = category === "event";
   const frequencyRequired = isChama && ["rotating_savings", "table_banking", "accumulating_savings"].includes(groupType);
-  const showFrequency = isChama || ["rent_housing", "education", "shared_savings"].includes(groupType);
+  const showFrequency = isChama;
 
   function chooseCategory(value: Category) {
     setCategory(value);
@@ -144,8 +144,9 @@ export function GroupCreationForm({ error }: { error?: string }) {
           {(Object.keys(catalogue) as Category[]).map((key) => (
             <button type="button" key={key} className={"ak-category-option " + (category === key ? "selected" : "") + (key === "chama" ? " coming-soon" : "")} onClick={() => { if (key !== "chama") chooseCategory(key); }} aria-pressed={category === key} disabled={key === "chama"} aria-disabled={key === "chama"}>
               <span className="ak-category-symbol">{key === "event" ? "✳" : key === "goal" ? "◎" : "↻"}</span>
-              <strong>{catalogue[key].label}{key === "chama" && <span className="ak-coming-soon-label">Coming soon</span>}</strong>
+              <strong>{catalogue[key].label}</strong>
               <small>{catalogue[key].description}</small>
+              {key === "chama" && <span className="ak-coming-soon-label">Coming Soon</span>}
             </button>
           ))}
         </div>
