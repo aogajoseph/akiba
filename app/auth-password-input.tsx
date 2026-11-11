@@ -6,6 +6,7 @@ type PasswordInputProps = {
   name: string;
   autoComplete: string;
   required?: boolean;
+  minLength?: number;
   onValueChange?: (value: string) => void;
 };
 
@@ -13,6 +14,7 @@ export default function PasswordInput({
   name,
   autoComplete,
   required = false,
+  minLength,
   onValueChange,
 }: PasswordInputProps) {
   const [visible, setVisible] = useState(false);
@@ -28,6 +30,7 @@ export default function PasswordInput({
         type={visible ? "text" : "password"}
         autoComplete={autoComplete}
         required={required}
+        minLength={minLength}
         onChange={handleChange}
       />
       <button
