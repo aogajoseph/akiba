@@ -134,6 +134,21 @@ declare
   old_status text;
   excluded_membership_id uuid;
 begin
+  if tg_op = 'DELETE' then
+    perform 1 from public.akiba_groups where id = old.group_id for update;
+    if old.role = 'group_creator' then
+      raise exception 'The Group Creator membership cannot be deleted';
+    end if;
+    if old.role = 'group_admin' and exists (
+      select 1 from public.akiba_withdrawal_requests r
+      where r.group_id = old.group_id
+        and r.status in ('pending_approval', 'approved', 'processing', 'failed_pending_reconciliation')
+    ) then
+      raise exception 'Group Admin memberships cannot be deleted while a withdrawal is unresolved';
+    end if;
+    return old;
+  end if;
+
   if tg_op = 'UPDATE' then
     old_role := old.role;
     old_status := old.status;
@@ -209,7 +224,7 @@ $fn$;
 
 drop trigger if exists akiba_group_membership_entitlement_guard on public.akiba_group_memberships;
 create trigger akiba_group_membership_entitlement_guard
-before insert or update
+before insert or update or delete
 on public.akiba_group_memberships
 for each row execute function akiba_private.guard_group_membership_entitlements();
 
