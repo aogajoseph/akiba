@@ -52,7 +52,9 @@ set role = case
   when m.user_id = g.created_by then 'group_creator'
   when m.role = 'sub_admin' then 'group_admin'
   else 'member'
-end
+end,
+status = case when m.user_id = g.created_by then 'active' else m.status end,
+ended_at = case when m.user_id = g.created_by then null else m.ended_at end
 from public.akiba_groups g
 where g.id = m.group_id
   and (m.role in ('admin', 'sub_admin') or m.user_id = g.created_by);
@@ -75,6 +77,28 @@ alter table public.akiba_group_memberships
 create unique index if not exists akiba_one_active_group_creator
   on public.akiba_group_memberships(group_id)
   where role = 'group_creator' and status = 'active';
+
+do $preflight$
+begin
+  if exists (
+    select 1
+    from public.akiba_groups g
+    join public.akiba_group_plan_entitlements e on e.plan_code = g.group_plan_code
+    left join lateral (
+      select count(*) filter (where m.status = 'active') as active_members,
+             count(*) filter (where m.status = 'active' and m.role = 'group_admin') as active_admins,
+             count(*) filter (where m.status = 'active' and m.role = 'group_creator') as active_creators
+      from public.akiba_group_memberships m
+      where m.group_id = g.id
+    ) counts on true
+    where counts.active_members > e.max_members
+       or counts.active_admins > e.max_group_admins
+       or counts.active_creators <> 1
+  ) then
+    raise exception 'Existing group memberships do not satisfy the new Creator/Admin plan limits; reconcile the affected groups before applying this migration';
+  end if;
+end;
+$preflight$;
 
 create or replace function akiba_private.create_group_owner_membership()
 returns trigger
