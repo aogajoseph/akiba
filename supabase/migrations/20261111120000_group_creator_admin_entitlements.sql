@@ -13,6 +13,14 @@ create table if not exists public.akiba_group_plan_entitlements (
   updated_at timestamptz not null default now()
 );
 
+alter table public.akiba_group_plan_entitlements enable row level security;
+drop policy if exists "authenticated users read active group plans" on public.akiba_group_plan_entitlements;
+create policy "authenticated users read active group plans"
+  on public.akiba_group_plan_entitlements for select to authenticated
+  using (is_active = true);
+grant select on public.akiba_group_plan_entitlements to authenticated;
+revoke all on public.akiba_group_plan_entitlements from anon;
+
 insert into public.akiba_group_plan_entitlements
   (plan_code, max_members, required_group_admins, max_group_admins)
 values ('free', 100, 3, 3)
@@ -98,10 +106,15 @@ declare
   active_admin_count integer;
   old_role text;
   old_status text;
+  excluded_membership_id uuid;
 begin
   if tg_op = 'UPDATE' then
     old_role := old.role;
     old_status := old.status;
+    excluded_membership_id := old.id;
+    if new.group_id is distinct from old.group_id or new.user_id is distinct from old.user_id then
+      raise exception 'A membership cannot be moved to another group or user';
+    end if;
     if old.role = 'group_creator'
        and (new.role is distinct from old.role
          or new.status is distinct from old.status
@@ -146,7 +159,7 @@ begin
   from public.akiba_group_memberships m
   where m.group_id = new.group_id
     and m.status = 'active'
-    and (tg_op <> 'UPDATE' or m.id <> old.id);
+    and m.id is distinct from excluded_membership_id;
 
   select count(*) into active_admin_count
   from public.akiba_group_memberships m
@@ -335,7 +348,7 @@ execute function akiba_private.guard_contribution_leadership();
 create or replace function akiba_private.guard_withdrawal_request_insert()
 returns trigger
 language plpgsql
-security invoker
+security definer
 set search_path = ''
 as $fn$
 declare
