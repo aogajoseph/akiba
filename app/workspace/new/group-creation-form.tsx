@@ -15,8 +15,9 @@ const catalogue = {
       ["party_celebration", "Party & Celebration", "Parties, reunions and special occasions"],
       ["trip_vacation", "Trip & Vacation", "Group travel and shared experiences"],
       ["community_event", "Community Event", "Community activities and gatherings"],
+      ["meeting", "Meeting", "Group meetings and discussions"],
       ["fundraiser", "Fundraiser", "A one-time fundraising initiative"],
-      ["other_event", "Other Event", "Another event or occasion"],
+      ["other_event", "Other", "Another event or occasion"],
     ],
   },
   goal: {
@@ -27,11 +28,11 @@ const catalogue = {
       ["education", "Education", "School fees, tuition and education costs"],
       ["business_investment", "Business & Investment", "Business capital and shared investments"],
       ["land_property", "Land & Property", "Land purchases, construction and property"],
-      ["vehicle_purchase", "Vehicle Purchase", "Buying a vehicle together"],
+      ["vehicle_purchase", "Purchase", "Buying a vehicle together"],
       ["family_support", "Family Support", "Shared family responsibilities and support"],
       ["shared_savings", "Shared Savings", "Saving towards a common financial goal"],
-      ["community_project", "Community Project", "Collective projects and community needs"],
-      ["other_goal", "Other Goal", "Another shared goal or objective"],
+      ["community_project", "Project", "Collective projects and community needs"],
+      ["other_goal", "Other", "Another shared goal or objective"],
     ],
   },
   chama: {
@@ -132,7 +133,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
       <section id="ak-create-step-0" className="ak-create-section" hidden={step !== 0}>
         <div className="ak-create-section-heading"><span>01</span><div><h2>Give your group an identity</h2><p>Choose a name and tell people what this group is about.</p></div></div>
         <label><span className="ak-field-heading">Group name <em className="ak-field-meta required">Required</em></span><input name="name" value={groupName} onChange={(event) => setGroupName(event.target.value)} maxLength={80} required placeholder="e.g. John's 30th Birthday" /></label>
-        <label><span className="ak-field-heading">About this group <small className="ak-field-meta">Optional</small></span><textarea name="description" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} rows={3} placeholder="Tell members what this group is about..." /></label>
+        <label><span className="ak-field-heading">Description <small className="ak-field-meta">Optional</small></span><textarea name="description" value={description} onChange={(event) => setDescription(event.target.value)} maxLength={500} rows={3} placeholder="Tell members what this group is about..." /></label>
         <label><span className="ak-field-heading">Group image <small className="ak-field-meta">Optional</small></span><small>JPG, PNG or WebP · up to 5 MB</small><input name="group_image" type="file" accept="image/png,image/jpeg,image/webp" /></label>
       </section>
 
@@ -141,14 +142,14 @@ export function GroupCreationForm({ error }: { error?: string }) {
         <input type="hidden" name="purpose" value={category} />
         <div className="ak-category-options">
           {(Object.keys(catalogue) as Category[]).map((key) => (
-            <button type="button" key={key} className={"ak-category-option " + (category === key ? "selected" : "")} onClick={() => chooseCategory(key)} aria-pressed={category === key}>
+            <button type="button" key={key} className={"ak-category-option " + (category === key ? "selected" : "") + (key === "chama" ? " coming-soon" : "")} onClick={() => { if (key !== "chama") chooseCategory(key); }} aria-pressed={category === key} disabled={key === "chama"} aria-disabled={key === "chama"}>
               <span className="ak-category-symbol">{key === "event" ? "✳" : key === "goal" ? "◎" : "↻"}</span>
-              <strong>{catalogue[key].label}</strong>
+              <strong>{catalogue[key].label}{key === "chama" && <span className="ak-coming-soon-label">Coming soon</span>}</strong>
               <small>{catalogue[key].description}</small>
             </button>
           ))}
         </div>
-        <label><span className="ak-field-heading">Group type <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); setFrequency(""); }} required>
+        <label><span className="ak-field-heading">{isEvent ? "Event type" : "Goal type"} <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); setFrequency(""); }} required>
           {types.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
         </select><small>{selectedType?.[2]}</small></label>
       </section>
@@ -166,7 +167,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
         <div className="ak-create-section-heading"><span>04</span><div><h2>Review your group</h2><p>Make sure the details look right. You can go back to change anything.</p></div></div>
         <div className="ak-create-review">
           <div><small>GROUP NAME</small><strong>{groupName.trim() || "Not provided"}</strong></div>
-          {description.trim() && <div><small>ABOUT</small><span>{description}</span></div>}
+          {description.trim() && <div><small>DESCRIPTION</small><span>{description}</span></div>}
           <div><small>GROUP TYPE</small><strong>{catalogue[category].label} · {selectedType?.[1]}</strong></div>
           <div><small>CURRENCY</small><strong>{currency || "KES"}</strong></div>
           {targetAmount && <div><small>TARGET AMOUNT</small><strong>{currency} {Number(targetAmount).toLocaleString()}</strong></div>}
