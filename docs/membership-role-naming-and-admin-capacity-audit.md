@@ -80,6 +80,8 @@ The database finance workflow still implements the previous rules:
 
 The current schema and UI do not yet implement the full Creator-versus-Group-Admin role distinction. The finance changes must be designed around the approved governance model, including the question of whether the Creator can ever be an approver (the public protocol currently makes the Creator the requester and all Group Admins the approvers).
 
+There is a second launch-protocol gap on contributions: the contribution orchestration in `lib/payments/orchestration/create-contribution.ts` verifies that the contributor is an active group member, but it does not check that the group has the required three appointed Group Admins. The M-Pesa route delegates to that active-membership check. Therefore, the public rule that no one may contribute until three Group Admins are appointed is not currently enforced by the contribution backend. This readiness gate must be added server/database-side as part of the same governance model, not merely displayed in the UI.
+
 ### 5. Plans and capacity — high
 
 - `app/marketing-template/components/Pricing.tsx` currently advertises group member capacities (Free 100, Plus 300, Premium 1,000) and personal group-count limits. It does not define Group Admin entitlements.
