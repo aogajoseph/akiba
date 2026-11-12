@@ -256,6 +256,26 @@ begin
 end;
 $test$;
 
+-- Invitation creation and cancellation are visible in the group activity history.
+select public.akiba_cancel_group_invitation(
+  (select id from public.akiba_group_invitations where token_hash = repeat('3', 64))
+);
+
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_activity
+    where group_id = '10000000-0000-0000-0000-000000000013'
+      and event_type = 'invitation_created'
+  ) then raise exception 'Invitation creation was not recorded in group activity'; end if;
+  if not exists (
+    select 1 from public.akiba_group_activity
+    where group_id = '10000000-0000-0000-0000-000000000013'
+      and event_type = 'invitation_cancelled'
+  ) then raise exception 'Invitation cancellation was not recorded in group activity'; end if;
+end;
+$test$;
+
 -- Deactivation begins the retention period immediately and blocks invitations.
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000302', true);
 do $test$
