@@ -115,6 +115,74 @@ grant execute on function public.akiba_create_group_invitation(uuid, text, times
 
 
 -- Record invitation cancellation in the same shared group activity history.
+-- Deactivated groups must reject leadership changes just as they reject
+-- membership changes. Locking the group row serializes this with deactivation.
+create or replace function public.akiba_set_group_admin(
+  p_group_id uuid,
+  p_user_id uuid,
+  p_action text
+)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  group_creator_id uuid;
+  group_status text;
+  target_role text;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  if p_group_id is null or p_user_id is null or p_action is null or p_action not in ('appoint', 'demote') then
+    raise exception 'Invalid Group Admin change';
+  end if;
+
+  select created_by, status into group_creator_id, group_status
+  from public.akiba_groups where id = p_group_id for update;
+  if not found then raise exception 'Group not found'; end if;
+  if group_status <> 'active' then raise exception 'This group is deactivated'; end if;
+  if group_creator_id <> actor_id then
+    raise exception 'Only the Group Creator may appoint or demote Group Admins';
+  end if;
+
+  if exists (
+    select 1 from public.akiba_withdrawal_requests r
+    where r.group_id = p_group_id
+      and r.status in ('pending_approval', 'approved', 'processing', 'failed_pending_reconciliation')
+  ) then
+    raise exception 'Group Admin appointments cannot change while a withdrawal is unresolved';
+  end if;
+
+  select role into target_role
+  from public.akiba_group_memberships
+  where group_id = p_group_id and user_id = p_user_id and status = 'active'
+  for update;
+  if not found then raise exception 'The selected person must already be an active group member'; end if;
+  if p_user_id = group_creator_id then raise exception 'The Group Creator cannot be appointed as a Group Admin'; end if;
+
+  if p_action = 'appoint' then
+    if target_role = 'group_admin' then return; end if;
+    if target_role <> 'member' then raise exception 'Only an ordinary member can be appointed'; end if;
+    update public.akiba_group_memberships set role = 'group_admin'
+    where group_id = p_group_id and user_id = p_user_id and status = 'active';
+    insert into public.akiba_group_membership_events
+      (group_id, actor_id, subject_user_id, event_type, previous_role, new_role)
+    values (p_group_id, actor_id, p_user_id, 'group_admin_appointed', 'member', 'group_admin');
+  else
+    if target_role = 'member' then return; end if;
+    if target_role <> 'group_admin' then raise exception 'Only a Group Admin can be demoted'; end if;
+    update public.akiba_group_memberships set role = 'member'
+    where group_id = p_group_id and user_id = p_user_id and status = 'active';
+    insert into public.akiba_group_membership_events
+      (group_id, actor_id, subject_user_id, event_type, previous_role, new_role)
+    values (p_group_id, actor_id, p_user_id, 'group_admin_demoted', 'group_admin', 'member');
+  end if;
+end;
+$fn$;
+revoke all on function public.akiba_set_group_admin(uuid, uuid, text) from public, anon;
+grant execute on function public.akiba_set_group_admin(uuid, uuid, text) to authenticated;
+
 create or replace function public.akiba_cancel_group_invitation(p_invitation_id uuid)
 returns void
 language plpgsql
