@@ -252,3 +252,16 @@ export async function deactivateGroup(formData: FormData) {
   revalidatePath("/workspace");
   redirect("/workspace?message=Group%20deactivated");
 }
+
+
+export async function cancelGroupInvitation(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const invitationId = String(formData.get("invitation_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || !/^[0-9a-f-]{36}$/i.test(invitationId)) redirect("/workspace");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+  const { error } = await supabase.rpc("akiba_cancel_group_invitation", { p_invitation_id: invitationId });
+  if (error) membershipRedirect(groupId, "The invitation could not be cancelled.");
+  redirect("/workspace/groups/" + groupId + "/membership?membershipUpdated=" + encodeURIComponent("Invitation cancelled."));
+}
