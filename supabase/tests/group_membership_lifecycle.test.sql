@@ -250,4 +250,31 @@ begin
 end;
 $test$;
 
+-- Simulate the passage of the six-month retention interval. The scheduled
+-- worker removes group membership/content and keeps the financial anchor.
+do $test$
+declare deleted_count integer;
+begin
+  deleted_count := akiba_private.process_due_group_deletions(now() + interval '7 months');
+  if deleted_count <> 1 then
+    raise exception 'Expected one due group to be processed, got %', deleted_count;
+  end if;
+  if not exists (
+    select 1 from public.akiba_groups
+    where id = '10000000-0000-0000-0000-000000000012'
+      and status = 'deleted'
+      and deleted_at >= scheduled_delete_at
+      and name = 'Deleted group'
+  ) then raise exception 'Due group was not scrubbed and marked deleted'; end if;
+  if exists (
+    select 1 from public.akiba_group_memberships
+    where group_id = '10000000-0000-0000-0000-000000000012'
+  ) then raise exception 'Deleted group still has active or historical membership rows'; end if;
+  if not exists (
+    select 1 from public.akiba_group_deletion_records
+    where group_id = '10000000-0000-0000-0000-000000000012'
+  ) then raise exception 'Group deletion record was not written'; end if;
+end;
+$test$;
+
 rollback;
