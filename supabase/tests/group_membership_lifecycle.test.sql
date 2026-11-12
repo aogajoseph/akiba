@@ -135,6 +135,19 @@ select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000012', '000
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000304', 'appoint');
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000305', 'appoint');
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000303', true);
+select public.akiba_step_down_group_admin('10000000-0000-0000-0000-000000000012');
+
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_memberships
+    where group_id = '10000000-0000-0000-0000-000000000012'
+      and user_id = '00000000-0000-0000-0000-000000000303'
+      and role = 'member' and status = 'active'
+  ) then raise exception 'Admin did not become an ordinary active Member after stepping down'; end if;
+end;
+$test$;
+
 select public.akiba_leave_group('10000000-0000-0000-0000-000000000012');
 
 do $test$
@@ -144,7 +157,7 @@ begin
     where group_id = '10000000-0000-0000-0000-000000000012'
       and user_id = '00000000-0000-0000-0000-000000000303'
       and role = 'member' and status = 'left'
-  ) then raise exception 'Admin did not step down and leave as a regular Member'; end if;
+  ) then raise exception 'Former Admin could not leave after becoming a regular Member'; end if;
 end;
 $test$;
 
