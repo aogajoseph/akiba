@@ -42,6 +42,7 @@ export default async function InvitationsInboxPage({ searchParams }: Props) {
           <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
           <Link href="/workspace#your-groups" className="ak-nav-link"><span>♧</span>My Groups</Link>
           <Link href="/workspace/invitations" className="ak-nav-link active"><span>✉</span>Invitations{invitations.length > 0 ? <small className="ak-coming">{invitations.length}</small> : null}</Link>
+          <Link href="/workspace/notifications" className="ak-nav-link"><span>♢</span>Notifications</Link>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
