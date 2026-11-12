@@ -4,7 +4,6 @@ import { signOut } from "@/app/auth-actions";
 import {
   cancelGroupInvitation,
   createGroupInvitation,
-  deactivateGroup,
   leaveGroup,
   removeGroupMember,
   setGroupAdmin,
@@ -13,6 +12,7 @@ import {
 } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
 import CopyInvitationLink from "./copy-invitation-link";
+import DeactivateGroupForm from "./deactivate-group-form";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
@@ -274,10 +274,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                   <span className="ak-section-eyebrow">GROUP LIFECYCLE</span>
                   <h2>Deactivate group</h2>
                   <p>When the group's purpose is fulfilled, deactivate it. Invitations, membership changes and new financial activity will stop immediately. The six-month retention period starts at deactivation.</p>
-                  <form action={deactivateGroup}>
-                    <input type="hidden" name="group_id" value={group.id} />
-                    <button type="submit" className="ak-member-danger">Deactivate group</button>
-                  </form>
+                  <DeactivateGroupForm groupId={group.id} />
                   <p className="ak-workspace-footnote">The Group Creator cannot leave or transfer this role.</p>
                 </section>
               )}
