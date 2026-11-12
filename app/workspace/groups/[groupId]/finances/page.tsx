@@ -40,7 +40,7 @@ export default async function GroupFinancesPage({ params }: Props) {
   if (!user) redirect("/login");
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name,currency_code,target_amount,group_image_path,group_plan_code").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,currency_code,target_amount,group_image_path,group_plan_code,status,scheduled_delete_at").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
@@ -94,7 +94,8 @@ export default async function GroupFinancesPage({ params }: Props) {
           <span className="ak-nav-label">WORKSPACE</span>
           <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
           <Link href="/workspace#your-groups" className="ak-nav-link active"><span>♧</span>My Groups</Link>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
+          <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations</Link>
+          <span className="ak-nav-link ak-nav-muted aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
@@ -130,10 +131,16 @@ export default async function GroupFinancesPage({ params }: Props) {
           <nav className="ak-group-tabs" aria-label="Group workspace">
             <Link href={`/workspace/groups/${group.id}`}><DashboardOutlinedIcon />Overview</Link>
             <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
-            <span aria-disabled="true" title="Member management improvements are coming soon"><GroupsOutlinedIcon />Members</span>
+            <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
             <span aria-disabled="true" title="Group chat is coming soon"><ChatBubbleOutlineOutlinedIcon />Chat</span>
             <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
           </nav>
+
+          {group.status !== "active" && <div className="ak-workspace-card ak-group-deactivated-banner">
+            <strong>This group has been deactivated.</strong>
+            <p>New contributions and withdrawals are disabled. Historical financial records remain available during the retention period.</p>
+            {group.scheduled_delete_at && <small>Scheduled deletion: {formatDate(group.scheduled_delete_at)}</small>}
+          </div>}
 
           <section className="ak-finance-summary" aria-label="Group finance summary">
             <article className="ak-workspace-summary-card"><span className="ak-summary-icon target">◎</span><div><small>Confirmed contributions</small><strong>{readError ? "—" : money(totalMinor, group.currency_code)}</strong><span>Only provider-confirmed funds are counted</span></div></article>
@@ -142,7 +149,7 @@ export default async function GroupFinancesPage({ params }: Props) {
           </section>
 
           <div className="ak-finance-grid">
-            <FinancePanel groupId={group.id} currencyCode={group.currency_code} enabled={sandboxEnabled} leadershipReady={leadershipReady} requiredGroupAdmins={requiredGroupAdmins} />
+            <FinancePanel groupId={group.id} currencyCode={group.currency_code} enabled={sandboxEnabled && group.status === "active"} groupActive={group.status === "active"} leadershipReady={leadershipReady} requiredGroupAdmins={requiredGroupAdmins} />
             <section className="ak-workspace-card ak-finance-history">
               <div className="ak-workspace-card-heading">
                 <div><span className="ak-section-eyebrow">CONFIRMED ACTIVITY</span><h2>Contribution history</h2><p>Entries appear only after the provider confirms payment and the ledger posts successfully.</p></div>
