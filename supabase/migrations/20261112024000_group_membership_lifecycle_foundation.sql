@@ -866,4 +866,100 @@ create table if not exists public.akiba_group_deletion_records (
 alter table public.akiba_group_deletion_records enable row level security;
 revoke all on public.akiba_group_deletion_records from public, anon, authenticated;
 
+
+create or replace function akiba_private.process_due_group_deletions()
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  group_row record;
+  deleted_timestamp timestamptz;
+  financial_count bigint;
+  ledger_count bigint;
+  intent_count bigint;
+  withdrawal_count bigint;
+  processed_count integer := 0;
+begin
+  for group_row in
+    select id, deactivated_at, scheduled_delete_at, group_image_path
+    from public.akiba_groups
+    where status = 'deactivated' and scheduled_delete_at <= clock_timestamp()
+    order by scheduled_delete_at, id
+    for update skip locked
+  loop
+    -- Never scrub a group while a provider operation or withdrawal is unresolved.
+    if exists (
+      select 1 from public.akiba_contribution_intents
+      where group_id = group_row.id
+        and status not in ('succeeded', 'failed', 'cancelled', 'expired')
+    ) or exists (
+      select 1 from public.akiba_withdrawal_requests
+      where group_id = group_row.id
+        and status in ('pending_approval', 'approved', 'processing', 'failed_pending_reconciliation')
+    ) then
+      continue;
+    end if;
+
+    select count(*) into financial_count
+    from public.akiba_financial_transactions where group_id = group_row.id;
+    select count(*) into ledger_count
+    from public.akiba_financial_ledger_entries where group_id = group_row.id;
+    select count(*) into intent_count
+    from public.akiba_contribution_intents where group_id = group_row.id;
+    select count(*) into withdrawal_count
+    from public.akiba_withdrawal_requests where group_id = group_row.id;
+
+    perform set_config('akiba.system_group_purge', 'on', true);
+
+    delete from public.akiba_group_invitations where group_id = group_row.id;
+    delete from public.akiba_group_blocks where group_id = group_row.id;
+    delete from public.akiba_group_messages where group_id = group_row.id;
+    delete from public.akiba_group_membership_events where group_id = group_row.id;
+    delete from public.akiba_group_activity where group_id = group_row.id;
+    delete from public.akiba_group_memberships where group_id = group_row.id;
+
+    update public.akiba_groups
+    set status = 'deleted',
+        name = 'Deleted group',
+        description = '',
+        event_location = null,
+        group_image_path = null,
+        target_amount = null,
+        event_date = null,
+        deadline = null,
+        contribution_frequency = null,
+        updated_at = clock_timestamp()
+    where id = group_row.id
+    returning deleted_at into deleted_timestamp;
+
+    insert into public.akiba_group_deletion_records
+      (group_id, deactivated_at, scheduled_delete_at, deleted_at, image_path_for_cleanup,
+       financial_transaction_count, ledger_entry_count, contribution_intent_count, withdrawal_count)
+    values
+      (group_row.id, group_row.deactivated_at, group_row.scheduled_delete_at, deleted_timestamp,
+       group_row.group_image_path, financial_count, ledger_count, intent_count, withdrawal_count)
+    on conflict (group_id) do nothing;
+
+    processed_count := processed_count + 1;
+  end loop;
+
+  return processed_count;
+end;
+$fn$;
+revoke all on function akiba_private.process_due_group_deletions() from public, anon, authenticated;
+
+-- Supabase projects have pg_cron enabled. Local environments without pg_cron
+-- can still run migrations; the scheduled job is registered where available.
+do $schedule$
+begin
+  if exists (select 1 from pg_catalog.pg_extension where extname = 'pg_cron') then
+    execute 'select cron.unschedule(jobid) from cron.job where jobname = ''akiba-group-retention-delete''';
+    execute 'select cron.schedule(''akiba-group-retention-delete'', ''0 * * * *'', ''select akiba_private.process_due_group_deletions();'')';
+  end if;
+end;
+$schedule$;
+
+
 commit;
