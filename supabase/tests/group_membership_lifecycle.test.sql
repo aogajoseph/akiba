@@ -223,6 +223,39 @@ begin
 end;
 $test$;
 
+-- An expired pending invitation must not block a fresh invitation to the same recipient.
+insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000311', 'authenticated', 'authenticated',
+        'member-311@akiba.test', '', now(), now(), now())
+on conflict (id) do nothing;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000306', true);
+select public.akiba_create_group_invitation(
+  '10000000-0000-0000-0000-000000000013',
+  repeat('2', 64), now() + interval '7 days', 'member-311@akiba.test', null
+);
+update public.akiba_group_invitations
+set expires_at = now() - interval '1 minute'
+where token_hash = repeat('2', 64);
+
+select public.akiba_create_group_invitation(
+  '10000000-0000-0000-0000-000000000013',
+  repeat('3', 64), now() + interval '7 days', 'member-311@akiba.test', null
+);
+
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_invitations
+    where token_hash = repeat('2', 64) and status = 'expired'
+  ) then raise exception 'Stale pending invitation was not marked expired'; end if;
+  if not exists (
+    select 1 from public.akiba_group_invitations
+    where token_hash = repeat('3', 64) and status = 'pending'
+  ) then raise exception 'A fresh invitation to the same recipient was not created'; end if;
+end;
+$test$;
+
 -- Deactivation begins the retention period immediately and blocks invitations.
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000302', true);
 do $test$
