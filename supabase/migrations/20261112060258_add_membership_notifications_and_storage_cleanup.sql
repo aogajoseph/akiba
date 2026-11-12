@@ -11,7 +11,7 @@ create table if not exists public.akiba_group_notifications (
   actor_id uuid references auth.users(id) on delete set null,
   source_event_id uuid not null,
   event_type text not null check (event_type in (
-    'invitation_received', 'invitation_accepted', 'invitation_declined',
+    'invitation_received', 'invitation_accepted', 'invitation_declined', 'invitation_cancelled',
     'membership_joined', 'membership_left', 'membership_removed',
     'group_admin_appointed', 'group_admin_demoted', 'group_deactivated'
   )),
@@ -91,20 +91,32 @@ begin
       on conflict (user_id, source_event_id) do nothing;
     end if;
   elsif tg_op = 'UPDATE' and old.status = 'pending'
-      and new.status in ('accepted', 'declined') then
-    insert into public.akiba_group_notifications
-      (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
-    values
-      (new.inviter_id, new.group_id,
-       case when new.status = 'accepted' then new.accepted_by else new.declined_by end,
-       notification_event_id,
-       case when new.status = 'accepted' then 'invitation_accepted' else 'invitation_declined' end,
-       case when new.status = 'accepted' then 'Invitation accepted' else 'Invitation declined' end,
-       case when new.status = 'accepted'
-         then 'The recipient accepted your group invitation.'
-         else 'The recipient declined your group invitation.' end,
-       '/workspace/groups/' || new.group_id::text || '/membership')
-    on conflict (user_id, source_event_id) do nothing;
+      and new.status in ('accepted', 'declined', 'cancelled') then
+    if new.status = 'cancelled' then
+      if new.intended_user_id is not null then
+        insert into public.akiba_group_notifications
+          (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
+        values
+          (new.intended_user_id, new.group_id, new.inviter_id, notification_event_id,
+           'invitation_cancelled', 'Invitation cancelled',
+           'A group invitation addressed to you was cancelled.', '/workspace/invitations')
+        on conflict (user_id, source_event_id) do nothing;
+      end if;
+    else
+      insert into public.akiba_group_notifications
+        (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
+      values
+        (new.inviter_id, new.group_id,
+         case when new.status = 'accepted' then new.accepted_by else new.declined_by end,
+         notification_event_id,
+         case when new.status = 'accepted' then 'invitation_accepted' else 'invitation_declined' end,
+         case when new.status = 'accepted' then 'Invitation accepted' else 'Invitation declined' end,
+         case when new.status = 'accepted'
+           then 'The recipient accepted your group invitation.'
+           else 'The recipient declined your group invitation.' end,
+         '/workspace/groups/' || new.group_id::text || '/membership')
+      on conflict (user_id, source_event_id) do nothing;
+    end if;
   end if;
   return new;
 end;
