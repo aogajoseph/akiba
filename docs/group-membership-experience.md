@@ -38,7 +38,9 @@ Deliver the complete group membership lifecycle through the Group Membership are
 - The Group Creator deactivates the group when its purpose is fulfilled.
 - Deactivation starts the six-month retention clock immediately.
 - Deactivation immediately disables new invitations, invitation acceptance, membership changes, contributions, withdrawals, and other new group activity.
-- The group is scheduled for permanent deletion six calendar months after deactivation.
+- The group is scheduled for deletion six calendar months after deactivation. An hourly database retention worker processes groups whose deadline has passed.
+- At deletion, the group is removed from the active product, its identifying group details are scrubbed, membership/content/invitation records are removed, and the original image path is retained in a cleanup record.
+- Financial transaction, ledger, contribution and withdrawal records are retained. Because those records reference the group, a minimal non-user-facing group tombstone remains as their relational anchor; the group is not physically deleted from the database while those financial references exist.
 - Historical financial and legally required records must not be destroyed merely because the group is deleted. Retention/archival obligations and any legal hold must be respected.
 
 ### Membership directory
