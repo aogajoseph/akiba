@@ -231,6 +231,13 @@ alter table public.akiba_group_deletion_records
   add column if not exists image_cleanup_last_error text,
   add column if not exists image_cleaned_at timestamptz,
   drop constraint if exists akiba_group_deletion_records_image_cleanup_status_check,
+  drop constraint if exists akiba_group_deletion_records_image_cleanup_attempts_check,
+  drop constraint if exists akiba_group_deletion_records_image_cleanup_consistency_check;
+
+update public.akiba_group_deletion_records
+set image_cleanup_status = case when image_path_for_cleanup is null then 'not_required' else 'pending' end;
+
+alter table public.akiba_group_deletion_records
   add constraint akiba_group_deletion_records_image_cleanup_status_check
     check (image_cleanup_status in ('not_required', 'pending', 'processing', 'completed', 'failed')),
   add constraint akiba_group_deletion_records_image_cleanup_attempts_check
@@ -240,10 +247,6 @@ alter table public.akiba_group_deletion_records
       (image_path_for_cleanup is null and image_cleanup_status in ('not_required', 'completed'))
       or (image_path_for_cleanup is not null and image_cleanup_status in ('pending', 'processing', 'failed'))
     );
-
-update public.akiba_group_deletion_records
-set image_cleanup_status = case when image_path_for_cleanup is null then 'not_required' else 'pending' end
-where image_cleanup_status = 'pending';
 
 create or replace function akiba_private.set_group_image_cleanup_state()
 returns trigger
