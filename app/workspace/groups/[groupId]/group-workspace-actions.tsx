@@ -76,8 +76,6 @@ export default function GroupWorkspaceActions({ groupName, isCreator }: { groupN
           <button type="button" role="menuitem">Notification settings</button>
           {isCreator && <button type="button" role="menuitem">Edit group</button>}
           <button type="button" role="menuitem">Report group</button>
-          <button type="button" role="menuitem">Leave group</button>
-          {isCreator && <><div className="ak-menu-divider" /><button type="button" role="menuitem" className="ak-menu-item-danger">Delete group</button></>}
         </div>,
         document.body
       )}
