@@ -121,7 +121,7 @@ export async function createGroupInvitation(formData: FormData) {
     membershipRedirect(groupId, "Enter either an email address or an Akiba username.");
   }
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  const siteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
   if (!siteUrl) membershipRedirect(groupId, "Invitations are temporarily unavailable.");
   const token = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(token).digest("hex");
@@ -140,7 +140,9 @@ export async function createGroupInvitation(formData: FormData) {
   if (error) {
     const message = error.message.includes("Group capacity reached")
       ? "Group capacity reached."
-      : error.message.includes("already a group member")
+      : error.code === "23505"
+        ? "A pending invitation already exists for this person."
+        : error.message.includes("already a group member")
         ? "This person is already a group member."
         : error.message.includes("blocked from joining")
           ? "This person is blocked from joining the group."
