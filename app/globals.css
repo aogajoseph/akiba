@@ -1115,3 +1115,7 @@
 .ak-group-deactivated-banner strong{color:#39344e;font-size:12px}
 .ak-group-deactivated-banner p{margin:6px 0;color:#77758e;font-size:10px;line-height:1.6}
 .ak-group-deactivated-banner small{color:#8b8297;font-size:9px}
+
+.ak-membership-counts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
+.ak-membership-leadership-note{margin:0 0 12px;padding:9px 11px;border:1px solid #f0e5d2;border-radius:8px;background:#fffaf1;color:#896b39;font-size:9px;line-height:1.5}
+@media(max-width:640px){.ak-membership-counts{justify-content:flex-start}}
