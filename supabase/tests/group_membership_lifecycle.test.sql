@@ -94,6 +94,12 @@ begin
       and user_id = '00000000-0000-0000-0000-000000000300'
       and role = 'member' and status = 'active' and ended_at is null
   ) then raise exception 'Removed member did not rejoin as an ordinary active member'; end if;
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000202'
+      and group_id = '10000000-0000-0000-0000-000000000011'
+      and event_type = 'membership_joined'
+  ) then raise exception 'Existing members were not notified when a former member rejoined'; end if;
 end;
 $test$;
 
