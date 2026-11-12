@@ -1100,3 +1100,13 @@
   .ak-member-actions{justify-content:flex-start}
   .ak-membership-copy{grid-template-columns:1fr}
 }
+
+.ak-inbox-invitation{align-items:center}
+.ak-inbox-invitation>div:first-of-type{align-self:center}
+.ak-inbox-invitation p{margin:5px 0;color:#777f98;font-size:9px;line-height:1.5}
+.ak-inbox-actions{display:flex;flex-wrap:wrap;gap:7px;margin-left:auto}
+.ak-inbox-actions form{margin:0}
+.ak-inbox-actions button{padding:8px 11px;border-radius:7px;font-size:9px;font-weight:750;cursor:pointer}
+.ak-inbox-actions .workspace-primary{border:0;background:#c52a78;color:#fff}
+.ak-inbox-actions .ak-member-danger{border:1px solid #f0dce4;background:#fff8fa;color:#b52c61}
+@media(max-width:640px){.ak-inbox-invitation{align-items:flex-start}.ak-inbox-actions{width:100%;margin-left:50px}}
