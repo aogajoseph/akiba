@@ -102,11 +102,12 @@ export async function setGroupAdmin(formData: FormData) {
       : error.message.includes("unresolved")
         ? "Group Admins cannot change while a withdrawal is being processed."
         : "The Group Admin change could not be completed. Check that the person is an active member.";
-    redirect("/workspace/groups/" + groupId + "?membershipError=" + encodeURIComponent(message));
+    membershipRedirect(groupId, message);
   }
 
   revalidatePath("/workspace/groups/" + groupId);
-  redirect("/workspace/groups/" + groupId + "?membershipUpdated=1");
+  revalidatePath("/workspace/groups/" + groupId + "/membership");
+  redirect("/workspace/groups/" + groupId + "/membership?membershipUpdated=" + encodeURIComponent("Group Admin role updated."));
 }
 
 
