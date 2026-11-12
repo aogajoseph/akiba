@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeInternalPath } from "@/lib/auth/redirect";
 
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
@@ -7,10 +8,7 @@ export async function GET(request: NextRequest) {
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type");
   const flow = request.nextUrl.searchParams.get("flow");
-  const requestedNext = request.nextUrl.searchParams.get("next") ?? "";
-  const safeNext = requestedNext.startsWith("/") && !requestedNext.startsWith("//") && !requestedNext.includes("\\\\")
-    ? requestedNext
-    : "/onboarding";
+  const safeNext = safeInternalPath(request.nextUrl.searchParams.get("next"), "/onboarding");
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
