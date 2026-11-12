@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createHash } from "node:crypto";
 import { notFound } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { acceptGroupInvitation, declineGroupInvitation } from "@/app/workspace/actions";
@@ -15,7 +16,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
   if (!/^[0-9a-f]{64}$/.test(token)) notFound();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const secret = process.env.SUPABASE_SECRET_KEY;
+  const secret = process.env.SUPABASE_SECRET_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   if (!url || !secret) {
     return <main className="auth-shell"><section className="auth-card">
       <h1>Invitation unavailable</h1>
@@ -26,8 +27,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
   const admin = createSupabaseAdminClient(url, secret, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
-  const tokenHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(token));
-  const hash = Array.from(new Uint8Array(tokenHash), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const hash = createHash("sha256").update(token).digest("hex");
   const { data: invitation } = await admin.from("akiba_group_invitations")
     .select("group_id,inviter_id,status,expires_at")
     .eq("token_hash", hash)
