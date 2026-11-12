@@ -974,8 +974,10 @@ end;
 $fn$;
 revoke all on function akiba_private.process_due_group_deletions(timestamptz) from public, anon, authenticated;
 
--- Supabase projects have pg_cron enabled. Local environments without pg_cron
--- can still run migrations; the scheduled job is registered where available.
+-- Ensure the scheduled retention worker is available in every deployed Supabase database.
+create extension if not exists pg_cron with schema pg_catalog;
+
+-- Register or refresh the hourly retention job.
 do $schedule$
 begin
   if exists (select 1 from pg_catalog.pg_extension where extname = 'pg_cron') then
