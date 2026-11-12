@@ -244,7 +244,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                 <p className="ak-workspace-footnote">Invitations expire after 7 days. Pending invitations do not reserve a membership slot.</p>
               </section>
 
-              {isCreator && (
+              {isCreator && group.status === "active" && (
                 <section className="ak-workspace-card">
                   <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">BLOCKED PEOPLE</span><h2>Blocked from this group</h2></div></div>
                   {!blocks?.length ? <div className="ak-workspace-empty"><strong>No blocked people</strong><p>People you block will appear here.</p></div> :
