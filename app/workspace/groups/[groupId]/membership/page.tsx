@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import {
@@ -21,7 +22,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 
 type Props = {
   params: Promise<{ groupId: string }>;
-  searchParams: Promise<{ membershipError?: string; membershipUpdated?: string; inviteUrl?: string }>;
+  searchParams: Promise<{ membershipError?: string; membershipUpdated?: string; inviteCreated?: string }>;
 };
 type Profile = { user_id: string; display_name: string | null; username: string; avatar_path: string | null };
 type Member = { user_id: string; role: "group_creator" | "group_admin" | "member"; joined_at: string; profile?: Profile };
@@ -93,14 +94,10 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
   const capacityReached = members.length >= maxMembers;
   let shareInviteUrl: string | null = null;
   const configuredSiteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
-  if (query.inviteUrl && configuredSiteUrl) {
-    try {
-      const supplied = new URL(query.inviteUrl);
-      const expectedOrigin = new URL(configuredSiteUrl).origin;
-      if (supplied.origin === expectedOrigin && /^\/invitations\/[0-9a-f]{64}$/.test(supplied.pathname)) {
-        shareInviteUrl = supplied.toString();
-      }
-    } catch { /* Ignore invalid invite URLs supplied in the query string. */ }
+  const cookieStore = await cookies();
+  const createdToken = cookieStore.get("akiba_group_invite_" + group.id)?.value;
+  if (createdToken && /^[0-9a-f]{64}$/.test(createdToken) && configuredSiteUrl) {
+    shareInviteUrl = new URL("/invitations/" + createdToken, configuredSiteUrl).toString();
   }
 
   const userAvatarUrl = profile.avatar_path
@@ -240,7 +237,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                     </form>
                   </>
                 )}
-                {shareInviteUrl && <div className="ak-membership-share-link"><strong>Invitation created</strong><p>Share this secure link with the intended recipient.</p><CopyInvitationLink url={shareInviteUrl} /></div>}
+                {query.inviteCreated === "1" && shareInviteUrl && <div className="ak-membership-share-link"><strong>Invitation created</strong><p>Share this secure link with the intended recipient.</p><CopyInvitationLink url={shareInviteUrl} /></div>}
                 <p className="ak-workspace-footnote">Invitations expire after 7 days. Pending invitations do not reserve a membership slot.</p>
               </section>
 
