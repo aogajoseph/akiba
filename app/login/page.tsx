@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { safeInternalPath } from "@/lib/auth/redirect";
 import { redirect } from "next/navigation";
 import { signIn } from "@/app/auth-actions";
 import SignInButton from "./sign-in-button";
@@ -11,7 +12,7 @@ export default async function LoginPage({ searchParams }: Props) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   const params = await searchParams;
-  const next = params.next?.startsWith("/") && !params.next.startsWith("//") ? params.next : "/workspace";
+  const next = safeInternalPath(params.next, "/workspace");
   if (user) redirect(next);
   return <main className="auth-shell"><section className="auth-card">
     <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
