@@ -171,7 +171,16 @@ begin
 end;
 $test$;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000307', true);
-select public.akiba_accept_group_invitation(repeat('e', 64));
+do $test$
+declare invitation_id uuid;
+begin
+  select id into invitation_id from public.akiba_group_invitations where token_hash = repeat('e', 64);
+  if not exists (select 1 from public.akiba_list_my_group_invitations() where invitation_id = invitation_id) then
+    raise exception 'Email-bound invitation was not visible in the recipient inbox';
+  end if;
+  perform public.akiba_accept_group_invitation_by_id(invitation_id);
+end;
+$test$;
 
 -- Declining terminates the invitation.
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000309', true);
@@ -183,7 +192,13 @@ select public.akiba_create_group_invitation(
   repeat('f', 64), now() + interval '7 days', 'member-310@akiba.test', null
 );
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000310', true);
-select public.akiba_decline_group_invitation(repeat('f', 64));
+do $test$
+declare invitation_id uuid;
+begin
+  select id into invitation_id from public.akiba_group_invitations where token_hash = repeat('f', 64);
+  perform public.akiba_decline_group_invitation_by_id(invitation_id);
+end;
+$test$;
 
 do $test$
 begin
