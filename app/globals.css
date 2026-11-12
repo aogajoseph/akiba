@@ -1110,3 +1110,8 @@
 .ak-inbox-actions .workspace-primary{border:0;background:#c52a78;color:#fff}
 .ak-inbox-actions .ak-member-danger{border:1px solid #f0dce4;background:#fff8fa;color:#b52c61}
 @media(max-width:640px){.ak-inbox-invitation{align-items:flex-start}.ak-inbox-actions{width:100%;margin-left:50px}}
+
+.ak-group-deactivated-banner{margin:0 0 14px;border-color:#e9e3ec;background:#fbf9fc}
+.ak-group-deactivated-banner strong{color:#39344e;font-size:12px}
+.ak-group-deactivated-banner p{margin:6px 0;color:#77758e;font-size:10px;line-height:1.6}
+.ak-group-deactivated-banner small{color:#8b8297;font-size:9px}
