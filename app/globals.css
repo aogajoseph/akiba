@@ -1128,3 +1128,19 @@
 .ak-membership-search-form input:focus{outline:2px solid #e9b5ce;outline-offset:1px}
 .ak-membership-search-form button{padding:9px 13px;border:0;border-radius:8px;background:#26294f;color:#fff;font-size:10px;font-weight:700;cursor:pointer}
 .ak-membership-search-form a{color:#6b5270;font-size:10px;font-weight:700;text-decoration:underline}
+
+
+.ak-notification-list{display:grid;gap:0}
+.ak-notification-row{display:flex;align-items:flex-start;gap:12px;padding:15px 2px;border-bottom:1px solid #f0eff4}
+.ak-notification-row:last-child{border-bottom:0}
+.ak-notification-row.is-unread{background:linear-gradient(90deg,#fff7fb 0%,#fff 75%)}
+.ak-notification-mark{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border-radius:10px;background:#f8edf4;color:#b52c76;font-size:15px}
+.ak-notification-copy{min-width:0;flex:1}
+.ak-notification-copy>a{color:#303451;text-decoration:none;font-size:11px}
+.ak-notification-copy>a:hover{text-decoration:underline}
+.ak-notification-copy p{margin:5px 0;color:#737b94;font-size:10px;line-height:1.55}
+.ak-notification-copy small{color:#9a9eae;font-size:9px}
+.ak-notification-row form{margin:0}
+.ak-notification-row form button{padding:7px 9px;border:1px solid #eee3eb;border-radius:7px;background:#fff;color:#a52b70;font-size:9px;font-weight:700;cursor:pointer}
+.ak-notification-read{color:#9a9eae;font-size:9px;padding:7px 9px}
+@media(max-width:640px){.ak-notification-row{flex-wrap:wrap}.ak-notification-row form,.ak-notification-read{margin-left:46px}}
