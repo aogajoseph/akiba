@@ -293,6 +293,7 @@ declare
   group_row public.akiba_groups%rowtype;
   plan_row public.akiba_group_plan_entitlements%rowtype;
   target_user_id uuid;
+  target_email text;
   normalized_email text := nullif(lower(btrim(coalesce(p_recipient_email, ''))), '');
   normalized_username text := nullif(lower(btrim(coalesce(p_recipient_username, ''))), '');
   recipient_key_value text;
@@ -336,6 +337,17 @@ begin
   end if;
 
   if target_user_id is not null then
+    select lower(email) into target_email from auth.users where id = target_user_id;
+    if exists (
+      select 1 from public.akiba_group_invitations
+      where group_id = p_group_id and status = 'pending'
+        and (
+          intended_user_id = target_user_id
+          or (target_email is not null and recipient_email = target_email)
+        )
+    ) then
+      raise exception 'A pending invitation already exists for this person';
+    end if;
     if exists (select 1 from public.akiba_group_blocks where group_id = p_group_id and user_id = target_user_id) then
       raise exception 'This person is blocked from joining the group';
     end if;
