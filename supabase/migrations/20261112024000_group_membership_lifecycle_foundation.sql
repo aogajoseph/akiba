@@ -132,7 +132,16 @@ alter table public.akiba_group_invitations enable row level security;
 drop policy if exists "active members read group invitations" on public.akiba_group_invitations;
 create policy "active members read group invitations"
   on public.akiba_group_invitations for select to authenticated
-  using (akiba_private.is_active_group_member(group_id));
+  using (
+    akiba_private.is_active_group_member(group_id)
+    and (
+      inviter_id = (select auth.uid())
+      or exists (
+        select 1 from public.akiba_groups g
+        where g.id = group_id and g.created_by = (select auth.uid())
+      )
+    )
+  );
 drop policy if exists "recipients read their group invitations" on public.akiba_group_invitations;
 create policy "recipients read their group invitations"
   on public.akiba_group_invitations for select to authenticated
