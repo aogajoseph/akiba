@@ -194,38 +194,42 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
           <div className="ak-workspace-overview-grid">
             <div className="ak-workspace-primary-column">
               <section className="ak-workspace-card">
-                <div className="ak-workspace-card-heading">
+                <div className="ak-workspace-card-heading ak-membership-directory-heading">
                   <div><span className="ak-section-eyebrow">MEMBER DIRECTORY</span><h2>People in this group</h2><p>Everyone who is currently part of this group, including you.</p></div>
-                  <div className="ak-membership-counts"><span className="ak-count-pill">{members.length} / {maxMembers} people</span><span className="ak-count-pill">{activeAdminCount} / {requiredAdminCount} Admins</span></div>
+                  <div className="ak-membership-counts">
+                    <span className="ak-membership-stat"><strong>{members.length}</strong><small>of {maxMembers} people</small></span>
+                    <span className="ak-membership-stat"><strong>{activeAdminCount}</strong><small>of {requiredAdminCount} Admins</small></span>
+                  </div>
                 </div>
                 {activeAdminCount < requiredAdminCount && group.status === "active" && <p className="ak-membership-leadership-note">Contributions remain blocked until the Group Creator appoints {requiredAdminCount} Group Admins.</p>}
                 <form method="get" className="ak-membership-search-form" role="search">
                   <label htmlFor="memberSearch">Search members</label>
                   <div><input id="memberSearch" name="memberSearch" type="search" placeholder="Name, username or role" defaultValue={query.memberSearch ?? ""} /><button type="submit">Search</button>{memberSearch && <Link href={"/workspace/groups/" + group.id + "/membership"}>Clear</Link>}</div>
                 </form>
+                {!membersError && <div className="ak-membership-results-meta"><span>{memberSearch ? `Showing ${visibleMembers.length} of ${members.length} people` : `${members.length} active ${members.length === 1 ? "person" : "people"}`}</span><span>Creator-led membership</span></div>}
                 {membersError ? <div className="ak-workspace-empty"><strong>Members couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
                   : visibleMembers.length === 0 ? <div className="ak-workspace-empty"><strong>No matching members</strong><p>Try another name, username or role.</p></div>
                   : <div className="ak-workspace-member-list">{visibleMembers.map((member) => {
                     const name = member.profile?.display_name?.trim() || "Akiba member";
                     const photo = member.profile?.avatar_path ? supabase.storage.from("avatars").getPublicUrl(member.profile.avatar_path).data.publicUrl : null;
                     const isSelf = member.user_id === user.id;
-                    return <div className="ak-workspace-member" key={member.user_id}>
+                    return <div className="ak-workspace-member ak-membership-person" key={member.user_id}>
                       {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
-                      <div><strong>{name}{isSelf ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></div>
-                      <div className="ak-workspace-member-role"><span className={member.role !== "member" ? "admin" : ""}>{roleLabel(member.role)}</span>
-                        {isCreator && !isSelf && group.status === "active" && <div className="ak-member-actions">
+                      <div className="ak-membership-person-copy"><strong>{name}{isSelf ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></div>
+                      <div className="ak-workspace-member-role ak-membership-person-role"><span className={member.role !== "member" ? "admin" : ""}>{roleLabel(member.role)}</span>
+                        {isCreator && !isSelf && group.status === "active" && <div className="ak-member-actions ak-membership-person-actions">
                           <form action={setGroupAdmin}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} />
                             <input type="hidden" name="action" value={member.role === "group_admin" ? "demote" : "appoint"} />
-                            <button type="submit" disabled={!plan || (member.role === "member" && activeAdminCount >= (plan.max_group_admins ?? 0))}>{member.role === "group_admin" ? "Demote" : "Appoint Admin"}</button>
+                            <button type="submit" aria-label={member.role === "group_admin" ? `Demote ${name} to Member` : `Appoint ${name} as Group Admin`} disabled={!plan || (member.role === "member" && activeAdminCount >= (plan.max_group_admins ?? 0))}>{member.role === "group_admin" ? "Demote" : "Appoint Admin"}</button>
                           </form>
                           <form action={removeGroupMember}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} />
-                            <button type="submit" className="ak-member-danger">Remove</button>
+                            <button type="submit" className="ak-member-danger" aria-label={`Remove ${name} from this group`}>Remove</button>
                           </form>
                           <form action={removeGroupMember}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} /><input type="hidden" name="block" value="true" />
-                            <button type="submit" className="ak-member-danger">Block</button>
+                            <button type="submit" className="ak-member-danger" aria-label={`Block ${name} from this group`}>Block</button>
                           </form>
                         </div>}
                       </div>
