@@ -230,7 +230,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                   <p>This group is deactivated and cannot receive invitations.</p>
                 ) : (
                   <>
-                    <p>Every active group member can invite people. Enter a username or email, or leave both blank to create a shareable link.</p>
+                    <p>Every active group member can invite people. Enter a username or email to bind the invitation to that recipient, or leave both blank for a shareable link. Share the generated link with them; existing Akiba users will also see addressed invitations in their inbox.</p>
                     <form action={createGroupInvitation} className="ak-membership-invite-form">
                       <input type="hidden" name="group_id" value={group.id} />
                       <label>Akiba username <input name="recipient_username" placeholder="username" autoComplete="off" /></label>
