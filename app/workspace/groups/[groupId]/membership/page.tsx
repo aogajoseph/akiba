@@ -199,7 +199,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
               </section>
 
               <section className="ak-workspace-card">
-                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">INVITATIONS</span><h2>Invitation history</h2><p>Recent invitations and their current status.</p></div></div>
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">INVITATIONS</span><h2>Your invitations</h2><p>Invitations you created and their current status. The Group Creator can see all group invitations.</p></div></div>
                 {!invitations?.length ? <div className="ak-workspace-empty"><strong>No invitations yet</strong><p>Invitations created by group members will appear here.</p></div> :
                   <div className="ak-workspace-member-list">{(invitations as Invitation[]).map((invite) => {
                     const inviter = profilesById.get(invite.inviter_id);
