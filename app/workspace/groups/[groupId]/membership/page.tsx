@@ -161,8 +161,16 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
         </header>
 
         <div className="ak-dashboard-content ak-workspace-content">
-          <div className="ak-workspace-page-heading">
-            <div><span className="ak-section-eyebrow">GROUP MEMBERSHIP</span><h1>{group.name}</h1><p>People, invitations and leadership in this group.</p></div>
+          <div className="ak-workspace-page-heading ak-membership-page-heading">
+            <div className="ak-membership-heading-copy">
+              <span className="ak-section-eyebrow">GROUP MEMBERSHIP</span>
+              <h1>{group.name}</h1>
+              <p>Manage the people, roles and invitations that keep this group moving.</p>
+              <div className="ak-membership-heading-meta">
+                <span className={group.status === "active" ? "ak-membership-status is-active" : "ak-membership-status is-inactive"}>{group.status === "active" ? "Active group" : "Group deactivated"}</span>
+                <span className="ak-membership-your-role">Your role: <strong>{roleLabel(membership.role)}</strong></span>
+              </div>
+            </div>
             <Link className="ak-workspace-back" href={"/workspace/groups/" + group.id}>← Back to overview</Link>
           </div>
 
