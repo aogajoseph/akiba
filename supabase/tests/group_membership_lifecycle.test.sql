@@ -343,6 +343,16 @@ $test$;
 select public.akiba_cancel_group_invitation(
   (select id from public.akiba_group_invitations where token_hash = repeat('3', 64))
 );
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000311'
+      and group_id = '10000000-0000-0000-0000-000000000013'
+      and event_type = 'invitation_cancelled'
+  ) then raise exception 'An addressed recipient was not notified when an invitation was cancelled'; end if;
+end;
+$test$;
 
 do $test$
 begin
