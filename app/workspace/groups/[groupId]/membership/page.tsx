@@ -217,7 +217,9 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                       {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
                       <div className="ak-membership-person-copy"><strong>{name}{isSelf ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></div>
                       <div className="ak-workspace-member-role ak-membership-person-role"><span className={member.role !== "member" ? "admin" : ""}>{roleLabel(member.role)}</span>
-                        {isCreator && !isSelf && group.status === "active" && <div className="ak-member-actions ak-membership-person-actions">
+                        {isCreator && !isSelf && group.status === "active" && <details className="ak-member-actions ak-membership-action-menu">
+                          <summary>Manage</summary>
+                          <div className="ak-membership-action-menu-content">
                           <form action={setGroupAdmin}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} />
                             <input type="hidden" name="action" value={member.role === "group_admin" ? "demote" : "appoint"} />
@@ -231,7 +233,8 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} /><input type="hidden" name="block" value="true" />
                             <button type="submit" className="ak-member-danger" aria-label={`Block ${name} from this group`}>Block</button>
                           </form>
-                        </div>}
+                          </div>
+                        </details>}
                       </div>
                     </div>;
                   })}</div>}
