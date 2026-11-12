@@ -52,7 +52,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   if (!user) redirect("/login");
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,event_location,deadline,contribution_frequency,group_image_path,group_plan_code,created_at").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,event_location,deadline,contribution_frequency,group_image_path,group_plan_code,status,deactivated_at,scheduled_delete_at,created_at").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
@@ -162,6 +162,11 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <span aria-disabled="true" title="Group chat is coming soon"><ChatBubbleOutlineOutlinedIcon />Chat</span>
             <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
           </nav>
+          {group.status !== "active" && <div className="ak-workspace-card ak-group-deactivated-banner">
+            <strong>This group has been deactivated.</strong>
+            <p>New invitations, membership changes and financial activity are disabled. Historical group information remains available during the retention period.</p>
+            {group.scheduled_delete_at && <small>Scheduled deletion: {formatDate(group.scheduled_delete_at)}</small>}
+          </div>
 
           <section className="ak-workspace-summary" aria-label="Group summary">
             <article className="ak-workspace-summary-card"><span className="ak-summary-icon members">♧</span><div><small>Active members</small><strong>{membersError ? "—" : members.length + (plan ? " / " + plan.max_members : "")}</strong><span>People in this group, including leadership</span></div></article>
