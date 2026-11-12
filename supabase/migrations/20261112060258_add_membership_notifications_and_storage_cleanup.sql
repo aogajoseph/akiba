@@ -1,5 +1,8 @@
 begin;
 
+create extension if not exists supabase_vault with schema vault;
+create extension if not exists pg_net with schema extensions;
+
 -- In-app membership notifications are durable, recipient-scoped records.
 create table if not exists public.akiba_group_notifications (
   id uuid primary key default gen_random_uuid(),
@@ -229,6 +232,7 @@ alter table public.akiba_group_deletion_records
   add column if not exists image_cleanup_status text not null default 'pending',
   add column if not exists image_cleanup_attempts integer not null default 0,
   add column if not exists image_cleanup_last_error text,
+  add column if not exists image_cleanup_started_at timestamptz,
   add column if not exists image_cleaned_at timestamptz,
   drop constraint if exists akiba_group_deletion_records_image_cleanup_status_check,
   drop constraint if exists akiba_group_deletion_records_image_cleanup_attempts_check,
