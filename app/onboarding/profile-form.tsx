@@ -17,7 +17,7 @@ type Availability = { username: string; available: boolean; message: string };
 const USERNAME_PATTERN = /^[a-z][a-z0-9_]{2,19}$/;
 const MAX_AVATAR_BYTES = 3 * 1024 * 1024;
 
-export default function ProfileForm({ initial }: { initial: ProfileValues }) {
+export default function ProfileForm({ initial, next }: { initial: ProfileValues; next: string }) {
   const fileInput = useRef<HTMLInputElement>(null);
   const [username, setUsername] = useState(initial.username);
   const [displayName, setDisplayName] = useState(initial.displayName);
@@ -160,6 +160,7 @@ export default function ProfileForm({ initial }: { initial: ProfileValues }) {
 
   return (
     <form className="profile-setup-form" onSubmit={handleSubmit} noValidate>
+      <input type="hidden" name="next" value={next} />
       <section className="profile-avatar-section">
         <div className="profile-avatar-preview" aria-label="Profile picture preview">
           {avatarUrl ? <img src={avatarUrl} alt="Your profile preview" /> : <span>{initials}</span>}
