@@ -295,3 +295,18 @@ export async function declineGroupInvitationById(formData: FormData) {
   if (error) redirect("/workspace/invitations?error=" + encodeURIComponent("This invitation could not be declined."));
   redirect("/workspace/invitations?message=" + encodeURIComponent("Invitation declined."));
 }
+
+
+export async function stepDownGroupAdmin(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) redirect("/workspace");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+  const { error } = await supabase.rpc("akiba_step_down_group_admin", { p_group_id: groupId });
+  if (error) membershipRedirect(groupId, error.message.includes("unresolved")
+    ? "You cannot step down while a withdrawal is unresolved."
+    : "Your Group Admin role could not be changed.");
+  revalidatePath("/workspace/groups/" + groupId);
+  redirect("/workspace/groups/" + groupId + "/membership?membershipUpdated=" + encodeURIComponent("You are now a regular Member."));
+}
