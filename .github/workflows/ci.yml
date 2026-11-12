@@ -29,6 +29,12 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Typecheck Supabase Edge Functions
+        run: deno check supabase/functions/cleanup-group-images/index.ts
       - name: Build
         run: npm run build
 
