@@ -166,7 +166,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <strong>This group has been deactivated.</strong>
             <p>New invitations, membership changes and financial activity are disabled. Historical group information remains available during the retention period.</p>
             {group.scheduled_delete_at && <small>Scheduled deletion: {formatDate(group.scheduled_delete_at)}</small>}
-          </div>
+          </div>}
 
           <section className="ak-workspace-summary" aria-label="Group summary">
             <article className="ak-workspace-summary-card"><span className="ak-summary-icon members">♧</span><div><small>Active members</small><strong>{membersError ? "—" : members.length + (plan ? " / " + plan.max_members : "")}</strong><span>People in this group, including leadership</span></div></article>
