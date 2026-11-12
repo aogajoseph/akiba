@@ -162,6 +162,11 @@ export async function acceptGroupInvitation(formData: FormData) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login?next=" + encodeURIComponent("/invitations/" + token));
+  const { data: profile } = await supabase.from("akiba_profiles")
+    .select("display_name").eq("user_id", user.id).maybeSingle();
+  if (!profile?.display_name?.trim()) {
+    redirect("/onboarding?next=" + encodeURIComponent("/invitations/" + token));
+  }
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const { data: groupId, error } = await supabase.rpc("akiba_accept_group_invitation", { p_token_hash: tokenHash });
   if (error) {
