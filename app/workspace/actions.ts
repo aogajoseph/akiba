@@ -250,7 +250,9 @@ export async function deactivateGroup(formData: FormData) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
   const { error } = await supabase.rpc("akiba_deactivate_group", { p_group_id: groupId });
-  if (error) membershipRedirect(groupId, "The group could not be deactivated.");
+  if (error) membershipRedirect(groupId, error.message.includes("Resolve outstanding withdrawals")
+    ? "Resolve outstanding withdrawals before deactivating the group."
+    : "The group could not be deactivated.");
   revalidatePath("/workspace");
   redirect("/workspace?message=Group%20deactivated");
 }
