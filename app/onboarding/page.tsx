@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { safeInternalPath } from "@/lib/auth/redirect";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
@@ -10,8 +11,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
   const params = await searchParams;
-  const candidate = params.next ?? "";
-  const next = candidate.startsWith("/") && !candidate.startsWith("//") && !candidate.includes("\\\\") ? candidate : "/workspace";
+  const next = safeInternalPath(params.next, "/workspace");
 
   const [{ data: profile, error: profileError }, { data: contact }] = await Promise.all([
     supabase
