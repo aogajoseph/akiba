@@ -640,7 +640,7 @@ begin
   if group_status <> 'active' then raise exception 'This group is deactivated'; end if;
   delete from public.akiba_group_blocks where group_id = p_group_id and user_id = p_user_id;
   insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
-  values (p_group_id, actor_id, 'member_unblocked', 'The Group Creator restored a person's ability to rejoin the group.');
+  values (p_group_id, actor_id, 'member_unblocked', 'The Group Creator restored a person''s ability to rejoin the group.');
 end;
 $fn$;
 revoke all on function public.akiba_unblock_group_member(uuid, uuid) from public, anon;
