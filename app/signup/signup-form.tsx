@@ -22,7 +22,7 @@ function getPasswordStrength(password: string) {
   return { level: 1, label: "Weak" };
 }
 
-export default function SignupForm() {
+export default function SignupForm({ next }: { next: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -49,10 +49,12 @@ export default function SignupForm() {
       // Browser-side PKCE stores the verifier in this browser's cookies so the
       // server callback can exchange the confirmation code using that verifier.
       const supabase = createBrowserClient(url, key);
+      const callback = new URL("/auth/callback", window.location.origin);
+      callback.searchParams.set("next", next);
       const { data, error: signupError } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: new URL("/auth/callback", window.location.origin).toString() },
+        options: { emailRedirectTo: callback.toString() },
       });
       if (signupError) {
         // Keep diagnostics useful without logging the submitted email or password.
@@ -74,7 +76,7 @@ export default function SignupForm() {
           setError("Unable to create account. Please try again.");
         }
       } else if (data.session) {
-        window.location.assign("/onboarding");
+        window.location.assign(next);
         return;
       } else if (data.user?.identities?.length === 0) {
         // With email confirmation enabled, Supabase returns an obfuscated user
