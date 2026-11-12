@@ -1082,10 +1082,10 @@
 .ak-membership-share-link{display:grid;gap:7px;margin-top:14px;padding:12px;border:1px solid #eadce5;border-radius:9px;background:#fff}
 .ak-membership-share-link>strong{color:#3e415d;font-size:10px}
 .ak-membership-share-link p{margin:0;color:#858ba2;font-size:9px}
-.ak-membership-copy{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px}
+.ak-membership-copy{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:6px}
 .ak-membership-copy input{min-width:0;width:100%;padding:8px;border:1px solid #e5e6ee;border-radius:7px;background:#fff;color:#626981;font-size:9px}
 .ak-membership-copy button{padding:8px 10px;border:0;border-radius:7px;background:#c52a78;color:#fff;font-size:9px;font-weight:750;cursor:pointer}
-.ak-membership-copy small{grid-column:1/-1;color:#b52c61;font-size:9px}
+.ak-membership-copy .ak-membership-share-button{padding:8px 10px;border:1px solid #eee3eb;border-radius:7px;background:#fff;color:#b52c76;font-size:9px;font-weight:750;cursor:pointer}.ak-membership-copy small{grid-column:1/-1;color:#b52c61;font-size:9px}
 .ak-membership-open-link{display:inline-flex;align-items:center;justify-content:center;width:100%;padding:10px;border:1px solid #eee3eb;border-radius:8px;background:#fff;color:#b52c76;font-size:10px;font-weight:750;text-decoration:none}
 .ak-membership-open-link:hover{background:#fff5fa}
 .ak-workspace-danger-card{border-color:#f0dce4;background:linear-gradient(145deg,#fff8fa,#fff 80%)}
