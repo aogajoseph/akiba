@@ -27,6 +27,7 @@ type Props = {
 type Profile = { user_id: string; display_name: string | null; username: string; avatar_path: string | null };
 type Member = { user_id: string; role: "group_creator" | "group_admin" | "member"; joined_at: string; profile?: Profile };
 type GroupActivity = { id: string; actor_id: string | null; event_type: string; summary: string; occurred_at: string };
+type MembershipEvent = { id: string; actor_id: string; subject_user_id: string; event_type: string; previous_role: string | null; new_role: string | null; created_at: string };
 type Invitation = {
   id: string;
   inviter_id: string;
@@ -61,7 +62,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
   if (groupError || !group) notFound();
   if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/workspace/groups/" + groupId + "/membership"));
 
-  const [{ data: membership }, { data: plan }, { data: memberRows, error: membersError }, { data: invitations }, { data: blocks }, { data: activityRows, error: activityError }] = await Promise.all([
+  const [{ data: membership }, { data: plan }, { data: memberRows, error: membersError }, { data: invitations }, { data: blocks }, { data: activityRows, error: activityError }, { data: membershipEventRows, error: membershipEventsError }] = await Promise.all([
     supabase.from("akiba_group_memberships").select("role,status,joined_at").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_group_plan_entitlements").select("max_members,max_group_admins,required_group_admins").eq("plan_code", group.group_plan_code).maybeSingle(),
     supabase.from("akiba_group_memberships").select("user_id,role,joined_at").eq("group_id", group.id).eq("status", "active").order("joined_at", { ascending: true }),
@@ -70,6 +71,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
       ? supabase.from("akiba_group_blocks").select("user_id,blocked_at").eq("group_id", group.id).order("blocked_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
     supabase.from("akiba_group_activity").select("id,actor_id,event_type,summary,occurred_at").eq("group_id", group.id).order("occurred_at", { ascending: false }).limit(30),
+    supabase.from("akiba_group_membership_events").select("id,actor_id,subject_user_id,event_type,previous_role,new_role,created_at").eq("group_id", group.id).order("created_at", { ascending: false }).limit(30),
   ]);
   if (!membership || membership.status !== "active") notFound();
 
@@ -80,6 +82,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     ...(invitations ?? []).map((invite) => invite.inviter_id),
     ...(blocks ?? []).map((block) => block.user_id),
     ...(activityRows ?? []).map((event) => event.actor_id).filter((id): id is string => Boolean(id)),
+    ...(membershipEventRows ?? []).flatMap((event) => [event.actor_id, event.subject_user_id]),
   ]));
   const { data: profiles } = relatedIds.length
     ? await supabase.from("akiba_profiles").select("user_id,display_name,username,avatar_path").in("user_id", relatedIds)
@@ -94,6 +97,19 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     ? members.filter((member) => [member.profile?.display_name, member.profile?.username, roleLabel(member.role)]
         .some((value) => value?.toLocaleLowerCase().includes(memberSearch)))
     : members;
+  const timelineEvents: GroupActivity[] = [
+    ...(activityRows ?? []).map((event) => ({ ...event, actor_id: event.actor_id ?? null })),
+    ...(membershipEventRows ?? []).map((event) => {
+      const subject = profilesById.get(event.subject_user_id);
+      const subjectName = subject?.display_name || subject?.username || "A group member";
+      const summary = event.event_type === "group_admin_appointed"
+        ? `${subjectName} was appointed as a Group Admin.`
+        : event.event_type === "group_admin_demoted"
+          ? `${subjectName} is now an ordinary Member.`
+          : "A membership role changed.";
+      return { id: event.id, actor_id: event.actor_id, event_type: event.event_type, summary, occurred_at: event.created_at };
+    }),
+  ].sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()).slice(0, 30);
   const isCreator = membership.role === "group_creator";
   const isAdmin = membership.role === "group_admin";
   const maxMembers = plan?.max_members ?? 100;
@@ -212,9 +228,9 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
 
               <section className="ak-workspace-card">
                 <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">GROUP ACTIVITY</span><h2>Recent activity</h2><p>A shared record of membership and leadership changes.</p></div></div>
-                {activityError ? <div className="ak-workspace-empty"><strong>Activity couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
-                  : !activityRows?.length ? <div className="ak-workspace-empty"><strong>No group activity yet</strong><p>Membership events will appear here as they happen.</p></div>
-                  : <div className="ak-workspace-member-list">{(activityRows as GroupActivity[]).map((event) => {
+                {activityError || membershipEventsError ? <div className="ak-workspace-empty"><strong>Activity couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
+                  : !timelineEvents.length ? <div className="ak-workspace-empty"><strong>No group activity yet</strong><p>Membership events will appear here as they happen.</p></div>
+                  : <div className="ak-workspace-member-list">{timelineEvents.map((event) => {
                     const actor = event.actor_id ? profilesById.get(event.actor_id) : null;
                     return <div className="ak-workspace-member" key={event.id}>
                       <span className="ak-workspace-member-fallback">•</span>
