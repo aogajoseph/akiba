@@ -426,13 +426,6 @@ begin
     raise exception 'You are blocked from joining this group';
   end if;
 
-  select * into plan_row from public.akiba_group_plan_entitlements
-  where plan_code = group_row.group_plan_code and is_active = true;
-  if not found then raise exception 'The group plan is unavailable'; end if;
-  select count(*) into active_count from public.akiba_group_memberships
-  where group_id = invitation_group_id and status = 'active';
-  if active_count >= plan_row.max_members then raise exception 'Group capacity reached'; end if;
-
   if exists (select 1 from public.akiba_group_memberships
     where group_id = invitation_group_id and user_id = actor_id and status = 'active') then
     update public.akiba_group_invitations
@@ -440,6 +433,13 @@ begin
     where id = invitation_row.id;
     return invitation_group_id;
   end if;
+
+  select * into plan_row from public.akiba_group_plan_entitlements
+  where plan_code = group_row.group_plan_code and is_active = true;
+  if not found then raise exception 'The group plan is unavailable'; end if;
+  select count(*) into active_count from public.akiba_group_memberships
+  where group_id = invitation_group_id and status = 'active';
+  if active_count >= plan_row.max_members then raise exception 'Group capacity reached'; end if;
 
   insert into public.akiba_group_memberships(group_id, user_id, role, status, joined_at, ended_at)
   values (invitation_group_id, actor_id, 'member', 'active', now(), null)
