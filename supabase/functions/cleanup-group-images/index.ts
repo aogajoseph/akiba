@@ -48,7 +48,7 @@ Deno.serve(async (request) => {
   const { data: jobs, error: queryError } = await supabase
     .from("akiba_group_deletion_records")
     .select("group_id,image_path_for_cleanup,image_cleanup_status,image_cleanup_attempts")
-    .in("image_cleanup_status", ["pending", "failed"])
+    .or("image_cleanup_status.in.(pending,failed),and(image_cleanup_status.eq.processing,image_cleanup_started_at.lt." + new Date(Date.now() - 30 * 60 * 1000).toISOString() + ")")
     .lt("image_cleanup_attempts", 20)
     .not("image_path_for_cleanup", "is", null)
     .order("deleted_at", { ascending: true })
@@ -67,6 +67,7 @@ Deno.serve(async (request) => {
         .from("akiba_group_deletion_records")
         .update({
           image_cleanup_status: "failed",
+          image_cleanup_started_at: null,
           image_cleanup_attempts: job.image_cleanup_attempts + 1,
           image_cleanup_last_error: "Stored object path failed group-image validation.",
         })
@@ -82,6 +83,7 @@ Deno.serve(async (request) => {
       .from("akiba_group_deletion_records")
       .update({
         image_cleanup_status: "processing",
+        image_cleanup_started_at: new Date().toISOString(),
         image_cleanup_attempts: job.image_cleanup_attempts + 1,
         image_cleanup_last_error: null,
       })
@@ -110,6 +112,7 @@ Deno.serve(async (request) => {
         .from("akiba_group_deletion_records")
         .update({
           image_cleanup_status: "failed",
+          image_cleanup_started_at: null,
           image_cleanup_last_error: removeError.message.slice(0, 500),
         })
         .eq("group_id", job.group_id)
@@ -122,6 +125,7 @@ Deno.serve(async (request) => {
       .from("akiba_group_deletion_records")
       .update({
         image_cleanup_status: "completed",
+        image_cleanup_started_at: null,
         image_path_for_cleanup: null,
         image_cleanup_last_error: null,
         image_cleaned_at: new Date().toISOString(),
