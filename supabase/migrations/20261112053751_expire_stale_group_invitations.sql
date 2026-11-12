@@ -1,0 +1,110 @@
+-- Expire stale pending invitations before checking for duplicates.
+-- Group row locking in this RPC serializes concurrent invitation creation.
+create or replace function public.akiba_create_group_invitation(
+  p_group_id uuid,
+  p_token_hash text,
+  p_expires_at timestamptz,
+  p_recipient_email text default null,
+  p_recipient_username text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  group_row public.akiba_groups%rowtype;
+  plan_row public.akiba_group_plan_entitlements%rowtype;
+  target_user_id uuid;
+  target_email text;
+  normalized_email text := nullif(lower(btrim(coalesce(p_recipient_email, ''))), '');
+  normalized_username text := nullif(lower(btrim(coalesce(p_recipient_username, ''))), '');
+  recipient_key_value text;
+  invitation_id uuid;
+  active_count integer;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  if p_group_id is null or p_token_hash is null or p_token_hash !~ '^[0-9a-f]{64}$'
+     or p_expires_at is null or p_expires_at <= now()
+     or p_expires_at > now() + interval '30 days'
+     or (normalized_email is not null and normalized_email !~ '^[^[:space:]@]+@[^[:space:]@]+\.[^[:space:]@]+$')
+     or (normalized_username is not null and normalized_username !~ '^[a-z][a-z0-9_]{2,19}$')
+     or (normalized_email is not null and normalized_username is not null) then
+    raise exception 'Invalid invitation details';
+  end if;
+
+  select * into group_row from public.akiba_groups where id = p_group_id for update;
+  if not found then raise exception 'Group not found'; end if;
+  if group_row.status <> 'active' then raise exception 'This group is deactivated and cannot accept invitations'; end if;
+  if not exists (
+    select 1 from public.akiba_group_memberships
+    where group_id = p_group_id and user_id = actor_id and status = 'active'
+  ) then raise exception 'Only active group members can invite people'; end if;
+
+  -- Expired invitations must no longer occupy the pending-recipient unique
+  -- indexes or block a fresh invitation to the same person.
+  update public.akiba_group_invitations
+  set status = 'expired', updated_at = now()
+  where group_id = p_group_id
+    and status = 'pending'
+    and expires_at <= now();
+
+  select * into plan_row from public.akiba_group_plan_entitlements
+  where plan_code = group_row.group_plan_code and is_active = true;
+  if not found then raise exception 'The group plan is unavailable'; end if;
+
+  select count(*) into active_count from public.akiba_group_memberships
+  where group_id = p_group_id and status = 'active';
+  if active_count >= plan_row.max_members then raise exception 'Group capacity reached'; end if;
+
+  if normalized_username is not null then
+    select user_id into target_user_id from public.akiba_profiles
+    where username = normalized_username;
+    if target_user_id is null then raise exception 'No Akiba account was found for that username'; end if;
+  elsif normalized_email is not null then
+    select id into target_user_id from auth.users
+    where lower(email) = normalized_email
+    limit 1;
+  end if;
+
+  if target_user_id is not null then
+    select lower(email) into target_email from auth.users where id = target_user_id;
+    if exists (
+      select 1 from public.akiba_group_invitations
+      where group_id = p_group_id and status = 'pending'
+        and (
+          intended_user_id = target_user_id
+          or (target_email is not null and recipient_email = target_email)
+        )
+    ) then
+      raise exception 'A pending invitation already exists for this person';
+    end if;
+    if exists (select 1 from public.akiba_group_blocks where group_id = p_group_id and user_id = target_user_id) then
+      raise exception 'This person is blocked from joining the group';
+    end if;
+    if exists (select 1 from public.akiba_group_memberships
+      where group_id = p_group_id and user_id = target_user_id and status = 'active') then
+      raise exception 'This person is already a group member';
+    end if;
+  end if;
+
+  recipient_key_value := case
+    when target_user_id is not null then 'user:' || target_user_id::text
+    when normalized_email is not null then 'email:' || normalized_email
+    else 'link:' || gen_random_uuid()::text
+  end;
+
+  insert into public.akiba_group_invitations
+    (group_id, inviter_id, intended_user_id, recipient_email, recipient_username,
+     recipient_key, token_hash, expires_at)
+  values
+    (p_group_id, actor_id, target_user_id, normalized_email, normalized_username,
+     recipient_key_value, p_token_hash, p_expires_at)
+  returning id into invitation_id;
+  return invitation_id;
+end;
+$fn$;
+
+revoke all on function public.akiba_create_group_invitation(uuid, text, timestamptz, text, text) from public, anon;
+grant execute on function public.akiba_create_group_invitation(uuid, text, timestamptz, text, text) to authenticated;
