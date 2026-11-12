@@ -695,4 +695,39 @@ revoke all on function public.akiba_decline_group_invitation_by_id(uuid) from pu
 grant execute on function public.akiba_decline_group_invitation_by_id(uuid) to authenticated;
 
 
+
+create or replace function public.akiba_step_down_group_admin(p_group_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  member_row public.akiba_group_memberships%rowtype;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  perform 1 from public.akiba_groups where id = p_group_id and status = 'active' for update;
+  if not found then raise exception 'Group not found or deactivated'; end if;
+
+  select * into member_row from public.akiba_group_memberships
+  where group_id = p_group_id and user_id = actor_id and status = 'active'
+  for update;
+  if not found then raise exception 'You are not an active group member'; end if;
+  if member_row.role = 'group_creator' then raise exception 'The Group Creator role cannot be changed'; end if;
+  if member_row.role = 'member' then return; end if;
+  if member_row.role <> 'group_admin' then raise exception 'Only a Group Admin can step down'; end if;
+
+  update public.akiba_group_memberships set role = 'member' where id = member_row.id;
+  insert into public.akiba_group_membership_events
+    (group_id, actor_id, subject_user_id, event_type, previous_role, new_role)
+  values (p_group_id, actor_id, actor_id, 'group_admin_demoted', 'group_admin', 'member');
+  insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
+  values (p_group_id, actor_id, 'group_admin_stepped_down', 'A Group Admin voluntarily stepped down to ordinary Member.');
+end;
+$fn$;
+revoke all on function public.akiba_step_down_group_admin(uuid) from public, anon;
+grant execute on function public.akiba_step_down_group_admin(uuid) to authenticated;
+
+
 commit;
