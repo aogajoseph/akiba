@@ -124,6 +124,13 @@ drop policy if exists "active members read group invitations" on public.akiba_gr
 create policy "active members read group invitations"
   on public.akiba_group_invitations for select to authenticated
   using (akiba_private.is_active_group_member(group_id));
+drop policy if exists "recipients read their group invitations" on public.akiba_group_invitations;
+create policy "recipients read their group invitations"
+  on public.akiba_group_invitations for select to authenticated
+  using (
+    intended_user_id = (select auth.uid())
+    or recipient_email = lower((select auth.jwt() ->> 'email'))
+  );
 revoke all on public.akiba_group_invitations from anon, authenticated;
 grant select on public.akiba_group_invitations to authenticated;
 
@@ -605,5 +612,90 @@ end;
 $fn$;
 revoke all on function public.akiba_unblock_group_member(uuid, uuid) from public, anon;
 grant execute on function public.akiba_unblock_group_member(uuid, uuid) to authenticated;
+
+
+-- Existing Akiba users can discover invitations addressed to their username
+-- or email from an in-app inbox without exposing raw invitation tokens.
+create or replace function public.akiba_list_my_group_invitations()
+returns table (
+  invitation_id uuid,
+  group_id uuid,
+  group_name text,
+  group_description text,
+  inviter_display_name text,
+  inviter_username text,
+  expires_at timestamptz,
+  created_at timestamptz
+)
+language sql
+stable
+security definer
+set search_path = ''
+as $fn$
+  select i.id, g.id, g.name, g.description,
+    coalesce(nullif(btrim(p.display_name), ''), p.username),
+    p.username, i.expires_at, i.created_at
+  from public.akiba_group_invitations i
+  join public.akiba_groups g on g.id = i.group_id
+  left join public.akiba_profiles p on p.user_id = i.inviter_id
+  where auth.uid() is not null
+    and i.status = 'pending'
+    and i.expires_at > now()
+    and g.status = 'active'
+    and (
+      i.intended_user_id = auth.uid()
+      or i.recipient_email = lower(auth.jwt() ->> 'email')
+    )
+  order by i.created_at desc;
+$fn$;
+revoke all on function public.akiba_list_my_group_invitations() from public, anon;
+grant execute on function public.akiba_list_my_group_invitations() to authenticated;
+
+create or replace function public.akiba_accept_group_invitation_by_id(p_invitation_id uuid)
+returns uuid
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare actor_id uuid := auth.uid(); token_digest text;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  select token_hash into token_digest
+  from public.akiba_group_invitations
+  where id = p_invitation_id and status = 'pending'
+    and (
+      intended_user_id = actor_id
+      or recipient_email = lower(auth.jwt() ->> 'email')
+    );
+  if token_digest is null then raise exception 'Invitation not found or not addressed to this account'; end if;
+  return public.akiba_accept_group_invitation(token_digest);
+end;
+$fn$;
+revoke all on function public.akiba_accept_group_invitation_by_id(uuid) from public, anon;
+grant execute on function public.akiba_accept_group_invitation_by_id(uuid) to authenticated;
+
+create or replace function public.akiba_decline_group_invitation_by_id(p_invitation_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare actor_id uuid := auth.uid(); token_digest text;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  select token_hash into token_digest
+  from public.akiba_group_invitations
+  where id = p_invitation_id and status = 'pending'
+    and (
+      intended_user_id = actor_id
+      or recipient_email = lower(auth.jwt() ->> 'email')
+    );
+  if token_digest is null then raise exception 'Invitation not found or not addressed to this account'; end if;
+  perform public.akiba_decline_group_invitation(token_digest);
+end;
+$fn$;
+revoke all on function public.akiba_decline_group_invitation_by_id(uuid) from public, anon;
+grant execute on function public.akiba_decline_group_invitation_by_id(uuid) to authenticated;
+
 
 commit;
