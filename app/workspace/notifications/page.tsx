@@ -19,7 +19,10 @@ function initials(value: string) {
   return value.trim().split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "A";
 }
 
-export default async function NotificationsPage() {
+type Props = { searchParams: Promise<{ error?: string }> };
+
+export default async function NotificationsPage({ searchParams }: Props) {
+  const params = await searchParams;
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/notifications"));
@@ -74,6 +77,7 @@ export default async function NotificationsPage() {
         </header>
         <div className="ak-dashboard-content ak-workspace-content">
           <div className="ak-workspace-page-heading"><div><span className="ak-section-eyebrow">YOUR UPDATES</span><h1>Notifications</h1><p>Invitations, membership changes and important group updates.</p></div><Link className="ak-workspace-back" href="/workspace">← Back to workspace</Link></div>
+          {params.error ? <p className="ak-finance-error" role="alert">{params.error}</p> : null}
           <section className="ak-workspace-card">
             <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">INBOX</span><h2>Recent notifications</h2><p>{unreadCount} unread · Showing the latest {rows.length}</p></div><span className="ak-count-pill">{unreadCount}</span></div>
             {error ? <div className="ak-workspace-empty" role="alert"><strong>Notifications couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
