@@ -134,6 +134,17 @@ from generate_series(303, 305) as n;
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000303', 'appoint');
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000304', 'appoint');
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000305', 'appoint');
+
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000303'
+      and group_id = '10000000-0000-0000-0000-000000000012'
+      and event_type = 'group_admin_appointed'
+  ) then raise exception 'A newly appointed Admin did not receive a notification'; end if;
+end;
+$test$;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000303', true);
 select public.akiba_step_down_group_admin('10000000-0000-0000-0000-000000000012');
 
@@ -149,6 +160,16 @@ end;
 $test$;
 
 select public.akiba_leave_group('10000000-0000-0000-0000-000000000012');
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000302'
+      and group_id = '10000000-0000-0000-0000-000000000012'
+      and event_type = 'membership_left'
+  ) then raise exception 'Remaining members were not notified when a member left'; end if;
+end;
+$test$;
 
 do $test$
 begin
@@ -170,6 +191,17 @@ select public.akiba_create_group_invitation(
   '10000000-0000-0000-0000-000000000013',
   repeat('e', 64), now() + interval '7 days', 'member-307@akiba.test', null
 );
+
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000307'
+      and group_id = '10000000-0000-0000-0000-000000000013'
+      and event_type = 'invitation_received'
+  ) then raise exception 'An addressed invitation did not create an in-app notification'; end if;
+end;
+$test$;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000308', true);
 do $test$
 declare message text;
@@ -192,6 +224,18 @@ begin
     raise exception 'Email-bound invitation was not visible in the recipient inbox';
   end if;
   perform public.akiba_accept_group_invitation_by_id(v_invitation_id);
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000306'
+      and group_id = '10000000-0000-0000-0000-000000000013'
+      and event_type = 'invitation_accepted'
+  ) then raise exception 'The inviter was not notified when the invitation was accepted'; end if;
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000306'
+      and group_id = '10000000-0000-0000-0000-000000000013'
+      and event_type = 'membership_joined'
+  ) then raise exception 'Existing members were not notified when a new member joined'; end if;
 end;
 $test$;
 
@@ -277,6 +321,9 @@ end;
 $test$;
 
 -- Deactivation begins the retention period immediately and blocks invitations.
+update public.akiba_groups
+set group_image_path = '10000000-0000-0000-0000-000000000012/00000000-0000-0000-0000-000000000999.jpg'
+where id = '10000000-0000-0000-0000-000000000012';
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000302', true);
 do $test$
 declare delete_at timestamptz; message text;
@@ -289,6 +336,13 @@ begin
       and scheduled_delete_at = deactivated_at + interval '6 months'
       and scheduled_delete_at = delete_at
   ) then raise exception 'Deactivation did not start the six-month retention period immediately'; end if;
+
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000304'
+      and group_id = '10000000-0000-0000-0000-000000000012'
+      and event_type = 'group_deactivated'
+  ) then raise exception 'Active members were not notified when the group was deactivated'; end if;
 
   begin
     perform public.akiba_set_group_admin(
@@ -344,7 +398,13 @@ begin
   if not exists (
     select 1 from public.akiba_group_deletion_records
     where group_id = '10000000-0000-0000-0000-000000000012'
-  ) then raise exception 'Group deletion record was not written'; end if;
+      and image_cleanup_status = 'pending'
+      and image_path_for_cleanup = '10000000-0000-0000-0000-000000000012/00000000-0000-0000-0000-000000000999.jpg'
+  ) then raise exception 'The group image was not queued for Storage API cleanup'; end if;
+  if exists (
+    select 1 from public.akiba_group_notifications
+    where group_id = '10000000-0000-0000-0000-000000000012'
+  ) then raise exception 'Group notifications were retained after the group retention period'; end if;
 end;
 $test$;
 
