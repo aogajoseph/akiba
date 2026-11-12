@@ -52,7 +52,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
   if (!user) redirect("/login?next=" + encodeURIComponent("/workspace/groups/" + groupId + "/membership"));
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name,description,status,group_plan_code,created_by").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,description,status,scheduled_delete_at,group_plan_code,created_by").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
