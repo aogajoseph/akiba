@@ -107,6 +107,12 @@ create table if not exists public.akiba_group_invitations (
 create unique index if not exists akiba_group_invitations_pending_recipient_idx
   on public.akiba_group_invitations(group_id, recipient_key)
   where status = 'pending';
+create unique index if not exists akiba_group_invitations_pending_email_idx
+  on public.akiba_group_invitations(group_id, lower(recipient_email))
+  where status = 'pending' and recipient_email is not null;
+create unique index if not exists akiba_group_invitations_pending_user_idx
+  on public.akiba_group_invitations(group_id, intended_user_id)
+  where status = 'pending' and intended_user_id is not null;
 create index if not exists akiba_group_invitations_group_status_idx
   on public.akiba_group_invitations(group_id, status, created_at desc);
 create index if not exists akiba_group_invitations_expiry_idx
@@ -183,6 +189,11 @@ create trigger akiba_group_active_withdrawal_guard
 before insert on public.akiba_withdrawal_requests
 for each row execute function akiba_private.guard_active_group_finance();
 
+drop trigger if exists akiba_group_active_message_guard on public.akiba_group_messages;
+create trigger akiba_group_active_message_guard
+before insert on public.akiba_group_messages
+for each row execute function akiba_private.guard_active_group_finance();
+
 -- The group creator alone can deactivate a group. The creator identity and
 -- membership are permanent; deactivation is not ownership transfer.
 create or replace function public.akiba_deactivate_group(p_group_id uuid)
@@ -209,11 +220,22 @@ begin
   end if;
   if group_row.status = 'deactivated' then return group_row.scheduled_delete_at; end if;
   if group_row.status <> 'active' then raise exception 'This group is already deleted'; end if;
+  if exists (
+    select 1 from public.akiba_withdrawal_requests r
+    where r.group_id = p_group_id
+      and r.status in ('pending_approval', 'approved', 'processing', 'failed_pending_reconciliation')
+  ) then
+    raise exception 'Resolve outstanding withdrawals before deactivating the group';
+  end if;
 
   update public.akiba_groups
   set status = 'deactivated', updated_at = clock_timestamp()
   where id = p_group_id
   returning scheduled_delete_at into delete_at;
+
+  update public.akiba_group_invitations
+  set status = 'cancelled', updated_at = now()
+  where group_id = p_group_id and status = 'pending';
 
   insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
   values (p_group_id, actor_id, 'group_deactivated',
@@ -494,6 +516,12 @@ begin
   set role = 'member', status = 'left', ended_at = now()
   where id = member_row.id;
 
+  if member_row.role = 'group_admin' then
+    insert into public.akiba_group_membership_events
+      (group_id, actor_id, subject_user_id, event_type, previous_role, new_role)
+    values (p_group_id, actor_id, actor_id, 'group_admin_demoted', 'group_admin', 'member');
+  end if;
+
   insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
   values (p_group_id, actor_id, 'member_left', 'A group member voluntarily left the group.');
 end;
@@ -535,6 +563,15 @@ begin
     insert into public.akiba_group_blocks(group_id, user_id, created_by)
     values (p_group_id, p_user_id, actor_id)
     on conflict (group_id, user_id) do nothing;
+
+    update public.akiba_group_invitations
+    set status = 'cancelled', updated_at = now()
+    where group_id = p_group_id and status = 'pending'
+      and (
+        intended_user_id = p_user_id
+        or recipient_email = (select lower(email) from auth.users where id = p_user_id)
+        or recipient_username = (select username from public.akiba_profiles where user_id = p_user_id)
+      );
   end if;
 
   insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
@@ -562,6 +599,8 @@ begin
   if not found then raise exception 'Group not found'; end if;
   if creator_id <> actor_id then raise exception 'Only the Group Creator can unblock a member'; end if;
   delete from public.akiba_group_blocks where group_id = p_group_id and user_id = p_user_id;
+  insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
+  values (p_group_id, actor_id, 'member_unblocked', 'The Group Creator restored a person's ability to rejoin the group.');
 end;
 $fn$;
 revoke all on function public.akiba_unblock_group_member(uuid, uuid) from public, anon;
