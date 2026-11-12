@@ -291,6 +291,24 @@ begin
   ) then raise exception 'Deactivation did not start the six-month retention period immediately'; end if;
 
   begin
+    perform public.akiba_set_group_admin(
+      '10000000-0000-0000-0000-000000000012',
+      '00000000-0000-0000-0000-000000000304',
+      'demote'
+    );
+    raise exception 'A deactivated group unexpectedly allowed a leadership change';
+  exception when others then
+    get stacked diagnostics message = message_text;
+    if message not like '%deactivated%' then raise; end if;
+  end;
+  if not exists (
+    select 1 from public.akiba_group_memberships
+    where group_id = '10000000-0000-0000-0000-000000000012'
+      and user_id = '00000000-0000-0000-0000-000000000304'
+      and role = 'group_admin' and status = 'active'
+  ) then raise exception 'Rejected leadership change modified the deactivated group'; end if;
+
+  begin
     perform public.akiba_create_group_invitation(
       '10000000-0000-0000-0000-000000000012',
       repeat('1', 64), now() + interval '7 days', null, null
