@@ -10,13 +10,26 @@ async function markReturning() {
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
 function field(formData: FormData, name: string) { return String(formData.get(name) ?? "").trim(); }
+
+function safeInternalPath(value: string, fallback = "/workspace") {
+ const candidate = String(value ?? "").trim();
+ if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\\\\")) return fallback;
+ try {
+   const parsed = new URL(candidate, "https://akiba.invalid");
+   return parsed.origin === "https://akiba.invalid" ? candidate : fallback;
+ } catch {
+   return fallback;
+ }
+}
+
 function isValidEmail(email: string) {
  const at = email.indexOf("@");
  return email.length <= 320 && !email.includes(" ") && at > 0 && at === email.lastIndexOf("@") && email.lastIndexOf(".") > at + 1 && !email.endsWith(".");
 }
 export async function signIn(formData: FormData) {
  const email=field(formData,"email").toLowerCase(), password=String(formData.get("password")??"");
- if(!email||!password) redirect("/login?error=Enter%20your%20email%20and%20password");
+ const next = safeInternalPath(field(formData, "next"));
+ if(!email||!password) redirect("/login?error=Enter%20your%20email%20and%20password&next=" + encodeURIComponent(next));
  const supabase=await createClient();
  const {error}=await supabase.auth.signInWithPassword({email,password});
  if(error){
@@ -31,8 +44,6 @@ export async function signIn(formData: FormData) {
      const secret = process.env.SUPABASE_SECRET_KEY;
      if (url && secret) {
        try {
-         // The lookup RPC is restricted to service_role and is called only
-         // after a failed password sign-in, never from the browser.
          const admin = createAdminClient(url, secret, { auth: { autoRefreshToken: false, persistSession: false } });
          const { data: exists, error: lookupError } = await admin.rpc("akiba_email_exists", { check_email: email });
          if (lookupError) console.error("Akiba account lookup failed", { code: lookupError.code });
@@ -44,22 +55,25 @@ export async function signIn(formData: FormData) {
        console.error("Akiba account lookup not configured");
      }
    }
-   redirect("/login?error=" + encodeURIComponent(message));
+   redirect("/login?error=" + encodeURIComponent(message) + "&next=" + encodeURIComponent(next));
  }
  await markReturning();
- redirect("/workspace");
+ redirect(next);
 }
 export async function signUp(formData: FormData) {
  const email=field(formData,"email").toLowerCase(),password=String(formData.get("password")??"");
- if(!isValidEmail(email)||password.length<8) redirect("/signup?error=Enter%20a%20valid%20email%20and%20a%20password%20of%20at%20least%208%20characters");
+ const next = safeInternalPath(field(formData, "next"), "/onboarding");
+ if(!isValidEmail(email)||password.length<8) redirect("/signup?error=Enter%20a%20valid%20email%20and%20a%20password%20of%20at%20least%208%20characters&next=" + encodeURIComponent(next));
  const supabase=await createClient();
  const site=process.env.NEXT_PUBLIC_SITE_URL;
  if(!site){console.error("Akiba NEXT_PUBLIC_SITE_URL is missing");redirect("/signup?error=Signup%20is%20temporarily%20unavailable");}
- const {data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:new URL("/auth/callback",site).toString()}});
- if(error){console.error("Akiba signup failure",{code:error.code,message:error.message});redirect("/signup?error="+encodeURIComponent(error.code==="user_already_exists"?"An account with this email already exists. Please sign in.":"Unable to create account. Please try again."));}
+ const callback = new URL("/auth/callback", site);
+ callback.searchParams.set("next", next);
+ const {data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:callback.toString()}});
+ if(error){console.error("Akiba signup failure",{code:error.code,message:error.message});redirect("/signup?error="+encodeURIComponent(error.code==="user_already_exists"?"An account with this email already exists. Please sign in.":"Unable to create account. Please try again.")+"&next="+encodeURIComponent(next));}
  await markReturning();
- if(data.session) redirect("/onboarding");
- redirect("/login?message="+encodeURIComponent("We've sent you a confirmation email. Verify your email address to continue."));
+ if(data.session) redirect(next);
+ redirect("/login?message="+encodeURIComponent("We've sent you a confirmation email. Verify your email address to continue.")+"&next="+encodeURIComponent(next));
 }
 export async function signOut(){const supabase=await createClient();await supabase.auth.signOut();await markReturning();redirect("/login?message=You%20have%20signed%20out.");}
 
