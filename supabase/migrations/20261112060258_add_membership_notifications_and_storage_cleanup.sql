@@ -144,6 +144,13 @@ begin
       'membership_joined', 'New member joined',
       'A new member joined your group.'
     );
+  elsif tg_op = 'UPDATE' and old.status <> 'active' and new.status = 'active'
+      and actor_id is not null and actor_id = new.user_id then
+    perform akiba_private.create_group_notification(
+      new.group_id, event_id, actor_id, null, false,
+      'membership_joined', 'Member rejoined',
+      'A former member rejoined your group.'
+    );
   elsif tg_op = 'UPDATE' and old.status = 'active' and new.status in ('left', 'removed') then
     perform akiba_private.create_group_notification(
       old.group_id, event_id, actor_id, old.user_id,
