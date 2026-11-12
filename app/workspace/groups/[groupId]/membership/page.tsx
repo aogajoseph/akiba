@@ -207,7 +207,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                     return <div className="ak-workspace-member" key={invite.id}>
                       <span className="ak-workspace-member-fallback">↗</span>
                       <div><strong>{recipient}</strong><small>Invited by {inviter?.display_name || inviter?.username || "Group member"} · {formatDate(invite.created_at)}</small></div>
-                      <div className="ak-workspace-member-role"><span>{invite.status === "pending" && new Date(invite.expires_at).getTime() <= Date.now() ? "Expired" : invite.status.replaceAll("_", " ")}</span>
+                      <div className="ak-workspace-member-role"><span>{invite.status.replaceAll("_", " ")}</span>
                         {invite.status === "pending" && canCancel && group.status === "active" && <form action={cancelGroupInvitation}>
                           <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="invitation_id" value={invite.id} />
                           <button type="submit" className="ak-member-danger">Cancel</button>
@@ -272,7 +272,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                 <section className="ak-workspace-card ak-workspace-danger-card">
                   <span className="ak-section-eyebrow">GROUP LIFECYCLE</span>
                   <h2>Deactivate group</h2>
-                  <p>When the group's purpose is fulfilled, deactivate it. Invitations, membership changes and new financial activity will stop immediately. The six-month retention period starts at deactivation.</p>
+                  <p>When the group&apos;s purpose is fulfilled, deactivate it. Invitations, membership changes and new financial activity will stop immediately. The six-month retention period starts at deactivation.</p>
                   <DeactivateGroupForm groupId={group.id} />
                   <p className="ak-workspace-footnote">The Group Creator cannot leave or transfer this role.</p>
                 </section>
