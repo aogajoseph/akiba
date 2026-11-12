@@ -321,3 +321,22 @@ export async function stepDownGroupAdmin(formData: FormData) {
   revalidatePath("/workspace/groups/" + groupId);
   redirect("/workspace/groups/" + groupId + "/membership?membershipUpdated=" + encodeURIComponent("You are now a regular Member."));
 }
+
+
+export async function markGroupNotificationRead(formData: FormData) {
+  const notificationId = String(formData.get("notification_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(notificationId)) redirect("/workspace/notifications");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/notifications"));
+  const rpc = supabase.rpc as unknown as (
+    name: string,
+    args: Record<string, unknown>,
+  ) => Promise<{ error: { message: string } | null }>;
+  const { error } = await rpc("akiba_mark_group_notification_read", {
+    p_notification_id: notificationId,
+  });
+  if (error) redirect("/workspace/notifications?error=" + encodeURIComponent("That notification could not be updated."));
+  revalidatePath("/workspace/notifications");
+  redirect("/workspace/notifications");
+}
