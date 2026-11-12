@@ -7,6 +7,16 @@ function fail(message: string): never {
   redirect("/onboarding?error=" + encodeURIComponent(message));
 }
 
+function safeNext(value: string) {
+  const candidate = String(value ?? "").trim();
+  if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\\\\")) return "/workspace";
+  try {
+    return new URL(candidate, "https://akiba.invalid").origin === "https://akiba.invalid" ? candidate : "/workspace";
+  } catch {
+    return "/workspace";
+  }
+}
+
 export async function saveProfile(formData: FormData) {
   const username = String(formData.get("username") ?? "").trim().toLowerCase();
   const displayName = String(formData.get("display_name") ?? "").trim();
@@ -15,6 +25,7 @@ export async function saveProfile(formData: FormData) {
   const phoneNumber = rawPhone.replace(/[\s()-]/g, "");
   const submittedAvatarPath = String(formData.get("avatar_path") ?? "").trim();
   const removeAvatar = formData.get("remove_avatar") === "yes";
+  const next = safeNext(String(formData.get("next") ?? ""));
 
   if (!/^[a-z][a-z0-9_]{2,19}$/.test(username)) fail("Choose a valid username.");
   if (!displayName || displayName.length > 60) fail("Display name must be between 1 and 60 characters.");
@@ -98,5 +109,5 @@ export async function saveProfile(formData: FormData) {
     if (removeError) console.error("Akiba old avatar cleanup failed", { code: removeError.name });
   }
 
-  redirect("/workspace");
+  redirect(next);
 }
