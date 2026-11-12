@@ -518,16 +518,13 @@ begin
   if member_row.role = 'group_creator' then
     raise exception 'The Group Creator cannot leave or transfer the Creator role';
   end if;
+  if member_row.role = 'group_admin' then
+    raise exception 'Step down as Group Admin before leaving the group';
+  end if;
 
   update public.akiba_group_memberships
-  set role = 'member', status = 'left', ended_at = now()
+  set status = 'left', ended_at = now()
   where id = member_row.id;
-
-  if member_row.role = 'group_admin' then
-    insert into public.akiba_group_membership_events
-      (group_id, actor_id, subject_user_id, event_type, previous_role, new_role)
-    values (p_group_id, actor_id, actor_id, 'group_admin_demoted', 'group_admin', 'member');
-  end if;
 
   insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
   values (p_group_id, actor_id, 'member_left', 'A group member voluntarily left the group.');
