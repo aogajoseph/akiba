@@ -1,6 +1,6 @@
 "use server";
 
-import { randomUUID } from "node:crypto";
+import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
@@ -106,4 +106,144 @@ export async function setGroupAdmin(formData: FormData) {
 
   revalidatePath("/workspace/groups/" + groupId);
   redirect("/workspace/groups/" + groupId + "?membershipUpdated=1");
+}
+
+
+function membershipRedirect(groupId: string, message: string, key = "membershipError"): never {
+  redirect("/workspace/groups/" + groupId + "/membership?" + key + "=" + encodeURIComponent(message));
+}
+
+export async function createGroupInvitation(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const email = String(formData.get("recipient_email") ?? "").trim().toLowerCase();
+  const username = String(formData.get("recipient_username") ?? "").trim().toLowerCase();
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || (email && username)) {
+    membershipRedirect(groupId, "Enter either an email address or an Akiba username.");
+  }
+
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+  if (!siteUrl) membershipRedirect(groupId, "Invitations are temporarily unavailable.");
+  const token = randomBytes(32).toString("hex");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/groups/" + groupId + "/membership"));
+
+  const { error } = await supabase.rpc("akiba_create_group_invitation", {
+    p_group_id: groupId,
+    p_token_hash: tokenHash,
+    p_expires_at: expiresAt,
+    p_recipient_email: email || null,
+    p_recipient_username: username || null,
+  });
+  if (error) {
+    const message = error.message.includes("Group capacity reached")
+      ? "Group capacity reached."
+      : error.message.includes("already a group member")
+        ? "This person is already a group member."
+        : error.message.includes("blocked from joining")
+          ? "This person is blocked from joining the group."
+          : error.message.includes("already exists")
+            ? "A pending invitation already exists for this person."
+            : error.message.includes("No Akiba account")
+              ? "No Akiba account was found for that username."
+              : "The invitation could not be created. Please try again.";
+    membershipRedirect(groupId, message);
+  }
+
+  const inviteUrl = new URL("/invitations/" + token, siteUrl).toString();
+  redirect("/workspace/groups/" + groupId + "/membership?inviteUrl=" + encodeURIComponent(inviteUrl));
+}
+
+export async function acceptGroupInvitation(formData: FormData) {
+  const token = String(formData.get("token") ?? "");
+  if (!/^[0-9a-f]{64}$/.test(token)) redirect("/login?error=" + encodeURIComponent("This invitation link is invalid."));
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent("/invitations/" + token));
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const { data: groupId, error } = await supabase.rpc("akiba_accept_group_invitation", { p_token_hash: tokenHash });
+  if (error) {
+    const message = error.message.includes("Group capacity reached")
+      ? "Group capacity reached. Ask a group member to try again when a space becomes available."
+      : error.message.includes("another Akiba account") || error.message.includes("email address this invitation")
+        ? error.message
+        : error.message.includes("blocked")
+          ? "You cannot join this group."
+          : "This invitation is no longer available. It may have expired, been cancelled or already used.";
+    redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
+  }
+  if (!groupId) redirect("/invitations/" + token + "?error=" + encodeURIComponent("This invitation has expired."));
+  redirect("/workspace/groups/" + groupId);
+}
+
+export async function declineGroupInvitation(formData: FormData) {
+  const token = String(formData.get("token") ?? "");
+  if (!/^[0-9a-f]{64}$/.test(token)) redirect("/login?error=" + encodeURIComponent("This invitation link is invalid."));
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent("/invitations/" + token));
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const { error } = await supabase.rpc("akiba_decline_group_invitation", { p_token_hash: tokenHash });
+  if (error) redirect("/invitations/" + token + "?error=" + encodeURIComponent("This invitation could not be declined. It may no longer be available."));
+  redirect("/workspace?message=" + encodeURIComponent("Invitation declined."));
+}
+
+export async function leaveGroup(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) redirect("/workspace");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+  const { error } = await supabase.rpc("akiba_leave_group", { p_group_id: groupId });
+  if (error) membershipRedirect(groupId, error.message.includes("Group Creator")
+    ? "The Group Creator cannot leave the group."
+    : error.message.includes("unresolved")
+      ? "Group Admins cannot leave while a withdrawal is unresolved."
+      : "You could not leave this group. Please try again.");
+  revalidatePath("/workspace");
+  redirect("/workspace?message=" + encodeURIComponent("You have left the group."));
+}
+
+export async function removeGroupMember(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const userId = String(formData.get("user_id") ?? "");
+  const block = String(formData.get("block") ?? "") === "true";
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || !/^[0-9a-f-]{36}$/i.test(userId)) redirect("/workspace");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+  const { error } = await supabase.rpc("akiba_remove_group_member", {
+    p_group_id: groupId, p_user_id: userId, p_block: block,
+  });
+  if (error) membershipRedirect(groupId, error.message.includes("unresolved")
+    ? "Group Admins cannot be removed while a withdrawal is unresolved."
+    : "The member could not be removed. Please try again.");
+  revalidatePath("/workspace/groups/" + groupId);
+  redirect("/workspace/groups/" + groupId + "/membership?membershipUpdated=" + (block ? "Member blocked." : "Member removed."));
+}
+
+export async function unblockGroupMember(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const userId = String(formData.get("user_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || !/^[0-9a-f-]{36}$/i.test(userId)) redirect("/workspace");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+  const { error } = await supabase.rpc("akiba_unblock_group_member", { p_group_id: groupId, p_user_id: userId });
+  if (error) membershipRedirect(groupId, "The block could not be removed.");
+  redirect("/workspace/groups/" + groupId + "/membership?membershipUpdated=Member unblocked.");
+}
+
+export async function deactivateGroup(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) redirect("/workspace");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+  const { error } = await supabase.rpc("akiba_deactivate_group", { p_group_id: groupId });
+  if (error) membershipRedirect(groupId, "The group could not be deactivated.");
+  revalidatePath("/workspace");
+  redirect("/workspace?message=Group%20deactivated");
 }
