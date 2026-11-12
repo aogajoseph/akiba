@@ -3,6 +3,7 @@
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
 
 const allowedTypes: Record<string, string[]> = {
@@ -154,8 +155,15 @@ export async function createGroupInvitation(formData: FormData) {
     membershipRedirect(groupId, message);
   }
 
-  const inviteUrl = new URL("/invitations/" + token, siteUrl).toString();
-  redirect("/workspace/groups/" + groupId + "/membership?inviteUrl=" + encodeURIComponent(inviteUrl));
+  const store = await cookies();
+  store.set("akiba_group_invite_" + groupId, token, {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax",
+    path: "/workspace/groups/" + groupId + "/membership",
+    maxAge: 5 * 60,
+  });
+  redirect("/workspace/groups/" + groupId + "/membership?inviteCreated=1");
 }
 
 export async function acceptGroupInvitation(formData: FormData) {
