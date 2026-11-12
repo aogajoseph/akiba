@@ -90,10 +90,11 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
   const activeAdminCount = members.filter((member) => member.role === "group_admin").length;
   const capacityReached = members.length >= maxMembers;
   let shareInviteUrl: string | null = null;
-  if (query.inviteUrl && process.env.NEXT_PUBLIC_SITE_URL) {
+  const configuredSiteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
+  if (query.inviteUrl && configuredSiteUrl) {
     try {
       const supplied = new URL(query.inviteUrl);
-      const expectedOrigin = new URL(process.env.NEXT_PUBLIC_SITE_URL).origin;
+      const expectedOrigin = new URL(configuredSiteUrl).origin;
       if (supplied.origin === expectedOrigin && /^\/invitations\/[0-9a-f]{64}$/.test(supplied.pathname)) {
         shareInviteUrl = supplied.toString();
       }
