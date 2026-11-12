@@ -265,3 +265,31 @@ export async function cancelGroupInvitation(formData: FormData) {
   if (error) membershipRedirect(groupId, "The invitation could not be cancelled.");
   redirect("/workspace/groups/" + groupId + "/membership?membershipUpdated=" + encodeURIComponent("Invitation cancelled."));
 }
+
+
+export async function acceptGroupInvitationById(formData: FormData) {
+  const invitationId = String(formData.get("invitation_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(invitationId)) redirect("/workspace/invitations");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/invitations"));
+  const { data: profile } = await supabase.from("akiba_profiles")
+    .select("display_name").eq("user_id", user.id).maybeSingle();
+  if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/workspace/invitations"));
+  const { data: groupId, error } = await supabase.rpc("akiba_accept_group_invitation_by_id", { p_invitation_id: invitationId });
+  if (error || !groupId) redirect("/workspace/invitations?error=" + encodeURIComponent(
+    error?.message.includes("Group capacity reached") ? "Group capacity reached." : "This invitation is no longer available."
+  ));
+  redirect("/workspace/groups/" + groupId);
+}
+
+export async function declineGroupInvitationById(formData: FormData) {
+  const invitationId = String(formData.get("invitation_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(invitationId)) redirect("/workspace/invitations");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/invitations"));
+  const { error } = await supabase.rpc("akiba_decline_group_invitation_by_id", { p_invitation_id: invitationId });
+  if (error) redirect("/workspace/invitations?error=" + encodeURIComponent("This invitation could not be declined."));
+  redirect("/workspace/invitations?message=" + encodeURIComponent("Invitation declined."));
+}
