@@ -1119,3 +1119,12 @@
 .ak-membership-counts{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px}
 .ak-membership-leadership-note{margin:0 0 12px;padding:9px 11px;border:1px solid #f0e5d2;border-radius:8px;background:#fffaf1;color:#896b39;font-size:9px;line-height:1.5}
 @media(max-width:640px){.ak-membership-counts{justify-content:flex-start}}
+
+
+.ak-membership-search-form{display:grid;gap:6px;margin:0 0 14px}
+.ak-membership-search-form label{color:#555b76;font-size:10px;font-weight:700}
+.ak-membership-search-form>div{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.ak-membership-search-form input{flex:1;min-width:180px;padding:10px 11px;border:1px solid #e5e6ee;border-radius:8px;background:#fff;color:#303451;font-size:11px}
+.ak-membership-search-form input:focus{outline:2px solid #e9b5ce;outline-offset:1px}
+.ak-membership-search-form button{padding:9px 13px;border:0;border-radius:8px;background:#26294f;color:#fff;font-size:10px;font-weight:700;cursor:pointer}
+.ak-membership-search-form a{color:#6b5270;font-size:10px;font-weight:700;text-decoration:underline}
