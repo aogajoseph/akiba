@@ -194,7 +194,7 @@ as $fn$
 declare
   actor_id uuid := auth.uid();
   group_row public.akiba_groups%rowtype;
-  deactivation_time timestamptz := clock_timestamp();
+  delete_at timestamptz;
 begin
   if actor_id is null then raise exception 'Authentication is required'; end if;
   if p_group_id is null then raise exception 'Group is required'; end if;
@@ -211,16 +211,14 @@ begin
   if group_row.status <> 'active' then raise exception 'This group is already deleted'; end if;
 
   update public.akiba_groups
-  set status = 'deactivated',
-      deactivated_at = deactivation_time,
-      scheduled_delete_at = deactivation_time + interval '6 months',
-      updated_at = deactivation_time
-  where id = p_group_id;
+  set status = 'deactivated', updated_at = clock_timestamp()
+  where id = p_group_id
+  returning scheduled_delete_at into delete_at;
 
   insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
   values (p_group_id, actor_id, 'group_deactivated',
     'The Group Creator deactivated this group. It is scheduled for deletion after the six-month retention period.');
-  return deactivation_time + interval '6 months';
+  return delete_at;
 end;
 $fn$;
 revoke all on function public.akiba_deactivate_group(uuid) from public, anon;
