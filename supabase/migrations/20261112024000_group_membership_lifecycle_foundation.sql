@@ -24,6 +24,36 @@ create index if not exists akiba_groups_deactivation_due_idx
   on public.akiba_groups(scheduled_delete_at)
   where status = 'deactivated';
 
+-- Protect the one-way lifecycle transition even if a client attempts a direct
+-- table update instead of calling the deactivation RPC.
+create or replace function akiba_private.guard_group_lifecycle_update()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+begin
+  if old.status is distinct from new.status then
+    if old.status <> 'active' or new.status <> 'deactivated'
+       or auth.uid() is distinct from old.created_by then
+      raise exception 'Only the Group Creator may deactivate an active group; group lifecycle transitions are one-way';
+    end if;
+    new.deactivated_at := clock_timestamp();
+    new.scheduled_delete_at := new.deactivated_at + interval '6 months';
+  elsif old.status <> 'active'
+      and (new.deactivated_at is distinct from old.deactivated_at
+        or new.scheduled_delete_at is distinct from old.scheduled_delete_at) then
+    raise exception 'A deactivated group retention deadline cannot be changed';
+  end if;
+  return new;
+end;
+$fn$;
+revoke all on function akiba_private.guard_group_lifecycle_update() from public, anon, authenticated;
+drop trigger if exists akiba_group_lifecycle_update_guard on public.akiba_groups;
+create trigger akiba_group_lifecycle_update_guard
+before update of status, deactivated_at, scheduled_delete_at on public.akiba_groups
+for each row execute function akiba_private.guard_group_lifecycle_update();
+
 -- A block is independent of membership status so removed members can be
 -- prevented from rejoining even when they obtain another invitation link.
 create table if not exists public.akiba_group_blocks (
