@@ -102,9 +102,46 @@ begin
     (p_group_id, actor_id, target_user_id, normalized_email, normalized_username,
      recipient_key_value, p_token_hash, p_expires_at)
   returning id into invitation_id;
+
+  insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
+  values (p_group_id, actor_id, 'invitation_created', 'A group member created an invitation.');
+
   return invitation_id;
 end;
 $fn$;
 
 revoke all on function public.akiba_create_group_invitation(uuid, text, timestamptz, text, text) from public, anon;
 grant execute on function public.akiba_create_group_invitation(uuid, text, timestamptz, text, text) to authenticated;
+
+
+-- Record invitation cancellation in the same shared group activity history.
+create or replace function public.akiba_cancel_group_invitation(p_invitation_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  invitation_row public.akiba_group_invitations%rowtype;
+  creator_id uuid;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  select * into invitation_row from public.akiba_group_invitations
+  where id = p_invitation_id;
+  if not found then raise exception 'Invitation not found'; end if;
+  perform 1 from public.akiba_groups where id = invitation_row.group_id for update;
+  select created_by into creator_id from public.akiba_groups where id = invitation_row.group_id;
+  if actor_id <> invitation_row.inviter_id and actor_id <> creator_id then
+    raise exception 'Only the inviter or Group Creator may cancel this invitation';
+  end if;
+  update public.akiba_group_invitations set status = 'cancelled', updated_at = now()
+  where id = p_invitation_id and status = 'pending';
+  if found then
+    insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
+    values (invitation_row.group_id, actor_id, 'invitation_cancelled', 'A group invitation was cancelled.');
+  end if;
+end;
+$fn$;
+revoke all on function public.akiba_cancel_group_invitation(uuid) from public, anon;
+grant execute on function public.akiba_cancel_group_invitation(uuid) to authenticated;
