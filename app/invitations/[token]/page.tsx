@@ -20,7 +20,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
   if (!url || !secret) {
     return <main className="auth-shell"><section className="auth-card">
       <h1>Invitation unavailable</h1>
-      <p>We couldn't load this invitation right now. Please try again later.</p>
+      <p>We couldn&apos;t load this invitation right now. Please try again later.</p>
     </section></main>;
   }
 
@@ -41,8 +41,9 @@ export default async function InvitationPage({ params, searchParams }: Props) {
   ]);
   if (!group) notFound();
 
-  const expired = new Date(invitation.expires_at).getTime() <= Date.now();
-  const status = invitation.status !== "pending" ? invitation.status : expired ? "expired" : group.status !== "active" ? "unavailable" : "pending";
+  // Expiry is enforced by the database when an invitation is accepted.
+  // Avoid deriving time-sensitive state during render.
+  const status = invitation.status !== "pending" ? invitation.status : group.status !== "active" ? "unavailable" : "pending";
   const next = "/invitations/" + token;
   const inviterName = inviter?.display_name?.trim() || (inviter?.username ? "@" + inviter.username : "A group member");
 
@@ -50,7 +51,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     <main className="auth-shell">
       <section className="auth-card">
         <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
-        <div className="workspace-eyebrow">You're invited</div>
+        <div className="workspace-eyebrow">You&apos;re invited</div>
         <h1>{group.name}</h1>
         <p>{group.description?.trim() || "You've been invited to join a group on Akiba."}</p>
         <p className="auth-switch">Invited by {inviterName}</p>
