@@ -22,10 +22,11 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 
 type Props = {
   params: Promise<{ groupId: string }>;
-  searchParams: Promise<{ membershipError?: string; membershipUpdated?: string; inviteCreated?: string }>;
+  searchParams: Promise<{ membershipError?: string; membershipUpdated?: string; inviteCreated?: string; memberSearch?: string }>;
 };
 type Profile = { user_id: string; display_name: string | null; username: string; avatar_path: string | null };
 type Member = { user_id: string; role: "group_creator" | "group_admin" | "member"; joined_at: string; profile?: Profile };
+type GroupActivity = { id: string; actor_id: string | null; event_type: string; summary: string; occurred_at: string };
 type Invitation = {
   id: string;
   inviter_id: string;
@@ -60,7 +61,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
   if (groupError || !group) notFound();
   if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/workspace/groups/" + groupId + "/membership"));
 
-  const [{ data: membership }, { data: plan }, { data: memberRows, error: membersError }, { data: invitations }, { data: blocks }] = await Promise.all([
+  const [{ data: membership }, { data: plan }, { data: memberRows, error: membersError }, { data: invitations }, { data: blocks }, { data: activityRows, error: activityError }] = await Promise.all([
     supabase.from("akiba_group_memberships").select("role,status,joined_at").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_group_plan_entitlements").select("max_members,max_group_admins,required_group_admins").eq("plan_code", group.group_plan_code).maybeSingle(),
     supabase.from("akiba_group_memberships").select("user_id,role,joined_at").eq("group_id", group.id).eq("status", "active").order("joined_at", { ascending: true }),
@@ -68,6 +69,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     group.created_by === user.id
       ? supabase.from("akiba_group_blocks").select("user_id,blocked_at").eq("group_id", group.id).order("blocked_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
+    supabase.from("akiba_group_activity").select("id,actor_id,event_type,summary,occurred_at").eq("group_id", group.id).order("occurred_at", { ascending: false }).limit(30),
   ]);
   if (!membership || membership.status !== "active") notFound();
 
@@ -77,6 +79,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     ...memberIds,
     ...(invitations ?? []).map((invite) => invite.inviter_id),
     ...(blocks ?? []).map((block) => block.user_id),
+    ...(activityRows ?? []).map((event) => event.actor_id).filter((id): id is string => Boolean(id)),
   ]));
   const { data: profiles } = relatedIds.length
     ? await supabase.from("akiba_profiles").select("user_id,display_name,username,avatar_path").in("user_id", relatedIds)
@@ -86,6 +89,11 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     members.push({ ...row, profile: profilesById.get(row.user_id) });
   }
 
+  const memberSearch = (query.memberSearch ?? "").trim().toLocaleLowerCase();
+  const visibleMembers = memberSearch
+    ? members.filter((member) => [member.profile?.display_name, member.profile?.username, roleLabel(member.role)]
+        .some((value) => value?.toLocaleLowerCase().includes(memberSearch)))
+    : members;
   const isCreator = membership.role === "group_creator";
   const isAdmin = membership.role === "group_admin";
   const maxMembers = plan?.max_members ?? 100;
@@ -166,8 +174,13 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                   <div className="ak-membership-counts"><span className="ak-count-pill">{members.length} / {maxMembers} people</span><span className="ak-count-pill">{activeAdminCount} / {requiredAdminCount} Admins</span></div>
                 </div>
                 {activeAdminCount < requiredAdminCount && group.status === "active" && <p className="ak-membership-leadership-note">Contributions remain blocked until the Group Creator appoints {requiredAdminCount} Group Admins.</p>}
+                <form method="get" className="ak-membership-search-form" role="search">
+                  <label htmlFor="memberSearch">Search members</label>
+                  <div><input id="memberSearch" name="memberSearch" type="search" placeholder="Name, username or role" defaultValue={query.memberSearch ?? ""} /><button type="submit">Search</button>{memberSearch && <Link href={"/workspace/groups/" + group.id + "/membership"}>Clear</Link>}</div>
+                </form>
                 {membersError ? <div className="ak-workspace-empty"><strong>Members couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
-                  : <div className="ak-workspace-member-list">{members.map((member) => {
+                  : visibleMembers.length === 0 ? <div className="ak-workspace-empty"><strong>No matching members</strong><p>Try another name, username or role.</p></div>
+                  : <div className="ak-workspace-member-list">{visibleMembers.map((member) => {
                     const name = member.profile?.display_name?.trim() || "Akiba member";
                     const photo = member.profile?.avatar_path ? supabase.storage.from("avatars").getPublicUrl(member.profile.avatar_path).data.publicUrl : null;
                     const isSelf = member.user_id === user.id;
@@ -195,6 +208,19 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                   })}</div>}
                 {isCreator && <p className="ak-workspace-footnote">You are the permanent Group Creator. Only you can manage Admin appointments, remove members or block access.</p>}
                 {isAdmin && <p className="ak-workspace-footnote">As a Group Admin, you can invite people and leave the group. The Creator manages membership and leadership.</p>}
+              </section>
+
+              <section className="ak-workspace-card">
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">GROUP ACTIVITY</span><h2>Recent activity</h2><p>A shared record of membership and leadership changes.</p></div></div>
+                {activityError ? <div className="ak-workspace-empty"><strong>Activity couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
+                  : !activityRows?.length ? <div className="ak-workspace-empty"><strong>No group activity yet</strong><p>Membership events will appear here as they happen.</p></div>
+                  : <div className="ak-workspace-member-list">{(activityRows as GroupActivity[]).map((event) => {
+                    const actor = event.actor_id ? profilesById.get(event.actor_id) : null;
+                    return <div className="ak-workspace-member" key={event.id}>
+                      <span className="ak-workspace-member-fallback">•</span>
+                      <div><strong>{event.summary}</strong><small>{actor?.display_name || actor?.username || "Akiba"} · {formatDate(event.occurred_at)}</small></div>
+                    </div>;
+                  })}</div>}
               </section>
 
               <section className="ak-workspace-card">
