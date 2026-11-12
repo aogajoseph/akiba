@@ -5,7 +5,8 @@ begin;
 alter table public.akiba_groups
   add column if not exists status text not null default 'active',
   add column if not exists deactivated_at timestamptz,
-  add column if not exists scheduled_delete_at timestamptz;
+  add column if not exists scheduled_delete_at timestamptz,
+  add column if not exists deleted_at timestamptz;
 
 alter table public.akiba_groups
   drop constraint if exists akiba_groups_status_check,
@@ -13,11 +14,14 @@ alter table public.akiba_groups
     check (status in ('active', 'deactivated', 'deleted')),
   drop constraint if exists akiba_groups_lifecycle_timestamps_check,
   add constraint akiba_groups_lifecycle_timestamps_check check (
-    (status = 'active' and deactivated_at is null and scheduled_delete_at is null)
+    (status = 'active' and deactivated_at is null and scheduled_delete_at is null and deleted_at is null)
     or
-    (status in ('deactivated', 'deleted')
-      and deactivated_at is not null
-      and scheduled_delete_at = deactivated_at + interval '6 months')
+    (status = 'deactivated' and deactivated_at is not null
+      and scheduled_delete_at = deactivated_at + interval '6 months' and deleted_at is null)
+    or
+    (status = 'deleted' and deactivated_at is not null
+      and scheduled_delete_at = deactivated_at + interval '6 months'
+      and deleted_at is not null and deleted_at >= scheduled_delete_at)
   );
 
 create index if not exists akiba_groups_deactivation_due_idx
@@ -33,6 +37,11 @@ security definer
 set search_path = ''
 as $fn$
 begin
+  if current_setting('akiba.system_group_purge', true) = 'on'
+     and old.status = 'deactivated' and new.status = 'deleted' then
+    new.deleted_at := clock_timestamp();
+    return new;
+  end if;
   if old.status is distinct from new.status then
     if old.status <> 'active' or new.status <> 'deactivated'
        or auth.uid() is distinct from old.created_by then
@@ -145,6 +154,9 @@ declare
   target_group_id uuid;
   group_status text;
 begin
+  if current_setting('akiba.system_group_purge', true) = 'on' then
+    if tg_op = 'DELETE' then return old; else return new; end if;
+  end if;
   target_group_id := case when tg_op = 'DELETE' then old.group_id else new.group_id end;
   select status into group_status
   from public.akiba_groups
@@ -729,5 +741,129 @@ $fn$;
 revoke all on function public.akiba_step_down_group_admin(uuid) from public, anon;
 grant execute on function public.akiba_step_down_group_admin(uuid) to authenticated;
 
+
+
+-- The retention worker can bypass normal membership immutability only while
+-- it is scrubbing a group that has reached its scheduled deletion date.
+create or replace function akiba_private.guard_group_membership_entitlements()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  creator_id uuid;
+  plan_row public.akiba_group_plan_entitlements%rowtype;
+  active_count integer;
+  active_admin_count integer;
+  old_role text;
+  old_status text;
+  excluded_membership_id uuid;
+begin
+  if current_setting('akiba.system_group_purge', true) = 'on' then
+    if tg_op = 'DELETE' then return old; else return new; end if;
+  end if;
+  if tg_op = 'DELETE' then
+    perform 1 from public.akiba_groups where id = old.group_id for update;
+    if old.role = 'group_creator' then
+      raise exception 'The Group Creator membership cannot be deleted';
+    end if;
+    if old.role = 'group_admin' and exists (
+      select 1 from public.akiba_withdrawal_requests r
+      where r.group_id = old.group_id
+        and r.status in ('pending_approval', 'approved', 'processing', 'failed_pending_reconciliation')
+    ) then
+      raise exception 'Group Admin memberships cannot be deleted while a withdrawal is unresolved';
+    end if;
+    return old;
+  end if;
+
+  if tg_op = 'UPDATE' then
+    old_role := old.role;
+    old_status := old.status;
+    excluded_membership_id := old.id;
+    if new.group_id is distinct from old.group_id or new.user_id is distinct from old.user_id then
+      raise exception 'A membership cannot be moved to another group or user';
+    end if;
+    if old.role = 'group_creator'
+       and (new.role is distinct from old.role
+         or new.status is distinct from old.status
+         or new.user_id is distinct from old.user_id
+         or new.group_id is distinct from old.group_id) then
+      raise exception 'The Group Creator identity cannot be changed or removed';
+    end if;
+  end if;
+
+  select g.created_by into creator_id
+  from public.akiba_groups g
+  where g.id = new.group_id
+  for update;
+  select e.* into plan_row
+  from public.akiba_group_plan_entitlements e
+  join public.akiba_groups g on g.group_plan_code = e.plan_code
+  where g.id = new.group_id and e.is_active = true;
+
+  if creator_id is null or plan_row.plan_code is null then
+    raise exception 'Group or active group plan was not found';
+  end if;
+
+  if new.role = 'group_creator' and new.user_id <> creator_id then
+    raise exception 'Only the recorded group creator may hold the Group Creator role';
+  end if;
+  if new.user_id = creator_id and new.role <> 'group_creator' then
+    raise exception 'The recorded group creator must retain the Group Creator role';
+  end if;
+
+  if tg_op = 'UPDATE'
+     and (old.role is distinct from new.role or old.status is distinct from new.status)
+     and (old.role = 'group_admin' or new.role = 'group_admin')
+     and exists (
+       select 1 from public.akiba_withdrawal_requests r
+       where r.group_id = old.group_id
+         and r.status in ('pending_approval', 'approved', 'processing', 'failed_pending_reconciliation')
+     ) then
+    raise exception 'Group Admin appointments cannot change while a withdrawal is unresolved';
+  end if;
+
+  select count(*) into active_count
+  from public.akiba_group_memberships m
+  where m.group_id = new.group_id
+    and m.status = 'active'
+    and m.id is distinct from excluded_membership_id;
+
+  select count(*) into active_admin_count
+  from public.akiba_group_memberships m
+  where m.group_id = new.group_id
+    and m.status = 'active'
+    and m.role = 'group_admin'
+    and (tg_op <> 'UPDATE' or m.id <> old.id);
+
+  if new.status = 'active' and active_count >= plan_row.max_members then
+    raise exception 'This group has reached its plan member limit of %', plan_row.max_members;
+  end if;
+
+  if new.status = 'active' and new.role = 'group_admin'
+     and active_admin_count >= plan_row.max_group_admins then
+    raise exception 'This group has reached its plan Group Admin limit of %', plan_row.max_group_admins;
+  end if;
+
+  return new;
+end;
+$fn$;
+
+
+create table if not exists public.akiba_group_deletion_records (
+  group_id uuid primary key,
+  deactivated_at timestamptz not null,
+  scheduled_delete_at timestamptz not null,
+  deleted_at timestamptz not null,
+  image_path_for_cleanup text,
+  financial_transaction_count bigint not null default 0,
+  ledger_entry_count bigint not null default 0,
+  contribution_intent_count bigint not null default 0,
+  withdrawal_count bigint not null default 0
+);
+alter table public.akiba_group_deletion_records enable row level security;
+revoke all on public.akiba_group_deletion_records from public, anon, authenticated;
 
 commit;
