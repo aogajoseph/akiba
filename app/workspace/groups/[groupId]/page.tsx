@@ -158,7 +158,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
           <nav className="ak-group-tabs" aria-label="Group workspace">
             <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}`}><DashboardOutlinedIcon />Overview</Link>
             <Link href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
-            <Link href={`/workspace/groups/${group.id}#members`}><GroupsOutlinedIcon />Members</Link>
+            <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
             <span aria-disabled="true" title="Group chat is coming soon"><ChatBubbleOutlineOutlinedIcon />Chat</span>
             <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
           </nav>
@@ -207,7 +207,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             </div>
 
             <aside className="ak-workspace-side-column">
-              <section className="ak-workspace-card ak-workspace-invite"><span className="ak-invite-symbol">＋</span><span className="ak-section-eyebrow">MAKE IT A GROUP EFFORT</span><h2>Bring your people in</h2><p>Great things happen when everyone who matters can take part. Invitations are part of the next workspace milestone.</p><button type="button" disabled>Invitations coming soon</button></section>
+              <section className="ak-workspace-card ak-workspace-invite"><span className="ak-invite-symbol">＋</span><span className="ak-section-eyebrow">MAKE IT A GROUP EFFORT</span><h2>Bring your people in</h2><p>Invite people, view the membership directory and manage group roles from the Membership area.</p><Link className="ak-membership-open-link" href={`/workspace/groups/${group.id}/membership`}>Open Membership →</Link></section>
               <section className="ak-workspace-card"><div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">AT A GLANCE</span><h2>About this group</h2></div></div><dl className="ak-workspace-details">
                 <div><dt>Category</dt><dd>{purpose}</dd></div><div><dt>Group type</dt><dd>{typeLabel}</dd></div>
                 {group.event_date && <div><dt>Event date</dt><dd>{formatDate(group.event_date)}</dd></div>}
