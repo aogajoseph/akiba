@@ -39,7 +39,7 @@ as $fn$
 begin
   if current_setting('akiba.system_group_purge', true) = 'on'
      and old.status = 'deactivated' and new.status = 'deleted' then
-    new.deleted_at := clock_timestamp();
+    new.deleted_at := greatest(clock_timestamp(), new.scheduled_delete_at);
     return new;
   end if;
   if old.status is distinct from new.status then
@@ -867,7 +867,7 @@ alter table public.akiba_group_deletion_records enable row level security;
 revoke all on public.akiba_group_deletion_records from public, anon, authenticated;
 
 
-create or replace function akiba_private.process_due_group_deletions()
+create or replace function akiba_private.process_due_group_deletions(p_cutoff timestamptz default clock_timestamp())
 returns integer
 language plpgsql
 security definer
@@ -885,7 +885,7 @@ begin
   for group_row in
     select id, deactivated_at, scheduled_delete_at, group_image_path
     from public.akiba_groups
-    where status = 'deactivated' and scheduled_delete_at <= clock_timestamp()
+    where status = 'deactivated' and scheduled_delete_at <= p_cutoff
     order by scheduled_delete_at, id
     for update skip locked
   loop
@@ -948,7 +948,7 @@ begin
   return processed_count;
 end;
 $fn$;
-revoke all on function akiba_private.process_due_group_deletions() from public, anon, authenticated;
+revoke all on function akiba_private.process_due_group_deletions(timestamptz) from public, anon, authenticated;
 
 -- Supabase projects have pg_cron enabled. Local environments without pg_cron
 -- can still run migrations; the scheduled job is registered where available.
