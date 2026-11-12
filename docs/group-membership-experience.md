@@ -68,4 +68,4 @@ Deliver the complete group membership lifecycle through the Group Membership are
 
 ## Open implementation detail
 
-The existing repository's notification delivery mechanism and operational scheduler must be inspected before choosing how invitations and six-month deletion jobs are delivered. The six-month retention interval is confirmed; implementation must use a reliable scheduled mechanism rather than depending on a user opening the app.
+The application currently has no installed transactional email provider. Addressed invitations are visible in the recipient's Akiba inbox, and the creator can share the generated recipient-bound link through WhatsApp, email or another channel. Automatic email delivery remains a provider-integration follow-up. The six-month retention interval is confirmed and is registered with pg_cron where that extension is enabled; it does not depend on a user opening the app.
