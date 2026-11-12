@@ -104,6 +104,16 @@ select public.akiba_remove_group_member(
   '00000000-0000-0000-0000-000000000299',
   true
 );
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000299'
+      and group_id = '10000000-0000-0000-0000-000000000011'
+      and event_type = 'membership_removed'
+  ) then raise exception 'A removed member was not notified of the membership change'; end if;
+end;
+$test$;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000202', true);
 do $test$
 declare message text;
@@ -238,6 +248,25 @@ begin
   ) then raise exception 'Existing members were not notified when a new member joined'; end if;
 end;
 $test$;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000306', true);
+select public.akiba_mark_group_notification_read((
+  select id from public.akiba_group_notifications
+  where user_id = '00000000-0000-0000-0000-000000000306'
+    and group_id = '10000000-0000-0000-0000-000000000013'
+    and event_type = 'invitation_accepted'
+  limit 1
+));
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000306'
+      and group_id = '10000000-0000-0000-0000-000000000013'
+      and event_type = 'invitation_accepted'
+      and read_at is not null
+  ) then raise exception 'The notification read action did not mark the recipient-owned record'; end if;
+end;
+$test$;
 
 -- Declining terminates the invitation.
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000309', true);
@@ -264,6 +293,16 @@ begin
     where token_hash = repeat('f', 64) and status = 'declined'
       and declined_by = '00000000-0000-0000-0000-000000000310'
   ) then raise exception 'Declined invitation was not terminated'; end if;
+end;
+$test$;
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_notifications
+    where user_id = '00000000-0000-0000-0000-000000000309'
+      and group_id = '10000000-0000-0000-0000-000000000014'
+      and event_type = 'invitation_declined'
+  ) then raise exception 'The inviter was not notified when an invitation was declined'; end if;
 end;
 $test$;
 
