@@ -125,9 +125,10 @@ declare
   actor_id uuid := auth.uid();
   event_id uuid := gen_random_uuid();
 begin
-  if tg_op = 'INSERT' and new.status = 'active' then
+  if tg_op = 'INSERT' and new.status = 'active'
+      and actor_id is not null and actor_id = new.user_id then
     perform akiba_private.create_group_notification(
-      new.group_id, event_id, new.user_id, null, false,
+      new.group_id, event_id, actor_id, null, false,
       'membership_joined', 'New member joined',
       'A new member joined your group.'
     );
