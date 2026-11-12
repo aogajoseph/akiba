@@ -317,7 +317,7 @@ begin
     select 1 from vault.secrets where name = 'akiba_group_image_cleanup_secret'
   ) then
     perform vault.create_secret(
-      encode(gen_random_bytes(32), 'hex'),
+      replace(gen_random_uuid()::text || gen_random_uuid()::text, '-', ''),
       'akiba_group_image_cleanup_secret',
       'Authenticates the scheduled Akiba group-image storage cleanup worker.'
     );
