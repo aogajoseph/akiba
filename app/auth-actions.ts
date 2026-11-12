@@ -9,18 +9,8 @@ async function markReturning() {
 
 import { createClient } from "@/lib/supabase/server";
 import { createClient as createAdminClient } from "@supabase/supabase-js";
+import { safeInternalPath } from "@/lib/auth/redirect";
 function field(formData: FormData, name: string) { return String(formData.get(name) ?? "").trim(); }
-
-function safeInternalPath(value: string, fallback = "/workspace") {
- const candidate = String(value ?? "").trim();
- if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\\\\")) return fallback;
- try {
-   const parsed = new URL(candidate, "https://akiba.invalid");
-   return parsed.origin === "https://akiba.invalid" ? candidate : fallback;
- } catch {
-   return fallback;
- }
-}
 
 function isValidEmail(email: string) {
  const at = email.indexOf("@");
