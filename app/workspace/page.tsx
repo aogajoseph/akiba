@@ -34,9 +34,10 @@ export default async function WorkspacePage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
 
-  const [{ data: profile, error: profileError }, { data: groups, error: groupsError }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: groups, error: groupsError }, { data: invitations }] = await Promise.all([
     supabase.from("akiba_profiles").select("username, display_name, avatar_path").eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at").order("created_at", { ascending: false }),
+    supabase.rpc("akiba_list_my_group_invitations"),
   ]);
 
   if (profileError || !profile?.display_name?.trim()) redirect("/onboarding");
@@ -74,6 +75,7 @@ export default async function WorkspacePage() {
           <span className="ak-nav-label">WORKSPACE</span>
           <Link href="/workspace" className="ak-nav-link active"><span>⌂</span>Home</Link>
           <a href="#your-groups" className="ak-nav-link"><span>♧</span>My Groups{groupRows.length > 0 && <small>{groupRows.length}</small>}</a>
+          <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations{(invitations ?? []).length > 0 && <small>{(invitations ?? []).length}</small>}</Link>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
