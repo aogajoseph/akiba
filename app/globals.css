@@ -1144,3 +1144,72 @@
 .ak-notification-row form button{padding:7px 9px;border:1px solid #eee3eb;border-radius:7px;background:#fff;color:#a52b70;font-size:9px;font-weight:700;cursor:pointer}
 .ak-notification-read{color:#9a9eae;font-size:9px;padding:7px 9px}
 @media(max-width:640px){.ak-notification-row{flex-wrap:wrap}.ak-notification-row form,.ak-notification-read{margin-left:46px}}
+
+
+/* Membership screen refinement: clearer hierarchy, calmer roster rows and touch-friendly controls. */
+.ak-membership-page-heading{align-items:flex-end;padding:22px 24px;margin:0 0 13px;border:1px solid #e9e7ef;border-radius:13px;background:linear-gradient(125deg,#fff 0%,#fffafd 100%);box-shadow:0 3px 14px #29244b06}
+.ak-membership-heading-copy{min-width:0}
+.ak-membership-heading-copy h1{margin-top:3px}
+.ak-membership-heading-copy>p{max-width:560px;line-height:1.65}
+.ak-membership-heading-meta{display:flex;align-items:center;flex-wrap:wrap;gap:8px;margin-top:13px}
+.ak-membership-status,.ak-membership-your-role{display:inline-flex;align-items:center;gap:6px;min-height:27px;padding:5px 10px;border:1px solid #eceaf1;border-radius:999px;background:#fff;color:#65647b;font-size:9px;font-weight:700}
+.ak-membership-status:before{content:"";width:6px;height:6px;border-radius:50%;background:#a2a0ae}
+.ak-membership-status.is-active{border-color:#d9eee2;background:#f5fbf7;color:#28764c}
+.ak-membership-status.is-active:before{background:#35a36a}
+.ak-membership-status.is-inactive{border-color:#eee2e7;background:#fff8fa;color:#a64b68}
+.ak-membership-your-role strong{color:#34334f}
+.ak-membership-page-heading .ak-workspace-back{margin-bottom:2px}
+.ak-membership-directory-heading{align-items:center;gap:18px}
+.ak-membership-counts{align-items:stretch;gap:8px}
+.ak-membership-stat{display:grid;align-content:center;gap:2px;min-width:100px;padding:9px 12px;border:1px solid #eeebf2;border-radius:10px;background:#fbfafc;text-align:center}
+.ak-membership-stat strong{color:#2e2d4a;font-size:17px;line-height:1.1;letter-spacing:-.4px}
+.ak-membership-stat small{color:#85849a;font-size:8px;font-weight:650}
+.ak-membership-results-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:-3px 1px 7px;color:#9290a2;font-size:9px}
+.ak-membership-results-meta span:last-child{color:#a4a1b1}
+.ak-membership-person{min-height:72px;padding:13px 12px;border:1px solid transparent;border-bottom-color:#efedf3;border-radius:9px;transition:background .16s ease,border-color .16s ease}
+.ak-membership-person:hover{border-color:#f0e7ed;background:#fffafd}
+.ak-membership-person>img,.ak-membership-person>.ak-workspace-member-fallback{width:42px;height:42px;flex-basis:42px;border-radius:13px}
+.ak-membership-person-copy{display:grid;gap:5px;min-width:0;flex:1}
+.ak-membership-person-copy>strong{display:flex;align-items:center;flex-wrap:wrap;gap:7px;color:#30304d;font-size:11px;font-weight:750}
+.ak-membership-person-copy>small{color:#9292a5;font-size:9px}
+.ak-membership-person-copy em{display:inline-flex;align-items:center;padding:3px 7px;border-radius:999px;background:#f8edf4;color:#b52c76;font-size:8px;font-style:normal;font-weight:750}
+.ak-membership-person-role{min-width:0;gap:8px}
+.ak-membership-person-role>span{display:inline-flex;align-items:center;min-height:25px;padding:5px 9px;border:1px solid #eceaf1;border-radius:999px;background:#faf9fb;color:#77758c;font-size:8px}
+.ak-membership-person-role>span.admin{border-color:#f0dce8;background:#fff5fa;color:#b52c76}
+.ak-membership-person-actions{gap:5px}
+.ak-membership-person-actions button{min-height:29px;padding:6px 9px;border-color:#e9e6ef;border-radius:7px;color:#65637b;font-size:8px;white-space:nowrap}
+.ak-membership-person-actions button:hover{border-color:#e8c6d8;background:#fff7fb;color:#a52b70}
+.ak-membership-person-actions .ak-member-danger{border-color:#f1e0e6;background:#fff;color:#b05270}
+.ak-membership-person-actions .ak-member-danger:hover{border-color:#eac1cf;background:#fff5f7;color:#a32e54}
+.ak-membership-person button:focus-visible,.ak-membership-search-form button:focus-visible{outline:3px solid #e9b5ce;outline-offset:2px}
+.ak-membership-leadership-note{display:flex;align-items:center;gap:8px;padding:11px 13px;font-size:10px}
+.ak-membership-leadership-note:before{content:"!";display:grid;place-items:center;flex:0 0 19px;width:19px;height:19px;border-radius:50%;background:#f7e8c9;color:#8a6829;font-size:10px;font-weight:850}
+.ak-membership-search-form{margin-top:2px}
+.ak-membership-search-form input{min-height:40px}
+.ak-membership-search-form button{min-height:40px;padding:0 16px}
+.ak-membership-invite-form input{min-height:41px}
+.ak-membership-invite-form .workspace-primary{min-height:42px}
+.ak-membership-share-link{gap:9px;padding:14px}
+.ak-membership-share-link>strong{font-size:11px}
+.ak-workspace-danger-card{box-shadow:0 2px 10px #a52b7008}
+@media(max-width:900px){.ak-membership-page-heading{padding:19px}.ak-membership-directory-heading{align-items:flex-start}}
+@media(max-width:640px){
+ .ak-membership-page-heading{gap:13px;padding:16px}
+ .ak-membership-heading-copy h1{font-size:24px}
+ .ak-membership-heading-meta{gap:6px;margin-top:10px}
+ .ak-membership-status,.ak-membership-your-role{min-height:25px;padding:4px 8px;font-size:8px}
+ .ak-membership-page-heading .ak-workspace-back{align-self:flex-start}
+ .ak-membership-directory-heading{gap:12px}
+ .ak-membership-counts{width:100%;justify-content:flex-start}
+ .ak-membership-stat{flex:1;min-width:0;padding:8px 9px}
+ .ak-membership-stat strong{font-size:15px}
+ .ak-membership-results-meta{align-items:flex-start;flex-direction:column;gap:3px;margin-top:0}
+ .ak-membership-person{gap:9px;padding:12px 7px}
+ .ak-membership-person-copy{flex:1 1 calc(100% - 60px)}
+ .ak-membership-person-role{width:100%;margin-left:51px}
+ .ak-membership-person-actions{justify-content:flex-start}
+ .ak-membership-person-actions button{min-height:32px;padding:7px 9px;font-size:9px}
+ .ak-membership-search-form>div{gap:6px}
+ .ak-membership-search-form input{min-width:0;flex:1 1 100%}
+ .ak-membership-search-form button{flex:1}
+}
