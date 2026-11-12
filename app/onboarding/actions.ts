@@ -2,19 +2,10 @@
 
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { safeInternalPath } from "@/lib/auth/redirect";
 
-function fail(message: string): never {
-  redirect("/onboarding?error=" + encodeURIComponent(message));
-}
-
-function safeNext(value: string) {
-  const candidate = String(value ?? "").trim();
-  if (!candidate.startsWith("/") || candidate.startsWith("//") || candidate.includes("\\\\")) return "/workspace";
-  try {
-    return new URL(candidate, "https://akiba.invalid").origin === "https://akiba.invalid" ? candidate : "/workspace";
-  } catch {
-    return "/workspace";
-  }
+function fail(message: string, next = "/workspace"): never {
+  redirect("/onboarding?error=" + encodeURIComponent(message) + "&next=" + encodeURIComponent(next));
 }
 
 export async function saveProfile(formData: FormData) {
@@ -25,16 +16,16 @@ export async function saveProfile(formData: FormData) {
   const phoneNumber = rawPhone.replace(/[\s()-]/g, "");
   const submittedAvatarPath = String(formData.get("avatar_path") ?? "").trim();
   const removeAvatar = formData.get("remove_avatar") === "yes";
-  const next = safeNext(String(formData.get("next") ?? ""));
+  const next = safeInternalPath(String(formData.get("next") ?? ""), "/workspace");
 
-  if (!/^[a-z][a-z0-9_]{2,19}$/.test(username)) fail("Choose a valid username.");
-  if (!displayName || displayName.length > 60) fail("Display name must be between 1 and 60 characters.");
-  if (bio.length > 160) fail("Your bio must be 160 characters or fewer.");
-  if (phoneNumber && !/^\+[1-9][0-9]{7,14}$/.test(phoneNumber)) fail("Enter a valid international phone number, including the country code.");
+  if (!/^[a-z][a-z0-9_]{2,19}$/.test(username)) fail("Choose a valid username.", next);
+  if (!displayName || displayName.length > 60) fail("Display name must be between 1 and 60 characters.", next);
+  if (bio.length > 160) fail("Your bio must be 160 characters or fewer.", next);
+  if (phoneNumber && !/^\+[1-9][0-9]{7,14}$/.test(phoneNumber)) fail("Enter a valid international phone number, including the country code.", next);
 
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) redirect("/login");
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent(next));
 
   let avatarPath: string | null = null;
   const { data: existing, error: existingError } = await supabase
@@ -45,12 +36,12 @@ export async function saveProfile(formData: FormData) {
 
   if (existingError) {
     console.error("Akiba profile lookup failed", { code: existingError.code });
-    fail("Unable to load your profile. Please try again.");
+    fail("Unable to load your profile. Please try again.", next);
   }
 
   if (submittedAvatarPath) {
     if (!submittedAvatarPath.startsWith(user.id + "/") || submittedAvatarPath.includes("..")) {
-      fail("That profile picture path is not valid.");
+      fail("That profile picture path is not valid.", next);
     }
     avatarPath = submittedAvatarPath;
   } else if (!removeAvatar) {
@@ -72,7 +63,7 @@ export async function saveProfile(formData: FormData) {
 
   if (result.error) {
     console.error("Akiba profile save failed", { code: result.error.code, message: result.error.message });
-    fail(result.error.code === "23505" ? "That username was just claimed. Choose another." : "Unable to save your profile. Please try again.");
+    fail(result.error.code === "23505" ? "That username was just claimed. Choose another." : "Unable to save your profile. Please try again.", next);
   }
 
   if (phoneNumber) {
@@ -83,7 +74,7 @@ export async function saveProfile(formData: FormData) {
       .maybeSingle();
     if (contactLookupError) {
       console.error("Akiba contact lookup failed", { code: contactLookupError.code });
-      fail("Your profile was saved, but we couldn't save the phone number. Please try again.");
+      fail("Your profile was saved, but we couldn't save the phone number. Please try again.", next);
     }
     const contactWrite = existingContact
       ? await supabase.from("akiba_user_contacts")
@@ -94,13 +85,13 @@ export async function saveProfile(formData: FormData) {
     const contactError = contactWrite.error;
     if (contactError) {
       console.error("Akiba contact save failed", { code: contactError.code });
-      fail("Your profile was saved, but we couldn't save the phone number. Please try again.");
+      fail("Your profile was saved, but we couldn't save the phone number. Please try again.", next);
     }
   } else {
     const { error: contactError } = await supabase.from("akiba_user_contacts").delete().eq("user_id", user.id);
     if (contactError) {
       console.error("Akiba contact removal failed", { code: contactError.code });
-      fail("Your profile was saved, but we couldn't update the phone number. Please try again.");
+      fail("Your profile was saved, but we couldn't update the phone number. Please try again.", next);
     }
   }
 
