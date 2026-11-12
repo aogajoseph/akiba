@@ -3,7 +3,7 @@ import { createClient } from "npm:@supabase/supabase-js@2";
 type CleanupJob = {
   group_id: string;
   image_path_for_cleanup: string;
-  image_cleanup_status: "pending" | "failed";
+  image_cleanup_status: "pending" | "failed" | "processing";
   image_cleanup_attempts: number;
 };
 
