@@ -8,6 +8,7 @@ import {
   leaveGroup,
   removeGroupMember,
   setGroupAdmin,
+  stepDownGroupAdmin,
   unblockGroupMember,
 } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
@@ -260,10 +261,10 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                 <section className="ak-workspace-card">
                   <span className="ak-section-eyebrow">YOUR MEMBERSHIP</span>
                   <h2>{isAdmin ? "Group Admin" : "Member"}</h2>
-                  <p>{isAdmin ? "Leaving will first change your role to ordinary Member, then end your membership." : "You can leave this group at any time."}</p>
-                  <form action={leaveGroup}>
+                  <p>{isAdmin ? "Step down to ordinary Member first. You can then leave the group separately." : "You can leave this group at any time."}</p>
+                  <form action={isAdmin ? stepDownGroupAdmin : leaveGroup}>
                     <input type="hidden" name="group_id" value={group.id} />
-                    <button type="submit" className="ak-member-danger">{isAdmin ? "Step down and leave group" : "Leave group"}</button>
+                    <button type="submit" className="ak-member-danger">{isAdmin ? "Step down as Group Admin" : "Leave group"}</button>
                   </form>
                 </section>
               )}
