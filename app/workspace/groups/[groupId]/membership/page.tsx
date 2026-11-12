@@ -89,6 +89,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
   const isAdmin = membership.role === "group_admin";
   const maxMembers = plan?.max_members ?? 100;
   const activeAdminCount = members.filter((member) => member.role === "group_admin").length;
+  const requiredAdminCount = plan?.required_group_admins ?? 3;
   const capacityReached = members.length >= maxMembers;
   let shareInviteUrl: string | null = null;
   const configuredSiteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
@@ -165,8 +166,9 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
               <section className="ak-workspace-card">
                 <div className="ak-workspace-card-heading">
                   <div><span className="ak-section-eyebrow">MEMBER DIRECTORY</span><h2>People in this group</h2><p>Everyone who is currently part of this group, including you.</p></div>
-                  <span className="ak-count-pill">{members.length} / {maxMembers}</span>
+                  <div className="ak-membership-counts"><span className="ak-count-pill">{members.length} / {maxMembers} people</span><span className="ak-count-pill">{activeAdminCount} / {requiredAdminCount} Admins</span></div>
                 </div>
+                {activeAdminCount < requiredAdminCount && group.status === "active" && <p className="ak-membership-leadership-note">Contributions remain blocked until the Group Creator appoints {requiredAdminCount} Group Admins.</p>}
                 {membersError ? <div className="ak-workspace-empty"><strong>Members couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
                   : <div className="ak-workspace-member-list">{members.map((member) => {
                     const name = member.profile?.display_name?.trim() || "Akiba member";
