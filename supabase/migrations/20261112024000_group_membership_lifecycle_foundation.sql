@@ -618,11 +618,14 @@ as $fn$
 declare
   actor_id uuid := auth.uid();
   creator_id uuid;
+  group_status text;
 begin
   if actor_id is null then raise exception 'Authentication is required'; end if;
-  select created_by into creator_id from public.akiba_groups where id = p_group_id for update;
+  select created_by, status into creator_id, group_status
+  from public.akiba_groups where id = p_group_id for update;
   if not found then raise exception 'Group not found'; end if;
   if creator_id <> actor_id then raise exception 'Only the Group Creator can unblock a member'; end if;
+  if group_status <> 'active' then raise exception 'This group is deactivated'; end if;
   delete from public.akiba_group_blocks where group_id = p_group_id and user_id = p_user_id;
   insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
   values (p_group_id, actor_id, 'member_unblocked', 'The Group Creator restored a person's ability to rejoin the group.');
