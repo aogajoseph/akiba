@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { cookies } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import {
   cancelGroupInvitation,
-  createGroupInvitation,
+  sendGroupInvitationEmailAction,
   leaveGroup,
   removeGroupMember,
   setGroupAdmin,
@@ -21,7 +20,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 
 type Props = {
   params: Promise<{ groupId: string }>;
-  searchParams: Promise<{ membershipError?: string; membershipUpdated?: string; inviteCreated?: string; inviteMode?: string; memberSearch?: string }>;
+  searchParams: Promise<{ membershipError?: string; membershipUpdated?: string; memberSearch?: string }>;
 };
 type Profile = { user_id: string; display_name: string | null; username: string; avatar_path: string | null };
 type Member = { user_id: string; role: "group_creator" | "group_admin" | "member"; joined_at: string; profile?: Profile };
@@ -98,10 +97,26 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
   const capacityReached = members.length >= maxMembers;
   let shareInviteUrl: string | null = null;
   const configuredSiteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
-  const cookieStore = await cookies();
-  const createdToken = cookieStore.get("akiba_group_invite_" + group.id)?.value;
-  if (createdToken && /^[0-9a-f]{64}$/.test(createdToken) && configuredSiteUrl) {
-    shareInviteUrl = new URL("/invitations/" + createdToken, configuredSiteUrl).toString();
+  if (configuredSiteUrl && group.status === "active" && !capacityReached) {
+    try {
+      const { randomBytes, createHash } = await import("node:crypto");
+      const token = randomBytes(32).toString("hex");
+      const tokenHash = createHash("sha256").update(token).digest("hex");
+      const { data: persistentToken, error: linkError } = await supabase.rpc("akiba_get_or_create_group_invite_link", {
+        p_group_id: group.id,
+        p_token: token,
+        p_token_hash: tokenHash,
+      });
+      if (!linkError && persistentToken && /^[0-9a-f]{64}$/.test(persistentToken)) {
+        shareInviteUrl = new URL("/invitations/" + persistentToken, configuredSiteUrl).toString();
+      } else if (linkError) {
+        console.error("Akiba group invitation link could not be loaded", { message: linkError.message });
+      }
+    } catch (linkError) {
+      console.error("Akiba group invitation link URL could not be prepared", {
+        message: linkError instanceof Error ? linkError.message : "Unknown error",
+      });
+    }
   }
 
   const userAvatarUrl = profile.avatar_path
@@ -248,17 +263,14 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                 <span className="ak-invite-symbol">＋</span>
                 <span className="ak-section-eyebrow">GROW THE GROUP</span>
                 <h2>Grow your group</h2>
-                <p>Invite a person by email or create a secure link you can share. Every active group member can invite people.</p>
                 {group.status !== "active" ? (
                   <p>This group is deactivated and cannot receive invitations.</p>
                 ) : capacityReached ? (
                   <p role="alert"><strong>Group capacity reached.</strong> You cannot invite more people until a space becomes available.</p>
                 ) : (
-                  <InviteGroupModal groupId={group.id} inviteAction={createGroupInvitation}
-                    successMode={query.inviteCreated === "1" ? (query.inviteMode === "email" ? "email" : "link") : null}
-                    shareUrl={query.inviteCreated === "1" ? shareInviteUrl : null} />
+                  <InviteGroupModal groupId={group.id} inviteAction={sendGroupInvitationEmailAction} shareUrl={shareInviteUrl} />
                 )}
-                <p className="ak-workspace-footnote">Invitations expire after 7 days. Pending invitations do not reserve a membership slot.</p>
+                <p className="ak-workspace-footnote">Email invitations expire after 7 days. Pending invitations do not reserve a membership slot.</p>
               </section>
 
               {isCreator && group.status === "active" && (
