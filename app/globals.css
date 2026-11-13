@@ -1237,3 +1237,21 @@
  .ak-membership-action-menu-content{left:0;right:auto;min-width:170px}
  .ak-membership-action-menu>summary{min-height:33px}
 }
+
+
+/* Membership invitation dialog */
+.ak-workspace-invite .ak-invite-modal-trigger{width:100%;min-height:43px;margin-top:5px}
+.ak-invite-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:18px;background:#17152b88;backdrop-filter:blur(3px)}
+.ak-invite-modal{position:relative;width:min(100%,460px);max-height:min(88vh,720px);overflow:auto;padding:28px;border:1px solid #eee8f0;border-radius:16px;background:#fff;box-shadow:0 24px 70px #15112640}
+.ak-invite-modal h2{margin:5px 34px 7px 0;color:#292744;font-size:22px;letter-spacing:-.45px}
+.ak-invite-modal>p{margin:0 0 18px;color:#777b91;font-size:11px;line-height:1.65}
+.ak-invite-modal-close{position:absolute;top:13px;right:14px;display:grid;place-items:center;width:34px;height:34px;border:1px solid #ece8ef;border-radius:9px;background:#fff;color:#6c6880;font-size:22px;cursor:pointer}
+.ak-invite-modal-close:hover{background:#faf7fa}
+.ak-invite-modal-divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:#aaa5b3;font-size:9px;font-weight:750}
+.ak-invite-modal-divider:before,.ak-invite-modal-divider:after{content:"";height:1px;flex:1;background:#efedf2}
+.ak-invite-modal-secondary{display:flex;align-items:center;justify-content:center;width:100%;min-height:42px;padding:10px 14px;border:1px solid #e8dce5;border-radius:8px;background:#fff;color:#a52b70;font-size:10px;font-weight:750;cursor:pointer}
+.ak-invite-modal-secondary:hover{background:#fff7fb}
+.ak-invite-modal form .ak-workspace-footnote{margin:8px 0 0}
+.ak-invite-modal .ak-membership-copy{margin-top:14px}
+.ak-invite-modal button:focus-visible,.ak-invite-modal input:focus-visible{outline:3px solid #e9b5ce;outline-offset:2px}
+@media(max-width:640px){.ak-invite-modal{padding:23px 18px;border-radius:13px}.ak-invite-modal h2{font-size:20px}}
