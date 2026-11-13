@@ -130,7 +130,8 @@ async function sendGroupInvitationEmail({
   groupName: string;
   invitationUrl: string;
 }) {
-  const host = process.env.SMTP_HOST;
+  // Support the existing Preview variable spelling while standardizing on SMTP_HOST.
+  const host = process.env.SMTP_HOST || process.env.SMTP_Host;
   const port = Number(process.env.SMTP_PORT || 465);
   const user = process.env.SMTP_USER;
   const password = process.env.SMTP_PASSWORD;
