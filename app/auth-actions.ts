@@ -65,7 +65,7 @@ export async function signUp(formData: FormData) {
  if(data.session) redirect(next);
  redirect("/login?message="+encodeURIComponent("We've sent you a confirmation email. Verify your email address to continue.")+"&next="+encodeURIComponent(next));
 }
-export async function signOut(){const supabase=await createClient();await supabase.auth.signOut();await markReturning();redirect("/login?message=You%20have%20signed%20out.");}
+export async function signOut(formData?: FormData){const supabase=await createClient();await supabase.auth.signOut();await markReturning();const next=safeInternalPath(formData ? field(formData,"next") : null);redirect("/login?message="+encodeURIComponent("You have signed out.")+"&next="+encodeURIComponent(next));}
 
 export async function preparePasswordReset(emailInput: string) {
  const email = String(emailInput ?? "").trim().toLowerCase();
