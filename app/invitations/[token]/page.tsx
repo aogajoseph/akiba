@@ -73,7 +73,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
         <h1>{group.name}</h1>
         <p>{group.description?.trim() || "You've been invited to join a group on Akiba."}</p>
         <p className="auth-switch">{isReusableLink ? "Shared by " : "Invited by "}{inviterName}</p>
-        {actionError && <p className="auth-error" role="alert">{actionError}</p>}
+        {actionError && !accountMismatchError && <p className="auth-error" role="alert">{actionError}</p>}
         {status !== "pending" ? (
           <div className="auth-message" role="status">
             {status === "expired" ? "This invitation has expired."
