@@ -41,7 +41,7 @@ export default function InviteGroupModal({
             {successMode ? (
               <>
                 <span className="ak-section-eyebrow">INVITATION CREATED</span>
-                <h2 id="ak-invite-modal-title">{successMode === "email" ? "Email invitation ready" : "Shareable link ready"}</h2>
+                <h2 id="ak-invite-modal-title">{successMode === "email" ? "Invitation email sent" : "Shareable link ready"}</h2>
                 {successMode === "email" ? (
                   <p>Akiba has sent the invitation to the email address you entered. The recipient must accept it using the same email address.</p>
                 ) : (
