@@ -56,6 +56,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
   const invitedEmail = invitation?.recipient_email?.trim().toLowerCase() ?? null;
   const signedInEmail = user?.email?.trim().toLowerCase() ?? null;
   const emailMismatch = !isReusableLink && Boolean(user && invitedEmail && signedInEmail !== invitedEmail);
+  const accountMismatchError = !isReusableLink && Boolean(actionError && (actionError.includes("email address this invitation") || actionError.includes("another Akiba account")));
   const inviterName = inviter?.display_name?.trim() || (inviter?.username ? "@" + inviter.username : "A group member");
 
   if (isReusableLink && user && status === "pending") {
@@ -81,20 +82,21 @@ export default async function InvitationPage({ params, searchParams }: Props) {
                   : status === "cancelled" ? "This invitation was cancelled."
                     : "This group is no longer accepting members."}
           </div>
-        ) : emailMismatch ? (
+        ) : emailMismatch || accountMismatchError ? (
           <div className="auth-form">
-            <p>This invitation was sent to <strong>{invitation?.recipient_email}</strong>, but you&apos;re currently signed in as <strong>{user?.email}</strong>.</p>
-            <p>To accept this invitation, sign out and then sign in or create an Akiba account using the invited email address.</p>
+            <p>This invitation is for <strong>{invitation?.recipient_email}</strong>{user?.email ? <>. You are currently signed in as <strong>{user.email}</strong>.</> : "."}</p>
+            <p>To join, use an Akiba account with the invited email address. You can switch accounts or create a new account with that email.</p>
             <form action={signOut}>
               <input type="hidden" name="next" value={next} />
               <button className="workspace-primary" type="submit">Switch account</button>
             </form>
+            <p className="auth-switch">New to Akiba? <Link href={"/signup?next=" + encodeURIComponent(next) + "&email=" + encodeURIComponent(invitedEmail ?? "")}>Create an account with the invited email</Link></p>
           </div>
         ) : !user ? (
           <div className="auth-form">
-            <p>Create an Akiba account or sign in to join this group.</p>
-            <Link className="workspace-primary" href={"/login?next=" + encodeURIComponent(next)}>Sign in to join</Link>
-            <p className="auth-switch">New to Akiba? <Link href={"/signup?next=" + encodeURIComponent(next)}>Create an account</Link></p>
+            <p>You’ve been invited to join this group. Use <strong>{invitedEmail}</strong> to create your account or sign in.</p>
+            <Link className="workspace-primary" href={"/signup?next=" + encodeURIComponent(next) + (invitedEmail ? "&email=" + encodeURIComponent(invitedEmail) : "")}>Create an account to join</Link>
+            <p className="auth-switch">Already have an Akiba account? <Link href={"/login?next=" + encodeURIComponent(next) + (invitedEmail ? "&email=" + encodeURIComponent(invitedEmail) : "")}>Sign in</Link></p>
           </div>
         ) : (
           <div className="auth-form">
