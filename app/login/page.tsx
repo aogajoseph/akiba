@@ -13,11 +13,11 @@ export default async function LoginPage({ searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   const params = await searchParams;
   const next = safeInternalPath(params.next, "/workspace");
-  const invitedEmail = params.email && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(params.email) ? params.email.trim().toLowerCase() : "";
+  const invitedEmail = params.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(params.email) ? params.email.trim().toLowerCase() : "";
   if (user) redirect(next);
   return <main className="auth-shell"><section className="auth-card">
     <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
-    <div className="workspace-eyebrow">{invitedEmail ? "YOUR GROUP INVITATION" : "Welcome back."}</div><h1>Sign in to join this group</h1>
+    <div className="workspace-eyebrow">{invitedEmail ? "YOUR GROUP INVITATION" : "Welcome back."}</div><h1>{invitedEmail ? "Sign in to join this group" : "Sign in to Akiba"}</h1>
     {invitedEmail && <p>Use the email address this invitation was sent to.</p>}
     {params.error && <p className="auth-error" role="alert">{params.error}</p>}
     {params.message && <p className="auth-message" role="status">{params.message}</p>}
