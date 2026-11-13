@@ -238,7 +238,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
               </section>
 
               <section className="ak-workspace-card">
-                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">INVITATIONS</span><h2>Pending Invitations</h2><p>Invitations that are still waiting to be accepted. The Group Creator can see all pending group invitations.</p></div></div>
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">INVITATIONS</span><h2>Pending Invitations</h2><p>Invitations that are still waiting to be accepted. All active group members can view them; only the inviter or Group Creator can cancel an invitation.</p></div></div>
                 {!invitations?.length ? <div className="ak-workspace-empty"><strong>No pending invitations</strong><p>New invitations will appear here until they are accepted, cancelled or expire.</p></div> :
                   <div className="ak-workspace-member-list">{(invitations as Invitation[]).map((invite) => {
                     const inviter = profilesById.get(invite.inviter_id);
