@@ -384,16 +384,25 @@ export async function sendGroupInvitationEmailAction(
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
   const invitationUrl = new URL("/invitations/" + token, siteUrl).toString();
-  const { data: invitationId, error } = await supabase.rpc("akiba_create_group_invitation", {
+  const { data: prepared, error } = await supabase.rpc("akiba_prepare_group_invitation", {
     p_group_id: groupId,
     p_token_hash: tokenHash,
     p_expires_at: expiresAt,
     p_recipient_email: email,
-    p_recipient_username: null,
   });
+  const invitation = Array.isArray(prepared) ? prepared[0] : prepared;
+  const invitationId = invitation?.invitation_id;
+  const wasResent = invitation?.was_resent === true;
   if (error || !invitationId) {
-    if (error) console.error("Akiba invitation creation failed", { code: error.code, message: error.message });
-    return { status: "error", message: "Invitation failed. Please try again" };
+    if (error) console.error("Akiba invitation preparation failed", { code: error.code, message: error.message });
+    const message = error?.message.includes("already a group member")
+      ? "This person is already a member of the group."
+      : error?.message.includes("blocked")
+        ? "This person is blocked from joining the group."
+        : error?.message.includes("capacity")
+          ? "Group capacity reached. Remove an inactive member before inviting someone else."
+          : "Invitation failed. Please try again.";
+    return { status: "error", message };
   }
 
   try {
@@ -402,15 +411,22 @@ export async function sendGroupInvitationEmailAction(
     console.error("Akiba invitation email delivery failed", {
       message: deliveryError instanceof Error ? deliveryError.message : "Unknown SMTP error",
     });
-    const { error: cancelError } = await supabase.rpc("akiba_cancel_group_invitation", {
-      p_invitation_id: invitationId,
-    });
-    if (cancelError) console.error("Akiba failed to cancel an undelivered invitation", { message: cancelError.message });
-    return { status: "error", message: "Invitation failed. Please try again" };
+    // For a newly-created invite, cancel the undelivered record. For a resend,
+    // leave the existing invitation pending; its previous token has been rotated.
+    if (!wasResent) {
+      const { error: cancelError } = await supabase.rpc("akiba_cancel_group_invitation", {
+        p_invitation_id: invitationId,
+      });
+      if (cancelError) console.error("Akiba failed to cancel an undelivered invitation", { message: cancelError.message });
+    }
+    return { status: "error", message: "Invitation failed. Please try again." };
   }
 
   revalidatePath("/workspace/groups/" + groupId + "/membership");
-  return { status: "success", message: "Invitation sent successfully" };
+  return {
+    status: "success",
+    message: wasResent ? "Invitation resent successfully." : "Invitation sent successfully.",
+  };
 }
 
 export async function acceptGroupInviteLink(formData: FormData) {
