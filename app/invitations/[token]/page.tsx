@@ -64,7 +64,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     <main className="auth-shell">
       <section className="auth-card">
         <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
-        <div className="workspace-eyebrow">{isReusableLink ? "Join this group" : "You&apos;re invited"}</div>
+        <div className="workspace-eyebrow">{isReusableLink ? "Join this group" : "You're invited"}</div>
         <h1>{group.name}</h1>
         <p>{group.description?.trim() || "You've been invited to join a group on Akiba."}</p>
         <p className="auth-switch">{isReusableLink ? "Shared by " : "Invited by "}{inviterName}</p>
