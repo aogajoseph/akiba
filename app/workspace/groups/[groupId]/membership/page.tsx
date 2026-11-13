@@ -12,8 +12,7 @@ import {
   unblockGroupMember,
 } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
-import CopyInvitationLink from "./copy-invitation-link";
-import DeactivateGroupForm from "./deactivate-group-form";
+import InviteGroupModal from "./invite-group-modal";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
@@ -22,12 +21,10 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 
 type Props = {
   params: Promise<{ groupId: string }>;
-  searchParams: Promise<{ membershipError?: string; membershipUpdated?: string; inviteCreated?: string; memberSearch?: string }>;
+  searchParams: Promise<{ membershipError?: string; membershipUpdated?: string; inviteCreated?: string; inviteMode?: string; memberSearch?: string }>;
 };
 type Profile = { user_id: string; display_name: string | null; username: string; avatar_path: string | null };
 type Member = { user_id: string; role: "group_creator" | "group_admin" | "member"; joined_at: string; profile?: Profile };
-type GroupActivity = { id: string; actor_id: string | null; event_type: string; summary: string; occurred_at: string };
-type MembershipEvent = { id: string; actor_id: string; subject_user_id: string; event_type: string; previous_role: string | null; new_role: string | null; created_at: string };
 type Invitation = {
   id: string;
   inviter_id: string;
@@ -62,16 +59,14 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
   if (groupError || !group) notFound();
   if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/workspace/groups/" + groupId + "/membership"));
 
-  const [{ data: membership }, { data: plan }, { data: memberRows, error: membersError }, { data: invitations }, { data: blocks }, { data: activityRows, error: activityError }, { data: membershipEventRows, error: membershipEventsError }] = await Promise.all([
+  const [{ data: membership }, { data: plan }, { data: memberRows, error: membersError }, { data: invitations }, { data: blocks }] = await Promise.all([
     supabase.from("akiba_group_memberships").select("role,status,joined_at").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_group_plan_entitlements").select("max_members,max_group_admins,required_group_admins").eq("plan_code", group.group_plan_code).maybeSingle(),
     supabase.from("akiba_group_memberships").select("user_id,role,joined_at").eq("group_id", group.id).eq("status", "active").order("joined_at", { ascending: true }),
-    supabase.from("akiba_group_invitations").select("id,inviter_id,recipient_email,recipient_username,status,expires_at,created_at").eq("group_id", group.id).order("created_at", { ascending: false }).limit(25),
+    supabase.from("akiba_group_invitations").select("id,inviter_id,recipient_email,recipient_username,status,expires_at,created_at").eq("group_id", group.id).eq("status", "pending").order("created_at", { ascending: false }).limit(25),
     group.created_by === user.id
       ? supabase.from("akiba_group_blocks").select("user_id,blocked_at").eq("group_id", group.id).order("blocked_at", { ascending: false })
       : Promise.resolve({ data: [], error: null }),
-    supabase.from("akiba_group_activity").select("id,actor_id,event_type,summary,occurred_at").eq("group_id", group.id).order("occurred_at", { ascending: false }).limit(30),
-    supabase.from("akiba_group_membership_events").select("id,actor_id,subject_user_id,event_type,previous_role,new_role,created_at").eq("group_id", group.id).order("created_at", { ascending: false }).limit(30),
   ]);
   if (!membership || membership.status !== "active") notFound();
 
@@ -81,8 +76,6 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     ...memberIds,
     ...(invitations ?? []).map((invite) => invite.inviter_id),
     ...(blocks ?? []).map((block) => block.user_id),
-    ...(activityRows ?? []).map((event) => event.actor_id).filter((id): id is string => Boolean(id)),
-    ...(membershipEventRows ?? []).flatMap((event) => [event.actor_id, event.subject_user_id]),
   ]));
   const { data: profiles } = relatedIds.length
     ? await supabase.from("akiba_profiles").select("user_id,display_name,username,avatar_path").in("user_id", relatedIds)
@@ -97,19 +90,6 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     ? members.filter((member) => [member.profile?.display_name, member.profile?.username, roleLabel(member.role)]
         .some((value) => value?.toLocaleLowerCase().includes(memberSearch)))
     : members;
-  const timelineEvents: GroupActivity[] = [
-    ...(activityRows ?? []).map((event) => ({ ...event, actor_id: event.actor_id ?? null })),
-    ...(membershipEventRows ?? []).map((event) => {
-      const subject = profilesById.get(event.subject_user_id);
-      const subjectName = subject?.display_name || subject?.username || "A group member";
-      const summary = event.event_type === "group_admin_appointed"
-        ? `${subjectName} was appointed as a Group Admin.`
-        : event.event_type === "group_admin_demoted"
-          ? `${subjectName} is now an ordinary Member.`
-          : "A membership role changed.";
-      return { id: event.id, actor_id: event.actor_id, event_type: event.event_type, summary, occurred_at: event.created_at };
-    }),
-  ].sort((a, b) => new Date(b.occurred_at).getTime() - new Date(a.occurred_at).getTime()).slice(0, 30);
   const isCreator = membership.role === "group_creator";
   const isAdmin = membership.role === "group_admin";
   const maxMembers = plan?.max_members ?? 100;
@@ -243,21 +223,8 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
               </section>
 
               <section className="ak-workspace-card">
-                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">GROUP ACTIVITY</span><h2>Recent activity</h2><p>A shared record of membership and leadership changes.</p></div></div>
-                {activityError || membershipEventsError ? <div className="ak-workspace-empty"><strong>Activity couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
-                  : !timelineEvents.length ? <div className="ak-workspace-empty"><strong>No group activity yet</strong><p>Membership events will appear here as they happen.</p></div>
-                  : <div className="ak-workspace-member-list">{timelineEvents.map((event) => {
-                    const actor = event.actor_id ? profilesById.get(event.actor_id) : null;
-                    return <div className="ak-workspace-member" key={event.id}>
-                      <span className="ak-workspace-member-fallback">•</span>
-                      <div><strong>{event.summary}</strong><small>{actor?.display_name || actor?.username || "Akiba"} · {formatDate(event.occurred_at)}</small></div>
-                    </div>;
-                  })}</div>}
-              </section>
-
-              <section className="ak-workspace-card">
-                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">INVITATIONS</span><h2>Your invitations</h2><p>Invitations you created and their current status. The Group Creator can see all group invitations.</p></div></div>
-                {!invitations?.length ? <div className="ak-workspace-empty"><strong>No invitations yet</strong><p>Invitations created by group members will appear here.</p></div> :
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">INVITATIONS</span><h2>Pending Invitations</h2><p>Invitations that are still waiting to be accepted. The Group Creator can see all pending group invitations.</p></div></div>
+                {!invitations?.length ? <div className="ak-workspace-empty"><strong>No pending invitations</strong><p>New invitations will appear here until they are accepted, cancelled or expire.</p></div> :
                   <div className="ak-workspace-member-list">{(invitations as Invitation[]).map((invite) => {
                     const inviter = profilesById.get(invite.inviter_id);
                     const recipient = invite.recipient_username ? "@" + invite.recipient_username : invite.recipient_email || "Shareable invitation link";
@@ -265,8 +232,8 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                     return <div className="ak-workspace-member" key={invite.id}>
                       <span className="ak-workspace-member-fallback">↗</span>
                       <div><strong>{recipient}</strong><small>Invited by {inviter?.display_name || inviter?.username || "Group member"} · {formatDate(invite.created_at)}</small></div>
-                      <div className="ak-workspace-member-role"><span>{invite.status.replaceAll("_", " ")}</span>
-                        {invite.status === "pending" && canCancel && group.status === "active" && <form action={cancelGroupInvitation}>
+                      <div className="ak-workspace-member-role"><span>Pending</span>
+                        {canCancel && group.status === "active" && <form action={cancelGroupInvitation}>
                           <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="invitation_id" value={invite.id} />
                           <button type="submit" className="ak-member-danger">Cancel</button>
                         </form>}
@@ -278,24 +245,19 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
 
             <aside className="ak-workspace-side-column">
               <section className="ak-workspace-card ak-workspace-invite">
-                <span className="ak-invite-symbol">＋</span><span className="ak-section-eyebrow">GROW THE GROUP</span><h2>Invite someone</h2>
-                {capacityReached && group.status === "active" ? (
-                  <p role="alert"><strong>Group capacity reached.</strong> You cannot invite more people until a space becomes available.</p>
-                ) : group.status !== "active" ? (
+                <span className="ak-invite-symbol">＋</span>
+                <span className="ak-section-eyebrow">GROW THE GROUP</span>
+                <h2>Invite someone</h2>
+                <p>Invite a person by email or create a secure link you can share. Every active group member can invite people.</p>
+                {group.status !== "active" ? (
                   <p>This group is deactivated and cannot receive invitations.</p>
+                ) : capacityReached ? (
+                  <p role="alert"><strong>Group capacity reached.</strong> You cannot invite more people until a space becomes available.</p>
                 ) : (
-                  <>
-                    <p>Every active group member can invite people. Enter a username or email to bind the invitation to that recipient, or leave both blank for a shareable link. Share the generated link with them; existing Akiba users will also see addressed invitations in their inbox.</p>
-                    <form action={createGroupInvitation} className="ak-membership-invite-form">
-                      <input type="hidden" name="group_id" value={group.id} />
-                      <label>Akiba username <input name="recipient_username" placeholder="username" autoComplete="off" /></label>
-                      <div className="ak-membership-or">or</div>
-                      <label>Email address <input name="recipient_email" type="email" placeholder="name@example.com" autoComplete="email" /></label>
-                      <button type="submit" className="workspace-primary">Create invitation</button>
-                    </form>
-                  </>
+                  <InviteGroupModal groupId={group.id} inviteAction={createGroupInvitation}
+                    successMode={query.inviteCreated === "1" ? (query.inviteMode === "email" ? "email" : "link") : null}
+                    shareUrl={query.inviteCreated === "1" ? shareInviteUrl : null} />
                 )}
-                {query.inviteCreated === "1" && shareInviteUrl && <div className="ak-membership-share-link"><strong>Invitation created</strong><p>Share this secure link with the intended recipient.</p><CopyInvitationLink url={shareInviteUrl} /></div>}
                 <p className="ak-workspace-footnote">Invitations expire after 7 days. Pending invitations do not reserve a membership slot.</p>
               </section>
 
@@ -326,15 +288,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                 </section>
               )}
 
-              {isCreator && group.status === "active" && (
-                <section className="ak-workspace-card ak-workspace-danger-card">
-                  <span className="ak-section-eyebrow">GROUP LIFECYCLE</span>
-                  <h2>Deactivate group</h2>
-                  <p>When the group&apos;s purpose is fulfilled, deactivate it. Invitations, membership changes and new financial activity will stop immediately. The six-month retention period starts at deactivation.</p>
-                  <DeactivateGroupForm groupId={group.id} />
-                  <p className="ak-workspace-footnote">The Group Creator cannot leave or transfer this role.</p>
-                </section>
-              )}
+}
             </aside>
           </div>
           <footer className="ak-footer"><span>Akiba · A Globe Software product</span><span>Do more, together.</span></footer>
