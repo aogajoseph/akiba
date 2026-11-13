@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
 import CopyInvitationLink from "./copy-invitation-link";
 
 type InviteAction = (formData: FormData) => void | Promise<void>;
@@ -68,7 +67,7 @@ export default function InviteGroupModal({
                 <form action={inviteAction}>
                   <input type="hidden" name="group_id" value={groupId} />
                   <input type="hidden" name="invite_mode" value="link" />
-                  <button type="submit" className="ak-invite-modal-secondary">Create and copy invite link</button>
+                  <button type="submit" className="ak-invite-modal-secondary">Create invite link</button>
                   <p className="ak-workspace-footnote">The link is single-use and expires after 7 days.</p>
                 </form>
               </>
