@@ -1,22 +1,30 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import CopyInvitationLink from "./copy-invitation-link";
+import type { GroupInvitationEmailState } from "@/app/workspace/actions";
 
-type InviteAction = (formData: FormData) => void | Promise<void>;
+const initialState: GroupInvitationEmailState = { status: "idle", message: "" };
 
 export default function InviteGroupModal({
   groupId,
   inviteAction,
-  successMode,
   shareUrl,
 }: {
   groupId: string;
-  inviteAction: InviteAction;
-  successMode: "email" | "link" | null;
+  inviteAction: (
+    previousState: GroupInvitationEmailState,
+    formData: FormData,
+  ) => Promise<GroupInvitationEmailState>;
   shareUrl: string | null;
 }) {
-  const [open, setOpen] = useState(Boolean(successMode));
+  const [open, setOpen] = useState(false);
+  const [state, formAction, pending] = useActionState(inviteAction, initialState);
+  const formRef = useRef<HTMLFormElement>(null);
+
+  useEffect(() => {
+    if (state.status === "success") formRef.current?.reset();
+  }, [state]);
 
   useEffect(() => {
     if (!open) return;
@@ -38,39 +46,26 @@ export default function InviteGroupModal({
         }}>
           <section className="ak-invite-modal" role="dialog" aria-modal="true" aria-labelledby="ak-invite-modal-title">
             <button type="button" className="ak-invite-modal-close" aria-label="Close invitation dialog" onClick={() => setOpen(false)}>×</button>
-            {successMode ? (
-              <>
-                <span className="ak-section-eyebrow">INVITATION CREATED</span>
-                <h2 id="ak-invite-modal-title">{successMode === "email" ? "Invitation email sent" : "Shareable link ready"}</h2>
-                {successMode === "email" ? (
-                  <p>Akiba has sent the invitation to the email address you entered. The recipient must accept it using the same email address.</p>
-                ) : (
-                  <p>Your secure invitation link is ready. Share it with the person you want to invite.</p>
-                )}
-                {shareUrl ? <CopyInvitationLink url={shareUrl} /> : <p role="alert">The invitation was created, but its link could not be prepared. Refresh the page and try again.</p>}
-                <button type="button" className="ak-invite-modal-secondary" onClick={() => setOpen(false)}>Done</button>
-              </>
-            ) : (
-              <>
-                <span className="ak-section-eyebrow">GROW THE GROUP</span>
-                <h2 id="ak-invite-modal-title">Invite someone</h2>
-                <p>Choose how you want to invite them.</p>
-                <form action={inviteAction} className="ak-membership-invite-form">
-                  <input type="hidden" name="group_id" value={groupId} />
-                  <input type="hidden" name="invite_mode" value="email" />
-                  <label>Email address
-                    <input name="recipient_email" type="email" placeholder="name@example.com" autoComplete="email" required />
-                  </label>
-                  <button type="submit" className="workspace-primary">Create email invitation</button>
-                </form>
-                <div className="ak-invite-modal-divider"><span>OR</span></div>
-                <form action={inviteAction}>
-                  <input type="hidden" name="group_id" value={groupId} />
-                  <input type="hidden" name="invite_mode" value="link" />
-                  <button type="submit" className="ak-invite-modal-secondary">Create invite link</button>
-                  <p className="ak-workspace-footnote">The link is single-use and expires after 7 days.</p>
-                </form>
-              </>
+            <span className="ak-section-eyebrow">GROW THE GROUP</span>
+            <h2 id="ak-invite-modal-title">Invite someone</h2>
+            <form ref={formRef} action={formAction} className="ak-membership-invite-form">
+              <input type="hidden" name="group_id" value={groupId} />
+              <label htmlFor="ak-invite-recipient-email">Email address
+                <input id="ak-invite-recipient-email" name="recipient_email" type="email" placeholder="name@example.com" autoComplete="email" required />
+              </label>
+              <button type="submit" className="workspace-primary" disabled={pending}>
+                {pending ? "Sending Invitation..." : "Send Invitation"}
+              </button>
+            </form>
+            {state.status !== "idle" && (
+              <p className={state.status === "success" ? "ak-invite-toast is-success" : "ak-invite-toast is-error"}
+                role={state.status === "error" ? "alert" : "status"}>
+                {state.message}
+              </p>
+            )}
+            <div className="ak-invite-modal-divider"><span>OR SHARE A GROUP LINK</span></div>
+            {shareUrl ? <CopyInvitationLink url={shareUrl} /> : (
+              <p role="alert">The group invitation link is temporarily unavailable. Please refresh and try again.</p>
             )}
           </section>
         </div>
