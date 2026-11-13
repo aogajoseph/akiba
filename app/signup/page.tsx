@@ -11,7 +11,7 @@ export default async function SignupPage({ searchParams }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   const params = await searchParams;
   const next = safeInternalPath(params.next, "/onboarding");
-  const invitedEmail = params.email && /^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(params.email)
+  const invitedEmail = params.email && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(params.email)
     ? params.email.trim().toLowerCase()
     : "";
   if (user) redirect(next);
