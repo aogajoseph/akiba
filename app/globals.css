@@ -1255,3 +1255,18 @@
 .ak-invite-modal .ak-membership-copy{margin-top:14px}
 .ak-invite-modal button:focus-visible,.ak-invite-modal input:focus-visible{outline:3px solid #e9b5ce;outline-offset:2px}
 @media(max-width:640px){.ak-invite-modal{padding:23px 18px;border-radius:13px}.ak-invite-modal h2{font-size:20px}}
+
+
+.ak-invite-toast{margin:10px 0 0!important;padding:10px 12px;border-radius:8px;font-size:11px!important;line-height:1.45!important}
+.ak-invite-toast.is-success{background:#edf8f1;color:#176b50}
+.ak-invite-toast.is-error{background:#fff0ef;color:#a8322b}
+.ak-membership-copy{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;align-items:center}
+.ak-membership-copy input{min-width:0;width:100%;padding:10px;border:1px solid #e5e7ed;border-radius:7px;background:#fafbfc;color:#50566d;font-size:10px}
+.ak-membership-copy button{padding:10px 13px;border:0;border-radius:7px;background:#176b50;color:#fff;font-size:10px;font-weight:700;cursor:pointer}
+.ak-membership-copy small{grid-column:1/-1;color:#176b50;font-size:10px}
+.ak-invite-modal .ak-membership-invite-form{display:grid;gap:12px}
+.ak-invite-modal .ak-membership-invite-form label{display:grid;gap:6px;color:#555b76;font-size:11px;font-weight:650}
+.ak-invite-modal .ak-membership-invite-form input{width:100%;min-width:0;padding:11px 12px;border:1px solid #dfe2e9;border-radius:8px;background:#fff;color:#303451;font-size:12px}
+.ak-invite-modal .ak-membership-invite-form button{width:100%;min-height:42px}
+.ak-invite-modal .ak-membership-invite-form button:disabled{opacity:.65;cursor:wait}
+.ak-invite-modal .ak-invite-modal-divider{margin:18px 0 12px}
