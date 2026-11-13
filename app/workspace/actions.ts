@@ -119,8 +119,12 @@ export async function createGroupInvitation(formData: FormData) {
   const groupId = String(formData.get("group_id") ?? "");
   const email = String(formData.get("recipient_email") ?? "").trim().toLowerCase();
   const username = String(formData.get("recipient_username") ?? "").trim().toLowerCase();
-  if (!/^[0-9a-f-]{36}$/i.test(groupId) || (email && username)) {
-    membershipRedirect(groupId, "Enter either an email address or an Akiba username.");
+  const inviteMode = String(formData.get("invite_mode") ?? (email || username ? "email" : "link"));
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || (email && username) ||
+      !["email", "link"].includes(inviteMode) ||
+      (inviteMode === "email" && !email && !username) ||
+      (inviteMode === "link" && (email || username))) {
+    membershipRedirect(groupId, "Enter a valid email address or create a shareable invitation link.");
   }
 
   const siteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
@@ -164,7 +168,7 @@ export async function createGroupInvitation(formData: FormData) {
     path: "/workspace/groups/" + groupId + "/membership",
     maxAge: 5 * 60,
   });
-  redirect("/workspace/groups/" + groupId + "/membership?inviteCreated=1");
+  redirect("/workspace/groups/" + groupId + "/membership?inviteCreated=1&inviteMode=" + inviteMode);
 }
 
 export async function acceptGroupInvitation(formData: FormData) {
