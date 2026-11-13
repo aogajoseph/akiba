@@ -355,7 +355,7 @@ export async function sendGroupInvitationEmailAction(
   const email = String(formData.get("recipient_email") ?? "").trim().toLowerCase();
   if (!/^[0-9a-f-]{36}$/i.test(groupId) ||
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { status: "error", message: "Invitation failed. Please try again" };
+    return { status: "error", message: "Please enter a valid email address." };
   }
 
   let siteUrl: URL;
@@ -367,17 +367,17 @@ export async function sendGroupInvitationEmailAction(
     siteUrl = new URL(configuredUrl);
     if (siteUrl.protocol !== "https:" && siteUrl.hostname !== "localhost") throw new Error("Invalid site URL");
   } catch {
-    return { status: "error", message: "Invitation failed. Please try again" };
+    return { status: "error", message: "Invitations are temporarily unavailable. Please try again later." };
   }
 
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) return { status: "error", message: "Invitation failed. Please try again" };
+  if (authError || !user) return { status: "error", message: "Please sign in again before sending an invitation." };
 
   const { data: group } = await supabase.from("akiba_groups")
     .select("name,status").eq("id", groupId).maybeSingle();
   if (!group?.name || group.status !== "active") {
-    return { status: "error", message: "Invitation failed. Please try again" };
+    return { status: "error", message: "This group is not currently accepting invitations." };
   }
 
   const token = randomBytes(32).toString("hex");
@@ -397,7 +397,9 @@ export async function sendGroupInvitationEmailAction(
     if (error) console.error("Akiba invitation preparation failed", { code: error.code, message: error.message });
     const message = error?.message.includes("already a group member")
       ? "This person is already a member of the group."
-      : error?.message.includes("blocked")
+      : error?.message.toLowerCase().includes("pending invitation") || error?.message.toLowerCase().includes("already invited")
+        ? "This person has already been invited. The group is waiting for their response."
+        : error?.message.includes("blocked")
         ? "This person is blocked from joining the group."
         : error?.message.includes("capacity")
           ? "Group capacity reached. Remove an inactive member before inviting someone else."
@@ -419,7 +421,9 @@ export async function sendGroupInvitationEmailAction(
       });
       if (cancelError) console.error("Akiba failed to cancel an undelivered invitation", { message: cancelError.message });
     }
-    return { status: "error", message: "Invitation failed. Please try again." };
+    return { status: "error", message: wasResent
+      ? "The invitation is still pending, but the new email could not be sent. Please try again."
+      : "The invitation could not be sent. Please try again." };
   }
 
   revalidatePath("/workspace/groups/" + groupId + "/membership");
