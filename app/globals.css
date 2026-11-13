@@ -606,7 +606,7 @@
 .ak-invite-symbol{display:grid;place-items:center;width:37px;height:37px;margin-bottom:13px;border-radius:11px;background:#fbe7f1;color:#c52a78;font-size:22px}
 .ak-workspace-invite h2{margin-top:5px}
 .ak-workspace-invite p{margin:8px 0 15px;color:#7f879f;font-size:10px;line-height:1.7}
-.ak-workspace-invite button{width:100%;padding:10px;border:1px solid #eee3eb;border-radius:8px;background:#fff;color:#a2a0ad;font-size:10px;font-weight:700;cursor:not-allowed}
+.ak-workspace-invite .ak-invite-modal-trigger{width:100%;min-height:43px;margin-top:5px;padding:11px 14px;border:1px solid #176b50;border-radius:8px;background:#176b50;color:#fff;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;transition:background .15s ease,box-shadow .15s ease}.ak-workspace-invite .ak-invite-modal-trigger:hover{background:#10543e;box-shadow:0 3px 10px #176b5026}.ak-workspace-invite .ak-invite-modal-trigger:focus-visible{outline:3px solid #9bcdb5;outline-offset:3px}
 .ak-workspace-details{display:grid;gap:0;margin:0}
 .ak-workspace-details>div{display:flex;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid #f0f1f5}
 .ak-workspace-details>div:first-child{border-top:0}
