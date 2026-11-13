@@ -22,7 +22,7 @@ function getPasswordStrength(password: string) {
   return { level: 1, label: "Weak" };
 }
 
-export default function SignupForm({ next }: { next: string }) {
+export default function SignupForm({ next, invitedEmail = "" }: { next: string; invitedEmail?: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -83,7 +83,7 @@ export default function SignupForm({ next }: { next: string }) {
         // with no identities for an already-registered email.
         setError("An account with this email already exists. Please sign in.");
       } else {
-        setMessage("Success! Click the link we sent to your email address to activate your Akiba account.");
+        setMessage(`Account details received. Check ${email} for the confirmation email. After confirming, you’ll return to your group invitation.`);
       }
     } catch (error) {
       console.error("Akiba signup request failed unexpectedly", {
@@ -102,7 +102,8 @@ export default function SignupForm({ next }: { next: string }) {
     {error && <p className="auth-error" role="alert">{error}</p>}
     {message && <p className="auth-message" role="status">{message}</p>}
     <form onSubmit={submit} className="auth-form">
-      <label>Email address<input name="email" type="email" autoComplete="email" required /></label>
+      <label>Email address<input name="email" type="email" autoComplete="email" defaultValue={invitedEmail} readOnly={Boolean(invitedEmail)} required /></label>
+      {invitedEmail && <small>This is the email address the invitation was sent to. Use this address to join the group.</small>}
       <label>Password
         <PasswordInput name="password" autoComplete="new-password" required minLength={6} onValueChange={setPassword} />
         <small>Use at least 6 characters.</small>
