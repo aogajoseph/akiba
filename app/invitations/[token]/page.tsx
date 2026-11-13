@@ -3,7 +3,7 @@ import { createHash } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { acceptGroupInviteLink, acceptGroupInvitation, declineGroupInvitation } from "@/app/workspace/actions";
-import { signOut } from "@/app/auth-actions";
+import { switchToInvitationAccount } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
 
 type Props = {
@@ -86,11 +86,11 @@ export default async function InvitationPage({ params, searchParams }: Props) {
           <div className="auth-form">
             <p>This invitation is for <strong>{invitation?.recipient_email}</strong>{user?.email ? <>. You are currently signed in as <strong>{user.email}</strong>.</> : "."}</p>
             <p>To join, use an Akiba account with the invited email address. You can switch accounts or create a new account with that email.</p>
-            <form action={signOut}>
-              <input type="hidden" name="next" value={next} />
-              <button className="workspace-primary" type="submit">Switch account</button>
+            <form action={switchToInvitationAccount}>
+              <input type="hidden" name="next" value={"/signup?next=" + encodeURIComponent(next) + "&email=" + encodeURIComponent(invitedEmail ?? "")} />
+              <button className="workspace-primary" type="submit">Continue with invited email</button>
             </form>
-            <p className="auth-switch">New to Akiba? <Link href={"/signup?next=" + encodeURIComponent(next) + "&email=" + encodeURIComponent(invitedEmail ?? "")}>Create an account with the invited email</Link></p>
+            <p className="auth-switch">If you already have an account with the invited email, choose <strong>Sign in</strong> on the next screen.</p>
           </div>
         ) : !user ? (
           <div className="auth-form">
