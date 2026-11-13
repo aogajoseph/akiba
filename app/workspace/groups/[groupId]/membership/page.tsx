@@ -247,7 +247,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
               <section className="ak-workspace-card ak-workspace-invite">
                 <span className="ak-invite-symbol">＋</span>
                 <span className="ak-section-eyebrow">GROW THE GROUP</span>
-                <h2>Invite someone</h2>
+                <h2>Grow your group</h2>
                 <p>Invite a person by email or create a secure link you can share. Every active group member can invite people.</p>
                 {group.status !== "active" ? (
                   <p>This group is deactivated and cannot receive invitations.</p>
