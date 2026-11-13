@@ -353,7 +353,7 @@ export async function sendGroupInvitationEmailAction(
   const groupId = String(formData.get("group_id") ?? "");
   const email = String(formData.get("recipient_email") ?? "").trim().toLowerCase();
   if (!/^[0-9a-f-]{36}$/i.test(groupId) ||
-      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return { status: "error", message: "Invitation failed. Please try again" };
   }
 
