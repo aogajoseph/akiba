@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/lib/supabase/server";
+import nodemailer from "nodemailer";
 
 const allowedTypes: Record<string, string[]> = {
   event: ["birthday", "wedding", "graduation", "funeral_bereavement", "party_celebration", "trip_vacation", "community_event", "meeting", "fundraiser", "other_event"],
@@ -115,6 +116,54 @@ function membershipRedirect(groupId: string, message: string, key = "membershipE
   redirect("/workspace/groups/" + groupId + "/membership?" + key + "=" + encodeURIComponent(message));
 }
 
+function escapeEmailHtml(value: string) {
+  return value.replace(/[&<>"']/g, (character) => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+  })[character] ?? character);
+}
+
+async function sendGroupInvitationEmail({
+  recipient,
+  groupName,
+  invitationUrl,
+}: {
+  recipient: string;
+  groupName: string;
+  invitationUrl: string;
+}) {
+  const host = process.env.SMTP_HOST;
+  const port = Number(process.env.SMTP_PORT || 465);
+  const user = process.env.SMTP_USER;
+  const password = process.env.SMTP_PASSWORD;
+  const fromEmail = process.env.SMTP_FROM_EMAIL || user;
+  const fromName = process.env.SMTP_FROM_NAME || "Akiba";
+
+  if (!host || !user || !password || !fromEmail || !Number.isInteger(port) || port < 1 || port > 65535) {
+    throw new Error("SMTP is not fully configured");
+  }
+
+  const transporter = nodemailer.createTransport({
+    host,
+    port,
+    secure: port === 465,
+    auth: { user, pass: password },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 20_000,
+  });
+
+  const safeGroupName = escapeEmailHtml(groupName);
+  const safeFromName = fromName.replace(/[\r\n"]/g, "").trim() || "Akiba";
+  await transporter.sendMail({
+    from: { name: safeFromName, address: fromEmail },
+    to: recipient,
+    subject: "You're invited to join " + groupName + " on Akiba",
+    text: "You're invited to join the group \"" + groupName + "\" on Akiba.\n\nAccept your invitation using this secure link:\n" + invitationUrl + "\n\nThis link can be used once and expires in 7 days. If you weren't expecting this invitation, you can ignore this email.",
+    html: `<!doctype html><html><body style="margin:0;padding:32px 16px;background:#f6f7f5;font-family:Arial,sans-serif;color:#20251f"><main style="max-width:520px;margin:0 auto;padding:32px;background:#fff;border:1px solid #e6e9e4;border-radius:16px"><p style="font-size:13px;letter-spacing:1.5px;color:#66705f;font-weight:700">AKIBA GROUP INVITATION</p><h1 style="font-size:24px;line-height:1.3">You're invited to join ${safeGroupName}</h1><p>Someone has invited you to join their group on Akiba.</p><p style="margin:28px 0"><a href="${escapeEmailHtml(invitationUrl)}" style="display:inline-block;padding:13px 22px;border-radius:8px;background:#245c43;color:#fff;text-decoration:none;font-weight:700">View invitation</a></p><p style="font-size:13px;color:#687168">This secure link can be used once and expires in 7 days. If you weren't expecting this invitation, you can ignore this email.</p></main></body></html>`,
+  });
+  await transporter.close();
+}
+
 export async function createGroupInvitation(formData: FormData) {
   const groupId = String(formData.get("group_id") ?? "");
   const email = String(formData.get("recipient_email") ?? "").trim().toLowerCase();
@@ -122,42 +171,72 @@ export async function createGroupInvitation(formData: FormData) {
   const inviteMode = String(formData.get("invite_mode") ?? (email || username ? "email" : "link"));
   if (!/^[0-9a-f-]{36}$/i.test(groupId) || (email && username) ||
       !["email", "link"].includes(inviteMode) ||
-      (inviteMode === "email" && !email && !username) ||
+      (inviteMode === "email" && !email) ||
       (inviteMode === "link" && (email || username))) {
     membershipRedirect(groupId, "Enter a valid email address or create a shareable invitation link.");
   }
 
-  const siteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
-  if (!siteUrl) membershipRedirect(groupId, "Invitations are temporarily unavailable.");
+  let siteUrl: URL;
+  try {
+    const configuredUrl = process.env.VERCEL_URL
+      ? "https://" + process.env.VERCEL_URL
+      : process.env.NEXT_PUBLIC_SITE_URL;
+    if (!configuredUrl) throw new Error("Missing site URL");
+    siteUrl = new URL(configuredUrl);
+    if (siteUrl.protocol !== "https:" && siteUrl.hostname !== "localhost") throw new Error("Invalid site URL");
+  } catch {
+    membershipRedirect(groupId, "Invitations are temporarily unavailable.");
+  }
+
   const token = randomBytes(32).toString("hex");
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const invitationUrl = new URL("/invitations/" + token, siteUrl).toString();
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/groups/" + groupId + "/membership"));
 
-  const { error } = await supabase.rpc("akiba_create_group_invitation", {
+  const { data: group, error: groupError } = await supabase.from("akiba_groups")
+    .select("name").eq("id", groupId).maybeSingle();
+  if (groupError || !group?.name) membershipRedirect(groupId, "The group could not be found.");
+
+  const { data: invitationId, error } = await supabase.rpc("akiba_create_group_invitation", {
     p_group_id: groupId,
     p_token_hash: tokenHash,
     p_expires_at: expiresAt,
     p_recipient_email: email || null,
     p_recipient_username: username || null,
   });
-  if (error) {
-    const message = error.message.includes("Group capacity reached")
+  if (error || !invitationId) {
+    const message = error?.message.includes("Group capacity reached")
       ? "Group capacity reached."
-      : error.code === "23505"
+      : error?.code === "23505"
         ? "A pending invitation already exists for this person."
-        : error.message.includes("already a group member")
+        : error?.message.includes("already a group member")
         ? "This person is already a group member."
-        : error.message.includes("blocked from joining")
+        : error?.message.includes("blocked from joining")
           ? "This person is blocked from joining the group."
-          : error.message.includes("already exists")
+          : error?.message.includes("already exists")
             ? "A pending invitation already exists for this person."
-            : error.message.includes("No Akiba account")
+            : error?.message.includes("No Akiba account")
               ? "No Akiba account was found for that username."
               : "The invitation could not be created. Please try again.";
     membershipRedirect(groupId, message);
+  }
+
+  if (inviteMode === "email") {
+    try {
+      await sendGroupInvitationEmail({ recipient: email, groupName: group.name, invitationUrl });
+    } catch (deliveryError) {
+      console.error("Akiba invitation email delivery failed", {
+        message: deliveryError instanceof Error ? deliveryError.message : "Unknown SMTP error",
+      });
+      const { error: cancelError } = await supabase.rpc("akiba_cancel_group_invitation", {
+        p_invitation_id: invitationId,
+      });
+      if (cancelError) console.error("Akiba failed to cancel an undelivered invitation", { message: cancelError.message });
+      membershipRedirect(groupId, "The invitation email could not be sent. Check the SMTP settings and try again.");
+    }
   }
 
   const store = await cookies();
