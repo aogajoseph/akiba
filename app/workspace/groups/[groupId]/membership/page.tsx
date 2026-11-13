@@ -288,7 +288,6 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                 </section>
               )}
 
-}
             </aside>
           </div>
           <footer className="ak-footer"><span>Akiba · A Globe Software product</span><span>Do more, together.</span></footer>
