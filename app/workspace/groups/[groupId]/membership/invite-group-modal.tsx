@@ -43,7 +43,7 @@ export default function InviteGroupModal({
                 <span className="ak-section-eyebrow">INVITATION CREATED</span>
                 <h2 id="ak-invite-modal-title">{successMode === "email" ? "Email invitation ready" : "Shareable link ready"}</h2>
                 {successMode === "email" ? (
-                  <p>The invitation is addressed to the email you entered. Akiba does not currently send outbound invitation emails, so share the secure link below with the recipient. They must join using the same email address.</p>
+                  <p>Akiba has sent the invitation to the email address you entered. The recipient must accept it using the same email address.</p>
                 ) : (
                   <p>Your secure invitation link is ready. Share it with the person you want to invite.</p>
                 )}
