@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { createHash } from "node:crypto";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-import { acceptGroupInvitation, declineGroupInvitation } from "@/app/workspace/actions";
+import { acceptGroupInviteLink, acceptGroupInvitation, declineGroupInvitation } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
 
 type Props = {
@@ -28,33 +28,46 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const hash = createHash("sha256").update(token).digest("hex");
-  const { data: invitation } = await admin.from("akiba_group_invitations")
-    .select("group_id,inviter_id,status,expires_at")
-    .eq("token_hash", hash)
-    .maybeSingle();
-  if (!invitation) notFound();
+  const [{ data: reusableLink }, { data: invitation }] = await Promise.all([
+    admin.from("akiba_group_invite_links").select("group_id,created_by").eq("token_hash", hash).maybeSingle(),
+    admin.from("akiba_group_invitations").select("group_id,inviter_id,status,expires_at").eq("token_hash", hash).maybeSingle(),
+  ]);
 
+  const isReusableLink = Boolean(reusableLink);
+  const groupId = reusableLink?.group_id ?? invitation?.group_id;
+  if (!groupId) notFound();
+
+  const inviterId = reusableLink?.created_by ?? invitation?.inviter_id;
   const [{ data: group }, { data: inviter }, { data: { user } }] = await Promise.all([
-    admin.from("akiba_groups").select("id,name,description,status").eq("id", invitation.group_id).maybeSingle(),
-    admin.from("akiba_profiles").select("display_name,username").eq("user_id", invitation.inviter_id).maybeSingle(),
+    admin.from("akiba_groups").select("id,name,description,status").eq("id", groupId).maybeSingle(),
+    inviterId
+      ? admin.from("akiba_profiles").select("display_name,username").eq("user_id", inviterId).maybeSingle()
+      : Promise.resolve({ data: null }),
     (await createClient()).auth.getUser(),
   ]);
   if (!group) notFound();
 
-  // Expiry is enforced by the database when an invitation is accepted.
-  // Avoid deriving time-sensitive state during render.
-  const status = invitation.status !== "pending" ? invitation.status : group.status !== "active" ? "unavailable" : "pending";
+  const status = isReusableLink
+    ? group.status === "active" ? "pending" : "unavailable"
+    : invitation!.status !== "pending" ? invitation!.status : group.status !== "active" ? "unavailable" : "pending";
+
   const next = "/invitations/" + token;
   const inviterName = inviter?.display_name?.trim() || (inviter?.username ? "@" + inviter.username : "A group member");
+
+  if (isReusableLink && user && status === "pending") {
+    const { data: membership } = await (await createClient()).from("akiba_group_memberships")
+      .select("status").eq("group_id", groupId).eq("user_id", user.id).eq("status", "active").maybeSingle();
+    if (membership) redirect("/workspace/groups/" + groupId);
+  }
 
   return (
     <main className="auth-shell">
       <section className="auth-card">
         <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
-        <div className="workspace-eyebrow">You&apos;re invited</div>
+        <div className="workspace-eyebrow">{isReusableLink ? "Join this group" : "You&apos;re invited"}</div>
         <h1>{group.name}</h1>
         <p>{group.description?.trim() || "You've been invited to join a group on Akiba."}</p>
-        <p className="auth-switch">Invited by {inviterName}</p>
+        <p className="auth-switch">{isReusableLink ? "Shared by " : "Invited by "}{inviterName}</p>
         {actionError && <p className="auth-error" role="alert">{actionError}</p>}
         {status !== "pending" ? (
           <div className="auth-message" role="status">
@@ -66,21 +79,30 @@ export default async function InvitationPage({ params, searchParams }: Props) {
           </div>
         ) : !user ? (
           <div className="auth-form">
-            <p>Sign in or create an Akiba account to accept this invitation.</p>
-            <Link className="workspace-primary" href={"/login?next=" + encodeURIComponent(next)}>Sign in to accept</Link>
+            <p>Create an Akiba account or sign in to join this group.</p>
+            <Link className="workspace-primary" href={"/login?next=" + encodeURIComponent(next)}>Sign in to join</Link>
             <p className="auth-switch">New to Akiba? <Link href={"/signup?next=" + encodeURIComponent(next)}>Create an account</Link></p>
           </div>
         ) : (
           <div className="auth-form">
-            <p>Accepting this invitation will add you as a Member of this group.</p>
-            <form action={acceptGroupInvitation}>
-              <input type="hidden" name="token" value={token} />
-              <button className="workspace-primary" type="submit">Accept invitation</button>
-            </form>
-            <form action={declineGroupInvitation}>
-              <input type="hidden" name="token" value={token} />
-              <button className="profile-secondary-button" type="submit">Decline invitation</button>
-            </form>
+            <p>Joining will add you as a Member of this group.</p>
+            {isReusableLink ? (
+              <form action={acceptGroupInviteLink}>
+                <input type="hidden" name="token" value={token} />
+                <button className="workspace-primary" type="submit">Join group</button>
+              </form>
+            ) : (
+              <>
+                <form action={acceptGroupInvitation}>
+                  <input type="hidden" name="token" value={token} />
+                  <button className="workspace-primary" type="submit">Accept invitation</button>
+                </form>
+                <form action={declineGroupInvitation}>
+                  <input type="hidden" name="token" value={token} />
+                  <button className="profile-secondary-button" type="submit">Decline invitation</button>
+                </form>
+              </>
+            )}
           </div>
         )}
       </section>
