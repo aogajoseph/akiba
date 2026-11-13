@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
 import { acceptGroupInviteLink, acceptGroupInvitation, declineGroupInvitation } from "@/app/workspace/actions";
+import { signOut } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
 
 type Props = {
@@ -30,7 +31,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
   const hash = createHash("sha256").update(token).digest("hex");
   const [{ data: reusableLink }, { data: invitation }] = await Promise.all([
     admin.from("akiba_group_invite_links").select("group_id,created_by").eq("token_hash", hash).maybeSingle(),
-    admin.from("akiba_group_invitations").select("group_id,inviter_id,status,expires_at").eq("token_hash", hash).maybeSingle(),
+    admin.from("akiba_group_invitations").select("group_id,inviter_id,status,expires_at,recipient_email").eq("token_hash", hash).maybeSingle(),
   ]);
 
   const isReusableLink = Boolean(reusableLink);
@@ -52,6 +53,9 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     : invitation!.status !== "pending" ? invitation!.status : group.status !== "active" ? "unavailable" : "pending";
 
   const next = "/invitations/" + token;
+  const invitedEmail = invitation?.recipient_email?.trim().toLowerCase() ?? null;
+  const signedInEmail = user?.email?.trim().toLowerCase() ?? null;
+  const emailMismatch = !isReusableLink && Boolean(user && invitedEmail && signedInEmail !== invitedEmail);
   const inviterName = inviter?.display_name?.trim() || (inviter?.username ? "@" + inviter.username : "A group member");
 
   if (isReusableLink && user && status === "pending") {
@@ -76,6 +80,15 @@ export default async function InvitationPage({ params, searchParams }: Props) {
                 : status === "declined" ? "This invitation was declined."
                   : status === "cancelled" ? "This invitation was cancelled."
                     : "This group is no longer accepting members."}
+          </div>
+        ) : emailMismatch ? (
+          <div className="auth-form">
+            <p>This invitation was sent to <strong>{invitation?.recipient_email}</strong>, but you&apos;re currently signed in as <strong>{user?.email}</strong>.</p>
+            <p>To accept this invitation, sign out and then sign in or create an Akiba account using the invited email address.</p>
+            <form action={signOut}>
+              <input type="hidden" name="next" value={next} />
+              <button className="workspace-primary" type="submit">Switch account</button>
+            </form>
           </div>
         ) : !user ? (
           <div className="auth-form">
