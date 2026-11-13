@@ -429,7 +429,7 @@ export async function sendGroupInvitationEmailAction(
   revalidatePath("/workspace/groups/" + groupId + "/membership");
   return {
     status: "success",
-    message: wasResent ? "Invitation resent successfully." : "Invitation sent successfully.",
+    message: wasResent ? "Invitation resent. A new email has been sent." : "Invitation sent. The group is waiting for their response.",
   };
 }
 
