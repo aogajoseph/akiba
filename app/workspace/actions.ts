@@ -426,3 +426,97 @@ export async function markGroupNotificationRead(formData: FormData) {
   revalidatePath("/workspace/notifications");
   redirect("/workspace/notifications");
 }
+
+
+export type GroupInvitationEmailState = {
+  status: "idle" | "success" | "error";
+  message: string;
+};
+
+export async function sendGroupInvitationEmailAction(
+  _previousState: GroupInvitationEmailState,
+  formData: FormData,
+): Promise<GroupInvitationEmailState> {
+  const groupId = String(formData.get("group_id") ?? "");
+  const email = String(formData.get("recipient_email") ?? "").trim().toLowerCase();
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) ||
+      !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    return { status: "error", message: "Invitation failed. Please try again" };
+  }
+
+  let siteUrl: URL;
+  try {
+    const configuredUrl = process.env.VERCEL_URL
+      ? "https://" + process.env.VERCEL_URL
+      : process.env.NEXT_PUBLIC_SITE_URL;
+    if (!configuredUrl) throw new Error("Missing site URL");
+    siteUrl = new URL(configuredUrl);
+    if (siteUrl.protocol !== "https:" && siteUrl.hostname !== "localhost") throw new Error("Invalid site URL");
+  } catch {
+    return { status: "error", message: "Invitation failed. Please try again" };
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return { status: "error", message: "Invitation failed. Please try again" };
+
+  const { data: group } = await supabase.from("akiba_groups")
+    .select("name,status").eq("id", groupId).maybeSingle();
+  if (!group?.name || group.status !== "active") {
+    return { status: "error", message: "Invitation failed. Please try again" };
+  }
+
+  const token = randomBytes(32).toString("hex");
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+  const invitationUrl = new URL("/invitations/" + token, siteUrl).toString();
+  const { data: invitationId, error } = await supabase.rpc("akiba_create_group_invitation", {
+    p_group_id: groupId,
+    p_token_hash: tokenHash,
+    p_expires_at: expiresAt,
+    p_recipient_email: email,
+    p_recipient_username: null,
+  });
+  if (error || !invitationId) {
+    if (error) console.error("Akiba invitation creation failed", { code: error.code, message: error.message });
+    return { status: "error", message: "Invitation failed. Please try again" };
+  }
+
+  try {
+    await sendGroupInvitationEmail({ recipient: email, groupName: group.name, invitationUrl });
+  } catch (deliveryError) {
+    console.error("Akiba invitation email delivery failed", {
+      message: deliveryError instanceof Error ? deliveryError.message : "Unknown SMTP error",
+    });
+    const { error: cancelError } = await supabase.rpc("akiba_cancel_group_invitation", {
+      p_invitation_id: invitationId,
+    });
+    if (cancelError) console.error("Akiba failed to cancel an undelivered invitation", { message: cancelError.message });
+    return { status: "error", message: "Invitation failed. Please try again" };
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/membership");
+  return { status: "success", message: "Invitation sent successfully" };
+}
+
+export async function acceptGroupInviteLink(formData: FormData) {
+  const token = String(formData.get("token") ?? "");
+  if (!/^[0-9a-f]{64}$/.test(token)) redirect("/login?error=" + encodeURIComponent("This group invitation link is invalid."));
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent("/invitations/" + token));
+  const { data: profile } = await supabase.from("akiba_profiles")
+    .select("display_name").eq("user_id", user.id).maybeSingle();
+  if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/invitations/" + token));
+  const tokenHash = createHash("sha256").update(token).digest("hex");
+  const { data: groupId, error } = await supabase.rpc("akiba_join_group_by_link", { p_token_hash: tokenHash });
+  if (error || !groupId) {
+    const message = error?.message.includes("Group capacity reached")
+      ? "Group capacity reached. Ask a group member to try again when a space becomes available."
+      : error?.message.includes("blocked")
+        ? "You cannot join this group."
+        : "This group invitation link is no longer available.";
+    redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
+  }
+  redirect("/workspace/groups/" + groupId);
+}
