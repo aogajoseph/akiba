@@ -63,7 +63,11 @@ export async function signUp(formData: FormData) {
  if(!site){console.error("Akiba NEXT_PUBLIC_SITE_URL is missing");redirect("/signup?error=Signup%20is%20temporarily%20unavailable");}
  const callback = new URL("/auth/callback", site);
  callback.searchParams.set("next", next);
- const {data,error}=await supabase.auth.signUp({email,password,options:{emailRedirectTo:callback.toString()}});
+ const invitationToken = next.match(/^\/invitations\/([0-9a-f]{64})$/)?.[1];
+ const {data,error}=await supabase.auth.signUp({email,password,options:{
+   emailRedirectTo:callback.toString(),
+   ...(invitationToken ? { data: { akiba_pending_invitation_token: invitationToken } } : {}),
+ }});
  if(error){console.error("Akiba signup failure",{code:error.code,message:error.message});redirect("/signup?error="+encodeURIComponent(error.code==="user_already_exists"?"An account with this email already exists. Please sign in.":"Unable to create account. Please try again.")+"&next="+encodeURIComponent(next));}
  await markReturning();
  if(data.session) redirect(next);
