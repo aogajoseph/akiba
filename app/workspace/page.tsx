@@ -38,7 +38,7 @@ export default async function WorkspacePage() {
     redirect("/invitations/" + invitationToken);
   }
 
-  const notificationRpc = supabase.rpc as unknown as (
+  const notificationRpc = supabase.rpc.bind(supabase) as unknown as (
     name: string,
     args?: Record<string, unknown>,
   ) => Promise<{ data: { read_at: string | null }[] | null; error: { message: string } | null }>;
