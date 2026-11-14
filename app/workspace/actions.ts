@@ -191,6 +191,7 @@ export async function acceptGroupInvitation(formData: FormData) {
     redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
   }
   if (!groupId) redirect("/invitations/" + token + "?error=" + encodeURIComponent("This invitation has expired."));
+  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   redirect("/workspace/groups/" + groupId);
 }
 
@@ -203,6 +204,7 @@ export async function declineGroupInvitation(formData: FormData) {
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const { error } = await supabase.rpc("akiba_decline_group_invitation", { p_token_hash: tokenHash });
   if (error) redirect("/invitations/" + token + "?error=" + encodeURIComponent("This invitation could not be declined. It may no longer be available."));
+  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   redirect("/workspace?message=" + encodeURIComponent("Invitation declined."));
 }
 
@@ -293,6 +295,7 @@ export async function acceptGroupInvitationById(formData: FormData) {
   if (error || !groupId) redirect("/workspace/invitations?error=" + encodeURIComponent(
     error?.message.includes("Group capacity reached") ? "Group capacity reached." : "This invitation is no longer available."
   ));
+  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   redirect("/workspace/groups/" + groupId);
 }
 
@@ -304,6 +307,7 @@ export async function declineGroupInvitationById(formData: FormData) {
   if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/invitations"));
   const { error } = await supabase.rpc("akiba_decline_group_invitation_by_id", { p_invitation_id: invitationId });
   if (error) redirect("/workspace/invitations?error=" + encodeURIComponent("This invitation could not be declined."));
+  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   redirect("/workspace/invitations?message=" + encodeURIComponent("Invitation declined."));
 }
 
@@ -397,8 +401,10 @@ export async function sendGroupInvitationEmailAction(
     if (error) console.error("Akiba invitation preparation failed", { code: error.code, message: error.message });
     const message = error?.message.includes("already a group member")
       ? "This person is already a member of the group."
-      : error?.message.toLowerCase().includes("pending invitation") || error?.message.toLowerCase().includes("already invited")
+      : error?.code === "23505" && /pending_recipient/i.test(error.message)
         ? "This person has already been invited. The group is waiting for their response."
+        : error?.message.toLowerCase().includes("pending invitation") || error?.message.toLowerCase().includes("already invited")
+          ? "This person has already been invited. The group is waiting for their response."
         : error?.message.includes("blocked")
         ? "This person is blocked from joining the group."
         : error?.message.includes("capacity")
