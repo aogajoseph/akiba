@@ -59,6 +59,17 @@ export default async function InvitationPage({ params, searchParams }: Props) {
   const accountMismatchError = !isReusableLink && Boolean(actionError && (actionError.includes("email address this invitation") || actionError.includes("another Akiba account")));
   const inviterName = inviter?.display_name?.trim() || (inviter?.username ? "@" + inviter.username : "A group member");
 
+  // An invited user must finish their profile before accepting. Send them
+  // straight to onboarding and preserve this invitation as the return path.
+  if (user && status === "pending" && !emailMismatch) {
+    const supabase = await createClient();
+    const { data: profile } = await supabase.from("akiba_profiles")
+      .select("display_name").eq("user_id", user.id).maybeSingle();
+    if (!profile?.display_name?.trim()) {
+      redirect("/onboarding?next=" + encodeURIComponent(next));
+    }
+  }
+
   if (isReusableLink && user && status === "pending") {
     const { data: membership } = await (await createClient()).from("akiba_group_memberships")
       .select("status").eq("group_id", groupId).eq("user_id", user.id).eq("status", "active").maybeSingle();
