@@ -103,8 +103,8 @@ export async function saveProfile(formData: FormData) {
   }
 
   // When onboarding began from a group invitation, finish the join now.
-  // The invitation page supplied this continuation only after the user
-  // opened the invite and chose to create an account to join.
+  // The invitation page supplies this only after the user opens an invite
+  // and needs to complete profile setup before joining.
   const invitationContinuation = next.match(/^\/invitations\/([0-9a-f]{64})\?complete=1&kind=(email|link)$/);
   if (invitationContinuation) {
     const [, token, kind] = invitationContinuation;
