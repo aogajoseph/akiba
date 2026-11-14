@@ -51,10 +51,17 @@ export default function SignupForm({ next, invitedEmail = "" }: { next: string; 
       const supabase = createBrowserClient(url, key);
       const callback = new URL("/auth/callback", window.location.origin);
       callback.searchParams.set("next", next);
+      // Keep the invitation as a navigation hint on the new account as well.
+      // This recovers the journey if the email provider returns the user to
+      // Akiba home instead of the requested callback URL.
+      const invitationToken = next.match(/^\/invitations\/([0-9a-f]{64})$/)?.[1];
       const { data, error: signupError } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: callback.toString() },
+        options: {
+          emailRedirectTo: callback.toString(),
+          ...(invitationToken ? { data: { akiba_pending_invitation_token: invitationToken } } : {}),
+        },
       });
       if (signupError) {
         // Keep diagnostics useful without logging the submitted email or password.
