@@ -109,8 +109,10 @@ export async function saveProfile(formData: FormData) {
   if (invitationContinuation) {
     const [, token, kind] = invitationContinuation;
     const tokenHash = createHash("sha256").update(token).digest("hex");
-    const rpcName = kind === "link" ? "akiba_join_group_by_link" : "akiba_accept_group_invitation";
-    const { data: groupId, error: joinError } = await supabase.rpc(rpcName, { p_token_hash: tokenHash });
+    const joinResult = kind === "link"
+      ? await supabase.rpc("akiba_join_group_by_link", { p_token_hash: tokenHash })
+      : await supabase.rpc("akiba_accept_group_invitation", { p_token_hash: tokenHash });
+    const { data: groupId, error: joinError } = joinResult;
     if (joinError || !groupId) {
       const message = joinError?.message.includes("Group capacity reached")
         ? "Group capacity reached. Ask a group member to try again when a space becomes available."
