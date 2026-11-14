@@ -1,5 +1,7 @@
 "use server";
 
+import { createHash } from "node:crypto";
+
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { safeInternalPath } from "@/lib/auth/redirect";
@@ -98,6 +100,27 @@ export async function saveProfile(formData: FormData) {
   if (existing?.avatar_path && existing.avatar_path !== avatarPath) {
     const { error: removeError } = await supabase.storage.from("avatars").remove([existing.avatar_path]);
     if (removeError) console.error("Akiba old avatar cleanup failed", { code: removeError.name });
+  }
+
+  // When onboarding began from a group invitation, finish the join now.
+  // The invitation page supplied this continuation only after the user
+  // opened the invite and chose to create an account to join.
+  const invitationContinuation = next.match(/^\\/invitations\\/([0-9a-f]{64})\\?complete=1&kind=(email|link)$/);
+  if (invitationContinuation) {
+    const [, token, kind] = invitationContinuation;
+    const tokenHash = createHash("sha256").update(token).digest("hex");
+    const rpcName = kind === "link" ? "akiba_join_group_by_link" : "akiba_accept_group_invitation";
+    const { data: groupId, error: joinError } = await supabase.rpc(rpcName, { p_token_hash: tokenHash });
+    if (joinError || !groupId) {
+      const message = joinError?.message.includes("Group capacity reached")
+        ? "Group capacity reached. Ask a group member to try again when a space becomes available."
+        : joinError?.message.includes("blocked")
+          ? "You cannot join this group."
+          : "Your profile is ready, but the invitation could not be accepted. Please review the invitation and try again.";
+      redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
+    }
+    await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
+    redirect("/workspace/groups/" + groupId);
   }
 
   redirect(next);
