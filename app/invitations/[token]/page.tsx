@@ -66,7 +66,8 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     const { data: profile } = await supabase.from("akiba_profiles")
       .select("display_name").eq("user_id", user.id).maybeSingle();
     if (!profile?.display_name?.trim()) {
-      redirect("/onboarding?next=" + encodeURIComponent(next));
+      const onboardingNext = next + "?complete=1&kind=" + (isReusableLink ? "link" : "email");
+      redirect("/onboarding?next=" + encodeURIComponent(onboardingNext));
     }
   }
 
