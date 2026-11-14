@@ -458,5 +458,6 @@ export async function acceptGroupInviteLink(formData: FormData) {
         : "This group invitation link is no longer available.";
     redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
   }
+  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   redirect("/workspace/groups/" + groupId);
 }
