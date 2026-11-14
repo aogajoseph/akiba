@@ -21,7 +21,7 @@ export async function signIn(formData: FormData) {
  const next = safeInternalPath(field(formData, "next"));
  if(!email||!password) redirect("/login?error=Enter%20your%20email%20and%20password&next=" + encodeURIComponent(next));
  const supabase=await createClient();
- const {error}=await supabase.auth.signInWithPassword({email,password});
+ const {data,error}=await supabase.auth.signInWithPassword({email,password});
  if(error){
    console.error("Akiba sign-in failure",{code:error.code,message:error.message});
    let message = error.code === "email_not_confirmed"
@@ -48,7 +48,11 @@ export async function signIn(formData: FormData) {
    redirect("/login?error=" + encodeURIComponent(message) + "&next=" + encodeURIComponent(next));
  }
  await markReturning();
- redirect(next);
+ const invitationToken = data.user?.user_metadata?.akiba_pending_invitation_token;
+ const destination = next === "/workspace" && typeof invitationToken === "string" && /^[0-9a-f]{64}$/.test(invitationToken)
+   ? "/invitations/" + invitationToken
+   : next;
+ redirect(destination);
 }
 export async function signUp(formData: FormData) {
  const email=field(formData,"email").toLowerCase(),password=String(formData.get("password")??"");
