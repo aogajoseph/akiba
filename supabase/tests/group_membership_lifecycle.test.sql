@@ -463,4 +463,58 @@ begin
 end;
 $test$;
 
+-- Only the original inviter can resend a pending invitation.
+insert into auth.users (id, aud, role, email, encrypted_password, email_confirmed_at, created_at, updated_at)
+values ('00000000-0000-0000-0000-000000000312', 'authenticated', 'authenticated',
+        'member-312@akiba.test', '', now(), now(), now())
+on conflict (id) do nothing;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000306', true);
+do $test$
+declare prepared record;
+begin
+  select * into prepared from public.akiba_prepare_group_invitation(
+    '10000000-0000-0000-0000-000000000013',
+    repeat('7', 64), now() + interval '7 days', 'member-312@akiba.test'
+  );
+  if prepared.was_resent then raise exception 'A new invitation was incorrectly marked as a resend'; end if;
+end;
+$test$;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000307', true);
+do $test$
+declare message text;
+begin
+  begin
+    perform public.akiba_prepare_group_invitation(
+      '10000000-0000-0000-0000-000000000013',
+      repeat('8', 64), now() + interval '7 days', 'member-312@akiba.test'
+    );
+    raise exception 'A different group member unexpectedly resent the pending invitation';
+  exception when others then
+    get stacked diagnostics message = message_text;
+    if message not like '%already been invited%' then raise; end if;
+  end;
+end;
+$test$;
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000306', true);
+do $test$
+declare prepared record;
+begin
+  select * into prepared from public.akiba_prepare_group_invitation(
+    '10000000-0000-0000-0000-000000000013',
+    repeat('9', 64), now() + interval '7 days', 'member-312@akiba.test'
+  );
+  if not prepared.was_resent then raise exception 'The original inviter could not resend the pending invitation'; end if;
+  if not exists (
+    select 1 from public.akiba_group_invitations
+    where id = prepared.invitation_id
+      and token_hash = repeat('9', 64)
+      and inviter_id = '00000000-0000-0000-0000-000000000306'
+      and last_resent_by = '00000000-0000-0000-0000-000000000306'
+  ) then raise exception 'The original inviter resend did not rotate the token and record the actor'; end if;
+end;
+$test$;
+
 rollback;
