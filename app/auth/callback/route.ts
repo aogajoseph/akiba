@@ -8,7 +8,12 @@ export async function GET(request: NextRequest) {
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type");
   const flow = request.nextUrl.searchParams.get("flow");
-  const safeNext = safeInternalPath(request.nextUrl.searchParams.get("next"), "/onboarding");
+  const requestedNext = safeInternalPath(request.nextUrl.searchParams.get("next"), "/onboarding");
+  // Legacy invitation links may still carry a one-time token as the next path.
+  // Recover pending invitations by the authenticated account email instead.
+  const safeNext = /^\/invitations\/[0-9a-f]{64}(?:\?.*)?$/.test(requestedNext)
+    ? "/workspace/invitations"
+    : requestedNext;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
