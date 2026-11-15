@@ -18,7 +18,8 @@ function isValidEmail(email: string) {
 }
 export async function signIn(formData: FormData) {
  const email=field(formData,"email").toLowerCase(), password=String(formData.get("password")??"");
- const next = safeInternalPath(field(formData, "next"));
+ const requestedNext = safeInternalPath(field(formData, "next"));
+ const next = /^\/invitations\/[0-9a-f]{64}$/.test(requestedNext) ? "/workspace/invitations" : requestedNext;
  if(!email||!password) redirect("/login?error=Enter%20your%20email%20and%20password&next=" + encodeURIComponent(next));
  const supabase=await createClient();
  const {data,error}=await supabase.auth.signInWithPassword({email,password});
@@ -48,25 +49,20 @@ export async function signIn(formData: FormData) {
    redirect("/login?error=" + encodeURIComponent(message) + "&next=" + encodeURIComponent(next));
  }
  await markReturning();
- const invitationToken = data.user?.user_metadata?.akiba_pending_invitation_token;
- const destination = next === "/workspace" && typeof invitationToken === "string" && /^[0-9a-f]{64}$/.test(invitationToken)
-   ? "/invitations/" + invitationToken
-   : next;
- redirect(destination);
+ redirect(next);
 }
 export async function signUp(formData: FormData) {
  const email=field(formData,"email").toLowerCase(),password=String(formData.get("password")??"");
- const next = safeInternalPath(field(formData, "next"), "/onboarding");
+ const requestedNext = safeInternalPath(field(formData, "next"), "/onboarding");
+ const next = /^\/invitations\/[0-9a-f]{64}$/.test(requestedNext) ? "/workspace/invitations" : requestedNext;
  if(!isValidEmail(email)||password.length<8) redirect("/signup?error=Enter%20a%20valid%20email%20and%20a%20password%20of%20at%20least%208%20characters&next=" + encodeURIComponent(next));
  const supabase=await createClient();
  const site=process.env.NEXT_PUBLIC_SITE_URL;
  if(!site){console.error("Akiba NEXT_PUBLIC_SITE_URL is missing");redirect("/signup?error=Signup%20is%20temporarily%20unavailable");}
  const callback = new URL("/auth/callback", site);
  callback.searchParams.set("next", next);
- const invitationToken = next.match(/^\/invitations\/([0-9a-f]{64})$/)?.[1];
  const {data,error}=await supabase.auth.signUp({email,password,options:{
    emailRedirectTo:callback.toString(),
-   ...(invitationToken ? { data: { akiba_pending_invitation_token: invitationToken } } : {}),
  }});
  if(error){console.error("Akiba signup failure",{code:error.code,message:error.message});redirect("/signup?error="+encodeURIComponent(error.code==="user_already_exists"?"An account with this email already exists. Please sign in.":"Unable to create account. Please try again.")+"&next="+encodeURIComponent(next));}
  await markReturning();
