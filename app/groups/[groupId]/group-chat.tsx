@@ -17,6 +17,7 @@ type MessageRow = {
 
 type ChatMessage = MessageRow & {
   authorName: string;
+  avatarUrl: string | null;
   isMine: boolean;
 };
 
@@ -24,6 +25,7 @@ type ProfileRow = {
   user_id: string;
   display_name: string | null;
   username: string;
+  avatar_path: string | null;
 };
 
 type MessageCursor = Pick<MessageRow, "created_at" | "id">;
@@ -68,7 +70,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     const authorIds = Array.from(new Set(rows.map((row) => row.author_id)));
     const { data: profiles } = await client
       .from("akiba_profiles")
-      .select("user_id,display_name,username")
+      .select("user_id,display_name,username,avatar_path")
       .in("user_id", authorIds);
 
     const profileById = new Map<string, ProfileRow>();
@@ -81,6 +83,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       return {
         ...row,
         authorName: profile?.display_name?.trim() || profile?.username || "Akiba member",
+        avatarUrl: profile?.avatar_path
+          ? client.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl
+          : null,
         isMine: row.author_id === userId,
       } satisfies ChatMessage;
     });
@@ -359,7 +364,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
           </div>
         ) : messages.map((message) => (
           <article key={message.id} className={message.isMine ? styles.messageMine : styles.message}>
-            <div className={styles.messageAvatar}>{message.authorName.slice(0, 1).toUpperCase()}</div>
+            <div className={styles.messageAvatar} aria-hidden="true">{message.avatarUrl ? <img src={message.avatarUrl} alt="" /> : message.authorName.slice(0, 1).toUpperCase()}</div>
             <div className={styles.messageBody}>
               <div className={styles.messageMeta}><b>{message.isMine ? "You" : message.authorName}</b><time dateTime={message.created_at}>{formatTime(message.created_at)}</time></div>
               <p>{message.body}</p>
