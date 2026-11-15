@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const requestedNext = safeInternalPath(request.nextUrl.searchParams.get("next"), "/onboarding");
   // Legacy invitation links may still carry a one-time token as the next path.
   // Recover pending invitations by the authenticated account email instead.
-  const safeNext = /^\/invitations\/[0-9a-f]{64}(?:\?.*)?$/.test(requestedNext)
+  const safeNext = /^\/invitations\/[0-9a-f]{64}$/.test(requestedNext)
     ? "/workspace/invitations"
     : requestedNext;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
