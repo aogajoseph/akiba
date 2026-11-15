@@ -401,9 +401,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
               {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => document.getElementById("message-" + message.parent_message_id)?.scrollIntoView({ behavior: "smooth", block: "center" })}>↪ {message.replyPreview.slice(0, 120)}</button>}
               <p>{message.deleted_at ? "This message was deleted" : message.body}</p>
               {message.edited_at && !message.deleted_at && <small>Edited</small>}
-              {!message.deleted_at && <div className={styles.messageActions}>
+              <div className={styles.messageActions}>
                 <button type="button" onClick={() => { setEditingMessage(null); setReplyTarget(message); }}>Reply</button>
-                {message.isMine && <>
+                {!message.deleted_at && message.isMine && <>
                   <button type="button" onClick={() => { setReplyTarget(null); setEditingMessage(message); setDraft(message.body); }}>Edit</button>
                   <button type="button" disabled={mutatingMessageId === message.id} onClick={async () => {
                     if (!window.confirm("Delete this message? This cannot be undone.")) return;
