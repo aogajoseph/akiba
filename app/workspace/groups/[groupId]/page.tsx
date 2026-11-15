@@ -123,7 +123,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
       <section className="ak-main">
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
-          <div className="ak-workspace-top-crumb"><Link href="/workspace">My Groups</Link><span>/</span><strong>{group.name}</strong></div>
+          <div className="ak-workspace-top-crumb"><Link href="/workspace/groups">My Groups</Link><span>/</span><strong>{group.name}</strong></div>
           <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
         </header>
 
