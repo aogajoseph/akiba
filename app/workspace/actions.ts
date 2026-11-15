@@ -402,9 +402,9 @@ export async function sendGroupInvitationEmailAction(
     const message = error?.message.includes("already a group member")
       ? "This person is already a member of the group."
       : error?.code === "23505" && /pending_recipient/i.test(error.message)
-        ? "This person has already been invited. The group is waiting for their response."
+        ? "This user has already been invited. The group is awaiting their response."
         : error?.message.toLowerCase().includes("pending invitation") || error?.message.toLowerCase().includes("already invited") || error?.message.toLowerCase().includes("already been invited")
-          ? "This person has already been invited. The group is waiting for their response."
+          ? "This user has already been invited. The group is awaiting their response."
         : error?.message.includes("blocked")
         ? "This person is blocked from joining the group."
         : error?.message.includes("capacity")
