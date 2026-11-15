@@ -29,6 +29,12 @@ jobs:
         run: npm run lint
       - name: Typecheck
         run: npm run typecheck
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+      - name: Typecheck Supabase Edge Functions
+        run: deno check supabase/functions/cleanup-group-images/index.ts
       - name: Build
         run: npm run build
 
@@ -47,3 +53,5 @@ jobs:
         run: supabase db reset --local --no-seed
       - name: Test Group Creator, Group Admin and plan entitlements
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_creator_admin_entitlements.test.sql
+      - name: Test group membership lifecycle
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_membership_lifecycle.test.sql

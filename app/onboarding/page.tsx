@@ -1,14 +1,19 @@
 import Link from "next/link";
+import { safeInternalPath } from "@/lib/auth/redirect";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import ProfileForm from "./profile-form";
 
-type Props = { searchParams: Promise<{ error?: string }> };
+type Props = { searchParams: Promise<{ error?: string; next?: string }> };
 
 export default async function OnboardingPage({ searchParams }: Props) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+  const params = await searchParams;
+  const next = safeInternalPath(params.next, "/workspace");
+  const invitationOnboarding = /^\/invitations\/[0-9a-f]{64}\?complete=1&kind=(email|link)$/.test(next);
+  const invitationInboxOnboarding = next === "/workspace/invitations";
 
   const [{ data: profile, error: profileError }, { data: contact }] = await Promise.all([
     supabase
@@ -28,9 +33,9 @@ export default async function OnboardingPage({ searchParams }: Props) {
     redirect("/workspace");
   }
 
-  if (profile?.display_name?.trim()) redirect("/workspace");
+  if (profile?.display_name?.trim()) redirect(next);
 
-  const { error } = await searchParams;
+  const { error } = params;
 
   return (
     <main className="profile-setup-shell">
@@ -45,9 +50,13 @@ export default async function OnboardingPage({ searchParams }: Props) {
           <div className="profile-setup-card-heading">
             <h1 id="profile-setup-title">Set up your profile</h1>
           </div>
-          <p className="profile-setup-description">This is how people will know you on Akiba</p>
+          <p className="profile-setup-description">{invitationOnboarding
+            ? "Finish setting up your profile, then review your invitation and choose whether to join the group."
+            : invitationInboxOnboarding
+              ? "Finish setting up your profile, then open your invitation inbox to review invitations addressed to your email. You decide whether to accept or decline."
+              : "This is how people will know you on Akiba"}</p>
           {error && <p className="profile-form-error" role="alert">{error}</p>}
-          <ProfileForm initial={{
+          <ProfileForm next={next} initial={{
             username: profile?.username ?? "",
             displayName: profile?.display_name ?? "",
             avatarPath: profile?.avatar_path ?? null,

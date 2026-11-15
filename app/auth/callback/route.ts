@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { safeInternalPath } from "@/lib/auth/redirect";
 
 export async function GET(request: NextRequest) {
   const origin = request.nextUrl.origin;
@@ -7,11 +8,21 @@ export async function GET(request: NextRequest) {
   const tokenHash = request.nextUrl.searchParams.get("token_hash");
   const type = request.nextUrl.searchParams.get("type");
   const flow = request.nextUrl.searchParams.get("flow");
+  const requestedNext = safeInternalPath(request.nextUrl.searchParams.get("next"), "/onboarding");
+  // Legacy invitation links may still carry a one-time token as the next path.
+  // Recover pending invitations by the authenticated account email instead.
+  const safeNext = /^\/invitations\/[0-9a-f]{64}$/.test(requestedNext)
+    ? "/workspace/invitations"
+    : requestedNext;
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  const failure = (message: string) =>
-    NextResponse.redirect(new URL("/login?error=" + encodeURIComponent(message), origin));
+  const failure = (message: string) => {
+    const destination = new URL("/login", origin);
+    destination.searchParams.set("error", message);
+    if (safeNext !== "/onboarding") destination.searchParams.set("next", safeNext);
+    return NextResponse.redirect(destination);
+  };
 
   if (!url || !key) return failure("Authentication is not configured.");
 
@@ -21,7 +32,7 @@ export async function GET(request: NextRequest) {
   if ((type && type !== "signup" && type !== "recovery") || (flow && flow !== "recovery")) {
     return failure("This authentication link is invalid. Request a new confirmation or reset link.");
   }
-  const response = NextResponse.redirect(new URL(isRecovery ? "/reset-password" : "/onboarding", origin));
+  const response = NextResponse.redirect(new URL(isRecovery ? "/reset-password" : safeNext, origin));
   const supabase = createServerClient(url, key, {
     cookies: {
       getAll: () => request.cookies.getAll(),

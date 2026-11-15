@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
+import { acceptGroupInvitationById, declineGroupInvitationById } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
 
 type Group = {
@@ -10,6 +11,17 @@ type Group = {
   group_type: string;
   description: string | null;
   currency_code: string;
+  created_at: string;
+};
+
+type Invitation = {
+  invitation_id: string;
+  group_id: string;
+  group_name: string;
+  group_description: string | null;
+  inviter_display_name: string | null;
+  inviter_username: string | null;
+  expires_at: string;
   created_at: string;
 };
 
@@ -33,15 +45,22 @@ export default async function WorkspacePage() {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
-
-  const [{ data: profile, error: profileError }, { data: groups, error: groupsError }] = await Promise.all([
+  const notificationRpc = supabase.rpc.bind(supabase) as unknown as (
+    name: string,
+    args?: Record<string, unknown>,
+  ) => Promise<{ data: { read_at: string | null }[] | null; error: { message: string } | null }>;
+  const [{ data: profile, error: profileError }, { data: groups, error: groupsError }, { data: invitations, error: invitationsError }, { data: notifications }] = await Promise.all([
     supabase.from("akiba_profiles").select("username, display_name, avatar_path").eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at").order("created_at", { ascending: false }),
+    supabase.rpc("akiba_list_my_group_invitations"),
+    notificationRpc("akiba_list_my_group_notifications", { p_limit: 100 }),
   ]);
 
   if (profileError || !profile?.display_name?.trim()) redirect("/onboarding");
 
+  const unreadNotificationCount = (notifications ?? []).filter((item) => !item.read_at).length;
   const groupRows = (groups ?? []) as Group[];
+  const invitationRows = (invitations ?? []) as Invitation[];
   const groupIds = groupRows.map((group) => group.id);
   let messageCount: number | null = 0;
   let messageError = false;
@@ -73,7 +92,9 @@ export default async function WorkspacePage() {
         <nav className="ak-nav" aria-label="Main navigation">
           <span className="ak-nav-label">WORKSPACE</span>
           <Link href="/workspace" className="ak-nav-link active"><span>⌂</span>Home</Link>
-          <a href="#your-groups" className="ak-nav-link"><span>♧</span>My Groups{groupRows.length > 0 && <small>{groupRows.length}</small>}</a>
+          <Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups{groupRows.length > 0 && <small>{groupRows.length}</small>}</Link>
+          <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations{(invitations ?? []).length > 0 && <small>{(invitations ?? []).length}</small>}</Link>
+          <Link href="/workspace/notifications" className="ak-nav-link"><span>♢</span>Notifications{unreadNotificationCount > 0 && <small>{unreadNotificationCount}</small>}</Link>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
@@ -104,6 +125,34 @@ export default async function WorkspacePage() {
 
           {groupsError && <div className="ak-alert" role="alert">We couldn&apos;t load your groups. Please refresh the page and try again.</div>}
 
+          {invitationsError ? (
+            <section className="ak-panel" aria-labelledby="pending-invitations-heading">
+              <div className="ak-panel-heading"><div><h2 id="pending-invitations-heading">Group invitations</h2><p>We couldn&apos;t check for pending invitations. Please refresh the page.</p></div></div>
+            </section>
+          ) : invitationRows.length > 0 ? (
+            <section className="ak-panel ak-invitations-panel" aria-labelledby="pending-invitations-heading">
+              <div className="ak-panel-heading"><div><span className="ak-eyebrow">ACTION NEEDED</span><h2 id="pending-invitations-heading">You&apos;ve been invited to join a group</h2><p>Review your invitations and choose whether to join.</p></div><span className="ak-panel-count">{invitationRows.length} pending</span></div>
+              <div className="ak-workspace-member-list">
+                {invitationRows.map((invite) => (
+                  <article className="ak-workspace-member ak-inbox-invitation" key={invite.invitation_id}>
+                    <span className="ak-workspace-member-fallback" aria-hidden="true">♧</span>
+                    <div>
+                      <strong>{invite.group_name}</strong>
+                      <small>Invited by {invite.inviter_display_name || (invite.inviter_username ? "@" + invite.inviter_username : "A group member")}</small>
+                      {invite.group_description ? <p>{invite.group_description}</p> : null}
+                      <small>Expires {new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" }).format(new Date(invite.expires_at))}</small>
+                    </div>
+                    <div className="ak-inbox-actions">
+                      <form action={acceptGroupInvitationById}><input type="hidden" name="invitation_id" value={invite.invitation_id} /><input type="hidden" name="return_to" value="/workspace" /><button type="submit" className="workspace-primary">Accept</button></form>
+                      <form action={declineGroupInvitationById}><input type="hidden" name="invitation_id" value={invite.invitation_id} /><input type="hidden" name="return_to" value="/workspace" /><button type="submit" className="ak-member-danger">Decline</button></form>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <Link className="ak-panel-footer" href="/workspace/invitations">View all invitations</Link>
+            </section>
+          ) : null}
+
           <div className="ak-metrics">
             <article className="ak-metric"><span className="ak-metric-icon pink">♧</span><span className="ak-metric-label">My Groups</span><strong>{groupsError ? "—" : groupRows.length}</strong><small>{groupRows.length === 1 ? "1 group to organise" : "Your shared spaces"}</small></article>
             <article className="ak-metric"><span className="ak-metric-icon violet">▤</span><span className="ak-metric-label">Group Messages</span><strong>{messageError ? "—" : messageCount ?? 0}</strong><small>{messageError ? "Couldn't load messages" : "Messages across your groups"}</small></article>
@@ -120,7 +169,7 @@ export default async function WorkspacePage() {
                 ) : (
                   <div className="ak-group-list">{groupRows.slice(0, 5).map((group) => <Link href={"/workspace/groups/" + group.id} className="ak-group-row" key={group.id}><span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span><span className="ak-group-copy"><strong>{group.name}</strong><small>{group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal"} · {group.group_type.replaceAll("_", " ")} · {group.currency_code}{group.description ? " · " + group.description : ""}</small></span><span className="ak-group-date">{shortDate(group.created_at)}</span><span className="ak-chevron">›</span></Link>)}</div>
                 )}
-                {groupRows.length > 5 && <Link className="ak-panel-footer" href="#your-groups">Showing your 5 most recent groups</Link>}
+                {groupRows.length > 5 && <Link className="ak-panel-footer" href="/workspace/groups">See all your groups</Link>}
               </section>
 
               <section className="ak-purpose-banner"><div className="ak-banner-logo"><img src="/akiba-logo.png" alt="" /></div><div><h2>Do more, together</h2><p>Create a group, bring people together, and turn your plans into reality.</p></div><Link href="/workspace/new" className="ak-primary">＋ Create Group</Link></section>
@@ -132,7 +181,7 @@ export default async function WorkspacePage() {
             </div>
 
             <aside className="ak-dashboard-aside">
-              <section className="ak-panel ak-quick-panel"><div className="ak-panel-heading"><h2>Quick Actions</h2></div><Link href="/workspace/new" className="ak-quick-action"><span className="ak-quick-icon pink">♧</span><span><strong>Create New Group</strong><small>Start organising together</small></span><b>›</b></Link><a href="#your-groups" className="ak-quick-action"><span className="ak-quick-icon violet">▤</span><span><strong>Explore My Groups</strong><small>Return to your shared spaces</small></span><b>›</b></a></section>
+              <section className="ak-panel ak-quick-panel"><div className="ak-panel-heading"><h2>Quick Actions</h2></div><Link href="/workspace/new" className="ak-quick-action"><span className="ak-quick-icon pink">♧</span><span><strong>Create New Group</strong><small>Start organising together</small></span><b>›</b></Link><Link href="/workspace/groups" className="ak-quick-action"><span className="ak-quick-icon violet">▤</span><span><strong>Explore My Groups</strong><small>View all your shared spaces</small></span><b>›</b></Link></section>
               <section className="ak-panel ak-upcoming-panel"><div className="ak-panel-heading"><h2>Upcoming &amp; Pending</h2></div><div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">▦</span><h3>Nothing scheduled yet</h3><p>Events, contribution schedules and approvals will appear here as those features become available.</p></div><div className="ak-feature-note">Scheduling and approvals aren&apos;t enabled in this release.</div></section>
               <section className="ak-note-card"><span>✳</span><strong>Do more, together</strong><p>Akiba helps people organise shared plans and purposes in one place.</p></section>
             </aside>

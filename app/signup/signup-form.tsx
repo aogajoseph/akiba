@@ -22,7 +22,7 @@ function getPasswordStrength(password: string) {
   return { level: 1, label: "Weak" };
 }
 
-export default function SignupForm() {
+export default function SignupForm({ next, invitedEmail = "" }: { next: string; invitedEmail?: string }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
@@ -49,10 +49,19 @@ export default function SignupForm() {
       // Browser-side PKCE stores the verifier in this browser's cookies so the
       // server callback can exchange the confirmation code using that verifier.
       const supabase = createBrowserClient(url, key);
+      const callback = new URL("/auth/callback", window.location.origin);
+      // Pending invitations are recovered from the authenticated inbox,
+      // rather than browser state or user-editable auth metadata.
+      const postAuthNext = /^\/invitations\/[0-9a-f]{64}$/.test(next)
+        ? "/workspace/invitations"
+        : next;
+      callback.searchParams.set("next", postAuthNext);
       const { data, error: signupError } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: new URL("/auth/callback", window.location.origin).toString() },
+        options: {
+          emailRedirectTo: callback.toString(),
+        },
       });
       if (signupError) {
         // Keep diagnostics useful without logging the submitted email or password.
@@ -74,14 +83,14 @@ export default function SignupForm() {
           setError("Unable to create account. Please try again.");
         }
       } else if (data.session) {
-        window.location.assign("/onboarding");
+        window.location.assign(postAuthNext);
         return;
       } else if (data.user?.identities?.length === 0) {
         // With email confirmation enabled, Supabase returns an obfuscated user
         // with no identities for an already-registered email.
         setError("An account with this email already exists. Please sign in.");
       } else {
-        setMessage("Success! Click the link we sent to your email address to activate your Akiba account.");
+        setMessage(`Account details received. Check ${email} for the confirmation email. After confirming, sign in if prompted; your invitation will be waiting in your Akiba invitation inbox.`);
       }
     } catch (error) {
       console.error("Akiba signup request failed unexpectedly", {
@@ -100,7 +109,8 @@ export default function SignupForm() {
     {error && <p className="auth-error" role="alert">{error}</p>}
     {message && <p className="auth-message" role="status">{message}</p>}
     <form onSubmit={submit} className="auth-form">
-      <label>Email address<input name="email" type="email" autoComplete="email" required /></label>
+      <label>Email address<input name="email" type="email" autoComplete="email" defaultValue={invitedEmail} readOnly={Boolean(invitedEmail)} required /></label>
+      {invitedEmail && <small>This is the email address the invitation was sent to. Use this address to join the group.</small>}
       <label>Password
         <PasswordInput name="password" autoComplete="new-password" required minLength={6} onValueChange={setPassword} />
         <small>Use at least 6 characters.</small>
