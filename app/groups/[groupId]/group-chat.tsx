@@ -205,7 +205,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
 
         const { data: initialRows, error: initialError } = await client
           .from("akiba_group_messages")
-          .select("id,group_id,author_id,body,created_at")
+          .select("id,group_id,author_id,body,created_at,parent_message_id,edited_at,deleted_at")
           .eq("group_id", groupId)
           .order("created_at", { ascending: false })
           .order("id", { ascending: false })
@@ -282,7 +282,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     const cursor = oldest as MessageCursor;
     const { data, error } = await client
       .from("akiba_group_messages")
-      .select("id,group_id,author_id,body,created_at")
+      .select("id,group_id,author_id,body,created_at,parent_message_id,edited_at,deleted_at")
       .eq("group_id", groupId)
       .or(
         "created_at.lt." + cursor.created_at +
@@ -416,7 +416,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
                     setMutatingMessageId(null);
                   }}>Delete</button>
                 </>}
-              </div>}
+              </div>
             </div>
           </article>
         ))}
