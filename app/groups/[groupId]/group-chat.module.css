@@ -1,0 +1,63 @@
+.page{min-height:100vh;background:#f6f8f6;color:#14251f;padding-bottom:60px}
+.topbar{height:70px;display:flex;align-items:center;justify-content:space-between;gap:18px;padding:0 max(24px,calc((100vw - 1120px)/2));background:#fff;border-bottom:1px solid #e7ece8}
+.brand{display:flex;align-items:center;gap:9px;color:#163d2f;font-size:23px;font-weight:750;letter-spacing:-1px;text-decoration:none}
+.brandMark{display:grid;place-items:center;width:28px;height:28px;border-radius:9px 9px 9px 3px;background:#176b50;color:white;font-size:18px}
+.breadcrumb{display:flex;align-items:center;gap:9px;color:#a0aaa3;font-size:11px}
+.breadcrumb a,.backLink{color:#6c7c71;text-decoration:none}
+.breadcrumb b{color:#176b50}
+.backLink{font-size:11px}
+.heading{max-width:1040px;margin:0 auto;padding:42px 24px 25px;display:flex;align-items:center;gap:17px}
+.headingIcon{display:grid;place-items:center;flex-shrink:0;width:56px;height:56px;border-radius:16px;background:#e3f0e5;color:#32794f;font-size:25px}
+.headingCopy{flex:1;min-width:0}
+.eyebrow{margin:0 0 8px;color:#859289;font-size:9px;font-weight:750;letter-spacing:1.6px}
+.heading h1{margin:0 0 7px;font-size:29px;letter-spacing:-1px;font-weight:700}
+.headingCopy>p:last-child{margin:0;color:#7b8981;font-size:12px;line-height:1.6}
+.connection{display:flex;align-items:center;gap:7px;padding:8px 10px;border:1px solid #e5ece6;border-radius:7px;background:#fff;color:#6f7e74;font-size:10px}
+.onlineDot,.offlineDot{width:7px;height:7px;border-radius:50%;background:#3d9b61}
+.offlineDot{background:#d19b46}
+.chatCard{max-width:992px;margin:0 auto;padding:0 24px}
+.chatCard>div,.composer{background:#fff}
+.chatHeader{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:20px 22px;border:1px solid #e7ece8;border-bottom:0;border-radius:12px 12px 0 0}
+.chatHeader h2{margin:0 0 5px;font-size:16px;letter-spacing:-.3px}
+.chatHeader p{margin:0;color:#87938b;font-size:11px;line-height:1.5}
+.secureLabel{padding:7px 9px;border:1px solid #e3eee5;border-radius:6px;background:#f5faf6;color:#4e805b;font-size:9px;white-space:nowrap}
+.secureLabel span{margin-right:5px;font-size:8px}
+.messages{min-height:390px;max-height:calc(100vh - 360px);overflow-y:auto;padding:10px 22px 18px;border-left:1px solid #e7ece8;border-right:1px solid #e7ece8;background:#fff}
+.olderButton{display:block;margin:8px auto 17px;padding:8px 12px;border:1px solid #e3eae4;border-radius:7px;background:#fff;color:#397755;font-size:10px;font-weight:650;cursor:pointer}
+.olderButton:disabled{opacity:.6;cursor:wait}
+.message,.messageMine{display:flex;align-items:flex-start;gap:11px;padding:15px 0;border-bottom:1px solid #f0f3f0}
+.messageMine .messageAvatar{background:#e6f1e8;color:#176b50}
+.messageAvatar{display:grid;place-items:center;flex-shrink:0;width:34px;height:34px;border-radius:50%;background:#edf1ed;color:#617368;font-size:11px;font-weight:750}
+.messageBody{flex:1;min-width:0}
+.messageMeta{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.messageMeta b{color:#34483d;font-size:11px}
+.messageMeta time{color:#a0aaa3;font-size:9px;white-space:nowrap}
+.messageBody p{margin:7px 0 0;color:#56675d;font-size:12px;line-height:1.75;white-space:pre-wrap;overflow-wrap:anywhere}
+.emptyState{max-width:360px;margin:85px auto;text-align:center}
+.emptyIcon{display:grid;place-items:center;width:48px;height:48px;margin:0 auto 15px;border-radius:15px;background:#edf6ef;color:#32794f;font-size:21px}
+.emptyState h3{margin:0 0 8px;font-size:15px}
+.emptyState p{margin:0;color:#849087;font-size:11px;line-height:1.7}
+.composer{padding:16px 20px 14px;border:1px solid #e7ece8;border-top:0;border-radius:0 0 12px 12px}
+.composer textarea{display:block;width:100%;min-height:56px;resize:vertical;padding:12px;border:1px solid #dfe7e1;border-radius:8px;background:#fcfdfc;color:#26392e;font:inherit;font-size:12px;line-height:1.6}
+.composer textarea::placeholder{color:#a0aaa3}
+.composer textarea:focus{outline:3px solid #d9ecdf;outline-offset:1px;border-color:#8db99a}
+.composerFooter{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:10px}
+.composerFooter>span{color:#9aa49d;font-size:9px}
+.composerFooter button,.backButton{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:11px 15px;border:1px solid #176b50;border-radius:8px;background:#176b50;color:#fff;font-size:10px;font-weight:700;cursor:pointer}
+.composerFooter button:disabled{opacity:.55;cursor:not-allowed}
+.footerNote{margin:13px 2px 0;color:#9aa49d;font-size:9px;line-height:1.6;text-align:center}
+.inlineError{margin:10px 20px 0;padding:10px 12px;border-radius:7px;background:#fff2f0;color:#a63a32;font-size:10px;line-height:1.5}
+.loadingCard,.accessCard{width:min(calc(100% - 40px),520px);margin:100px auto;padding:42px 28px;border:1px solid #e7ece8;border-radius:13px;background:#fff;text-align:center}
+.loadingCard p{margin:15px 0 0;color:#7b8981;font-size:12px}
+.spinner{display:inline-block;width:25px;height:25px;border:3px solid #e1ece3;border-top-color:#176b50;border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.accessCard{margin-top:90px}
+.accessIcon{display:grid;place-items:center;width:38px;height:38px;margin:0 auto 15px;border-radius:50%;background:#fff4e8;color:#a26a27;font-weight:800}
+.accessCard h1{margin:0 0 9px;font-size:20px}
+.accessCard p{margin:0 0 20px;color:#7b8981;font-size:12px;line-height:1.7}
+.backButton{text-decoration:none}
+.srOnly{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:700px){
+ .topbar{height:60px;padding:0 16px}.breadcrumb{display:none}.heading{padding:27px 17px 20px;gap:12px}.headingIcon{width:46px;height:46px;border-radius:13px}.heading h1{font-size:23px}.headingCopy>p:last-child{font-size:10px}.connection{padding:7px;font-size:9px}.chatCard{padding:0 12px}.chatHeader{padding:16px}.chatHeader h2{font-size:14px}.chatHeader p{font-size:10px}.messages{min-height:360px;max-height:calc(100vh - 330px);padding:8px 15px 15px}.composer{padding:13px 14px}.composerFooter{align-items:flex-end}.composerFooter>span{max-width:58%;line-height:1.5}.composerFooter button{padding:10px 12px}.messageMeta{align-items:flex-start;flex-direction:column;gap:4px}.messageMeta time{font-size:8px}.messageBody p{font-size:11px}
+}
+@media(max-width:380px){.brand{font-size:20px}.heading{align-items:flex-start;flex-wrap:wrap}.connection{margin-left:58px}.secureLabel{font-size:8px}.composerFooter>span{font-size:8px}}
