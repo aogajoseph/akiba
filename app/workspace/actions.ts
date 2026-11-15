@@ -284,31 +284,35 @@ export async function cancelGroupInvitation(formData: FormData) {
 
 export async function acceptGroupInvitationById(formData: FormData) {
   const invitationId = String(formData.get("invitation_id") ?? "");
-  if (!/^[0-9a-f-]{36}$/i.test(invitationId)) redirect("/workspace/invitations");
+  const returnTo = String(formData.get("return_to") ?? "") === "/workspace" ? "/workspace" : "/workspace/invitations";
+  if (!/^[0-9a-f-]{36}$/i.test(invitationId)) redirect(returnTo);
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/invitations"));
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent(returnTo));
   const { data: profile } = await supabase.from("akiba_profiles")
     .select("display_name").eq("user_id", user.id).maybeSingle();
-  if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/workspace/invitations"));
+  if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent(returnTo));
   const { data: groupId, error } = await supabase.rpc("akiba_accept_group_invitation_by_id", { p_invitation_id: invitationId });
-  if (error || !groupId) redirect("/workspace/invitations?error=" + encodeURIComponent(
+  if (error || !groupId) redirect(returnTo + "?error=" + encodeURIComponent(
     error?.message.includes("Group capacity reached") ? "Group capacity reached." : "This invitation is no longer available."
   ));
   await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
+  revalidatePath("/workspace");
   redirect("/workspace/groups/" + groupId);
 }
 
 export async function declineGroupInvitationById(formData: FormData) {
   const invitationId = String(formData.get("invitation_id") ?? "");
-  if (!/^[0-9a-f-]{36}$/i.test(invitationId)) redirect("/workspace/invitations");
+  const returnTo = String(formData.get("return_to") ?? "") === "/workspace" ? "/workspace" : "/workspace/invitations";
+  if (!/^[0-9a-f-]{36}$/i.test(invitationId)) redirect(returnTo);
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
-  if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/invitations"));
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent(returnTo));
   const { error } = await supabase.rpc("akiba_decline_group_invitation_by_id", { p_invitation_id: invitationId });
-  if (error) redirect("/workspace/invitations?error=" + encodeURIComponent("This invitation could not be declined."));
+  if (error) redirect(returnTo + "?error=" + encodeURIComponent("This invitation could not be declined."));
   await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
-  redirect("/workspace/invitations?message=" + encodeURIComponent("Invitation declined."));
+  revalidatePath("/workspace");
+  redirect(returnTo + "?message=" + encodeURIComponent("Invitation declined."));
 }
 
 
