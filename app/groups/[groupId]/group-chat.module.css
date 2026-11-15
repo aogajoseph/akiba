@@ -77,3 +77,22 @@
 .composerContext span{font-weight:750;white-space:nowrap}
 .composerContext p{flex:1;min-width:0;margin:0;color:#718078;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .composerContext button{border:0;background:transparent;color:#65796b;font-size:10px;cursor:pointer}
+
+
+/* Keep the Edited metadata identical for the author and other members. */
+.editedLabel{display:inline-block;align-self:flex-start;margin-top:4px;color:#849187;font-size:9px!important;font-weight:600;line-height:1.2}
+.messageMine .editedLabel{align-self:flex-end}
+
+/* In-app confirmation for soft-deleting a group message. */
+.dialogBackdrop{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:18px;background:rgba(20,37,31,.48);backdrop-filter:blur(3px)}
+.deleteDialog{width:min(100%,420px);padding:25px;border:1px solid #e5ece7;border-radius:15px;background:#fff;box-shadow:0 22px 65px rgba(18,39,29,.24)}
+.deleteDialogIcon{display:grid;place-items:center;width:36px;height:36px;margin-bottom:13px;border-radius:11px;background:#fff1ed;color:#b8493d;font-size:17px;font-weight:800}
+.deleteDialog h3{margin:0 0 8px;color:#20372b;font-size:18px;letter-spacing:-.35px}
+.deleteDialog>p{margin:0;color:#738177;font-size:12px;line-height:1.65}
+.deleteDialogActions{display:flex;justify-content:flex-end;gap:9px;margin-top:22px}
+.deleteDialogActions button{min-height:39px;padding:9px 14px;border-radius:8px;font-size:11px;font-weight:700;cursor:pointer}
+.deleteDialogActions button:disabled{opacity:.55;cursor:wait}
+.deleteCancel{border:1px solid #e2e9e3;background:#fff;color:#607066}
+.deleteConfirm{border:1px solid #b93e36;background:#b93e36;color:#fff}
+.deleteCancel:focus-visible,.deleteConfirm:focus-visible{outline:3px solid #d7e9dc;outline-offset:2px}
+@media(max-width:480px){.deleteDialog{padding:21px 18px}.deleteDialogActions button{flex:1}}
