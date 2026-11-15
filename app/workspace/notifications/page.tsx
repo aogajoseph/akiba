@@ -52,7 +52,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
         <nav className="ak-nav" aria-label="Main navigation">
           <span className="ak-nav-label">WORKSPACE</span>
           <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
-          <Link href="/workspace#your-groups" className="ak-nav-link"><span>♧</span>My Groups</Link>
+          <Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations</Link>
           <Link href="/workspace/notifications" className="ak-nav-link active"><span>♢</span>Notifications{unreadCount > 0 ? <small>{unreadCount}</small> : null}</Link>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
