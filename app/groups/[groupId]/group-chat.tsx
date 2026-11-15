@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
-import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./group-chat.module.css";
 
@@ -320,129 +319,66 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   }
 
   if (status === "loading") {
-    return (
-      <main className={styles.page}>
-        <div className={styles.loadingCard}>
-          <span className={styles.spinner} />
-          <p>Opening your group conversation…</p>
-        </div>
-      </main>
-    );
+    return <section className={styles.chatCard} aria-live="polite"><div className={styles.loadingCard}><span className={styles.spinner} /><p>Opening your group conversation…</p></div></section>;
   }
 
   if (status === "denied" || status === "error") {
     return (
-      <main className={styles.page}>
-        <header className={styles.topbar}>
-          <Link href="/" className={styles.brand}><span className={styles.brandMark}>a</span> akiba</Link>
-          <Link href="/" className={styles.backLink}>← Back to Akiba</Link>
-        </header>
-        <section className={styles.accessCard} role="alert">
+      <section className={styles.chatCard}>
+        <div className={styles.accessCard} role="alert">
           <span className={styles.accessIcon}>!</span>
-          <h1>Conversation unavailable</h1>
+          <h2>Conversation unavailable</h2>
           <p>{errorMessage}</p>
-          <Link href="/" className={styles.backButton}>Return to Akiba</Link>
-        </section>
-      </main>
+        </div>
+      </section>
     );
   }
 
   return (
-    <main className={styles.page}>
-      <header className={styles.topbar}>
-        <Link href="/" className={styles.brand}><span className={styles.brandMark}>a</span> akiba</Link>
-        <nav className={styles.breadcrumb} aria-label="Breadcrumb">
-          <Link href="/">Home</Link><span>/</span><span>{groupName}</span><span>/</span><b>Group chat</b>
-        </nav>
-        <Link href="/" className={styles.backLink}>All groups</Link>
-      </header>
-
-      <section className={styles.heading}>
-        <div className={styles.headingIcon}>↗</div>
-        <div className={styles.headingCopy}>
-          <p className={styles.eyebrow}>GROUP CONVERSATION</p>
-          <h1>{groupName}</h1>
-          <p>Plans, questions and updates shared with members of this group.</p>
+    <section className={styles.chatCard} aria-label="Group conversation">
+      <div className={styles.chatHeader}>
+        <div>
+          <h2>Group chat</h2>
+          <p>Only active members of this group can read or send messages.</p>
         </div>
-        <div className={styles.connection}>
-          <span className={connection === "connected" ? styles.onlineDot : styles.offlineDot} />
-          {connection === "connected" ? "Live" : connection === "connecting" ? "Connecting" : "Reconnecting"}
-        </div>
-      </section>
-
-      <section className={styles.chatCard} aria-label="Group conversation">
-        <div className={styles.chatHeader}>
-          <div>
-            <h2>Conversation</h2>
-            <p>Only active members of this group can read or send messages.</p>
-          </div>
+        <div className={styles.chatHeaderActions}>
+          <span className={styles.connection}>
+            <span className={connection === "connected" ? styles.onlineDot : styles.offlineDot} />
+            {connection === "connected" ? "Live" : connection === "connecting" ? "Connecting" : "Reconnecting"}
+          </span>
           <span className={styles.secureLabel}><span>●</span> Group-only</span>
         </div>
-
-        <div className={styles.messages}>
-          {hasMore && (
-            <button
-              type="button"
-              className={styles.olderButton}
-              onClick={() => void loadOlderMessages()}
-              disabled={loadingOlder}
-            >
-              {loadingOlder ? "Loading older messages…" : "Load earlier messages"}
-            </button>
-          )}
-
-          {messages.length === 0 ? (
-            <div className={styles.emptyState}>
-              <div className={styles.emptyIcon}>✉</div>
-              <h3>Start the conversation</h3>
-              <p>Share an update or ask the group a question. Your message will stay here for members to see.</p>
-            </div>
-          ) : (
-            messages.map((message) => (
-              <article
-                key={message.id}
-                className={message.isMine ? styles.messageMine : styles.message}
-              >
-                <div className={styles.messageAvatar}>
-                  {message.authorName.slice(0, 1).toUpperCase()}
-                </div>
-                <div className={styles.messageBody}>
-                  <div className={styles.messageMeta}>
-                    <b>{message.isMine ? "You" : message.authorName}</b>
-                    <time dateTime={message.created_at}>{formatTime(message.created_at)}</time>
-                  </div>
-                  <p>{message.body}</p>
-                </div>
-              </article>
-            ))
-          )}
-          <div ref={messagesEndRef} />
-        </div>
-
-        {errorMessage && <p className={styles.inlineError} role="alert">{errorMessage}</p>}
-        {sendError && <p className={styles.inlineError} role="alert">{sendError}</p>}
-
-        <form className={styles.composer} onSubmit={sendMessage}>
-          <label className={styles.srOnly} htmlFor="group-chat-message">Write a group message</label>
-          <textarea
-            id="group-chat-message"
-            value={draft}
-            onChange={(event) => setDraft(event.target.value)}
-            onKeyDown={handleComposerKeyDown}
-            placeholder="Write a message…"
-            maxLength={1000}
-            rows={2}
-            disabled={sending || status !== "ready"}
-          />
-          <div className={styles.composerFooter}>
-            <span>{draft.length}/1000 · Enter to send, Shift+Enter for a new line</span>
-            <button type="submit" disabled={!draft.trim() || sending || status !== "ready"}>
-              {sending ? "Sending…" : "Send message"} <span aria-hidden="true">→</span>
-            </button>
+      </div>
+      <div className={styles.messages}>
+        {hasMore && <button type="button" className={styles.olderButton} onClick={() => void loadOlderMessages()} disabled={loadingOlder}>{loadingOlder ? "Loading older messages…" : "Load earlier messages"}</button>}
+        {messages.length === 0 ? (
+          <div className={styles.emptyState}>
+            <div className={styles.emptyIcon}>✉</div>
+            <h3>Start the conversation</h3>
+            <p>Share an update or ask the group a question. Your message will stay here for members to see.</p>
           </div>
-        </form>
-        <p className={styles.footerNote}>Messages are for group coordination. Contributions and withdrawals are recorded separately.</p>
-      </section>
-    </main>
+        ) : messages.map((message) => (
+          <article key={message.id} className={message.isMine ? styles.messageMine : styles.message}>
+            <div className={styles.messageAvatar}>{message.authorName.slice(0, 1).toUpperCase()}</div>
+            <div className={styles.messageBody}>
+              <div className={styles.messageMeta}><b>{message.isMine ? "You" : message.authorName}</b><time dateTime={message.created_at}>{formatTime(message.created_at)}</time></div>
+              <p>{message.body}</p>
+            </div>
+          </article>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+      {errorMessage && <p className={styles.inlineError} role="alert">{errorMessage}</p>}
+      {sendError && <p className={styles.inlineError} role="alert">{sendError}</p>}
+      <form className={styles.composer} onSubmit={sendMessage}>
+        <label className={styles.srOnly} htmlFor="group-chat-message">Write a group message</label>
+        <textarea id="group-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={handleComposerKeyDown} placeholder="Write a message…" maxLength={1000} rows={2} disabled={sending || status !== "ready"} />
+        <div className={styles.composerFooter}>
+          <span>{draft.length}/1000 · Enter to send, Shift+Enter for a new line</span>
+          <button type="submit" disabled={!draft.trim() || sending || status !== "ready"}>{sending ? "Sending…" : "Send message"} <span aria-hidden="true">→</span></button>
+        </div>
+      </form>
+      <p className={styles.footerNote}>Messages are for group coordination. Contributions and withdrawals are recorded separately.</p>
+    </section>
   );
 }
