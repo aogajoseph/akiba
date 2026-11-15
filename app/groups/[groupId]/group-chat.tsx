@@ -72,9 +72,10 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       .select("user_id,display_name,username")
       .in("user_id", authorIds);
 
-    const profileById = new Map(
-      ((profiles ?? []) as ProfileRow[]).map((profile) => [profile.user_id, profile]),
-    );
+    const profileById = new Map<string, ProfileRow>();
+    for (const profile of (profiles ?? []) as ProfileRow[]) {
+      profileById.set(profile.user_id, profile);
+    }
 
     return rows.map((row) => {
       const profile = profileById.get(row.author_id);
