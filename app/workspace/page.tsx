@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
+import { acceptGroupInvitationById, declineGroupInvitationById } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
 
 type Group = {
@@ -10,6 +11,17 @@ type Group = {
   group_type: string;
   description: string | null;
   currency_code: string;
+  created_at: string;
+};
+
+type Invitation = {
+  invitation_id: string;
+  group_id: string;
+  group_name: string;
+  group_description: string | null;
+  inviter_display_name: string | null;
+  inviter_username: string | null;
+  expires_at: string;
   created_at: string;
 };
 
@@ -42,7 +54,7 @@ export default async function WorkspacePage() {
     name: string,
     args?: Record<string, unknown>,
   ) => Promise<{ data: { read_at: string | null }[] | null; error: { message: string } | null }>;
-  const [{ data: profile, error: profileError }, { data: groups, error: groupsError }, { data: invitations }, { data: notifications }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: groups, error: groupsError }, { data: invitations, error: invitationsError }, { data: notifications }] = await Promise.all([
     supabase.from("akiba_profiles").select("username, display_name, avatar_path").eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at").order("created_at", { ascending: false }),
     supabase.rpc("akiba_list_my_group_invitations"),
@@ -53,6 +65,7 @@ export default async function WorkspacePage() {
 
   const unreadNotificationCount = (notifications ?? []).filter((item) => !item.read_at).length;
   const groupRows = (groups ?? []) as Group[];
+  const invitationRows = (invitations ?? []) as Invitation[];
   const groupIds = groupRows.map((group) => group.id);
   let messageCount: number | null = 0;
   let messageError = false;
@@ -116,6 +129,34 @@ export default async function WorkspacePage() {
           </div>
 
           {groupsError && <div className="ak-alert" role="alert">We couldn&apos;t load your groups. Please refresh the page and try again.</div>}
+
+          {invitationsError ? (
+            <section className="ak-panel" aria-labelledby="pending-invitations-heading">
+              <div className="ak-panel-heading"><div><h2 id="pending-invitations-heading">Group invitations</h2><p>We couldn&apos;t check for pending invitations. Please refresh the page.</p></div></div>
+            </section>
+          ) : invitationRows.length > 0 ? (
+            <section className="ak-panel ak-invitations-panel" aria-labelledby="pending-invitations-heading">
+              <div className="ak-panel-heading"><div><span className="ak-eyebrow">ACTION NEEDED</span><h2 id="pending-invitations-heading">You&apos;ve been invited to join a group</h2><p>Review your invitations and choose whether to join.</p></div><span className="ak-panel-count">{invitationRows.length} pending</span></div>
+              <div className="ak-workspace-member-list">
+                {invitationRows.map((invite) => (
+                  <article className="ak-workspace-member ak-inbox-invitation" key={invite.invitation_id}>
+                    <span className="ak-workspace-member-fallback" aria-hidden="true">♧</span>
+                    <div>
+                      <strong>{invite.group_name}</strong>
+                      <small>Invited by {invite.inviter_display_name || (invite.inviter_username ? "@" + invite.inviter_username : "A group member")}</small>
+                      {invite.group_description ? <p>{invite.group_description}</p> : null}
+                      <small>Expires {new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" }).format(new Date(invite.expires_at))}</small>
+                    </div>
+                    <div className="ak-inbox-actions">
+                      <form action={acceptGroupInvitationById}><input type="hidden" name="invitation_id" value={invite.invitation_id} /><button type="submit" className="workspace-primary">Accept</button></form>
+                      <form action={declineGroupInvitationById}><input type="hidden" name="invitation_id" value={invite.invitation_id} /><button type="submit" className="ak-member-danger">Decline</button></form>
+                    </div>
+                  </article>
+                ))}
+              </div>
+              <Link className="ak-panel-footer" href="/workspace/invitations">View all invitations</Link>
+            </section>
+          ) : null}
 
           <div className="ak-metrics">
             <article className="ak-metric"><span className="ak-metric-icon pink">♧</span><span className="ak-metric-label">My Groups</span><strong>{groupsError ? "—" : groupRows.length}</strong><small>{groupRows.length === 1 ? "1 group to organise" : "Your shared spaces"}</small></article>
