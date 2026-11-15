@@ -45,11 +45,6 @@ export default async function WorkspacePage() {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
-  const invitationToken = user.user_metadata?.akiba_pending_invitation_token;
-  if (typeof invitationToken === "string" && /^[0-9a-f]{64}$/.test(invitationToken)) {
-    redirect("/invitations/" + invitationToken);
-  }
-
   const notificationRpc = supabase.rpc.bind(supabase) as unknown as (
     name: string,
     args?: Record<string, unknown>,
