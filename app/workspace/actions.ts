@@ -191,7 +191,6 @@ export async function acceptGroupInvitation(formData: FormData) {
     redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
   }
   if (!groupId) redirect("/invitations/" + token + "?error=" + encodeURIComponent("This invitation has expired."));
-  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   redirect("/workspace/groups/" + groupId);
 }
 
@@ -204,7 +203,6 @@ export async function declineGroupInvitation(formData: FormData) {
   const tokenHash = createHash("sha256").update(token).digest("hex");
   const { error } = await supabase.rpc("akiba_decline_group_invitation", { p_token_hash: tokenHash });
   if (error) redirect("/invitations/" + token + "?error=" + encodeURIComponent("This invitation could not be declined. It may no longer be available."));
-  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   redirect("/workspace?message=" + encodeURIComponent("Invitation declined."));
 }
 
@@ -296,7 +294,6 @@ export async function acceptGroupInvitationById(formData: FormData) {
   if (error || !groupId) redirect(returnTo + "?error=" + encodeURIComponent(
     error?.message.includes("Group capacity reached") ? "Group capacity reached." : "This invitation is no longer available."
   ));
-  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   revalidatePath("/workspace");
   redirect("/workspace/groups/" + groupId);
 }
@@ -310,7 +307,6 @@ export async function declineGroupInvitationById(formData: FormData) {
   if (authError || !user) redirect("/login?next=" + encodeURIComponent(returnTo));
   const { error } = await supabase.rpc("akiba_decline_group_invitation_by_id", { p_invitation_id: invitationId });
   if (error) redirect(returnTo + "?error=" + encodeURIComponent("This invitation could not be declined."));
-  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   revalidatePath("/workspace");
   redirect(returnTo + "?message=" + encodeURIComponent("Invitation declined."));
 }
@@ -462,6 +458,5 @@ export async function acceptGroupInviteLink(formData: FormData) {
         : "This group invitation link is no longer available.";
     redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
   }
-  await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
   redirect("/workspace/groups/" + groupId);
 }
