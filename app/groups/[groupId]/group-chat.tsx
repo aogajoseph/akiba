@@ -59,6 +59,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
   const [mutatingMessageId, setMutatingMessageId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ChatMessage | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "denied" | "error">("loading");
   const [connection, setConnection] = useState<"connecting" | "connected" | "reconnecting">("connecting");
   const [sending, setSending] = useState(false);
@@ -347,6 +348,67 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }));
   }
 
+  async function confirmDeleteMessage() {
+    const target = deleteTarget;
+    const client = clientRef.current;
+    if (!target || !client || mutatingMessageId) return;
+
+    setMutatingMessageId(target.id);
+    setSendError("");
+    try {
+      const { data, error } = await client
+        .from("akiba_group_messages")
+        .update({ body: "[deleted]", deleted_at: new Date().toISOString() })
+        .eq("id", target.id)
+        .eq("group_id", groupId)
+        .select("id,deleted_at")
+        .maybeSingle();
+
+      if (error) {
+        console.error("Group chat message deletion failed", {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        setSendError(
+          error.code === "42501"
+            ? "You no longer have permission to delete this message."
+            : "The message could not be deleted. Please try again.",
+        );
+        return;
+      }
+
+      if (!data) {
+        setSendError("This message is no longer available to delete. Refresh the conversation and try again.");
+        return;
+      }
+
+      setMessages((current) =>
+        current.map((item) =>
+          item.id === target.id
+            ? { ...item, body: "[deleted]", deleted_at: data.deleted_at ?? new Date().toISOString() }
+            : item,
+        ),
+      );
+      setDeleteTarget(null);
+    } catch (error) {
+      console.error("Unexpected group chat message deletion error", error);
+      setSendError("The message could not be deleted. Please try again.");
+    } finally {
+      setMutatingMessageId(null);
+    }
+  }
+
+  useEffect(() => {
+    if (!deleteTarget) return;
+    function handleEscape(event: KeyboardEvent) {
+      if (event.key === "Escape" && !mutatingMessageId) setDeleteTarget(null);
+    }
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [deleteTarget, mutatingMessageId]);
+
   function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
     if (event.key === "Enter" && !event.shiftKey) {
       event.preventDefault();
@@ -400,21 +462,12 @@ export default function GroupChat({ groupId }: { groupId: string }) {
               <div className={styles.messageMeta}><b>{message.isMine ? "You" : message.authorName}</b><time dateTime={message.created_at}>{formatTime(message.created_at)}</time></div>
               {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => document.getElementById("message-" + message.parent_message_id)?.scrollIntoView({ behavior: "smooth", block: "center" })}>↪ {message.replyPreview.slice(0, 120)}</button>}
               <p>{message.deleted_at ? "This message was deleted" : message.body}</p>
-              {message.edited_at && !message.deleted_at && <small>Edited</small>}
+              {message.edited_at && !message.deleted_at && <small className={styles.editedLabel}>Edited</small>}
               <div className={styles.messageActions}>
                 <button type="button" onClick={() => { setEditingMessage(null); setReplyTarget(message); }}>Reply</button>
                 {!message.deleted_at && message.isMine && <>
                   <button type="button" onClick={() => { setReplyTarget(null); setEditingMessage(message); setDraft(message.body); }}>Edit</button>
-                  <button type="button" disabled={mutatingMessageId === message.id} onClick={async () => {
-                    if (!window.confirm("Delete this message? This cannot be undone.")) return;
-                    const client = clientRef.current;
-                    if (!client) return;
-                    setMutatingMessageId(message.id);
-                    const { error } = await client.from("akiba_group_messages").update({ body: "", deleted_at: new Date().toISOString() }).eq("id", message.id).eq("group_id", groupId);
-                    if (error) setSendError("The message could not be deleted. Please try again.");
-                    else setMessages((current) => current.map((item) => item.id === message.id ? { ...item, body: "", deleted_at: new Date().toISOString() } : item));
-                    setMutatingMessageId(null);
-                  }}>Delete</button>
+                  <button type="button" disabled={mutatingMessageId === message.id} onClick={() => { setSendError(""); setDeleteTarget(message); }}>Delete</button>
                 </>}
               </div>
             </div>
@@ -438,6 +491,30 @@ export default function GroupChat({ groupId }: { groupId: string }) {
         </div>
       </form>
       <p className={styles.footerNote}>Messages are for group coordination. Contributions and withdrawals are recorded separately.</p>
+      {deleteTarget && (
+        <div className={styles.dialogBackdrop} onClick={() => { if (!mutatingMessageId) setDeleteTarget(null); }}>
+          <section
+            className={styles.deleteDialog}
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="delete-message-title"
+            aria-describedby="delete-message-description"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <span className={styles.deleteDialogIcon} aria-hidden="true">!</span>
+            <h3 id="delete-message-title">Delete this message?</h3>
+            <p id="delete-message-description">
+              The message will be removed from the conversation for everyone in this group. This action cannot be undone.
+            </p>
+            <div className={styles.deleteDialogActions}>
+              <button type="button" className={styles.deleteCancel} disabled={mutatingMessageId === deleteTarget.id} onClick={() => setDeleteTarget(null)}>Cancel</button>
+              <button type="button" className={styles.deleteConfirm} disabled={mutatingMessageId === deleteTarget.id} onClick={() => void confirmDeleteMessage()}>
+                {mutatingMessageId === deleteTarget.id ? "Deleting…" : "Delete message"}
+              </button>
+            </div>
+          </section>
+        </div>
+      )}
     </section>
   );
 }
