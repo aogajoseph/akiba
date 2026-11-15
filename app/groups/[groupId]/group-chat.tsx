@@ -141,7 +141,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
 
     const { data, error } = await client
       .from("akiba_group_messages")
-      .select("id,group_id,author_id,body,created_at")
+      .select("id,group_id,author_id,body,created_at,parent_message_id,edited_at,deleted_at")
       .eq("group_id", groupId)
       .eq("id", messageId)
       .maybeSingle();
@@ -232,6 +232,14 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             if (event.group_id === groupId && event.message_id) {
               void loadMessage(event.message_id);
             }
+          })
+          .on("broadcast", { event: "message_updated" }, ({ payload }) => {
+            const event = payload as { group_id?: string; message_id?: string };
+            if (event.group_id === groupId && event.message_id) void loadMessage(event.message_id);
+          })
+          .on("broadcast", { event: "message_deleted" }, ({ payload }) => {
+            const event = payload as { group_id?: string; message_id?: string };
+            if (event.group_id === groupId && event.message_id) void loadMessage(event.message_id);
           })
           .subscribe((channelStatus) => {
             if (!active) return;
