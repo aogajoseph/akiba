@@ -50,7 +50,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
             <h1 id="profile-setup-title">Set up your profile</h1>
           </div>
           <p className="profile-setup-description">{invitationOnboarding
-            ? "Finish setting up your profile. We’ll add you to the group you were invited to and take you straight there."
+            ? "Finish setting up your profile, then review your invitation and choose whether to join the group."
             : "This is how people will know you on Akiba"}</p>
           {error && <p className="profile-form-error" role="alert">{error}</p>}
           <ProfileForm next={next} initial={{
