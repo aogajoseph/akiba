@@ -67,3 +67,13 @@
  .topbar{height:60px;padding:0 16px}.breadcrumb{display:none}.heading{padding:27px 17px 20px;gap:12px}.headingIcon{width:46px;height:46px;border-radius:13px}.heading h1{font-size:23px}.headingCopy>p:last-child{font-size:10px}.connection{padding:7px;font-size:9px}.chatCard{padding:0}.chatHeader{padding:16px}.chatHeader h2{font-size:14px}.chatHeader p{font-size:10px}.messages{min-height:360px;max-height:calc(100vh - 330px);padding:8px 15px 15px}.composer{padding:13px 14px}.composerFooter{align-items:flex-end}.composerFooter>span{max-width:58%;line-height:1.5}.composerFooter button{padding:10px 12px}.messageMeta{align-items:flex-start;gap:5px}.messageMeta time{font-size:8px}.messageBody{max-width:82%;padding:9px 11px}.messageBody p{font-size:11px}.messageAvatar{flex-basis:28px;width:28px;height:28px}
 }
 @media(max-width:380px){.brand{font-size:20px}.heading{align-items:flex-start;flex-wrap:wrap}.connection{margin-left:58px}.secureLabel{font-size:8px}.composerFooter>span{font-size:8px}}
+
+.replyPreview{display:block;margin-top:7px;padding:7px 9px;border:0;border-left:3px solid #8ab99a;border-radius:4px;background:#edf4ef;color:#54745f;text-align:left;font-size:10px;line-height:1.5;cursor:pointer;overflow-wrap:anywhere}
+.messageActions{display:flex;gap:10px;margin-top:7px;opacity:.82}
+.messageActions button{padding:2px 0;border:0;background:transparent;color:#648070;font:inherit;font-size:9px;cursor:pointer}
+.messageActions button:hover{text-decoration:underline;color:#176b50}
+.messageActions button:disabled{opacity:.5;cursor:wait}
+.composerContext{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border:1px solid #dce9df;border-bottom:0;border-radius:9px 9px 0 0;background:#f4f9f5;color:#426a50;font-size:10px}
+.composerContext span{font-weight:750;white-space:nowrap}
+.composerContext p{flex:1;min-width:0;margin:0;color:#718078;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.composerContext button{border:0;background:transparent;color:#65796b;font-size:10px;cursor:pointer}
