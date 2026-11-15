@@ -151,7 +151,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
       <section className="ak-main">
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
-          <div className="ak-workspace-top-crumb"><Link href="/workspace">My Groups</Link><span>/</span><Link href={"/workspace/groups/" + group.id}>{group.name}</Link><span>/</span><strong>Membership</strong></div>
+          <div className="ak-workspace-top-crumb"><Link href="/workspace/groups">My Groups</Link><span>/</span><Link href={"/workspace/groups/" + group.id}>{group.name}</Link><span>/</span><strong>Membership</strong></div>
           <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{userAvatarUrl ? <img src={userAvatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
         </header>
 
