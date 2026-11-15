@@ -53,6 +53,8 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     : invitation!.status !== "pending" ? invitation!.status : group.status !== "active" ? "unavailable" : "pending";
 
   const next = "/invitations/" + token;
+  // Reusable links remain token-based; email invitations use the durable inbox.
+  const authNext = isReusableLink ? next + "?source=link" : "/workspace/invitations";
   const invitedEmail = invitation?.recipient_email?.trim().toLowerCase() ?? null;
   const signedInEmail = user?.email?.trim().toLowerCase() ?? null;
   const emailMismatch = !isReusableLink && Boolean(user && invitedEmail && signedInEmail !== invitedEmail);
@@ -107,7 +109,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
         ) : !user ? (
           <div className="auth-form">
             <p>You’ve been invited to join this group. Use <strong>{invitedEmail}</strong> to create your account or sign in. After you verify your email and complete your profile, this invitation will be waiting in your Akiba invitation inbox.</p>
-            <Link className="workspace-primary" href={"/signup?next=" + encodeURIComponent("/workspace/invitations") + (invitedEmail ? "&email=" + encodeURIComponent(invitedEmail) : "")}>Create an account</Link>
+            <Link className="workspace-primary" href={"/signup?next=" + encodeURIComponent(authNext) + (invitedEmail ? "&email=" + encodeURIComponent(invitedEmail) : "")}>Create an account</Link>
             <p className="auth-switch">Already have an Akiba account? <Link href={"/login?next=" + encodeURIComponent("/workspace/invitations") + (invitedEmail ? "&email=" + encodeURIComponent(invitedEmail) : "")}>Sign in</Link></p>
           </div>
         ) : (
