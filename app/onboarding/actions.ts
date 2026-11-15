@@ -1,7 +1,5 @@
 "use server";
 
-import { createHash } from "node:crypto";
-
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { safeInternalPath } from "@/lib/auth/redirect";
@@ -102,27 +100,12 @@ export async function saveProfile(formData: FormData) {
     if (removeError) console.error("Akiba old avatar cleanup failed", { code: removeError.name });
   }
 
-  // When onboarding began from a group invitation, finish the join now.
-  // The invitation page supplies this only after the user opens an invite
-  // and needs to complete profile setup before joining.
+  // Profile completion must never accept a group invitation. Return the
+  // invitee to the invitation page so they can review it and choose Accept
+  // or Decline themselves.
   const invitationContinuation = next.match(/^\/invitations\/([0-9a-f]{64})\?complete=1&kind=(email|link)$/);
   if (invitationContinuation) {
-    const [, token, kind] = invitationContinuation;
-    const tokenHash = createHash("sha256").update(token).digest("hex");
-    const joinResult = kind === "link"
-      ? await supabase.rpc("akiba_join_group_by_link", { p_token_hash: tokenHash })
-      : await supabase.rpc("akiba_accept_group_invitation", { p_token_hash: tokenHash });
-    const { data: groupId, error: joinError } = joinResult;
-    if (joinError || !groupId) {
-      const message = joinError?.message.includes("Group capacity reached")
-        ? "Group capacity reached. Ask a group member to try again when a space becomes available."
-        : joinError?.message.includes("blocked")
-          ? "You cannot join this group."
-          : "Your profile is ready, but the invitation could not be accepted. Please review the invitation and try again.";
-      redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
-    }
-    await supabase.auth.updateUser({ data: { akiba_pending_invitation_token: null } });
-    redirect("/workspace/groups/" + groupId);
+    redirect("/invitations/" + invitationContinuation[1]);
   }
 
   redirect(next);
