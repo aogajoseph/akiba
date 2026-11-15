@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type FormEvent, type KeyboardEvent } from "react";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 import Link from "next/link";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./group-chat.module.css";
@@ -58,6 +59,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [sendError, setSendError] = useState("");
   const clientRef = useRef<ReturnType<typeof createClient> | null>(null);
+  const currentUserIdRef = useRef("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const hydrateMessages = useCallback(async (rows: MessageRow[], userId: string) => {
@@ -86,7 +88,8 @@ export default function GroupChat({ groupId }: { groupId: string }) {
 
   const loadLatest = useCallback(async (replace = false) => {
     const client = clientRef.current;
-    if (!client || !currentUserId) return;
+    const userId = currentUserIdRef.current;
+    if (!client || !userId) return;
 
     const { data, error } = await client
       .from("akiba_group_messages")
@@ -102,15 +105,16 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     }
 
     const rows = (data ?? []) as MessageRow[];
-    const hydrated = await hydrateMessages(rows, currentUserId);
+    const hydrated = await hydrateMessages(rows, userId);
     setMessages((current) => mergeMessages(replace ? [] : current, hydrated));
     setHasMore(rows.length === PAGE_SIZE);
     setStatus("ready");
-  }, [currentUserId, groupId, hydrateMessages]);
+  }, [groupId, hydrateMessages]);
 
   const loadMessage = useCallback(async (messageId: string) => {
     const client = clientRef.current;
-    if (!client || !currentUserId) return;
+    const userId = currentUserIdRef.current;
+    if (!client || !userId) return;
 
     const { data, error } = await client
       .from("akiba_group_messages")
@@ -120,13 +124,13 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       .maybeSingle();
 
     if (error || !data) return;
-    const hydrated = await hydrateMessages([data as MessageRow], currentUserId);
+    const hydrated = await hydrateMessages([data as MessageRow], userId);
     setMessages((current) => mergeMessages(current, hydrated));
-  }, [currentUserId, groupId, hydrateMessages]);
+  }, [groupId, hydrateMessages]);
 
   useEffect(() => {
     let active = true;
-    let channel: ReturnType<ReturnType<typeof createClient>["channel"]> | null = null;
+    let channel: RealtimeChannel | null = null;
 
     async function initialize() {
       try {
@@ -142,6 +146,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
         }
 
         const userId = authData.user.id;
+        currentUserIdRef.current = userId;
         const { data: group, error: groupError } = await client
           .from("akiba_groups")
           .select("id,name,status")
