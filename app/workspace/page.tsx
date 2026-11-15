@@ -84,7 +84,7 @@ export default async function WorkspacePage() {
         <nav className="ak-nav" aria-label="Main navigation">
           <span className="ak-nav-label">WORKSPACE</span>
           <Link href="/workspace" className="ak-nav-link active"><span>⌂</span>Home</Link>
-          <a href="#your-groups" className="ak-nav-link"><span>♧</span>My Groups{groupRows.length > 0 && <small>{groupRows.length}</small>}</a>
+          <Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups{groupRows.length > 0 && <small>{groupRows.length}</small>}</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations{(invitations ?? []).length > 0 && <small>{(invitations ?? []).length}</small>}</Link>
           <Link href="/workspace/notifications" className="ak-nav-link"><span>♢</span>Notifications{unreadNotificationCount > 0 && <small>{unreadNotificationCount}</small>}</Link>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
@@ -133,7 +133,7 @@ export default async function WorkspacePage() {
                 ) : (
                   <div className="ak-group-list">{groupRows.slice(0, 5).map((group) => <Link href={"/workspace/groups/" + group.id} className="ak-group-row" key={group.id}><span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span><span className="ak-group-copy"><strong>{group.name}</strong><small>{group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal"} · {group.group_type.replaceAll("_", " ")} · {group.currency_code}{group.description ? " · " + group.description : ""}</small></span><span className="ak-group-date">{shortDate(group.created_at)}</span><span className="ak-chevron">›</span></Link>)}</div>
                 )}
-                {groupRows.length > 5 && <Link className="ak-panel-footer" href="#your-groups">Showing your 5 most recent groups</Link>}
+                {groupRows.length > 5 && <Link className="ak-panel-footer" href="/workspace/groups">See all your groups</Link>}
               </section>
 
               <section className="ak-purpose-banner"><div className="ak-banner-logo"><img src="/akiba-logo.png" alt="" /></div><div><h2>Do more, together</h2><p>Create a group, bring people together, and turn your plans into reality.</p></div><Link href="/workspace/new" className="ak-primary">＋ Create Group</Link></section>
@@ -145,7 +145,7 @@ export default async function WorkspacePage() {
             </div>
 
             <aside className="ak-dashboard-aside">
-              <section className="ak-panel ak-quick-panel"><div className="ak-panel-heading"><h2>Quick Actions</h2></div><Link href="/workspace/new" className="ak-quick-action"><span className="ak-quick-icon pink">♧</span><span><strong>Create New Group</strong><small>Start organising together</small></span><b>›</b></Link><a href="#your-groups" className="ak-quick-action"><span className="ak-quick-icon violet">▤</span><span><strong>Explore My Groups</strong><small>Return to your shared spaces</small></span><b>›</b></a></section>
+              <section className="ak-panel ak-quick-panel"><div className="ak-panel-heading"><h2>Quick Actions</h2></div><Link href="/workspace/new" className="ak-quick-action"><span className="ak-quick-icon pink">♧</span><span><strong>Create New Group</strong><small>Start organising together</small></span><b>›</b></Link><Link href="/workspace/groups" className="ak-quick-action"><span className="ak-quick-icon violet">▤</span><span><strong>Explore My Groups</strong><small>View all your shared spaces</small></span><b>›</b></Link></section>
               <section className="ak-panel ak-upcoming-panel"><div className="ak-panel-heading"><h2>Upcoming &amp; Pending</h2></div><div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">▦</span><h3>Nothing scheduled yet</h3><p>Events, contribution schedules and approvals will appear here as those features become available.</p></div><div className="ak-feature-note">Scheduling and approvals aren&apos;t enabled in this release.</div></section>
               <section className="ak-note-card"><span>✳</span><strong>Do more, together</strong><p>Akiba helps people organise shared plans and purposes in one place.</p></section>
             </aside>
