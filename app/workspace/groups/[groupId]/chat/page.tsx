@@ -12,7 +12,7 @@ import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 type Props = { params: Promise<{ groupId: string }> };
 
 function initials(value: string) {
-  return value.trim().split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "A";
+  return value.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "A";
 }
 
 export default async function GroupChatPage({ params }: Props) {
