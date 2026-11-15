@@ -106,9 +106,9 @@ export default async function InvitationPage({ params, searchParams }: Props) {
           </div>
         ) : !user ? (
           <div className="auth-form">
-            <p>You’ve been invited to join this group. Use <strong>{invitedEmail}</strong> to create your account or sign in.</p>
-            <Link className="workspace-primary" href={"/signup?next=" + encodeURIComponent(next) + (invitedEmail ? "&email=" + encodeURIComponent(invitedEmail) : "")}>Create an account to join</Link>
-            <p className="auth-switch">Already have an Akiba account? <Link href={"/login?next=" + encodeURIComponent(next) + (invitedEmail ? "&email=" + encodeURIComponent(invitedEmail) : "")}>Sign in</Link></p>
+            <p>You’ve been invited to join this group. Use <strong>{invitedEmail}</strong> to create your account or sign in. After you verify your email and complete your profile, this invitation will be waiting in your Akiba invitation inbox.</p>
+            <Link className="workspace-primary" href={"/signup?next=" + encodeURIComponent("/workspace/invitations") + (invitedEmail ? "&email=" + encodeURIComponent(invitedEmail) : "")}>Create an account</Link>
+            <p className="auth-switch">Already have an Akiba account? <Link href={"/login?next=" + encodeURIComponent("/workspace/invitations") + (invitedEmail ? "&email=" + encodeURIComponent(invitedEmail) : "")}>Sign in</Link></p>
           </div>
         ) : (
           <div className="auth-form">
