@@ -132,7 +132,7 @@ export default async function GroupFinancesPage({ params }: Props) {
             <Link href={`/workspace/groups/${group.id}`}><DashboardOutlinedIcon />Overview</Link>
             <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
-            <span aria-disabled="true" title="Group chat is coming soon"><ChatBubbleOutlineOutlinedIcon />Chat</span>
+            <Link className="" href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat</Link>
             <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
           </nav>
 
