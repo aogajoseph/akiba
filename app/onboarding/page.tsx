@@ -13,6 +13,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
   const params = await searchParams;
   const next = safeInternalPath(params.next, "/workspace");
   const invitationOnboarding = /^\/invitations\/[0-9a-f]{64}\?complete=1&kind=(email|link)$/.test(next);
+  const invitationInboxOnboarding = next === "/workspace/invitations";
 
   const [{ data: profile, error: profileError }, { data: contact }] = await Promise.all([
     supabase
@@ -51,7 +52,9 @@ export default async function OnboardingPage({ searchParams }: Props) {
           </div>
           <p className="profile-setup-description">{invitationOnboarding
             ? "Finish setting up your profile, then review your invitation and choose whether to join the group."
-            : "This is how people will know you on Akiba"}</p>
+            : invitationInboxOnboarding
+              ? "Finish setting up your profile, then open your invitation inbox to review invitations addressed to your email. You decide whether to accept or decline."
+              : "This is how people will know you on Akiba"}</p>
           {error && <p className="profile-form-error" role="alert">{error}</p>}
           <ProfileForm next={next} initial={{
             username: profile?.username ?? "",
