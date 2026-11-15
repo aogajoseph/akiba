@@ -113,7 +113,7 @@ export default async function GroupFinancesPage({ params }: Props) {
       <section className="ak-main">
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
-          <div className="ak-workspace-top-crumb"><Link href="/workspace">My Groups</Link><span>/</span><Link href={`/workspace/groups/${group.id}`}>{group.name}</Link><span>/</span><strong>Finances</strong></div>
+          <div className="ak-workspace-top-crumb"><Link href="/workspace/groups">My Groups</Link><span>/</span><Link href={`/workspace/groups/${group.id}`}>{group.name}</Link><span>/</span><strong>Finances</strong></div>
           <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
         </header>
 
