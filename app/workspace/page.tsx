@@ -148,8 +148,8 @@ export default async function WorkspacePage() {
                       <small>Expires {new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric" }).format(new Date(invite.expires_at))}</small>
                     </div>
                     <div className="ak-inbox-actions">
-                      <form action={acceptGroupInvitationById}><input type="hidden" name="invitation_id" value={invite.invitation_id} /><button type="submit" className="workspace-primary">Accept</button></form>
-                      <form action={declineGroupInvitationById}><input type="hidden" name="invitation_id" value={invite.invitation_id} /><button type="submit" className="ak-member-danger">Decline</button></form>
+                      <form action={acceptGroupInvitationById}><input type="hidden" name="invitation_id" value={invite.invitation_id} /><input type="hidden" name="return_to" value="/workspace" /><button type="submit" className="workspace-primary">Accept</button></form>
+                      <form action={declineGroupInvitationById}><input type="hidden" name="invitation_id" value={invite.invitation_id} /><input type="hidden" name="return_to" value="/workspace" /><button type="submit" className="ak-member-danger">Decline</button></form>
                     </div>
                   </article>
                 ))}
