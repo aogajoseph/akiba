@@ -50,17 +50,17 @@ export default function SignupForm({ next, invitedEmail = "" }: { next: string; 
       // server callback can exchange the confirmation code using that verifier.
       const supabase = createBrowserClient(url, key);
       const callback = new URL("/auth/callback", window.location.origin);
-      callback.searchParams.set("next", next);
-      // Keep the invitation as a navigation hint on the new account as well.
-      // This recovers the journey if the email provider returns the user to
-      // Akiba home instead of the requested callback URL.
-      const invitationToken = next.match(/^\/invitations\/([0-9a-f]{64})$/)?.[1];
+      // Pending invitations are recovered from the authenticated inbox,
+      // rather than browser state or user-editable auth metadata.
+      const postAuthNext = /^\/invitations\/[0-9a-f]{64}$/.test(next)
+        ? "/workspace/invitations"
+        : next;
+      callback.searchParams.set("next", postAuthNext);
       const { data, error: signupError } = await supabase.auth.signUp({
         email,
         password,
         options: {
           emailRedirectTo: callback.toString(),
-          ...(invitationToken ? { data: { akiba_pending_invitation_token: invitationToken } } : {}),
         },
       });
       if (signupError) {
@@ -83,14 +83,14 @@ export default function SignupForm({ next, invitedEmail = "" }: { next: string; 
           setError("Unable to create account. Please try again.");
         }
       } else if (data.session) {
-        window.location.assign(next);
+        window.location.assign(postAuthNext);
         return;
       } else if (data.user?.identities?.length === 0) {
         // With email confirmation enabled, Supabase returns an obfuscated user
         // with no identities for an already-registered email.
         setError("An account with this email already exists. Please sign in.");
       } else {
-        setMessage(`Account details received. Check ${email} for the confirmation email. After confirming, you’ll return to your group invitation.`);
+        setMessage(`Account details received. Check ${email} for the confirmation email. After confirming, sign in if prompted; your invitation will be waiting in your Akiba invitation inbox.`);
       }
     } catch (error) {
       console.error("Akiba signup request failed unexpectedly", {
