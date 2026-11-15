@@ -13,12 +13,16 @@ type MessageRow = {
   author_id: string;
   body: string;
   created_at: string;
+  parent_message_id: string | null;
+  edited_at: string | null;
+  deleted_at: string | null;
 };
 
 type ChatMessage = MessageRow & {
   authorName: string;
   avatarUrl: string | null;
   isMine: boolean;
+  replyPreview: string | null;
 };
 
 type ProfileRow = {
@@ -52,6 +56,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [currentUserId, setCurrentUserId] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
+  const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
+  const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
+  const [mutatingMessageId, setMutatingMessageId] = useState<string | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "denied" | "error">("loading");
   const [connection, setConnection] = useState<"connecting" | "connected" | "reconnecting">("connecting");
   const [sending, setSending] = useState(false);
@@ -78,6 +85,16 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       profileById.set(profile.user_id, profile);
     }
 
+    const parentIds = Array.from(new Set(rows.map((row) => row.parent_message_id).filter((id): id is string => Boolean(id))));
+    const parentBodies = new Map<string, string>();
+    if (parentIds.length) {
+      const { data: parents } = await client.from("akiba_group_messages")
+        .select("id,body,deleted_at").in("id", parentIds);
+      for (const parent of parents ?? []) {
+        parentBodies.set(parent.id, parent.deleted_at ? "This message was deleted" : parent.body);
+      }
+    }
+
     return rows.map((row) => {
       const profile = profileById.get(row.author_id);
       return {
@@ -87,6 +104,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
           ? client.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl
           : null,
         isMine: row.author_id === userId,
+        replyPreview: row.parent_message_id ? parentBodies.get(row.parent_message_id) ?? "Original message unavailable" : null,
       } satisfies ChatMessage;
     });
   }, []);
@@ -98,7 +116,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
 
     const { data, error } = await client
       .from("akiba_group_messages")
-      .select("id,group_id,author_id,body,created_at")
+      .select("id,group_id,author_id,body,created_at,parent_message_id,edited_at,deleted_at")
       .eq("group_id", groupId)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
@@ -284,18 +302,21 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     const body = draft.trim();
     const client = clientRef.current;
 
-    if (!body || !client || !currentUserId || sending || body.length > 1000) return;
+    if (!client || !currentUserId || sending) return;
+    if (!body || body.length > 1000) return;
 
     setSending(true);
     setSendError("");
 
-    const { data, error } = await client
-      .from("akiba_group_messages")
-      .insert({
-        group_id: groupId,
-        author_id: currentUserId,
-        body,
-      })
+    const query = editingMessage
+      ? client.from("akiba_group_messages").update({ body }).eq("id", editingMessage.id).eq("group_id", groupId)
+      : client.from("akiba_group_messages").insert({
+          group_id: groupId,
+          author_id: currentUserId,
+          body,
+          parent_message_id: replyTarget?.id ?? null,
+        });
+    const { data, error } = await query
       .select("id,group_id,author_id,body,created_at")
       .single();
 
@@ -312,6 +333,8 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     const hydrated = await hydrateMessages([data as MessageRow], currentUserId);
     setMessages((current) => mergeMessages(current, hydrated));
     setDraft("");
+    setReplyTarget(null);
+    setEditingMessage(null);
     setSending(false);
     requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }));
   }
@@ -363,11 +386,29 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             <p>Share an update or ask the group a question. Your message will stay here for members to see.</p>
           </div>
         ) : messages.map((message) => (
-          <article key={message.id} className={message.isMine ? styles.messageMine : styles.message}>
+          <article id={"message-" + message.id} key={message.id} className={message.isMine ? styles.messageMine : styles.message}>
             <div className={styles.messageAvatar} aria-hidden="true">{message.avatarUrl ? <img src={message.avatarUrl} alt="" /> : message.authorName.slice(0, 1).toUpperCase()}</div>
             <div className={styles.messageBody}>
               <div className={styles.messageMeta}><b>{message.isMine ? "You" : message.authorName}</b><time dateTime={message.created_at}>{formatTime(message.created_at)}</time></div>
-              <p>{message.body}</p>
+              {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => document.getElementById("message-" + message.parent_message_id)?.scrollIntoView({ behavior: "smooth", block: "center" })}>↪ {message.replyPreview.slice(0, 120)}</button>}
+              <p>{message.deleted_at ? "This message was deleted" : message.body}</p>
+              {message.edited_at && !message.deleted_at && <small>Edited</small>}
+              {!message.deleted_at && <div className={styles.messageActions}>
+                <button type="button" onClick={() => { setEditingMessage(null); setReplyTarget(message); }}>Reply</button>
+                {message.isMine && <>
+                  <button type="button" onClick={() => { setReplyTarget(null); setEditingMessage(message); setDraft(message.body); }}>Edit</button>
+                  <button type="button" disabled={mutatingMessageId === message.id} onClick={async () => {
+                    if (!window.confirm("Delete this message? This cannot be undone.")) return;
+                    const client = clientRef.current;
+                    if (!client) return;
+                    setMutatingMessageId(message.id);
+                    const { error } = await client.from("akiba_group_messages").update({ body: "", deleted_at: new Date().toISOString() }).eq("id", message.id).eq("group_id", groupId);
+                    if (error) setSendError("The message could not be deleted. Please try again.");
+                    else setMessages((current) => current.map((item) => item.id === message.id ? { ...item, body: "", deleted_at: new Date().toISOString() } : item));
+                    setMutatingMessageId(null);
+                  }}>Delete</button>
+                </>}
+              </div>}
             </div>
           </article>
         ))}
@@ -375,12 +416,17 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       </div>
       {errorMessage && <p className={styles.inlineError} role="alert">{errorMessage}</p>}
       {sendError && <p className={styles.inlineError} role="alert">{sendError}</p>}
+      {(replyTarget || editingMessage) && <div className={styles.composerContext}>
+        <span>{editingMessage ? "Editing your message" : "Replying to " + (replyTarget?.isMine ? "your message" : replyTarget?.authorName)}</span>
+        <p>{editingMessage?.body ?? replyTarget?.body}</p>
+        <button type="button" onClick={() => { setReplyTarget(null); setEditingMessage(null); setDraft(""); }}>Cancel</button>
+      </div>}
       <form className={styles.composer} onSubmit={sendMessage}>
         <label className={styles.srOnly} htmlFor="group-chat-message">Write a group message</label>
         <textarea id="group-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={handleComposerKeyDown} placeholder="Write a message…" maxLength={1000} rows={2} disabled={sending || status !== "ready"} />
         <div className={styles.composerFooter}>
           <span>{draft.length}/1000 · Enter to send, Shift+Enter for a new line</span>
-          <button type="submit" disabled={!draft.trim() || sending || status !== "ready"}>{sending ? "Sending…" : "Send message"} <span aria-hidden="true">→</span></button>
+          <button type="submit" disabled={!draft.trim() || sending || status !== "ready"}>{sending ? (editingMessage ? "Saving…" : "Sending…") : (editingMessage ? "Save edit" : "Send message")} <span aria-hidden="true">→</span></button>
         </div>
       </form>
       <p className={styles.footerNote}>Messages are for group coordination. Contributions and withdrawals are recorded separately.</p>
