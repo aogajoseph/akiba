@@ -20,6 +20,9 @@ export default function NotificationRealtime() {
         .on("broadcast", { event: "notification_created" }, () => {
           if (active) router.refresh();
         })
+        .on("broadcast", { event: "group_unread_updated" }, () => {
+          if (active) router.refresh();
+        })
         .subscribe();
     });
 
