@@ -96,3 +96,7 @@
 .deleteConfirm{border:1px solid #b93e36;background:#b93e36;color:#fff}
 .deleteCancel:focus-visible,.deleteConfirm:focus-visible{outline:3px solid #d7e9dc;outline-offset:2px}
 @media(max-width:480px){.deleteDialog{padding:21px 18px}.deleteDialogActions button{flex:1}}
+
+
+/* Visually distinguish the deleted-message placeholder from member-authored text. */
+.deletedMessageText{color:#98a39b!important;font-style:italic}
