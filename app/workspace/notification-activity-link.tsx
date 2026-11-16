@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import type { MouseEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 
@@ -17,21 +18,24 @@ type Props = {
 
 export default function NotificationActivityLink({ id, href, unread, title, body, date, eventType }: Props) {
   const router = useRouter();
+  const [isUnread, setIsUnread] = useState(unread);
   async function open(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
-    if (unread) {
+    if (isUnread) {
+      setIsUnread(false);
       const client = createClient();
-      await client.rpc("akiba_mark_group_notification_read", { p_notification_id: id });
+      const { error } = await client.rpc("akiba_mark_group_notification_read", { p_notification_id: id });
+      if (error) setIsUnread(true);
     }
     router.push(href);
     router.refresh();
   }
 
   return (
-    <Link href={href} className="ak-activity-row" onClick={open}>
+    <Link href={href} className={"ak-activity-row" + (isUnread ? " is-unread" : "")} onClick={open}>
       <span className="ak-activity-icon">{eventType === "chat_message" ? "▣" : eventType.startsWith("invitation") ? "✉" : "♧"}</span>
       <div><strong>{title}</strong><p>{body}</p><small>{date}</small></div>
-      {unread && <span className="ak-activity-unread-dot" aria-label="Unread" />}
+      {isUnread && <span className="ak-activity-unread-dot" aria-label="Unread" />}
     </Link>
   );
 }
