@@ -24,13 +24,9 @@ export default function NotificationBell({ unreadCount: initialUnreadCount, noti
   const [open, setOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount ?? 0);
   const [notifications, setNotifications] = useState(initialNotifications ?? []);
-  const [readIds, setReadIds] = useState<string[]>([]);
   const router = useRouter();
 
   useEffect(() => {
-    if (initialUnreadCount !== undefined && initialNotifications !== undefined) {
-      return;
-    }
     let active = true;
     const client = createClient();
     const load = async () => {
@@ -56,16 +52,22 @@ export default function NotificationBell({ unreadCount: initialUnreadCount, noti
       active = false;
       if (channel) void client.removeChannel(channel);
     };
+  }, []);
+
+  useEffect(() => {
+    if (initialUnreadCount !== undefined) setUnreadCount(initialUnreadCount);
+    if (initialNotifications !== undefined) setNotifications(initialNotifications);
   }, [initialUnreadCount, initialNotifications]);
 
   async function openNotification(id: string, href: string, wasUnread: boolean) {
-    if (wasUnread && !readIds.includes(id)) {
-      setReadIds((current) => [...current, id]);
+    if (wasUnread) {
+      const previous = notifications;
+      setNotifications((current) => current.map((item) => item.id === id ? { ...item, read_at: new Date().toISOString() } : item));
       setUnreadCount((count) => Math.max(0, count - 1));
       const client = createClient();
       const { error } = await client.rpc("akiba_mark_group_notification_read", { p_notification_id: id });
       if (error) {
-        setReadIds((current) => current.filter((item) => item !== id));
+        setNotifications(previous);
         setUnreadCount((count) => count + 1);
       }
     }
@@ -92,7 +94,7 @@ export default function NotificationBell({ unreadCount: initialUnreadCount, noti
           {notifications.length === 0 ? <p className="ak-notification-tray-empty">You’re all caught up.</p> : (
             <div className="ak-notification-tray-list">
               {notifications.map((item) => {
-                const isUnread = !item.read_at && !readIds.includes(item.id);
+                const isUnread = !item.read_at;
                 return (
                   <Link
                     href={item.href}
