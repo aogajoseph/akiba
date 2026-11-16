@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type Keyboard
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./group-chat.module.css";
-import { GroupChatAttachmentComposer, GroupChatAttachmentList, GroupChatPresence } from "./group-chat-extras";
+import { GroupChatAttachmentPicker, GroupChatAttachmentList, GroupChatPresence, uploadGroupChatAttachments } from "./group-chat-extras";
 
 const PAGE_SIZE = 30;
 
@@ -57,6 +57,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [currentUserId, setCurrentUserId] = useState("");
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [draft, setDraft] = useState("");
+  const [attachmentFiles, setAttachmentFiles] = useState<File[]>([]);
   const [replyTarget, setReplyTarget] = useState<ChatMessage | null>(null);
   const [editingMessage, setEditingMessage] = useState<ChatMessage | null>(null);
   const [mutatingMessageId, setMutatingMessageId] = useState<string | null>(null);
@@ -318,40 +319,48 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     const client = clientRef.current;
 
     if (!client || !currentUserId || sending) return;
-    if (!body || body.length > 1000) return;
+    if ((!body && attachmentFiles.length === 0) || body.length > 1000 || editingMessage) return;
 
     setSending(true);
     setSendError("");
 
-    const query = editingMessage
-      ? client.from("akiba_group_messages").update({ body }).eq("id", editingMessage.id).eq("group_id", groupId)
-      : client.from("akiba_group_messages").insert({
-          group_id: groupId,
-          author_id: currentUserId,
-          body,
-          parent_message_id: replyTarget?.id ?? null,
-        });
-    const { data, error } = await query
-      .select("id,group_id,author_id,body,created_at")
-      .single();
+    const { data, error } = await client.from("akiba_group_messages").insert({
+      group_id: groupId,
+      author_id: currentUserId,
+      body,
+      parent_message_id: replyTarget?.id ?? null,
+    }).select("id,group_id,author_id,body,created_at,parent_message_id,edited_at,deleted_at").single();
 
     if (error || !data) {
-      setSendError(
-        error?.code === "42501"
-          ? "You no longer have permission to post in this group."
-          : "Your message wasn't sent. Check your connection and try again.",
-      );
+      setSendError(error?.code === "42501"
+        ? "You no longer have permission to post in this group."
+        : "Your message wasn't sent. Check your connection and try again.");
       setSending(false);
       return;
     }
 
-    const hydrated = await hydrateMessages([data as MessageRow], currentUserId);
-    setMessages((current) => mergeMessages(current, hydrated));
-    setDraft("");
-    setReplyTarget(null);
-    setEditingMessage(null);
-    setSending(false);
-    requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }));
+    try {
+      if (attachmentFiles.length) {
+        await uploadGroupChatAttachments(groupId, currentUserId, data.id, attachmentFiles);
+      }
+      const hydrated = await hydrateMessages([data as MessageRow], currentUserId);
+      setMessages((current) => mergeMessages(current, hydrated));
+      setDraft("");
+      setAttachmentFiles([]);
+      setReplyTarget(null);
+      setAttachmentRefreshKey((value) => value + 1);
+      requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }));
+    } catch (uploadError) {
+      await client.from("akiba_group_messages").update({
+        body: body || "Attachment upload failed.",
+        deleted_at: body ? null : new Date().toISOString(),
+      }).eq("id", data.id).eq("group_id", groupId);
+      setSendError(uploadError instanceof Error
+        ? "Your message couldn't be completed with its attachments: " + uploadError.message
+        : "Your attachments couldn't be sent. Please try again.");
+    } finally {
+      setSending(false);
+    }
   }
 
 
@@ -524,7 +533,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             <div className={styles.messageBody}>
               <div className={styles.messageMeta}><b>{message.isMine ? "You" : message.authorName}</b><time dateTime={message.created_at}>{formatTime(message.created_at)}</time></div>
               {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => document.getElementById("message-" + message.parent_message_id)?.scrollIntoView({ behavior: "smooth", block: "center" })}>↪ {message.replyPreview.slice(0, 120)}</button>}
-              <p className={message.deleted_at ? styles.deletedMessageText : undefined}>{message.deleted_at ? "This message was deleted" : message.body}</p>
+              {(message.deleted_at || message.body.trim()) && <p className={message.deleted_at ? styles.deletedMessageText : undefined}>{message.deleted_at ? "This message was deleted" : message.body}</p>}
               <GroupChatAttachmentList groupId={groupId} messageId={message.id} deleted={Boolean(message.deleted_at)} refreshKey={attachmentRefreshKey} />
               {message.edited_at && !message.deleted_at && <small className={styles.editedLabel}>Edited</small>}
               <div className={styles.messageActions}>
@@ -549,10 +558,10 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       <form className={styles.composer} onSubmit={sendMessage}>
         <label className={styles.srOnly} htmlFor="group-chat-message">Write a group message</label>
         <textarea id="group-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={handleComposerKeyDown} placeholder="Write a message…" maxLength={1000} rows={2} disabled={sending || status !== "ready"} />
-        <GroupChatAttachmentComposer groupId={groupId} currentUserId={currentUserId} onUploaded={() => { setAttachmentRefreshKey((value) => value + 1); void loadLatest(false); }} />
+        <GroupChatAttachmentPicker files={attachmentFiles} onFilesChange={setAttachmentFiles} disabled={sending || Boolean(editingMessage) || status !== "ready"} />
         <div className={styles.composerFooter}>
           <span>{draft.length}/1000 · Enter to send, Shift+Enter for a new line</span>
-          <button type="submit" disabled={!draft.trim() || sending || status !== "ready"}>{sending ? (editingMessage ? "Saving…" : "Sending…") : (editingMessage ? "Save edit" : "Send message")} <span aria-hidden="true">→</span></button>
+          <button type="submit" disabled={(!draft.trim() && attachmentFiles.length === 0) || sending || status !== "ready" || Boolean(editingMessage)}>{sending ? (editingMessage ? "Saving…" : "Sending…") : (editingMessage ? "Save edit" : "Send message")} <span aria-hidden="true">→</span></button>
         </div>
       </form>
       <p className={styles.footerNote}>Messages are for group coordination. Contributions and withdrawals are recorded separately.</p>
