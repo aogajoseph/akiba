@@ -34,8 +34,19 @@ create table if not exists public.akiba_group_chat_attachments (
   mime_type text not null,
   file_size bigint not null check (file_size > 0 and file_size <= 15728640),
   created_at timestamptz not null default now(),
-  constraint akiba_group_chat_attachment_path_matches_group
-    check (storage_path like group_id::text || '/%')
+  constraint akiba_group_chat_attachment_path_matches_uploader
+    check (storage_path like group_id::text || '/' || uploaded_by::text || '/%'),
+  constraint akiba_group_chat_attachment_mime_type_allowed
+    check (mime_type in (
+      'image/jpeg', 'image/png', 'image/webp', 'image/gif',
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'application/vnd.ms-powerpoint',
+      'application/vnd.openxmlformats-officedocument.presentationml.presentation'
+    ))
 );
 
 create index if not exists akiba_group_chat_attachments_message_idx
