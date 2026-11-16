@@ -35,6 +35,10 @@ export default async function NotificationsPage({ searchParams }: Props) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/notifications"));
 
+  // Mark only activity notifications as read when this inbox is opened.
+  // Chat unread state lives in group message read cursors and is untouched.
+  const { error: markAllError } = await supabase.rpc("akiba_mark_all_my_group_notifications_read");
+
   const from = (page - 1) * pageSize;
   const [{ data: profile }, { data: notifications, error, count }, { data: preview }, { data: unreadCountData }] = await Promise.all([
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
@@ -96,6 +100,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
         <div className="ak-dashboard-content ak-workspace-content">
           <div className="ak-workspace-page-heading"><div><span className="ak-section-eyebrow">YOUR UPDATES</span><h1>Notifications</h1><p>Everything happening across your groups, in chronological order.</p></div><Link className="ak-workspace-back" href="/workspace">← Back to workspace</Link></div>
           {params.error ? <p className="ak-finance-error" role="alert">{params.error}</p> : null}
+          {markAllError ? <p className="ak-finance-error" role="alert">We couldn’t update your notification read status. Please refresh to try again.</p> : null}
           <section className="ak-workspace-card">
             <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">INBOX</span><h2>All notifications</h2><p>{total} notifications · Page {page} of {totalPages}</p></div><span className="ak-count-pill">{unreadCount} unread</span></div>
             {error ? <div className="ak-workspace-empty" role="alert"><strong>Notifications couldn’t be loaded</strong><p>Please refresh the page to try again.</p></div>
