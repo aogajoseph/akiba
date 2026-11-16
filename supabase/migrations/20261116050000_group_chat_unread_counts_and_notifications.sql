@@ -148,6 +148,26 @@ declare
   v_recipient record;
 begin
   if new.deleted_at is not null then
+    if tg_op = 'UPDATE' and old.deleted_at is null then
+      for v_recipient in
+        select gm.user_id
+        from public.akiba_group_memberships gm
+        where gm.group_id = new.group_id
+          and gm.status = 'active'
+          and gm.user_id <> new.author_id
+      loop
+        begin
+          perform realtime.send(
+            jsonb_build_object('group_id', new.group_id, 'message_id', new.id),
+            'group_unread_updated',
+            'user:' || v_recipient.user_id::text || ':notifications',
+            true
+          );
+        exception when others then
+          raise warning 'Unable to broadcast deleted-message unread update for group %, user %', new.group_id, v_recipient.user_id;
+        end;
+      end loop;
+    end if;
     return new;
   end if;
 
@@ -198,7 +218,7 @@ $fn$;
 revoke all on function akiba_private.create_group_chat_notifications() from public, anon, authenticated;
 drop trigger if exists akiba_group_chat_notifications on public.akiba_group_messages;
 create trigger akiba_group_chat_notifications
-after insert on public.akiba_group_messages
+after insert or update of deleted_at on public.akiba_group_messages
 for each row execute function akiba_private.create_group_chat_notifications();
 
 -- User-specific private Broadcast topics. Payloads contain only notification
@@ -217,7 +237,7 @@ begin
         'group_id', new.group_id,
         'event_type', new.event_type
       ),
-      'notification_created',
+      case when tg_op = 'INSERT' then 'notification_created' else 'notification_updated' end,
       'user:' || new.user_id::text || ':notifications',
       true
     );
@@ -231,7 +251,7 @@ $fn$;
 revoke all on function akiba_private.broadcast_user_group_notification() from public, anon, authenticated;
 drop trigger if exists akiba_group_notification_broadcast on public.akiba_group_notifications;
 create trigger akiba_group_notification_broadcast
-after insert on public.akiba_group_notifications
+after insert or update of read_at on public.akiba_group_notifications
 for each row execute function akiba_private.broadcast_user_group_notification();
 
 drop policy if exists "users receive their own notification broadcasts" on realtime.messages;
