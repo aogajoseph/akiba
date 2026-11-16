@@ -264,4 +264,47 @@ create policy "users receive their own notification broadcasts"
     and (select realtime.topic()) = 'user:' || (select auth.uid())::text || ':notifications'
   );
 
+
+-- Accurate inbox badge count and one-step mark-all-read operation.
+create or replace function public.akiba_count_my_unread_group_notifications()
+returns bigint
+language sql
+security definer
+set search_path = ''
+as $fn$
+  select count(*)::bigint
+  from public.akiba_group_notifications n
+  where auth.uid() is not null
+    and n.user_id = auth.uid()
+    and n.read_at is null;
+$fn$;
+
+create or replace function public.akiba_mark_all_my_group_notifications_read()
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  v_updated integer;
+begin
+  if auth.uid() is null then
+    raise exception 'Authentication is required';
+  end if;
+
+  update public.akiba_group_notifications
+  set read_at = clock_timestamp()
+  where user_id = auth.uid()
+    and read_at is null;
+
+  get diagnostics v_updated = row_count;
+  return v_updated;
+end;
+$fn$;
+
+revoke all on function public.akiba_count_my_unread_group_notifications() from public, anon;
+revoke all on function public.akiba_mark_all_my_group_notifications_read() from public, anon;
+grant execute on function public.akiba_count_my_unread_group_notifications() to authenticated;
+grant execute on function public.akiba_mark_all_my_group_notifications_read() to authenticated;
+
 commit;
