@@ -389,12 +389,17 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     setLoadingOlder(false);
   }
 
-  function jumpToRepliedMessage(messageId: string) {
+  async function jumpToRepliedMessage(messageId: string) {
     if (replyHighlightTimerRef.current) window.clearTimeout(replyHighlightTimerRef.current);
+    if (!document.getElementById("message-" + messageId)) {
+      await loadMessage(messageId);
+    }
     setHighlightedMessageId(messageId);
-    window.setTimeout(() => {
-      document.getElementById("message-" + messageId)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 50);
+    window.requestAnimationFrame(() => {
+      window.requestAnimationFrame(() => {
+        document.getElementById("message-" + messageId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
+    });
     replyHighlightTimerRef.current = window.setTimeout(() => {
       setHighlightedMessageId((current) => current === messageId ? null : current);
       replyHighlightTimerRef.current = null;
