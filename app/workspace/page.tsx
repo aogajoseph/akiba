@@ -5,6 +5,7 @@ import { acceptGroupInvitationById, declineGroupInvitationById } from "@/app/wor
 import { createClient } from "@/lib/supabase/server";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
 import NotificationBell, { type NotificationBellItem } from "@/app/workspace/notification-bell";
+import NotificationActivityLink from "@/app/workspace/notification-activity-link";
 
 type Group = {
   id: string;
@@ -162,7 +163,7 @@ export default async function WorkspacePage() {
 
               <section className="ak-panel ak-activity-panel">
                 <div className="ak-panel-heading"><div><h2>Recent Activity</h2><p>Your five latest notifications across all groups.</p></div></div>
-                {notificationsError ? <div className="ak-inline-error">Recent notifications couldn&apos;t be loaded.</div> : notificationRows.length === 0 ? <div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">◷</span><h3>No notifications yet</h3><p>Updates from your groups will appear here.</p></div> : <div className="ak-activity-list">{notificationRows.map((item) => <Link href={item.href} className="ak-activity-row" key={item.id}><span className="ak-activity-icon">{item.event_type === "chat_message" ? "▣" : item.event_type.startsWith("invitation") ? "✉" : "♧"}</span><div><strong>{item.title}</strong><p>{item.body}</p><small>{shortDate(item.created_at)}</small></div>{!item.read_at && <span className="ak-activity-unread-dot" aria-label="Unread" />}</Link>)}</div>}
+                {notificationsError ? <div className="ak-inline-error">Recent notifications couldn&apos;t be loaded.</div> : notificationRows.length === 0 ? <div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">◷</span><h3>No notifications yet</h3><p>Updates from your groups will appear here.</p></div> : <div className="ak-activity-list">{notificationRows.map((item) => <NotificationActivityLink key={item.id} id={item.id} href={item.href} unread={!item.read_at} title={item.title} body={item.body} date={shortDate(item.created_at)} eventType={item.event_type} />)}</div>}
                 <Link className="ak-panel-footer" href="/workspace/notifications">See all notifications</Link>
               </section>
             </div>
