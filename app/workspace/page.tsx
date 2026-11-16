@@ -5,7 +5,9 @@ import { acceptGroupInvitationById, declineGroupInvitationById } from "@/app/wor
 import { createClient } from "@/lib/supabase/server";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
 import NotificationBell, { type NotificationBellItem } from "@/app/workspace/notification-bell";
+import MessageBell from "@/app/workspace/message-bell";
 import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
+import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
 import NotificationActivityLink from "@/app/workspace/notification-activity-link";
 
 type Group = {
@@ -82,7 +84,7 @@ export default async function WorkspacePage() {
           <Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups{groupRows.length > 0 && <small>{groupRows.length}</small>}</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations{(invitations ?? []).length > 0 && <small>{(invitations ?? []).length}</small>}</Link>
           <NotificationSidebarLink />
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
+          <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
@@ -102,7 +104,7 @@ export default async function WorkspacePage() {
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
           <div className="ak-search-placeholder"><span>⌕</span><span>Search groups, chats, or people...</span></div>
-          <div className="ak-topbar-right"><NotificationBell unreadCount={unreadNotificationCount} notifications={notificationRows.slice(0, 5)} /><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(displayName)}</div></div>
+          <div className="ak-topbar-right"><NotificationBell unreadCount={unreadNotificationCount} notifications={notificationRows.slice(0, 5)} /><MessageBell /><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(displayName)}</div></div>
         </header>
 
         <div className="ak-dashboard-content">
