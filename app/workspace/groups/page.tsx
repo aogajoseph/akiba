@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
+import NotificationBell, { type NotificationBellItem } from "@/app/workspace/notification-bell";
 
 type Group = {
   id: string;
@@ -27,15 +28,19 @@ export default async function MyGroupsPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/groups"));
 
-  const [{ data: profile }, initialGroups, unreadResult] = await Promise.all([
+  const [{ data: profile }, initialGroups, unreadResult, notificationCountResult, notificationPreviewResult] = await Promise.all([
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at")
       .order("created_at", { ascending: false }).range(0, 499),
     supabase.rpc("akiba_list_my_group_chat_unread_counts"),
+    supabase.rpc("akiba_count_my_unread_group_notifications"),
+    supabase.rpc("akiba_list_my_group_notifications", { p_limit: 5 }),
   ]);
   if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/workspace/groups"));
 
   const groups: Group[] = (initialGroups.data ?? []) as Group[];
+  const notificationCount = Number(notificationCountResult.data ?? 0);
+  const notificationPreview = (notificationPreviewResult.data ?? []) as NotificationBellItem[];
   const unreadByGroup = new Map<string, number>(
     ((unreadResult.data ?? []) as { group_id: string; unread_count: number | string }[])
       .map((row) => [row.group_id, Number(row.unread_count)]),
@@ -71,7 +76,7 @@ export default async function MyGroupsPage() {
           <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
           <Link href="/workspace/groups" className="ak-nav-link active" aria-current="page"><span>♧</span>My Groups{groups.length > 0 && <small>{groups.length}</small>}</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations</Link>
-          <Link href="/workspace/notifications" className="ak-nav-link"><span>♢</span>Notifications</Link>
+          <Link href="/workspace/notifications" className="ak-nav-link"><span>♢</span>Notifications{notificationCount > 0 ? <small>{notificationCount}</small> : null}</Link><span>♢</span>Notifications</Link>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
@@ -91,7 +96,7 @@ export default async function MyGroupsPage() {
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
           <div className="ak-workspace-top-crumb"><Link href="/workspace">Workspace</Link><span>/</span><strong>My Groups</strong></div>
-          <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(displayName)}</div></div>
+          <div className="ak-topbar-right"><NotificationBell unreadCount={notificationCount} notifications={notificationPreview.slice(0, 5)} /><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(displayName)}</div></div>
         </header>
 
         <div className="ak-dashboard-content ak-workspace-content">
