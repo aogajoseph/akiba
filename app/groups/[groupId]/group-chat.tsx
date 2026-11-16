@@ -221,9 +221,6 @@ export default function GroupChat({ groupId }: { groupId: string }) {
 
         setGroupName(group.name);
         setCurrentUserId(userId);
-        const { data: currentProfile } = await client.from("akiba_profiles").select("display_name,username").eq("user_id", userId).maybeSingle();
-        if (!active) return;
-        currentUserNameRef.current = currentProfile?.display_name?.trim() || currentProfile?.username || "Akiba member";
         clientRef.current = client;
         const { data: initialRows, error: initialError } = await client
           .from("akiba_group_messages")
