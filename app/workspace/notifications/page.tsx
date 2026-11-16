@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { markGroupNotificationRead } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
+import NotificationRealtime from "@/app/workspace/notification-realtime";
 
 type Notification = {
   id: string;
@@ -47,6 +48,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
 
   return (
     <main className="ak-dashboard ak-workspace-app">
+      <NotificationRealtime />
       <aside className="ak-sidebar">
         <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
         <nav className="ak-nav" aria-label="Main navigation">
@@ -76,7 +78,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
           <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
         </header>
         <div className="ak-dashboard-content ak-workspace-content">
-          <div className="ak-workspace-page-heading"><div><span className="ak-section-eyebrow">YOUR UPDATES</span><h1>Notifications</h1><p>Invitations, membership changes and important group updates.</p></div><Link className="ak-workspace-back" href="/workspace">← Back to workspace</Link></div>
+          <div className="ak-workspace-page-heading"><div><span className="ak-section-eyebrow">YOUR UPDATES</span><h1>Notifications</h1><p>New group messages, invitations, membership changes and important updates.</p></div><Link className="ak-workspace-back" href="/workspace">← Back to workspace</Link></div>
           {params.error ? <p className="ak-finance-error" role="alert">{params.error}</p> : null}
           <section className="ak-workspace-card">
             <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">INBOX</span><h2>Recent notifications</h2><p>{unreadCount} unread · Showing the latest {rows.length}</p></div><span className="ak-count-pill">{unreadCount}</span></div>
@@ -84,7 +86,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
               : rows.length === 0 ? <div className="ak-workspace-empty"><strong>You’re all caught up</strong><p>New invitations and group membership updates will appear here.</p></div>
                 : <div className="ak-notification-list">{rows.map((item) => (
                   <article className={"ak-notification-row" + (item.read_at ? "" : " is-unread")} key={item.id}>
-                    <span className="ak-notification-mark" aria-hidden="true">{item.event_type.startsWith("invitation") ? "✉" : "♧"}</span>
+                    <span className="ak-notification-mark" aria-hidden="true">{item.event_type === "chat_message" ? "▣" : item.event_type.startsWith("invitation") ? "✉" : "♧"}</span>
                     <div className="ak-notification-copy">
                       <Link href={item.href}><strong>{item.title}</strong></Link>
                       <p>{item.body}</p>
