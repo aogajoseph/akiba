@@ -1270,3 +1270,7 @@
 .ak-invite-modal .ak-membership-invite-form button{width:100%;min-height:42px}
 .ak-invite-modal .ak-membership-invite-form button:disabled{opacity:.65;cursor:wait}
 .ak-invite-modal .ak-invite-modal-divider{margin:18px 0 12px}
+
+
+/* Per-member unread message count in the group directory. */
+.ak-group-unread-badge{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;min-width:21px;height:21px;padding:0 6px;border-radius:999px;background:#176b50;color:#fff;font-size:9px;font-weight:800;line-height:1}
