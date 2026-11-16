@@ -67,9 +67,12 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [hasMore, setHasMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sendError, setSendError] = useState("");
+  const [notificationsMuted, setNotificationsMuted] = useState(false);
   const clientRef = useRef<ReturnType<typeof createClient> | null>(null);
   const currentUserIdRef = useRef("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const chatContainerRef = useRef<HTMLElement | null>(null);
+  const lastReadCursorRef = useRef<string | null>(null);
 
   const hydrateMessages = useCallback(async (rows: MessageRow[], userId: string) => {
     const client = clientRef.current;
@@ -203,6 +206,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
         setGroupName(group.name);
         setCurrentUserId(userId);
         clientRef.current = client;
+        const { data: chatPreferences } = await client.rpc("akiba_get_group_chat_preferences", { p_group_id: groupId });
+        const preference = Array.isArray(chatPreferences) ? chatPreferences[0] : chatPreferences;
+        setNotificationsMuted(Boolean(preference?.notifications_muted));
 
         const { data: initialRows, error: initialError } = await client
           .from("akiba_group_messages")
@@ -348,6 +354,52 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }));
   }
 
+  async function toggleGroupNotifications() {
+    const client = clientRef.current;
+    if (!client) return;
+    const nextMuted = !notificationsMuted;
+    setNotificationsMuted(nextMuted);
+    const { error } = await client.rpc("akiba_set_group_chat_muted", {
+      p_group_id: groupId,
+      p_muted: nextMuted,
+    });
+    if (error) {
+      setNotificationsMuted(!nextMuted);
+      setSendError("Your group notification preference could not be saved. Please try again.");
+    }
+  }
+
+  useEffect(() => {
+    if (status !== "ready" || messages.length === 0) return;
+    const latest = messages[messages.length - 1];
+    const cursorKey = latest.created_at + ":" + latest.id;
+    let conversationVisible = false;
+    const markLatestRead = () => {
+      if (!conversationVisible || document.visibilityState !== "visible" || lastReadCursorRef.current === cursorKey) return;
+      const client = clientRef.current;
+      if (!client) return;
+      lastReadCursorRef.current = cursorKey;
+      void client.rpc("akiba_mark_group_chat_read", { p_group_id: groupId, p_message_id: latest.id })
+        .then(({ error }) => {
+          if (error && lastReadCursorRef.current === cursorKey) lastReadCursorRef.current = null;
+        });
+    };
+    const node = chatContainerRef.current;
+    const observer = node && typeof IntersectionObserver !== "undefined"
+      ? new IntersectionObserver((entries) => {
+          conversationVisible = entries.some((entry) => entry.isIntersecting && entry.intersectionRatio > 0);
+          markLatestRead();
+        }, { threshold: 0.01 })
+      : null;
+    if (node && observer) observer.observe(node);
+    const onVisibilityChange = () => markLatestRead();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [groupId, messages, status]);
+
   async function confirmDeleteMessage() {
     const target = deleteTarget;
     const client = clientRef.current;
@@ -433,7 +485,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   }
 
   return (
-    <section className={styles.chatCard} aria-label="Group conversation">
+    <section ref={chatContainerRef} className={styles.chatCard} aria-label="Group conversation">
       <div className={styles.chatHeader}>
         <div>
           <h2>Group chat</h2>
@@ -445,6 +497,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             {connection === "connected" ? "Live" : connection === "connecting" ? "Connecting" : "Reconnecting"}
           </span>
           <span className={styles.secureLabel}><span>●</span> Group-only</span>
+          <button type="button" className={styles.notificationPreference} aria-pressed={notificationsMuted} onClick={() => void toggleGroupNotifications()}>{notificationsMuted ? "Unmute notifications" : "Mute notifications"}</button>
         </div>
       </div>
       <div className={styles.messages}>
