@@ -319,17 +319,22 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     const client = clientRef.current;
 
     if (!client || !currentUserId || sending) return;
-    if ((!body && attachmentFiles.length === 0) || body.length > 1000 || editingMessage) return;
+    if ((!body && attachmentFiles.length === 0) || body.length > 1000) return;
 
     setSending(true);
     setSendError("");
 
-    const { data, error } = await client.from("akiba_group_messages").insert({
-      group_id: groupId,
-      author_id: currentUserId,
-      body,
-      parent_message_id: replyTarget?.id ?? null,
-    }).select("id,group_id,author_id,body,created_at,parent_message_id,edited_at,deleted_at").single();
+    const query = editingMessage
+      ? client.from("akiba_group_messages").update({ body }).eq("id", editingMessage.id).eq("group_id", groupId)
+      : client.from("akiba_group_messages").insert({
+          group_id: groupId,
+          author_id: currentUserId,
+          body,
+          parent_message_id: replyTarget?.id ?? null,
+        });
+    const { data, error } = await query
+      .select("id,group_id,author_id,body,created_at,parent_message_id,edited_at,deleted_at")
+      .single();
 
     if (error || !data) {
       setSendError(error?.code === "42501"
@@ -340,7 +345,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     }
 
     try {
-      if (attachmentFiles.length) {
+      if (!editingMessage && attachmentFiles.length) {
         await uploadGroupChatAttachments(groupId, currentUserId, data.id, attachmentFiles);
       }
       const hydrated = await hydrateMessages([data as MessageRow], currentUserId);
@@ -348,7 +353,8 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       setDraft("");
       setAttachmentFiles([]);
       setReplyTarget(null);
-      setAttachmentRefreshKey((value) => value + 1);
+      setEditingMessage(null);
+      if (!editingMessage && attachmentFiles.length) setAttachmentRefreshKey((value) => value + 1);
       requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }));
     } catch (uploadError) {
       await client.from("akiba_group_messages").update({
@@ -361,7 +367,6 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     } finally {
       setSending(false);
     }
-  }
 
 
   useEffect(() => {
@@ -561,7 +566,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
         <GroupChatAttachmentPicker files={attachmentFiles} onFilesChange={setAttachmentFiles} disabled={sending || Boolean(editingMessage) || status !== "ready"} />
         <div className={styles.composerFooter}>
           <span>{draft.length}/1000 · Enter to send, Shift+Enter for a new line</span>
-          <button type="submit" disabled={(!draft.trim() && attachmentFiles.length === 0) || sending || status !== "ready" || Boolean(editingMessage)}>{sending ? (editingMessage ? "Saving…" : "Sending…") : (editingMessage ? "Save edit" : "Send message")} <span aria-hidden="true">→</span></button>
+          <button type="submit" disabled={(!draft.trim() && attachmentFiles.length === 0) || sending || status !== "ready"}>{sending ? (editingMessage ? "Saving…" : "Sending…") : (editingMessage ? "Save edit" : "Send message")} <span aria-hidden="true">→</span></button>
         </div>
       </form>
       <p className={styles.footerNote}>Messages are for group coordination. Contributions and withdrawals are recorded separately.</p>
