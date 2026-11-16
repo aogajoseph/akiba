@@ -284,7 +284,7 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
         setOnline(uniquePeople);
         setNames((current) => {
           const next = { ...current };
-          for (const person of people) next[person.user_id] = person.display_name || "Akiba member";
+          for (const person of uniquePeople) next[person.user_id] = person.display_name || "Akiba member";
           return next;
         });
       });
