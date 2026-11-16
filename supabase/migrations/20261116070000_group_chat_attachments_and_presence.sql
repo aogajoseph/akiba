@@ -79,7 +79,7 @@ create policy "members attach files to their own messages"
     and exists (
       select 1 from public.akiba_group_messages m
       where m.id = message_id
-        and m.group_id = group_id
+        and m.group_id = akiba_group_chat_attachments.group_id
         and m.author_id = (select auth.uid())
         and m.deleted_at is null
     )
@@ -93,12 +93,12 @@ create policy "active members upload group chat files"
   for insert to authenticated
   with check (
     bucket_id = 'akiba-group-chat-attachments'
-    and (storage.foldername(name))[1] ~* '^[0-9a-f-]{36}$'
-    and (storage.foldername(name))[2] = (select auth.uid())::text
-    and akiba_private.is_active_group_member(((storage.foldername(name))[1])::uuid)
+    and (storage.foldername(storage.objects.name))[1] ~* '^[0-9a-f-]{36}$'
+    and (storage.foldername(storage.objects.name))[2] = (select auth.uid())::text
+    and akiba_private.is_active_group_member(((storage.foldername(storage.objects.name))[1])::uuid)
     and exists (
       select 1 from public.akiba_groups g
-      where g.id = ((storage.foldername(name))[1])::uuid and g.status = 'active'
+      where g.id = ((storage.foldername(storage.objects.name))[1])::uuid and g.status = 'active'
     )
   );
 
@@ -108,11 +108,11 @@ create policy "active members read group chat files"
   for select to authenticated
   using (
     bucket_id = 'akiba-group-chat-attachments'
-    and (storage.foldername(name))[1] ~* '^[0-9a-f-]{36}$'
-    and akiba_private.is_active_group_member(((storage.foldername(name))[1])::uuid)
+    and (storage.foldername(storage.objects.name))[1] ~* '^[0-9a-f-]{36}$'
+    and akiba_private.is_active_group_member(((storage.foldername(storage.objects.name))[1])::uuid)
     and exists (
       select 1 from public.akiba_groups g
-      where g.id = ((storage.foldername(name))[1])::uuid and g.status = 'active'
+      where g.id = ((storage.foldername(storage.objects.name))[1])::uuid and g.status = 'active'
     )
   );
 
@@ -190,9 +190,9 @@ create policy "uploaders remove orphaned group chat files"
   for delete to authenticated
   using (
     bucket_id = 'akiba-group-chat-attachments'
-    and (storage.foldername(name))[2] = (select auth.uid())::text
-    and (storage.foldername(name))[1] ~* '^[0-9a-f-]{36}$'
-    and akiba_private.is_active_group_member(((storage.foldername(name))[1])::uuid)
+    and (storage.foldername(storage.objects.name))[2] = (select auth.uid())::text
+    and (storage.foldername(storage.objects.name))[1] ~* '^[0-9a-f-]{36}$'
+    and akiba_private.is_active_group_member(((storage.foldername(storage.objects.name))[1])::uuid)
     and not exists (
       select 1 from public.akiba_group_chat_attachments a
       where a.storage_path = storage.objects.name
