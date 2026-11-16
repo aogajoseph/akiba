@@ -22,5 +22,5 @@ export default function MessagesSidebarLink({ active = false }: { active?: boole
     });
     return () => { mounted = false; if (channel) void client.removeChannel(channel); };
   }, []);
-  return <Link href="/workspace/chat" className={"ak-nav-link" + (active ? " active" : "")} aria-current={active ? "page" : undefined}><span>◷</span>Messages{count > 0 ? <small>{count > 99 ? "99+" : count}</small> : null}</Link>;
+  return <Link href="/workspace/chat" className={"ak-nav-link" + (active ? " active" : "")} aria-current={active ? "page" : undefined}><span>◷</span>Chat{count > 0 ? <small>{count > 99 ? "99+" : count}</small> : null}</Link>;
 }
