@@ -82,6 +82,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
   const [reactionRefreshKey, setReactionRefreshKey] = useState(0);
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [pendingAttachmentMessageId, setPendingAttachmentMessageId] = useState<string | null>(null);
   const clientRef = useRef<ReturnType<typeof createClient> | null>(null);
   const currentUserIdRef = useRef("");
@@ -96,6 +97,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const typingBroadcastAtRef = useRef(0);
   const typingTimeoutsRef = useRef<Map<string, number>>(new Map());
   const typingNameCacheRef = useRef<Map<string, string>>(new Map());
+  const replyHighlightTimerRef = useRef<number | null>(null);
 
   const hydrateMessages = useCallback(async (rows: MessageRow[], userId: string) => {
     const client = clientRef.current;
@@ -347,6 +349,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       for (const timeout of typingTimeoutsRef.current.values()) window.clearTimeout(timeout);
       typingTimeoutsRef.current.clear();
       typingNameCacheRef.current.clear();
+      if (replyHighlightTimerRef.current) window.clearTimeout(replyHighlightTimerRef.current);
       if (channel && clientRef.current) {
         void clientRef.current.removeChannel(channel);
       }
@@ -384,6 +387,18 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     setMessages((current) => mergeMessages(current, hydrated));
     setHasMore(rows.length === PAGE_SIZE);
     setLoadingOlder(false);
+  }
+
+  function jumpToRepliedMessage(messageId: string) {
+    if (replyHighlightTimerRef.current) window.clearTimeout(replyHighlightTimerRef.current);
+    setHighlightedMessageId(messageId);
+    window.setTimeout(() => {
+      document.getElementById("message-" + messageId)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 50);
+    replyHighlightTimerRef.current = window.setTimeout(() => {
+      setHighlightedMessageId((current) => current === messageId ? null : current);
+      replyHighlightTimerRef.current = null;
+    }, 2800);
   }
 
   function sendTypingSignal(eventName: "typing" | "typing_stopped") {
@@ -635,11 +650,11 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             <p>Share an update or ask the group a question. Your message will stay here for members to see.</p>
           </div>
         ) : messages.map((message) => (
-          <article id={"message-" + message.id} key={message.id} className={message.isMine ? styles.messageMine : styles.message}>
+          <article id={"message-" + message.id} key={message.id} className={[message.isMine ? styles.messageMine : styles.message, highlightedMessageId === message.id ? styles.messageReferenced : ""].filter(Boolean).join(" ")}>
             <div className={styles.messageAvatar} aria-hidden="true">{message.avatarUrl ? <img src={message.avatarUrl} alt="" /> : message.authorName.slice(0, 1).toUpperCase()}</div>
             <div className={styles.messageBody}>
               <div className={styles.messageMeta}><b>{message.isMine ? "You" : message.authorName}</b><time dateTime={message.created_at}>{formatTime(message.created_at)}</time></div>
-              {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => document.getElementById("message-" + message.parent_message_id)?.scrollIntoView({ behavior: "smooth", block: "center" })}>↪ {message.replyPreview.slice(0, 120)}</button>}
+              {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => message.parent_message_id && jumpToRepliedMessage(message.parent_message_id)}>↪ {message.replyPreview.slice(0, 120)}</button>}
               {(message.deleted_at || message.body.trim()) && <p className={message.deleted_at ? styles.deletedMessageText : undefined}>{message.deleted_at ? "This message was deleted" : message.body}</p>}
               <GroupChatAttachmentList groupId={groupId} messageId={message.id} deleted={Boolean(message.deleted_at)} refreshKey={attachmentRefreshKey} />
               {!message.deleted_at && <GroupChatReactions groupId={groupId} messageId={message.id} currentUserId={currentUserId} refreshKey={reactionRefreshKey} />}
