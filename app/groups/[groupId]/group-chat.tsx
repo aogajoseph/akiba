@@ -246,6 +246,12 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             const event = payload as { group_id?: string; message_id?: string };
             if (event.group_id === groupId && event.message_id) void loadMessage(event.message_id);
           })
+          .on("broadcast", { event: "attachments_created" }, ({ payload }) => {
+            const event = payload as { group_id?: string; message_id?: string };
+            if (event.group_id === groupId && event.message_id) {
+              setAttachmentRefreshKey((value) => value + 1);
+            }
+          })
           .on("broadcast", { event: "message_deleted" }, ({ payload }) => {
             const event = payload as { group_id?: string; message_id?: string };
             if (event.group_id === groupId && event.message_id) void loadMessage(event.message_id);
