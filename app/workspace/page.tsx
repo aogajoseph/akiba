@@ -5,6 +5,7 @@ import { acceptGroupInvitationById, declineGroupInvitationById } from "@/app/wor
 import { createClient } from "@/lib/supabase/server";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
 import NotificationBell, { type NotificationBellItem } from "@/app/workspace/notification-bell";
+import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
 import NotificationActivityLink from "@/app/workspace/notification-activity-link";
 
 type Group = {
@@ -80,7 +81,7 @@ export default async function WorkspacePage() {
           <Link href="/workspace" className="ak-nav-link active"><span>⌂</span>Home</Link>
           <Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups{groupRows.length > 0 && <small>{groupRows.length}</small>}</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations{(invitations ?? []).length > 0 && <small>{(invitations ?? []).length}</small>}</Link>
-          <Link href="/workspace/notifications" className="ak-nav-link"><span>♢</span>Notifications{unreadNotificationCount > 0 && <small>{unreadNotificationCount}</small>}</Link>
+          <NotificationSidebarLink />
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
