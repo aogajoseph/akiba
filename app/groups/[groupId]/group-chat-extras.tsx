@@ -283,6 +283,10 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
   useEffect(() => {
     if (!currentUserId) return;
     let active = true;
+    onlineRef.current = [];
+    setOnline([]);
+    setLastSeen({});
+    setNames({});
     const client = createClient();
     let channel: ReturnType<typeof client.channel> | null = null;
 
@@ -369,7 +373,7 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
     <div className={styles.presenceBar} aria-live="polite">
       <span className={styles.presenceCount}><i />{online.length} online</span>
       {othersOnline.length > 0 && <span>{othersOnline.slice(0, 3).map((person) => names[person.user_id] || person.display_name).join(", ")}{othersOnline.length > 3 ? " +" + (othersOnline.length - 3) : ""}</span>}
-      {offlineIds.length > 0 && <span className={styles.lastSeenText}>Recently active: {offlineIds.slice(0, 2).map((id) => (names[id] || "Member") + " " + lastSeenLabel(lastSeen[id])).join(" · ")}</span>}
+      {offlineIds.length > 0 && <span className={styles.lastSeenText}>Offline: {offlineIds.slice(0, 2).map((id) => (names[id] || "Member") + " " + lastSeenLabel(lastSeen[id])).join(" · ")}</span>}
     </div>
   );
 }
