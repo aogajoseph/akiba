@@ -1,7 +1,6 @@
 begin;
 
--- Per-member chat read cursor and mute preference. This is deliberately separate
--- from the financial ledger and scoped to one user in one group.
+-- Per-member, per-group chat read cursor, kept separate from the financial ledger.
 create table if not exists public.akiba_group_chat_preferences (
   user_id uuid not null references auth.users(id) on delete cascade,
   group_id uuid not null references public.akiba_groups(id) on delete cascade,
@@ -16,7 +15,7 @@ create index if not exists akiba_group_chat_preferences_group_idx
 alter table public.akiba_group_chat_preferences enable row level security;
 revoke all on public.akiba_group_chat_preferences from public, anon, authenticated;
 
--- Extend the existing in-app inbox rather than introducing another notification store.
+-- Keep the activity inbox event types limited to app-wide group/account activity.
 alter table public.akiba_group_notifications
   drop constraint if exists akiba_group_notifications_event_type_check;
 alter table public.akiba_group_notifications
