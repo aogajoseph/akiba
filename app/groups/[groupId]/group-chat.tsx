@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState, type FormEvent, type Keyboard
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { createClient } from "@/lib/supabase/client";
 import styles from "./group-chat.module.css";
-import { GroupChatAttachmentPicker, GroupChatAttachmentList, GroupChatPresence, uploadGroupChatAttachments } from "./group-chat-extras";
+import { GroupChatAttachmentPicker, GroupChatAttachmentList, GroupChatPresence, GroupChatReactions, uploadGroupChatAttachments } from "./group-chat-extras";
 
 const PAGE_SIZE = 30;
 
@@ -70,6 +70,8 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [sendError, setSendError] = useState("");
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
+  const [reactionRefreshKey, setReactionRefreshKey] = useState(0);
+  const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
   const [pendingAttachmentMessageId, setPendingAttachmentMessageId] = useState<string | null>(null);
   const clientRef = useRef<ReturnType<typeof createClient> | null>(null);
   const currentUserIdRef = useRef("");
@@ -79,6 +81,11 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const lastReadCursorRef = useRef<string | null>(null);
   const initialScrollDoneRef = useRef(false);
   const wasAtBottomRef = useRef(true);
+  const chatChannelRef = useRef<RealtimeChannel | null>(null);
+  const currentUserNameRef = useRef("Akiba member");
+  const typingStopTimerRef = useRef<number | null>(null);
+  const typingBroadcastAtRef = useRef(0);
+  const typingTimeoutsRef = useRef<Map<string, number>>(new Map());
 
   const hydrateMessages = useCallback(async (rows: MessageRow[], userId: string) => {
     const client = clientRef.current;
@@ -180,6 +187,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
 
         const userId = authData.user.id;
         currentUserIdRef.current = userId;
+        const { data: currentProfile } = await client.from("akiba_profiles").select("display_name,username").eq("user_id", userId).maybeSingle();
+        if (!active) return;
+        currentUserNameRef.current = currentProfile?.display_name?.trim() || currentProfile?.username || "Akiba member";
         const { data: group, error: groupError } = await client
           .from("akiba_groups")
           .select("id,name,status")
@@ -246,6 +256,30 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             const event = payload as { group_id?: string; message_id?: string };
             if (event.group_id === groupId && event.message_id) void loadMessage(event.message_id);
           })
+          .on("broadcast", { event: "reaction_changed" }, ({ payload }) => {
+            const event = payload as { group_id?: string; message_id?: string };
+            if (event.group_id === groupId && event.message_id) setReactionRefreshKey((value) => value + 1);
+          })
+          .on("broadcast", { event: "typing" }, ({ payload }) => {
+            const event = payload as { group_id?: string; user_id?: string; display_name?: string };
+            if (event.group_id !== groupId || !event.user_id || event.user_id === currentUserIdRef.current) return;
+            setTypingUsers((current) => ({ ...current, [event.user_id as string]: event.display_name || "A member" }));
+            const previous = typingTimeoutsRef.current.get(event.user_id);
+            if (previous) window.clearTimeout(previous);
+            const timeout = window.setTimeout(() => {
+              setTypingUsers((current) => { const next = { ...current }; delete next[event.user_id as string]; return next; });
+              typingTimeoutsRef.current.delete(event.user_id as string);
+            }, 2600);
+            typingTimeoutsRef.current.set(event.user_id, timeout);
+          })
+          .on("broadcast", { event: "typing_stopped" }, ({ payload }) => {
+            const event = payload as { group_id?: string; user_id?: string };
+            if (event.group_id !== groupId || !event.user_id) return;
+            const timeout = typingTimeoutsRef.current.get(event.user_id);
+            if (timeout) window.clearTimeout(timeout);
+            typingTimeoutsRef.current.delete(event.user_id);
+            setTypingUsers((current) => { const next = { ...current }; delete next[event.user_id as string]; return next; });
+          })
           .on("broadcast", { event: "attachments_created" }, ({ payload }) => {
             const event = payload as { group_id?: string; message_id?: string };
             if (event.group_id === groupId && event.message_id) {
@@ -256,7 +290,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             const event = payload as { group_id?: string; message_id?: string };
             if (event.group_id === groupId && event.message_id) void loadMessage(event.message_id);
           })
-          .subscribe((channelStatus) => {
+          ;
+        chatChannelRef.current = channel;
+        channel.subscribe((channelStatus) => {
             if (!active) return;
             if (channelStatus === "SUBSCRIBED") {
               setConnection("connected");
@@ -281,6 +317,10 @@ export default function GroupChat({ groupId }: { groupId: string }) {
 
     return () => {
       active = false;
+      chatChannelRef.current = null;
+      if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
+      for (const timeout of typingTimeoutsRef.current.values()) window.clearTimeout(timeout);
+      typingTimeoutsRef.current.clear();
       if (channel && clientRef.current) {
         void clientRef.current.removeChannel(channel);
       }
@@ -318,6 +358,28 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     setMessages((current) => mergeMessages(current, hydrated));
     setHasMore(rows.length === PAGE_SIZE);
     setLoadingOlder(false);
+  }
+
+  function sendTypingSignal(eventName: "typing" | "typing_stopped") {
+    const channel = chatChannelRef.current;
+    const userId = currentUserIdRef.current;
+    if (!channel || !userId) return;
+    void channel.send({ type: "broadcast", event: eventName, payload: { group_id: groupId, user_id: userId, display_name: currentUserNameRef.current } });
+  }
+
+  function handleDraftChange(value: string) {
+    setDraft(value);
+    if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
+    if (!value.trim()) { sendTypingSignal("typing_stopped"); return; }
+    const now = Date.now();
+    if (now - typingBroadcastAtRef.current > 1100) {
+      sendTypingSignal("typing");
+      typingBroadcastAtRef.current = now;
+    }
+    typingStopTimerRef.current = window.setTimeout(() => {
+      sendTypingSignal("typing_stopped");
+      typingStopTimerRef.current = null;
+    }, 1900);
   }
 
   async function sendMessage(event: FormEvent<HTMLFormElement>) {
@@ -359,6 +421,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       }
       const hydrated = await hydrateMessages([data as MessageRow], currentUserId);
       setMessages((current) => mergeMessages(current, hydrated));
+      sendTypingSignal("typing_stopped");
+      if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
+      typingStopTimerRef.current = null;
       setDraft("");
       setAttachmentFiles([]);
       setReplyTarget(null);
@@ -551,6 +616,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
               {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => document.getElementById("message-" + message.parent_message_id)?.scrollIntoView({ behavior: "smooth", block: "center" })}>↪ {message.replyPreview.slice(0, 120)}</button>}
               {(message.deleted_at || message.body.trim()) && <p className={message.deleted_at ? styles.deletedMessageText : undefined}>{message.deleted_at ? "This message was deleted" : message.body}</p>}
               <GroupChatAttachmentList groupId={groupId} messageId={message.id} deleted={Boolean(message.deleted_at)} refreshKey={attachmentRefreshKey} />
+              {!message.deleted_at && <GroupChatReactions groupId={groupId} messageId={message.id} currentUserId={currentUserId} refreshKey={reactionRefreshKey} />}
               {message.edited_at && !message.deleted_at && <small className={styles.editedLabel}>Edited</small>}
               <div className={styles.messageActions}>
                 <button type="button" onClick={() => { setEditingMessage(null); setReplyTarget(message); }}>Reply</button>
@@ -562,6 +628,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             </div>
           </article>
         ))}
+        {Object.keys(typingUsers).length > 0 && <div className={styles.typingIndicator} aria-live="polite">{Object.values(typingUsers).join(", ")} {Object.keys(typingUsers).length === 1 ? "is" : "are"} typing…</div>}
         <div ref={messagesEndRef} />
       </div>
       {errorMessage && <p className={styles.inlineError} role="alert">{errorMessage}</p>}
@@ -573,7 +640,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       </div>}
       <form className={styles.composer} onSubmit={sendMessage}>
         <label className={styles.srOnly} htmlFor="group-chat-message">Write a group message</label>
-        <textarea id="group-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={handleComposerKeyDown} placeholder="Write a message…" maxLength={1000} rows={2} disabled={sending || status !== "ready"} />
+        <textarea id="group-chat-message" value={draft} onChange={(event) => handleDraftChange(event.target.value)} onKeyDown={handleComposerKeyDown} placeholder="Write a message…" maxLength={1000} rows={2} disabled={sending || status !== "ready"} />
         <GroupChatAttachmentPicker files={attachmentFiles} onFilesChange={setAttachmentFiles} disabled={sending || Boolean(editingMessage) || status !== "ready"} />
         <div className={styles.composerFooter}>
           <span>{draft.length}/1000 · Enter to send, Shift+Enter for a new line</span>
