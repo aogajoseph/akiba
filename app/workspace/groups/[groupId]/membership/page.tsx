@@ -13,7 +13,9 @@ import {
 import { createClient } from "@/lib/supabase/server";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
 import NotificationBell from "@/app/workspace/notification-bell";
+import MessageBell from "@/app/workspace/message-bell";
 import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
+import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
 import InviteGroupModal from "./invite-group-modal";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
@@ -137,7 +139,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
           <Link href="/workspace/groups" className="ak-nav-link active"><span>♧</span>My Groups</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations</Link>
           <NotificationSidebarLink />
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
+          <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
@@ -156,7 +158,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
           <div className="ak-workspace-top-crumb"><Link href="/workspace/groups">My Groups</Link><span>/</span><Link href={"/workspace/groups/" + group.id}>{group.name}</Link><span>/</span><strong>Membership</strong></div>
-          <div className="ak-topbar-right"><NotificationBell /><div className="ak-topbar-avatar">{userAvatarUrl ? <img src={userAvatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
+          <div className="ak-topbar-right"><NotificationBell /><MessageBell /><div className="ak-topbar-avatar">{userAvatarUrl ? <img src={userAvatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
         </header>
 
         <div className="ak-dashboard-content ak-workspace-content">
