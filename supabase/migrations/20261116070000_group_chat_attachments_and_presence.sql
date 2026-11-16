@@ -170,4 +170,23 @@ create policy "active group members receive group chat presence"
     )
   );
 
+
+-- Permit a client to remove only its own orphaned object when metadata creation
+-- fails. Once a metadata row exists, deletion is denied by this policy.
+drop policy if exists "uploaders remove orphaned group chat files" on storage.objects;
+create policy "uploaders remove orphaned group chat files"
+  on storage.objects
+  for delete to authenticated
+  using (
+    bucket_id = 'akiba-group-chat-attachments'
+    and (storage.foldername(name))[2] = (select auth.uid())::text
+    and (storage.foldername(name))[1] ~* '^[0-9a-f-]{36}
+
+    and akiba_private.is_active_group_member(((storage.foldername(name))[1])::uuid)
+    and not exists (
+      select 1 from public.akiba_group_chat_attachments a
+      where a.storage_path = storage.objects.name
+    )
+  );
+
 commit;
