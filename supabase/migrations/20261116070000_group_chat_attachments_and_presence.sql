@@ -189,4 +189,19 @@ create policy "uploaders remove orphaned group chat files"
     )
   );
 
+
+drop policy if exists "active group members publish group chat presence" on realtime.messages;
+create policy "active group members publish group chat presence"
+  on realtime.messages
+  for insert to authenticated
+  with check (
+    realtime.messages.extension = 'presence'
+    and exists (
+      select 1 from public.akiba_groups g
+      where (select realtime.topic()) = 'group:' || g.id::text || ':presence'
+        and g.status = 'active'
+        and akiba_private.is_active_group_member(g.id)
+    )
+  );
+
 commit;
