@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { acceptGroupInvitationById, declineGroupInvitationById } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
+import NotificationRealtime from "@/app/workspace/notification-realtime";
+import NotificationBell from "@/app/workspace/notification-bell";
 
 type Props = { searchParams: Promise<{ error?: string; message?: string }> };
 type Invitation = {
@@ -35,6 +37,7 @@ export default async function InvitationsInboxPage({ searchParams }: Props) {
 
   return (
     <main className="ak-dashboard ak-workspace-app">
+      <NotificationRealtime />
       <aside className="ak-sidebar">
         <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
         <nav className="ak-nav" aria-label="Main navigation">
@@ -61,7 +64,7 @@ export default async function InvitationsInboxPage({ searchParams }: Props) {
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
           <div className="ak-workspace-top-crumb"><Link href="/workspace">Workspace</Link><span>/</span><strong>Invitations</strong></div>
-          <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
+          <div className="ak-topbar-right"><NotificationBell /><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
         </header>
         <div className="ak-dashboard-content ak-workspace-content">
           <div className="ak-workspace-page-heading"><div><span className="ak-section-eyebrow">YOUR INVITATIONS</span><h1>Group invitations</h1><p>Invitations addressed to your Akiba account or email.</p></div><Link className="ak-workspace-back" href="/workspace">← Back to workspace</Link></div>
