@@ -4,6 +4,7 @@ import { signOut } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
 import NotificationBell, { type NotificationBellItem } from "@/app/workspace/notification-bell";
+import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
 
 type Group = {
   id: string;
@@ -76,7 +77,7 @@ export default async function MyGroupsPage() {
           <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
           <Link href="/workspace/groups" className="ak-nav-link active" aria-current="page"><span>♧</span>My Groups{groups.length > 0 && <small>{groups.length}</small>}</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations</Link>
-          <Link href="/workspace/notifications" className="ak-nav-link"><span>♢</span>Notifications{notificationCount > 0 ? <small>{notificationCount}</small> : null}</Link><span>♢</span>Notifications</Link>
+          <NotificationSidebarLink /><span>♢</span>Notifications</Link>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
