@@ -44,8 +44,20 @@ export default function NotificationBell({ unreadCount: initialUnreadCount, noti
       setUnreadCount(Number(count ?? 0));
       setNotifications((items ?? []) as NotificationBellItem[]);
     };
-    void load();
-    return () => { active = false; };
+    let channel: ReturnType<typeof client.channel> | null = null;
+    void client.auth.getUser().then(({ data, error }) => {
+      if (!active || error || !data.user) return;
+      channel = client.channel("user:" + data.user.id + ":notifications", { config: { private: true } })
+        .on("broadcast", { event: "notification_created" }, () => { void load(); })
+        .on("broadcast", { event: "notification_updated" }, () => { void load(); })
+        .on("broadcast", { event: "group_unread_updated" }, () => { void load(); })
+        .subscribe();
+      void load();
+    });
+    return () => {
+      active = false;
+      if (channel) void client.removeChannel(channel);
+    };
   }, [initialUnreadCount, initialNotifications]);
 
   async function openNotification(id: string, href: string, wasUnread: boolean) {
