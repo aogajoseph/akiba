@@ -72,7 +72,10 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const currentUserIdRef = useRef("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const chatContainerRef = useRef<HTMLElement | null>(null);
+  const messagesViewportRef = useRef<HTMLDivElement | null>(null);
   const lastReadCursorRef = useRef<string | null>(null);
+  const initialScrollDoneRef = useRef(false);
+  const wasAtBottomRef = useRef(true);
 
   const hydrateMessages = useCallback(async (rows: MessageRow[], userId: string) => {
     const client = clientRef.current;
@@ -375,7 +378,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     const cursorKey = latest.created_at + ":" + latest.id;
     let conversationVisible = false;
     const markLatestRead = () => {
-      if (!conversationVisible || document.visibilityState !== "visible" || lastReadCursorRef.current === cursorKey) return;
+      const viewport = messagesViewportRef.current;
+      const isAtBottom = Boolean(viewport && viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight <= 48);
+      if (!conversationVisible || !isAtBottom || document.visibilityState !== "visible" || lastReadCursorRef.current === cursorKey) return;
       const client = clientRef.current;
       if (!client) return;
       lastReadCursorRef.current = cursorKey;
@@ -392,13 +397,35 @@ export default function GroupChat({ groupId }: { groupId: string }) {
         }, { threshold: 0.01 })
       : null;
     if (node && observer) observer.observe(node);
+    const viewport = messagesViewportRef.current;
     const onVisibilityChange = () => markLatestRead();
+    viewport?.addEventListener("scroll", markLatestRead, { passive: true });
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
       observer?.disconnect();
+      viewport?.removeEventListener("scroll", markLatestRead);
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [groupId, messages, status]);
+
+  useEffect(() => {
+    if (status !== "ready" || messages.length === 0) return;
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+    if (!initialScrollDoneRef.current) {
+      viewport.scrollTop = viewport.scrollHeight;
+      initialScrollDoneRef.current = true;
+      wasAtBottomRef.current = true;
+    } else if (wasAtBottomRef.current) {
+      viewport.scrollTop = viewport.scrollHeight;
+    }
+  }, [messages, status]);
+
+  function handleMessagesScroll() {
+    const viewport = messagesViewportRef.current;
+    if (!viewport) return;
+    wasAtBottomRef.current = viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight <= 48;
+  }
 
   async function confirmDeleteMessage() {
     const target = deleteTarget;
@@ -500,7 +527,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
           <button type="button" className={styles.notificationPreference} aria-pressed={notificationsMuted} onClick={() => void toggleGroupNotifications()}>{notificationsMuted ? "Unmute notifications" : "Mute notifications"}</button>
         </div>
       </div>
-      <div className={styles.messages}>
+      <div ref={messagesViewportRef} className={styles.messages} onScroll={handleMessagesScroll}>
         {hasMore && <button type="button" className={styles.olderButton} onClick={() => void loadOlderMessages()} disabled={loadingOlder}>{loadingOlder ? "Loading older messages…" : "Load earlier messages"}</button>}
         {messages.length === 0 ? (
           <div className={styles.emptyState}>
