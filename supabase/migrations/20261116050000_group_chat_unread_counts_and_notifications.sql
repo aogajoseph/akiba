@@ -168,12 +168,17 @@ begin
       and gm.user_id <> new.author_id
   loop
     -- Keep unread badges current even when a member muted this group's inbox alerts.
-    perform realtime.send(
-      jsonb_build_object('group_id', new.group_id, 'message_id', new.id),
-      'group_unread_updated',
-      'user:' || v_recipient.user_id::text || ':notifications',
-      true
-    );
+    begin
+      perform realtime.send(
+        jsonb_build_object('group_id', new.group_id, 'message_id', new.id),
+        'group_unread_updated',
+        'user:' || v_recipient.user_id::text || ':notifications',
+        true
+      );
+    exception when others then
+      -- Durable unread state remains queryable if Realtime is temporarily unavailable.
+      raise warning 'Unable to broadcast unread update for group %, user %', new.group_id, v_recipient.user_id;
+    end;
 
     if not v_recipient.notifications_muted then
       insert into public.akiba_group_notifications
@@ -205,16 +210,21 @@ security definer
 set search_path = ''
 as $fn$
 begin
-  perform realtime.send(
-    jsonb_build_object(
-      'notification_id', new.id,
-      'group_id', new.group_id,
-      'event_type', new.event_type
-    ),
-    'notification_created',
-    'user:' || new.user_id::text || ':notifications',
-    true
-  );
+  begin
+    perform realtime.send(
+      jsonb_build_object(
+        'notification_id', new.id,
+        'group_id', new.group_id,
+        'event_type', new.event_type
+      ),
+      'notification_created',
+      'user:' || new.user_id::text || ':notifications',
+      true
+    );
+  exception when others then
+    -- The inbox row is durable; clients will catch up on their next inbox refresh.
+    raise warning 'Unable to broadcast notification % to user %', new.id, new.user_id;
+  end;
   return new;
 end;
 $fn$;
