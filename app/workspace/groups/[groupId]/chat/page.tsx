@@ -37,6 +37,10 @@ export default async function GroupChatPage({ params }: Props) {
     .select("status").eq("group_id", group.id).eq("user_id", user.id).maybeSingle();
   if (!membership || membership.status !== "active") notFound();
 
+  const { data: unreadRows } = await supabase.rpc("akiba_list_my_group_chat_unread_counts");
+  const chatUnreadCount = Number(((unreadRows ?? []) as { group_id: string; unread_count: number | string }[])
+    .find((row) => row.group_id === group.id)?.unread_count ?? 0);
+
   const avatarUrl = profile.avatar_path
     ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl
     : null;
@@ -88,7 +92,7 @@ export default async function GroupChatPage({ params }: Props) {
             <Link href={"/workspace/groups/" + group.id}><DashboardOutlinedIcon />Overview</Link>
             <Link href={"/workspace/groups/" + group.id + "/finances"}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={"/workspace/groups/" + group.id + "/membership"}><GroupsOutlinedIcon />Membership</Link>
-            <Link className="active" aria-current="page" href={"/workspace/groups/" + group.id + "/chat"}><ChatBubbleOutlineOutlinedIcon />Chat</Link>
+            <Link className="active" aria-current="page" href={"/workspace/groups/" + group.id + "/chat"}><ChatBubbleOutlineOutlinedIcon />Chat{chatUnreadCount > 0 && <span className="ak-group-tab-unread-badge">{chatUnreadCount > 99 ? "99+" : chatUnreadCount}</span>}</Link>
             <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
           </nav>
 
