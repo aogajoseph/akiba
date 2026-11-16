@@ -13,7 +13,7 @@ export type UnreadGroupSummary = {
 
 function summaryText(item: UnreadGroupSummary) {
   const count = Number(item.unread_count);
-  return "You have " + count + " unread " + (count === 1 ? "message" : "messages") + " in ‘" + item.group_name + "’.";
+  return "You have " + count + " unread " + (count === 1 ? "message" : "messages") + " from " + item.group_name + ".";
 }
 
 export default function MessageBell() {
