@@ -102,3 +102,25 @@
 .deletedMessageText{color:#98a39b!important;font-style:italic}
 
 
+
+
+/* Group-chat attachment cards and private-file composer. */
+.attachmentComposer{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:11px}
+.attachButton{padding:7px 10px;border:1px solid #dce8df;border-radius:7px;background:#f7faf7;color:#397755;font-size:10px;font-weight:700;cursor:pointer}
+.attachButton:disabled{opacity:.6;cursor:wait}
+.attachmentHint{color:#929e95;font-size:9px}
+.attachmentError{display:block;width:100%;color:#a63a32;font-size:9px;line-height:1.5}
+.attachmentList{display:grid;gap:7px;margin-top:9px;max-width:420px}
+.attachmentItem{display:flex;align-items:center;gap:9px;min-width:0;padding:8px;border:1px solid #e1e9e2;border-radius:8px;background:rgba(255,255,255,.72)}
+.attachmentImageButton{flex:0 0 66px;width:66px;height:54px;padding:0;overflow:hidden;border:0;border-radius:5px;background:#e8eee9;cursor:pointer}
+.attachmentImageButton img{display:block;width:100%;height:100%;object-fit:cover}
+.attachmentFileIcon{display:grid;place-items:center;flex:0 0 40px;height:40px;border-radius:7px;background:#edf3ee;color:#4b7658;font-size:9px;font-weight:800}
+.attachmentDetails{display:flex;flex:1;flex-direction:column;min-width:0;gap:4px}
+.attachmentDetails b{overflow:hidden;color:#405548;font-size:10px;text-overflow:ellipsis;white-space:nowrap}
+.attachmentDetails small{color:#89968d;font-size:9px}
+.attachmentDownload{padding:6px 8px;border:1px solid #dce8df;border-radius:6px;background:#fff;color:#397755;font-size:9px;cursor:pointer}
+.presenceBar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:9px 18px;border:1px solid #e7ece8;border-bottom:0;background:#fbfdfb;color:#78877d;font-size:9px}
+.presenceCount{display:inline-flex;align-items:center;gap:6px;color:#4c7458;font-weight:750}
+.presenceCount i{width:7px;height:7px;border-radius:50%;background:#3d9b61}
+.lastSeenText{color:#9aa49d}
+@media(max-width:700px){.presenceBar{padding:8px 14px;gap:7px}.attachmentList{max-width:100%}.attachmentItem{gap:7px}.attachmentImageButton{flex-basis:56px;width:56px;height:48px}}
