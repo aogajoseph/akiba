@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import type { MouseEvent } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 type Props = {
@@ -16,7 +17,7 @@ type Props = {
 
 export default function NotificationActivityLink({ id, href, unread, title, body, date, eventType }: Props) {
   const router = useRouter();
-  async function open(event: React.MouseEvent<HTMLAnchorElement>) {
+  async function open(event: MouseEvent<HTMLAnchorElement>) {
     event.preventDefault();
     if (unread) {
       const client = createClient();
