@@ -37,6 +37,15 @@ type AttachmentRow = {
   created_at: string;
 };
 
+function fileTypeLabel(mimeType: string) {
+  if (mimeType === "application/pdf") return "PDF";
+  if (mimeType.includes("word")) return "DOC";
+  if (mimeType.includes("excel") || mimeType.includes("spreadsheet")) return "XLS";
+  if (mimeType.includes("powerpoint") || mimeType.includes("presentation")) return "PPT";
+  if (mimeType === "image/jpeg" || mimeType === "image/png" || mimeType === "image/webp" || mimeType === "image/gif") return "IMG";
+  return "FILE";
+}
+
 function formatBytes(value: number) {
   if (value < 1024) return value + " B";
   if (value < 1024 * 1024) return (value / 1024).toFixed(0) + " KB";
@@ -81,8 +90,8 @@ export function GroupChatAttachmentList({ groupId, messageId, deleted = false, r
     let active = true;
     const urls: string[] = [];
     async function loadPreviews() {
-      const images = items.filter((item) => item.mime_type.startsWith("image/"));
-      const entries = await Promise.all(images.map(async (item) => {
+      const previewable = items.filter((item) => item.mime_type.startsWith("image/") || item.mime_type === "application/pdf");
+      const entries = await Promise.all(previewable.map(async (item) => {
         const { data, error: downloadError } = await createClient().storage.from(BUCKET).download(item.storage_path);
         if (downloadError || !data) return null;
         const url = URL.createObjectURL(data);
@@ -128,8 +137,10 @@ export function GroupChatAttachmentList({ groupId, messageId, deleted = false, r
             <button type="button" className={styles.attachmentImageButton} onClick={() => void download(item)} aria-label={"Download " + item.file_name}>
               <img src={previews[item.id]} alt={item.file_name} />
             </button>
+          ) : item.mime_type === "application/pdf" && previews[item.id] ? (
+            <iframe className={styles.attachmentPdfPreview} src={previews[item.id]} title={"PDF preview: " + item.file_name} loading="lazy" />
           ) : (
-            <span className={styles.attachmentFileIcon} aria-hidden="true">{item.mime_type === "application/pdf" ? "PDF" : "FILE"}</span>
+            <span className={styles.attachmentFileIcon} aria-hidden="true">{fileTypeLabel(item.mime_type)}</span>
           )}
           <div className={styles.attachmentDetails}>
             <b title={item.file_name}>{item.file_name}</b>
@@ -262,6 +273,8 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
   const [online, setOnline] = useState<PresenceUser[]>([]);
   const [lastSeen, setLastSeen] = useState<Record<string, string>>({});
   const [names, setNames] = useState<Record<string, string>>({});
+  const onlineRef = useRef<PresenceUser[]>([]);
+  const [, setClock] = useState(0);
 
   useEffect(() => {
     if (!currentUserId) return;
@@ -278,8 +291,8 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
       const displayName = profile?.display_name?.trim() || profile?.username || "Akiba member";
       const { error: touchError } = await client.rpc("akiba_touch_group_chat_presence", { p_group_id: groupId });
       if (touchError) return;
-      const initial = (presenceRows ?? []) as { user_id: string; last_seen_at: string }[];
-      setLastSeen(Object.fromEntries(initial.map((row) => [row.user_id, row.last_seen_at])));
+      const initial = (presenceRows ?? []) as { user_id: string; last_seen_at: string | null }[];
+      setLastSeen(Object.fromEntries(initial.filter((row) => row.last_seen_at).map((row) => [row.user_id, row.last_seen_at as string])));
       const otherIds = initial.map((row) => row.user_id).filter((id) => id !== currentUserId);
       const { data: memberProfiles } = otherIds.length
         ? await client.from("akiba_profiles").select("user_id,display_name,username").in("user_id", otherIds)
@@ -299,6 +312,16 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
         const state = channel.presenceState<PresenceUser>();
         const presences = Object.values(state).flat().filter((person) => Boolean(person.user_id));
         const uniquePeople = Array.from(new Map(presences.map((person) => [person.user_id, person])).values());
+        const nextIds = new Set(uniquePeople.map((person) => person.user_id));
+        const now = new Date().toISOString();
+        setLastSeen((current) => {
+          const next = { ...current };
+          for (const previous of onlineRef.current) {
+            if (!nextIds.has(previous.user_id)) next[previous.user_id] = now;
+          }
+          return next;
+        });
+        onlineRef.current = uniquePeople;
         setOnline(uniquePeople);
         setNames((current) => {
           const next = { ...current };
@@ -314,15 +337,25 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
     }
 
     void start();
-    const markAway = () => {
-      if (document.visibilityState === "hidden") {
+    const markActivity = () => {
+      if (document.visibilityState === "visible") {
+        void client.rpc("akiba_touch_group_chat_presence", { p_group_id: groupId });
+      } else {
         void client.rpc("akiba_touch_group_chat_presence", { p_group_id: groupId });
       }
     };
-    document.addEventListener("visibilitychange", markAway);
+    const heartbeat = window.setInterval(() => {
+      if (document.visibilityState === "visible") {
+        void client.rpc("akiba_touch_group_chat_presence", { p_group_id: groupId });
+      }
+    }, 60_000);
+    const clock = window.setInterval(() => setClock((value) => value + 1), 60_000);
+    document.addEventListener("visibilitychange", markActivity);
     return () => {
       active = false;
-      document.removeEventListener("visibilitychange", markAway);
+      document.removeEventListener("visibilitychange", markActivity);
+      window.clearInterval(heartbeat);
+      window.clearInterval(clock);
       void client.rpc("akiba_touch_group_chat_presence", { p_group_id: groupId });
       if (channel) void client.removeChannel(channel);
     };
