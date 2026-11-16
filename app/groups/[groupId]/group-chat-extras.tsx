@@ -143,80 +143,41 @@ export function GroupChatAttachmentList({ groupId, messageId, deleted = false, r
   );
 }
 
-export function GroupChatAttachmentComposer({ groupId, currentUserId, onUploaded }: {
-  groupId: string;
-  currentUserId: string;
-  onUploaded: () => void;
+export function GroupChatAttachmentPicker({ files, onFilesChange, disabled = false }: {
+  files: File[];
+  onFilesChange: (files: File[]) => void;
+  disabled?: boolean;
 }) {
   const inputRef = useRef<HTMLInputElement | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState("");
+  const MAX_FILES = 10;
+  const MAX_TOTAL_SIZE = 50 * 1024 * 1024;
 
-  async function uploadFile(file: File) {
-    if (!ALLOWED_TYPES.has(file.type)) {
-      setError("Choose an image, PDF, Word, Excel or PowerPoint file.");
-      return;
-    }
-    if (file.size <= 0 || file.size > MAX_FILE_SIZE) {
-      setError("Files must be smaller than 15 MB.");
-      return;
-    }
-
-    setUploading(true);
-    setError("");
-    const client = createClient();
-    let storagePath = "";
-    let messageId = "";
-
-    try {
-      // Upload first. If the private bucket is not provisioned in this
-      // Supabase environment, fail without leaving a misleading chat message.
-      const extension = EXTENSIONS[file.type];
-      storagePath = groupId + "/" + currentUserId + "/" + crypto.randomUUID() + "." + extension;
-      const { error: uploadError } = await client.storage.from(BUCKET).upload(storagePath, file, {
-        contentType: file.type,
-        cacheControl: "3600",
-        upsert: false,
-      });
-      if (uploadError) {
-        if (uploadError.message.toLowerCase().includes("bucket") && uploadError.message.toLowerCase().includes("not found")) {
-          throw new Error("Attachments aren't enabled in this environment yet. The group-chat attachments migration must be applied first.");
-        }
-        throw new Error(uploadError.message);
-      }
-
-      const { data: message, error: messageError } = await client
-        .from("akiba_group_messages")
-        .insert({ group_id: groupId, author_id: currentUserId, body: "Shared an attachment: " + file.name.slice(0, 180) })
-        .select("id")
-        .single();
-      if (messageError || !message) throw new Error("The file uploaded, but a chat message couldn't be created.");
-      messageId = message.id;
-
-      const { error: metadataError } = await client.from("akiba_group_chat_attachments").insert({
-        group_id: groupId,
-        message_id: messageId,
-        uploaded_by: currentUserId,
-        storage_path: storagePath,
-        file_name: file.name.slice(0, 255),
-        mime_type: file.type,
-        file_size: file.size,
-      });
-      if (metadataError) throw new Error("The file uploaded but its message details couldn't be saved.");
-      onUploaded();
+  function chooseFiles(selected: FileList | null) {
+    if (!selected?.length) return;
+    const incoming = Array.from(selected);
+    const invalid = incoming.find((file) => !ALLOWED_TYPES.has(file.type) || file.size <= 0 || file.size > MAX_FILE_SIZE);
+    if (invalid) {
+      setError(!ALLOWED_TYPES.has(invalid.type)
+        ? "Choose images, PDFs, Word, Excel or PowerPoint files."
+        : "Each file must be smaller than 15 MB.");
       if (inputRef.current) inputRef.current.value = "";
-    } catch (uploadError) {
-      if (storagePath) await client.storage.from(BUCKET).remove([storagePath]);
-      if (messageId) {
-        await client.from("akiba_group_messages")
-          .update({ body: "Attachment could not be shared." })
-          .eq("id", messageId)
-          .eq("group_id", groupId);
-      }
-      setError(uploadError instanceof Error ? uploadError.message : "The file couldn't be shared. Please try again.");
-    } finally {
-      setUploading(false);
+      return;
     }
+    const combined = [...files, ...incoming];
+    if (combined.length > MAX_FILES) {
+      setError("You can attach up to 10 files to one message.");
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+    if (combined.reduce((total, file) => total + file.size, 0) > MAX_TOTAL_SIZE) {
+      setError("The combined attachments must be smaller than 50 MB.");
+      if (inputRef.current) inputRef.current.value = "";
+      return;
+    }
+    onFilesChange(combined);
+    setError("");
+    if (inputRef.current) inputRef.current.value = "";
   }
 
   return (
@@ -225,21 +186,65 @@ export function GroupChatAttachmentComposer({ groupId, currentUserId, onUploaded
         ref={inputRef}
         className={styles.srOnly}
         type="file"
+        multiple
         accept="image/jpeg,image/png,image/webp,image/gif,application/pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx"
-        disabled={uploading}
-        onChange={(event) => {
-          const file = event.currentTarget.files?.[0];
-          if (file) void uploadFile(file);
-        }}
-        aria-label="Choose an attachment"
+        disabled={disabled}
+        onChange={(event) => chooseFiles(event.currentTarget.files)}
+        aria-label="Choose files to attach"
       />
-      <button type="button" className={styles.attachButton} disabled={uploading} onClick={() => inputRef.current?.click()}>
-        {uploading ? "Uploading file…" : "＋ Attach file"}
+      <button type="button" className={styles.attachButton} disabled={disabled} onClick={() => inputRef.current?.click()} aria-label="Attach files" title="Attach files">
+        <svg viewBox="0 0 24 24" width="19" height="19" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="m21.4 11.1-8.9 8.9a6 6 0 0 1-8.5-8.5l9.2-9.2a4 4 0 0 1 5.7 5.7l-9.2 9.2a2 2 0 0 1-2.8-2.8l8.5-8.5" />
+        </svg>
       </button>
-      <span className={styles.attachmentHint}>Images and documents · Max 15 MB</span>
+      {files.length > 0 && (
+        <div className={styles.pendingAttachments} aria-live="polite">
+          {files.map((file, index) => (
+            <div className={styles.pendingAttachment} key={index}>
+              <span>{file.type.startsWith("image/") ? "IMG" : file.type === "application/pdf" ? "PDF" : "FILE"}</span>
+              <b title={file.name}>{file.name}</b>
+              <small>{formatBytes(file.size)}</small>
+              <button type="button" onClick={() => onFilesChange(files.filter((_, fileIndex) => fileIndex !== index))} disabled={disabled} aria-label={"Remove " + file.name}>×</button>
+            </div>
+          ))}
+        </div>
+      )}
       {error && <small className={styles.attachmentError} role="alert">{error}</small>}
     </div>
   );
+}
+
+export async function uploadGroupChatAttachments(groupId: string, currentUserId: string, messageId: string, files: File[]) {
+  if (!files.length) return;
+  const client = createClient();
+  const uploadedPaths: string[] = [];
+  try {
+    const rows = await Promise.all(files.map(async (file) => {
+      const extension = EXTENSIONS[file.type];
+      const storagePath = groupId + "/" + currentUserId + "/" + crypto.randomUUID() + "." + extension;
+      const { error } = await client.storage.from(BUCKET).upload(storagePath, file, {
+        contentType: file.type,
+        cacheControl: "3600",
+        upsert: false,
+      });
+      if (error) throw new Error(error.message);
+      uploadedPaths.push(storagePath);
+      return {
+        group_id: groupId,
+        message_id: messageId,
+        uploaded_by: currentUserId,
+        storage_path: storagePath,
+        file_name: file.name.slice(0, 255),
+        mime_type: file.type,
+        file_size: file.size,
+      };
+    }));
+    const { error: metadataError } = await client.from("akiba_group_chat_attachments").insert(rows);
+    if (metadataError) throw new Error(metadataError.message);
+  } catch (error) {
+    if (uploadedPaths.length) await client.storage.from(BUCKET).remove(uploadedPaths);
+    throw error;
+  }
 }
 
 type PresenceUser = { user_id: string; display_name: string; online_at: string };
