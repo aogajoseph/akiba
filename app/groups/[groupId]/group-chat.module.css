@@ -100,3 +100,9 @@
 
 /* Visually distinguish the deleted-message placeholder from member-authored text. */
 .deletedMessageText{color:#98a39b!important;font-style:italic}
+
+
+.notificationPreference{min-height:31px;padding:7px 10px;border:1px solid #e5ece6;border-radius:7px;background:#fff;color:#60766a;font-size:9px;font-weight:700;cursor:pointer;white-space:nowrap}
+.notificationPreference:hover{border-color:#b9d7c2;background:#f7fbf8;color:#176b50}
+.notificationPreference:focus-visible{outline:3px solid #d9ecdf;outline-offset:2px}
+@media(max-width:700px){.notificationPreference{padding:7px 8px;font-size:8px}}
