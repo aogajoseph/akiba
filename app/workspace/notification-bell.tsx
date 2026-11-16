@@ -54,10 +54,6 @@ export default function NotificationBell({ unreadCount: initialUnreadCount, noti
     };
   }, []);
 
-  useEffect(() => {
-    if (initialUnreadCount !== undefined) setUnreadCount(initialUnreadCount);
-    if (initialNotifications !== undefined) setNotifications(initialNotifications);
-  }, [initialUnreadCount, initialNotifications]);
 
   async function openNotification(id: string, href: string, wasUnread: boolean) {
     if (wasUnread) {
