@@ -400,7 +400,6 @@ export function GroupChatReactions({ groupId, messageId, currentUserId, refreshK
       setRows((data ?? []) as MessageReactionRow[]);
     }
     if (!disabled) void load();
-    else setRows([]);
     return () => { active = false; };
   }, [groupId, messageId, refreshKey, disabled]);
 
