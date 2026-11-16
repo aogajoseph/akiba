@@ -2,6 +2,11 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
+import NotificationRealtime from "@/app/workspace/notification-realtime";
+import NotificationBell from "@/app/workspace/notification-bell";
+import MessageBell from "@/app/workspace/message-bell";
+import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
+import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
 import FinancePanel from "./finance-panel";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
@@ -88,6 +93,7 @@ export default async function GroupFinancesPage({ params }: Props) {
 
   return (
     <main className="ak-dashboard ak-workspace-app">
+      <NotificationRealtime />
       <aside className="ak-sidebar">
         <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
         <nav className="ak-nav" aria-label="Main navigation">
@@ -95,7 +101,8 @@ export default async function GroupFinancesPage({ params }: Props) {
           <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
           <Link href="/workspace/groups" className="ak-nav-link active"><span>♧</span>My Groups</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations</Link>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
+          <NotificationSidebarLink />
+          <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
@@ -114,7 +121,7 @@ export default async function GroupFinancesPage({ params }: Props) {
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
           <div className="ak-workspace-top-crumb"><Link href="/workspace/groups">My Groups</Link><span>/</span><Link href={`/workspace/groups/${group.id}`}>{group.name}</Link><span>/</span><strong>Finances</strong></div>
-          <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
+          <div className="ak-topbar-right"><NotificationBell /><MessageBell /><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
         </header>
 
         <div className="ak-dashboard-content ak-workspace-content">
@@ -132,7 +139,7 @@ export default async function GroupFinancesPage({ params }: Props) {
             <Link href={`/workspace/groups/${group.id}`}><DashboardOutlinedIcon />Overview</Link>
             <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
-            <span aria-disabled="true" title="Group chat is coming soon"><ChatBubbleOutlineOutlinedIcon />Chat</span>
+            <Link className="" href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat</Link>
             <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
           </nav>
 

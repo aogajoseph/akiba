@@ -3,6 +3,12 @@ import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { acceptGroupInvitationById, declineGroupInvitationById } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
+import NotificationRealtime from "@/app/workspace/notification-realtime";
+import NotificationBell, { type NotificationBellItem } from "@/app/workspace/notification-bell";
+import MessageBell from "@/app/workspace/message-bell";
+import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
+import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
+import NotificationActivityLink from "@/app/workspace/notification-activity-link";
 
 type Group = {
   id: string;
@@ -25,13 +31,7 @@ type Invitation = {
   created_at: string;
 };
 
-type Activity = {
-  id: string;
-  group_id: string;
-  event_type: string;
-  summary: string;
-  occurred_at: string;
-};
+type Notification = NotificationBellItem & { group_id: string };
 
 function initials(name: string) {
   return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
@@ -45,44 +45,33 @@ export default async function WorkspacePage() {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
-  const notificationRpc = supabase.rpc.bind(supabase) as unknown as (
-    name: string,
-    args?: Record<string, unknown>,
-  ) => Promise<{ data: { read_at: string | null }[] | null; error: { message: string } | null }>;
-  const [{ data: profile, error: profileError }, { data: groups, error: groupsError }, { data: invitations, error: invitationsError }, { data: notifications }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: groups, error: groupsError }, { data: invitations, error: invitationsError }, { data: notifications, error: notificationsError }, { data: unreadNotificationCountData }] = await Promise.all([
     supabase.from("akiba_profiles").select("username, display_name, avatar_path").eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at").order("created_at", { ascending: false }),
     supabase.rpc("akiba_list_my_group_invitations"),
-    notificationRpc("akiba_list_my_group_notifications", { p_limit: 100 }),
+    supabase.rpc("akiba_list_my_group_notifications", { p_limit: 5 }),
+    supabase.rpc("akiba_count_my_unread_group_notifications"),
   ]);
 
   if (profileError || !profile?.display_name?.trim()) redirect("/onboarding");
 
-  const unreadNotificationCount = (notifications ?? []).filter((item) => !item.read_at).length;
+  const unreadNotificationCount = Number(unreadNotificationCountData ?? 0);
+  const notificationRows = (notifications ?? []) as Notification[];
   const groupRows = (groups ?? []) as Group[];
   const invitationRows = (invitations ?? []) as Invitation[];
   const groupIds = groupRows.map((group) => group.id);
   let messageCount: number | null = 0;
   let messageError = false;
-  let activities: Activity[] = [];
-  let activityError = false;
-
   if (groupIds.length > 0) {
-    const [messageCountResult, activityResult] = await Promise.all([
-      supabase.from("akiba_group_messages").select("id", { count: "exact", head: true }).in("group_id", groupIds),
-      supabase.from("akiba_group_activity").select("id,group_id,event_type,summary,occurred_at").in("group_id", groupIds).order("occurred_at", { ascending: false }).limit(5),
-    ]);
+    const messageCountResult = await supabase.from("akiba_group_messages").select("id", { count: "exact", head: true }).in("group_id", groupIds);
     messageCount = messageCountResult.count;
     messageError = Boolean(messageCountResult.error);
-    activities = (activityResult.data ?? []) as Activity[];
-    activityError = Boolean(activityResult.error);
   }
 
   const avatarUrl = profile.avatar_path
     ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl
     : null;
   const displayName = profile.display_name;
-  const groupNameById = new Map(groupRows.map((group) => [group.id, group.name]));
    const firstName = displayName.trim().split(/\s+/)[0];
 
   return (
@@ -94,8 +83,8 @@ export default async function WorkspacePage() {
           <Link href="/workspace" className="ak-nav-link active"><span>⌂</span>Home</Link>
           <Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups{groupRows.length > 0 && <small>{groupRows.length}</small>}</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations{(invitations ?? []).length > 0 && <small>{(invitations ?? []).length}</small>}</Link>
-          <Link href="/workspace/notifications" className="ak-nav-link"><span>♢</span>Notifications{unreadNotificationCount > 0 && <small>{unreadNotificationCount}</small>}</Link>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
+          <NotificationSidebarLink />
+          <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
@@ -110,11 +99,12 @@ export default async function WorkspacePage() {
         </div>
       </aside>
 
+      <NotificationRealtime />
       <section className="ak-main">
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
           <div className="ak-search-placeholder"><span>⌕</span><span>Search groups, chats, or people...</span></div>
-          <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(displayName)}</div></div>
+          <div className="ak-topbar-right"><NotificationBell unreadCount={unreadNotificationCount} notifications={notificationRows.slice(0, 5)} /><MessageBell /><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(displayName)}</div></div>
         </header>
 
         <div className="ak-dashboard-content">
@@ -156,7 +146,7 @@ export default async function WorkspacePage() {
           <div className="ak-metrics">
             <article className="ak-metric"><span className="ak-metric-icon pink">♧</span><span className="ak-metric-label">My Groups</span><strong>{groupsError ? "—" : groupRows.length}</strong><small>{groupRows.length === 1 ? "1 group to organise" : "Your shared spaces"}</small></article>
             <article className="ak-metric"><span className="ak-metric-icon violet">▤</span><span className="ak-metric-label">Group Messages</span><strong>{messageError ? "—" : messageCount ?? 0}</strong><small>{messageError ? "Couldn't load messages" : "Messages across your groups"}</small></article>
-            <article className="ak-metric"><span className="ak-metric-icon green">↗</span><span className="ak-metric-label">Group Updates</span><strong>{activityError ? "—" : activities.length}</strong><small>{activityError ? "Couldn't load updates" : "Recent recorded updates"}</small></article>
+            <article className="ak-metric"><span className="ak-metric-icon green">↗</span><span className="ak-metric-label">Group Updates</span><strong>{notificationsError ? "—" : notificationRows.length}</strong><small>{notificationsError ? "Couldn't load updates" : "Latest notifications"}</small></article>
             <article className="ak-metric"><span className="ak-metric-icon amber">✓</span><span className="ak-metric-label">Profile</span><strong className="ak-metric-status">Complete</strong><small>Your account is ready</small></article>
           </div>
 
@@ -175,8 +165,9 @@ export default async function WorkspacePage() {
               <section className="ak-purpose-banner"><div className="ak-banner-logo"><img src="/akiba-logo.png" alt="" /></div><div><h2>Do more, together</h2><p>Create a group, bring people together, and turn your plans into reality.</p></div><Link href="/workspace/new" className="ak-primary">＋ Create Group</Link></section>
 
               <section className="ak-panel ak-activity-panel">
-                <div className="ak-panel-heading"><div><h2>Recent Activity</h2><p>Updates from the groups you&apos;re part of.</p></div></div>
-                {activityError ? <div className="ak-inline-error">Recent activity couldn&apos;t be loaded.</div> : activities.length === 0 ? <div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">◷</span><h3>No activity yet</h3><p>Group updates will appear here as things happen.</p></div> : <div className="ak-activity-list">{activities.map((item) => <div className="ak-activity-row" key={item.id}><span className="ak-activity-icon">✳</span><div><strong>{groupNameById.get(item.group_id) ?? "Your group"}</strong><p>{item.summary || item.event_type}</p><small>{shortDate(item.occurred_at)}</small></div></div>)}</div>}
+                <div className="ak-panel-heading"><div><h2>Recent Activity</h2><p>Your five latest notifications across all groups.</p></div></div>
+                {notificationsError ? <div className="ak-inline-error">Recent notifications couldn&apos;t be loaded.</div> : notificationRows.length === 0 ? <div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">◷</span><h3>No notifications yet</h3><p>Updates from your groups will appear here.</p></div> : <div className="ak-activity-list">{notificationRows.map((item) => <NotificationActivityLink key={item.id} id={item.id} href={item.href} unread={!item.read_at} title={item.title} body={item.body} date={shortDate(item.created_at)} eventType={item.event_type} />)}</div>}
+                <Link className="ak-panel-footer" href="/workspace/notifications">See all notifications</Link>
               </section>
             </div>
 

@@ -3,6 +3,11 @@ import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { setGroupAdmin } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
+import NotificationRealtime from "@/app/workspace/notification-realtime";
+import NotificationBell, { type NotificationBellItem } from "@/app/workspace/notification-bell";
+import MessageBell from "@/app/workspace/message-bell";
+import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
+import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
 import GroupWorkspaceActions from "./group-workspace-actions";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
@@ -62,9 +67,17 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
     .select("max_members,required_group_admins,max_group_admins")
     .eq("plan_code", group.group_plan_code).maybeSingle();
 
-  const { data: membership } = await supabase.from("akiba_group_memberships")
-    .select("role,status,joined_at").eq("group_id", group.id).eq("user_id", user.id).maybeSingle();
+  const [{ data: membership }, { data: groupUnreadRows }, { data: notificationUnreadCount }, { data: notificationPreview }] = await Promise.all([
+    supabase.from("akiba_group_memberships")
+      .select("role,status,joined_at").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
+    supabase.rpc("akiba_list_my_group_chat_unread_counts"),
+    supabase.rpc("akiba_count_my_unread_group_notifications"),
+    supabase.rpc("akiba_list_my_group_notifications", { p_limit: 5 }),
+  ]);
   if (!membership || membership.status !== "active") notFound();
+  const chatUnreadCount = Number(((groupUnreadRows ?? []) as { group_id: string; unread_count: number | string }[]).find((row) => row.group_id === group.id)?.unread_count ?? 0);
+  const notificationCount = Number(notificationUnreadCount ?? 0);
+  const notificationRows = (notificationPreview ?? []) as NotificationBellItem[];
 
   const { data: memberRows, error: membersError } = await supabase.from("akiba_group_memberships")
     .select("user_id,role,joined_at").eq("group_id", group.id).eq("status", "active").order("joined_at", { ascending: true });
@@ -99,13 +112,15 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
 
   return (
     <main className="ak-dashboard ak-workspace-app">
+      <NotificationRealtime />
       <aside className="ak-sidebar">
         <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
         <nav className="ak-nav" aria-label="Main navigation">
           <span className="ak-nav-label">WORKSPACE</span>
           <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
           <Link href="/workspace/groups" className="ak-nav-link active"><span>♧</span>My Groups</Link>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
+          <NotificationSidebarLink />
+          <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
@@ -124,7 +139,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
           <div className="ak-workspace-top-crumb"><Link href="/workspace/groups">My Groups</Link><span>/</span><strong>{group.name}</strong></div>
-          <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
+          <div className="ak-topbar-right"><NotificationBell unreadCount={notificationCount} notifications={notificationRows.slice(0, 5)} /><MessageBell /><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
         </header>
 
         <div className="ak-dashboard-content ak-workspace-content">
@@ -159,7 +174,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}`}><DashboardOutlinedIcon />Overview</Link>
             <Link href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
-            <span aria-disabled="true" title="Group chat is coming soon"><ChatBubbleOutlineOutlinedIcon />Chat</span>
+            <Link className="" href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat{chatUnreadCount > 0 && <span className="ak-group-tab-unread-badge">{chatUnreadCount > 99 ? "99+" : chatUnreadCount}</span>}</Link>
             <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
           </nav>
           {group.status !== "active" && <div className="ak-workspace-card ak-group-deactivated-banner">
