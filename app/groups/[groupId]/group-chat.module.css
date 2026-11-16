@@ -145,3 +145,12 @@
 .reactionError{display:block;margin-top:3px;color:#a63a32;font-size:9px}
 .typingIndicator{padding:5px 4px;color:#71877a;font-size:10px;font-style:italic}
 @media(max-width:700px){.reactionPicker button{width:32px;height:32px}}
+
+
+/* Briefly spotlight the original message when a reply reference is followed. */
+.messageBody{transition:background-color .55s ease,border-color .55s ease,box-shadow .55s ease}
+.messageReferenced .messageBody{
+  background-color:rgba(197,42,120,.10);
+  border-color:rgba(197,42,120,.34);
+  box-shadow:0 0 0 3px rgba(197,42,120,.045);
+}
