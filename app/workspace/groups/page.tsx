@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
+import NotificationRealtime from "@/app/workspace/notification-realtime";
 
 type Group = {
   id: string;
@@ -26,14 +27,19 @@ export default async function MyGroupsPage() {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/groups"));
 
-  const [{ data: profile }, initialGroups] = await Promise.all([
+  const [{ data: profile }, initialGroups, unreadResult] = await Promise.all([
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at")
       .order("created_at", { ascending: false }).range(0, 499),
+    supabase.rpc("akiba_list_my_group_chat_unread_counts"),
   ]);
   if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/workspace/groups"));
 
   const groups: Group[] = (initialGroups.data ?? []) as Group[];
+  const unreadByGroup = new Map<string, number>(
+    ((unreadResult.data ?? []) as { group_id: string; unread_count: number | string }[])
+      .map((row) => [row.group_id, Number(row.unread_count)]),
+  );
   let groupsError = Boolean(initialGroups.error);
   // Fetch subsequent pages so the directory is not limited to the dashboard's
   // five-item preview or the API's per-request row cap.
@@ -57,6 +63,7 @@ export default async function MyGroupsPage() {
 
   return (
     <main className="ak-dashboard ak-workspace-app">
+      <NotificationRealtime />
       <aside className="ak-sidebar">
         <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
         <nav className="ak-nav" aria-label="Main navigation">
@@ -104,6 +111,7 @@ export default async function MyGroupsPage() {
                   <Link href={"/workspace/groups/" + group.id} className="ak-group-row" key={group.id}>
                     <span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span>
                     <span className="ak-group-copy"><strong>{group.name}</strong><small>{group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal"} · {group.group_type.replaceAll("_", " ")} · {group.currency_code}{group.description ? " · " + group.description : ""}</small></span>
+                    {(unreadByGroup.get(group.id) ?? 0) > 0 && <span className="ak-group-unread-badge" aria-label={(unreadByGroup.get(group.id) ?? 0) + " unread messages"}>{(unreadByGroup.get(group.id) ?? 0) > 99 ? "99+" : unreadByGroup.get(group.id)}</span>}
                     <span className="ak-group-date">{shortDate(group.created_at)}</span><span className="ak-chevron">›</span>
                   </Link>
                 ))}</div>}
