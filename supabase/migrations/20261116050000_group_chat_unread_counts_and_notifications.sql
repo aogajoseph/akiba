@@ -6,7 +6,7 @@ create table if not exists public.akiba_group_chat_preferences (
   user_id uuid not null references auth.users(id) on delete cascade,
   group_id uuid not null references public.akiba_groups(id) on delete cascade,
   last_read_at timestamptz,
-  last_read_message_id uuid references public.akiba_group_messages(id) on delete set null,
+  last_read_message_id uuid references public.akiba_group_messages(id) on delete cascade,
   notifications_muted boolean not null default false,
   updated_at timestamptz not null default now(),
   primary key (user_id, group_id),
