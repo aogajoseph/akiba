@@ -269,6 +269,10 @@ function relativeLastSeen(value: string) {
   return Math.floor(seconds / 86400) + "d ago";
 }
 
+function lastSeenLabel(value: string | null | undefined) {
+  return value ? relativeLastSeen(value) : "not yet active";
+}
+
 export function GroupChatPresence({ groupId, currentUserId }: { groupId: string; currentUserId: string }) {
   const [online, setOnline] = useState<PresenceUser[]>([]);
   const [lastSeen, setLastSeen] = useState<Record<string, string | null>>({});
@@ -365,7 +369,7 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
     <div className={styles.presenceBar} aria-live="polite">
       <span className={styles.presenceCount}><i />{online.length} online</span>
       {othersOnline.length > 0 && <span>{othersOnline.slice(0, 3).map((person) => names[person.user_id] || person.display_name).join(", ")}{othersOnline.length > 3 ? " +" + (othersOnline.length - 3) : ""}</span>}
-      {offlineIds.length > 0 && <span className={styles.lastSeenText}>Recently active: {offlineIds.slice(0, 2).map((id) => (names[id] || "Member") + " " + relativeLastSeen(lastSeen[id])).join(" · ")}</span>}
+      {offlineIds.length > 0 && <span className={styles.lastSeenText}>Recently active: {offlineIds.slice(0, 2).map((id) => (names[id] || "Member") + " " + lastSeenLabel(lastSeen[id])).join(" · ")}</span>}
     </div>
   );
 }
