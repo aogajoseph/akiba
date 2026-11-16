@@ -212,7 +212,7 @@ export function GroupChatAttachmentPicker({ files, onFilesChange, disabled = fal
         <div className={styles.pendingAttachments} aria-live="polite">
           {files.map((file, index) => (
             <div className={styles.pendingAttachment} key={index}>
-              <span>{file.type.startsWith("image/") ? "IMG" : file.type === "application/pdf" ? "PDF" : "FILE"}</span>
+              <span>{fileTypeLabel(file.type)}</span>
               <b title={file.name}>{file.name}</b>
               <small>{formatBytes(file.size)}</small>
               <button type="button" onClick={() => onFilesChange(files.filter((_, fileIndex) => fileIndex !== index))} disabled={disabled} aria-label={"Remove " + file.name}>×</button>
