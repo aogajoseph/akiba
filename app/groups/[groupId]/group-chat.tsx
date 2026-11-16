@@ -82,7 +82,6 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const initialScrollDoneRef = useRef(false);
   const wasAtBottomRef = useRef(true);
   const chatChannelRef = useRef<RealtimeChannel | null>(null);
-  const currentUserNameRef = useRef("Akiba member");
   const typingStopTimerRef = useRef<number | null>(null);
   const typingBroadcastAtRef = useRef(0);
   const typingTimeoutsRef = useRef<Map<string, number>>(new Map());
@@ -187,9 +186,6 @@ export default function GroupChat({ groupId }: { groupId: string }) {
 
         const userId = authData.user.id;
         currentUserIdRef.current = userId;
-        const { data: currentProfile } = await client.from("akiba_profiles").select("display_name,username").eq("user_id", userId).maybeSingle();
-        if (!active) return;
-        currentUserNameRef.current = currentProfile?.display_name?.trim() || currentProfile?.username || "Akiba member";
         const { data: group, error: groupError } = await client
           .from("akiba_groups")
           .select("id,name,status")
@@ -264,7 +260,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             const event = payload as { group_id?: string; user_id?: string; display_name?: string };
             const typingUserId = event.user_id;
             if (event.group_id !== groupId || !typingUserId || typingUserId === currentUserIdRef.current) return;
-            setTypingUsers((current) => ({ ...current, [typingUserId]: event.display_name || "A member" }));
+            setTypingUsers((current) => ({ ...current, [typingUserId]: "A member" }));
             const previous = typingTimeoutsRef.current.get(typingUserId);
             if (previous) window.clearTimeout(previous);
             const timeout = window.setTimeout(() => {
@@ -365,7 +361,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     const channel = chatChannelRef.current;
     const userId = currentUserIdRef.current;
     if (!channel || !userId) return;
-    void channel.send({ type: "broadcast", event: eventName, payload: { group_id: groupId, user_id: userId, display_name: currentUserNameRef.current } });
+    void channel.send({ type: "broadcast", event: eventName, payload: { group_id: groupId, user_id: userId } });
   }
 
   function handleDraftChange(value: string) {
