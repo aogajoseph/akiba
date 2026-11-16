@@ -70,6 +70,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [errorMessage, setErrorMessage] = useState("");
   const [sendError, setSendError] = useState("");
   const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
+  const [pendingAttachmentMessageId, setPendingAttachmentMessageId] = useState<string | null>(null);
   const clientRef = useRef<ReturnType<typeof createClient> | null>(null);
   const currentUserIdRef = useRef("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -324,14 +325,16 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     setSending(true);
     setSendError("");
 
-    const query = editingMessage
-      ? client.from("akiba_group_messages").update({ body }).eq("id", editingMessage.id).eq("group_id", groupId)
-      : client.from("akiba_group_messages").insert({
-          group_id: groupId,
-          author_id: currentUserId,
-          body,
-          parent_message_id: replyTarget?.id ?? null,
-        });
+    const query = pendingAttachmentMessageId
+      ? client.from("akiba_group_messages").update({ body }).eq("id", pendingAttachmentMessageId).eq("group_id", groupId)
+      : editingMessage
+        ? client.from("akiba_group_messages").update({ body }).eq("id", editingMessage.id).eq("group_id", groupId)
+        : client.from("akiba_group_messages").insert({
+            group_id: groupId,
+            author_id: currentUserId,
+            body,
+            parent_message_id: replyTarget?.id ?? null,
+          });
     const { data, error } = await query
       .select("id,group_id,author_id,body,created_at,parent_message_id,edited_at,deleted_at")
       .single();
@@ -354,16 +357,18 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       setAttachmentFiles([]);
       setReplyTarget(null);
       setEditingMessage(null);
+      setPendingAttachmentMessageId(null);
       if (!editingMessage && attachmentFiles.length) setAttachmentRefreshKey((value) => value + 1);
       requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }));
     } catch (uploadError) {
-      await client.from("akiba_group_messages").update({
-        body: body || "Attachment upload failed.",
-        deleted_at: body ? null : new Date().toISOString(),
-      }).eq("id", data.id).eq("group_id", groupId);
+      // Keep the same message ID and the selected files so a retry completes
+      // this message instead of creating a duplicate conversation entry.
+      setPendingAttachmentMessageId(data.id);
+      const hydrated = await hydrateMessages([data as MessageRow], currentUserId);
+      setMessages((current) => mergeMessages(current, hydrated));
       setSendError(uploadError instanceof Error
-        ? "Your message couldn't be completed with its attachments: " + uploadError.message
-        : "Your attachments couldn't be sent. Please try again.");
+        ? "Upload incomplete. Your files are still attached below; press Send to retry without duplicating the message. " + uploadError.message
+        : "Upload incomplete. Your files are still attached below; press Send to retry.");
     } finally {
       setSending(false);
     }
