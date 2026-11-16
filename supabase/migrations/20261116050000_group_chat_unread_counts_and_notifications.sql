@@ -25,8 +25,7 @@ alter table public.akiba_group_notifications
   check (event_type in (
     'invitation_received', 'invitation_accepted', 'invitation_declined', 'invitation_cancelled',
     'membership_joined', 'membership_left', 'membership_removed',
-    'group_admin_appointed', 'group_admin_demoted', 'group_deactivated',
-    'chat_message'
+    'group_admin_appointed', 'group_admin_demoted', 'group_deactivated'
   ));
 
 create or replace function public.akiba_get_group_chat_preferences(p_group_id uuid)
@@ -135,59 +134,25 @@ grant execute on function public.akiba_set_group_chat_muted(uuid, boolean) to au
 grant execute on function public.akiba_mark_group_chat_read(uuid, uuid) to authenticated;
 grant execute on function public.akiba_list_my_group_chat_unread_counts() to authenticated;
 
--- One durable inbox item per eligible active member, excluding the sender and
--- members who muted this group. No message body is copied into the notification.
-create or replace function akiba_private.create_group_chat_notifications()
+-- Group messages never enter the app-wide activity notification inbox.
+-- Realtime only signals that unread summaries may have changed; clients query
+-- the membership-checked summary RPC for counts and group names.
+create or replace function akiba_private.broadcast_group_chat_unread_updates()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $fn$
 declare
-  v_group_name text;
   v_recipient record;
 begin
-  if new.deleted_at is not null then
-    if tg_op = 'UPDATE' and old.deleted_at is null then
-      for v_recipient in
-        select gm.user_id
-        from public.akiba_group_memberships gm
-        where gm.group_id = new.group_id
-          and gm.status = 'active'
-          and gm.user_id <> new.author_id
-      loop
-        begin
-          perform realtime.send(
-            jsonb_build_object('group_id', new.group_id, 'message_id', new.id),
-            'group_unread_updated',
-            'user:' || v_recipient.user_id::text || ':notifications',
-            true
-          );
-        exception when others then
-          raise warning 'Unable to broadcast deleted-message unread update for group %, user %', new.group_id, v_recipient.user_id;
-        end;
-      end loop;
-    end if;
-    return new;
-  end if;
-
-  select g.name into v_group_name
-  from public.akiba_groups g
-  where g.id = new.group_id and g.status = 'active';
-  if v_group_name is null then
-    return new;
-  end if;
-
   for v_recipient in
-    select gm.user_id, coalesce(pref.notifications_muted, false) as notifications_muted
+    select gm.user_id
     from public.akiba_group_memberships gm
-    left join public.akiba_group_chat_preferences pref
-      on pref.user_id = gm.user_id and pref.group_id = new.group_id
     where gm.group_id = new.group_id
       and gm.status = 'active'
       and gm.user_id <> new.author_id
   loop
-    -- Keep unread badges current even when a member muted this group's inbox alerts.
     begin
       perform realtime.send(
         jsonb_build_object('group_id', new.group_id, 'message_id', new.id),
@@ -196,30 +161,48 @@ begin
         true
       );
     exception when others then
-      -- Durable unread state remains queryable if Realtime is temporarily unavailable.
+      -- Durable unread state remains queryable if Realtime is unavailable.
       raise warning 'Unable to broadcast unread update for group %, user %', new.group_id, v_recipient.user_id;
     end;
-
-    if not v_recipient.notifications_muted then
-      insert into public.akiba_group_notifications
-        (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
-      values
-        (v_recipient.user_id, new.group_id, new.author_id, new.id,
-         'chat_message', 'New message in ' || v_group_name,
-         'A group member posted a new message.',
-         '/workspace/groups/' || new.group_id::text || '/chat')
-      on conflict (user_id, source_event_id) do nothing;
-    end if;
   end loop;
-
   return new;
 end;
 $fn$;
-revoke all on function akiba_private.create_group_chat_notifications() from public, anon, authenticated;
+revoke all on function akiba_private.broadcast_group_chat_unread_updates() from public, anon, authenticated;
 drop trigger if exists akiba_group_chat_notifications on public.akiba_group_messages;
-create trigger akiba_group_chat_notifications
+drop trigger if exists akiba_group_chat_unread_updates on public.akiba_group_messages;
+create trigger akiba_group_chat_unread_updates
 after insert or update of deleted_at on public.akiba_group_messages
-for each row execute function akiba_private.create_group_chat_notifications();
+for each row execute function akiba_private.broadcast_group_chat_unread_updates();
+
+-- One row per group with unread messages. The caller can display summaries
+-- without exposing message bodies or mixing chat state with activity alerts.
+create or replace function public.akiba_list_my_group_chat_unread_summaries()
+returns table (group_id uuid, group_name text, unread_count bigint, latest_unread_at timestamptz)
+language sql
+security definer
+set search_path = ''
+as $fn$
+  select m.group_id, g.name, count(*)::bigint, max(m.created_at)
+  from public.akiba_group_messages m
+  join public.akiba_group_memberships gm
+    on gm.group_id = m.group_id
+   and gm.user_id = auth.uid()
+   and gm.status = 'active'
+  join public.akiba_groups g
+    on g.id = m.group_id and g.status = 'active'
+  left join public.akiba_group_chat_preferences p
+    on p.group_id = m.group_id and p.user_id = auth.uid()
+  where auth.uid() is not null
+    and m.author_id <> auth.uid()
+    and m.deleted_at is null
+    and (p.last_read_at is null
+      or (m.created_at, m.id) > (p.last_read_at, p.last_read_message_id))
+  group by m.group_id, g.name
+  order by max(m.created_at) desc, m.group_id;
+$fn$;
+revoke all on function public.akiba_list_my_group_chat_unread_summaries() from public, anon;
+grant execute on function public.akiba_list_my_group_chat_unread_summaries() to authenticated;
 
 -- User-specific private Broadcast topics. Payloads contain only notification
 -- and group identifiers; clients reload durable inbox rows through RLS.
