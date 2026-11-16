@@ -191,32 +191,7 @@ create policy "uploaders remove orphaned group chat files"
   using (
     bucket_id = 'akiba-group-chat-attachments'
     and (storage.foldername(name))[2] = (select auth.uid())::text
-    and (storage.foldername(name))[1] ~* '^[0-9a-f-]{36}
-    and akiba_private.is_active_group_member(((storage.foldername(name))[1])::uuid)
-    and not exists (
-      select 1 from public.akiba_group_chat_attachments a
-      where a.storage_path = storage.objects.name
-    )
-  );
-
-
-drop policy if exists "active group members publish group chat presence" on realtime.messages;
-create policy "active group members publish group chat presence"
-  on realtime.messages
-  for insert to authenticated
-  with check (
-    extension = 'presence'
-    and exists (
-      select 1 from public.akiba_groups g
-      where (select realtime.topic()) = 'group:' || g.id::text || ':presence'
-        and g.status = 'active'
-        and akiba_private.is_active_group_member(g.id)
-    )
-  );
-
-commit;
-
-
+    and (storage.foldername(name))[1] ~* '^[0-9a-f-]{36}$'
     and akiba_private.is_active_group_member(((storage.foldername(name))[1])::uuid)
     and not exists (
       select 1 from public.akiba_group_chat_attachments a
