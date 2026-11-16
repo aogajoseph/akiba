@@ -124,3 +124,8 @@
 .presenceCount i{width:7px;height:7px;border-radius:50%;background:#3d9b61}
 .lastSeenText{color:#9aa49d}
 @media(max-width:700px){.presenceBar{padding:8px 14px;gap:7px}.attachmentList{max-width:100%}.attachmentItem{gap:7px}.attachmentImageButton{flex-basis:56px;width:56px;height:48px}}
+
+/* In-message PDF preview and clear file-type identification. */
+.attachmentPdfPreview{display:block;flex:0 0 100%;width:100%;height:210px;min-width:0;border:1px solid #e1e9e2;border-radius:6px;background:#fff}
+.attachmentItem:has(.attachmentPdfPreview){flex-wrap:wrap}
+.attachmentFileIcon{letter-spacing:.2px}
