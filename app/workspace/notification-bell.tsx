@@ -29,8 +29,6 @@ export default function NotificationBell({ unreadCount: initialUnreadCount, noti
 
   useEffect(() => {
     if (initialUnreadCount !== undefined && initialNotifications !== undefined) {
-      setUnreadCount(initialUnreadCount);
-      setNotifications(initialNotifications);
       return;
     }
     let active = true;
