@@ -64,9 +64,14 @@ export function GroupChatAttachmentList({ groupId, messageId, deleted = false, r
       .then(({ data, error: queryError }) => {
         if (!active) return;
         if (queryError) {
-          setError("Attachment unavailable.");
+          // A message without attachment metadata is still a normal chat message.
+          // In particular, don't render a misleading error under every bubble
+          // while the attachments schema is not yet present in this environment.
+          setItems([]);
+          setError("");
           return;
         }
+        setError("");
         setItems((data ?? []) as AttachmentRow[]);
       });
     return () => { active = false; };
@@ -164,14 +169,8 @@ export function GroupChatAttachmentComposer({ groupId, currentUserId, onUploaded
     let messageId = "";
 
     try {
-      const { data: message, error: messageError } = await client
-        .from("akiba_group_messages")
-        .insert({ group_id: groupId, author_id: currentUserId, body: "Shared an attachment: " + file.name.slice(0, 180) })
-        .select("id")
-        .single();
-      if (messageError || !message) throw new Error("A chat message couldn't be created.");
-      messageId = message.id;
-
+      // Upload first. If the private bucket is not provisioned in this
+      // Supabase environment, fail without leaving a misleading chat message.
       const extension = EXTENSIONS[file.type];
       storagePath = groupId + "/" + currentUserId + "/" + crypto.randomUUID() + "." + extension;
       const { error: uploadError } = await client.storage.from(BUCKET).upload(storagePath, file, {
@@ -179,7 +178,20 @@ export function GroupChatAttachmentComposer({ groupId, currentUserId, onUploaded
         cacheControl: "3600",
         upsert: false,
       });
-      if (uploadError) throw new Error(uploadError.message);
+      if (uploadError) {
+        if (uploadError.message.toLowerCase().includes("bucket") && uploadError.message.toLowerCase().includes("not found")) {
+          throw new Error("Attachments aren't enabled in this environment yet. The group-chat attachments migration must be applied first.");
+        }
+        throw new Error(uploadError.message);
+      }
+
+      const { data: message, error: messageError } = await client
+        .from("akiba_group_messages")
+        .insert({ group_id: groupId, author_id: currentUserId, body: "Shared an attachment: " + file.name.slice(0, 180) })
+        .select("id")
+        .single();
+      if (messageError || !message) throw new Error("The file uploaded, but a chat message couldn't be created.");
+      messageId = message.id;
 
       const { error: metadataError } = await client.from("akiba_group_chat_attachments").insert({
         group_id: groupId,
