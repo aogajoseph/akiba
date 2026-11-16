@@ -43,10 +43,11 @@ function formatBytes(value: number) {
   return (value / (1024 * 1024)).toFixed(1) + " MB";
 }
 
-export function GroupChatAttachmentList({ groupId, messageId, deleted = false }: {
+export function GroupChatAttachmentList({ groupId, messageId, deleted = false, refreshKey = 0 }: {
   groupId: string;
   messageId: string;
   deleted?: boolean;
+  refreshKey?: number;
 }) {
   const [items, setItems] = useState<AttachmentRow[]>([]);
   const [previews, setPreviews] = useState<Record<string, string>>({});
@@ -69,7 +70,7 @@ export function GroupChatAttachmentList({ groupId, messageId, deleted = false }:
         setItems((data ?? []) as AttachmentRow[]);
       });
     return () => { active = false; };
-  }, [groupId, messageId]);
+  }, [groupId, messageId, refreshKey]);
 
   useEffect(() => {
     let active = true;
@@ -261,7 +262,16 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
       if (touchError) return;
       const initial = (presenceRows ?? []) as { user_id: string; last_seen_at: string }[];
       setLastSeen(Object.fromEntries(initial.map((row) => [row.user_id, row.last_seen_at])));
-      setNames((current) => ({ ...current, [currentUserId]: displayName }));
+      const otherIds = initial.map((row) => row.user_id).filter((id) => id !== currentUserId);
+      const { data: memberProfiles } = otherIds.length
+        ? await client.from("akiba_profiles").select("user_id,display_name,username").in("user_id", otherIds)
+        : { data: [] };
+      if (!active) return;
+      setNames((current) => {
+        const next = { ...current, [currentUserId]: displayName };
+        for (const person of memberProfiles ?? []) next[person.user_id] = person.display_name?.trim() || person.username || "Akiba member";
+        return next;
+      });
 
       channel = client.channel("group:" + groupId + ":presence", {
         config: { private: true, presence: { key: currentUserId } },
@@ -269,8 +279,9 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
       channel.on("presence", { event: "sync" }, () => {
         if (!active || !channel) return;
         const state = channel.presenceState<PresenceUser>();
-        const people = Object.values(state).flat().filter((person) => Boolean(person.user_id));
-        setOnline(people);
+        const presences = Object.values(state).flat().filter((person) => Boolean(person.user_id));
+        const uniquePeople = Array.from(new Map(presences.map((person) => [person.user_id, person])).values());
+        setOnline(uniquePeople);
         setNames((current) => {
           const next = { ...current };
           for (const person of people) next[person.user_id] = person.display_name || "Akiba member";
