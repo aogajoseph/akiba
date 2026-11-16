@@ -271,7 +271,7 @@ function relativeLastSeen(value: string) {
 
 export function GroupChatPresence({ groupId, currentUserId }: { groupId: string; currentUserId: string }) {
   const [online, setOnline] = useState<PresenceUser[]>([]);
-  const [lastSeen, setLastSeen] = useState<Record<string, string>>({});
+  const [lastSeen, setLastSeen] = useState<Record<string, string | null>>({});
   const [names, setNames] = useState<Record<string, string>>({});
   const onlineRef = useRef<PresenceUser[]>([]);
   const [, setClock] = useState(0);
@@ -292,7 +292,7 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
       const { error: touchError } = await client.rpc("akiba_touch_group_chat_presence", { p_group_id: groupId });
       if (touchError) return;
       const initial = (presenceRows ?? []) as { user_id: string; last_seen_at: string | null }[];
-      setLastSeen(Object.fromEntries(initial.filter((row) => row.last_seen_at).map((row) => [row.user_id, row.last_seen_at as string])));
+      setLastSeen(Object.fromEntries(initial.map((row) => [row.user_id, row.last_seen_at])));
       const otherIds = initial.map((row) => row.user_id).filter((id) => id !== currentUserId);
       const { data: memberProfiles } = otherIds.length
         ? await client.from("akiba_profiles").select("user_id,display_name,username").in("user_id", otherIds)
@@ -338,11 +338,7 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
 
     void start();
     const markActivity = () => {
-      if (document.visibilityState === "visible") {
-        void client.rpc("akiba_touch_group_chat_presence", { p_group_id: groupId });
-      } else {
-        void client.rpc("akiba_touch_group_chat_presence", { p_group_id: groupId });
-      }
+      void client.rpc("akiba_touch_group_chat_presence", { p_group_id: groupId });
     };
     const heartbeat = window.setInterval(() => {
       if (document.visibilityState === "visible") {
