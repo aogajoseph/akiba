@@ -68,6 +68,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [hasMore, setHasMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sendError, setSendError] = useState("");
+  const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
   const clientRef = useRef<ReturnType<typeof createClient> | null>(null);
   const currentUserIdRef = useRef("");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
@@ -524,7 +525,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
               <div className={styles.messageMeta}><b>{message.isMine ? "You" : message.authorName}</b><time dateTime={message.created_at}>{formatTime(message.created_at)}</time></div>
               {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => document.getElementById("message-" + message.parent_message_id)?.scrollIntoView({ behavior: "smooth", block: "center" })}>↪ {message.replyPreview.slice(0, 120)}</button>}
               <p className={message.deleted_at ? styles.deletedMessageText : undefined}>{message.deleted_at ? "This message was deleted" : message.body}</p>
-              <GroupChatAttachmentList groupId={groupId} messageId={message.id} deleted={Boolean(message.deleted_at)} />
+              <GroupChatAttachmentList groupId={groupId} messageId={message.id} deleted={Boolean(message.deleted_at)} refreshKey={attachmentRefreshKey} />
               {message.edited_at && !message.deleted_at && <small className={styles.editedLabel}>Edited</small>}
               <div className={styles.messageActions}>
                 <button type="button" onClick={() => { setEditingMessage(null); setReplyTarget(message); }}>Reply</button>
@@ -548,7 +549,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       <form className={styles.composer} onSubmit={sendMessage}>
         <label className={styles.srOnly} htmlFor="group-chat-message">Write a group message</label>
         <textarea id="group-chat-message" value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={handleComposerKeyDown} placeholder="Write a message…" maxLength={1000} rows={2} disabled={sending || status !== "ready"} />
-        <GroupChatAttachmentComposer groupId={groupId} currentUserId={currentUserId} onUploaded={() => void loadLatest(false)} />
+        <GroupChatAttachmentComposer groupId={groupId} currentUserId={currentUserId} onUploaded={() => { setAttachmentRefreshKey((value) => value + 1); void loadLatest(false); }} />
         <div className={styles.composerFooter}>
           <span>{draft.length}/1000 · Enter to send, Shift+Enter for a new line</span>
           <button type="submit" disabled={!draft.trim() || sending || status !== "ready"}>{sending ? (editingMessage ? "Saving…" : "Sending…") : (editingMessage ? "Save edit" : "Send message")} <span aria-hidden="true">→</span></button>
