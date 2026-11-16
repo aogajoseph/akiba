@@ -77,7 +77,7 @@ export default async function MyGroupsPage() {
           <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
           <Link href="/workspace/groups" className="ak-nav-link active" aria-current="page"><span>♧</span>My Groups{groups.length > 0 && <small>{groups.length}</small>}</Link>
           <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations</Link>
-          <NotificationSidebarLink /><span>♢</span>Notifications</Link>
+          <NotificationSidebarLink />
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>◷</span>Chat<small className="ak-coming">Soon</small></span>
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
