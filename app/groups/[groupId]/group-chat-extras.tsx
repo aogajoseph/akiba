@@ -373,3 +373,86 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
     </div>
   );
 }
+
+
+type MessageReactionRow = { id: string; user_id: string; reaction: string };
+const MESSAGE_REACTIONS = ["👍", "❤️", "😂", "😮", "🙏", "🎉"];
+
+export function GroupChatReactions({ groupId, messageId, currentUserId, refreshKey = 0, disabled = false }: {
+  groupId: string; messageId: string; currentUserId: string; refreshKey?: number; disabled?: boolean;
+}) {
+  const [rows, setRows] = useState<MessageReactionRow[]>([]);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [busyReaction, setBusyReaction] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      const { data, error: queryError } = await createClient()
+        .from("akiba_group_message_reactions")
+        .select("id,user_id,reaction")
+        .eq("group_id", groupId)
+        .eq("message_id", messageId);
+      if (!active) return;
+      if (queryError) { setError("Reactions couldn't be loaded."); return; }
+      setError("");
+      setRows((data ?? []) as MessageReactionRow[]);
+    }
+    if (!disabled) void load();
+    else setRows([]);
+    return () => { active = false; };
+  }, [groupId, messageId, refreshKey, disabled]);
+
+  async function toggleReaction(reaction: string) {
+    if (disabled || busyReaction) return;
+    setBusyReaction(reaction);
+    setError("");
+    const client = createClient();
+    const existing = rows.find((row) => row.user_id === currentUserId && row.reaction === reaction);
+    if (existing) {
+      const { error: deleteError } = await client.from("akiba_group_message_reactions")
+        .delete().eq("id", existing.id).eq("user_id", currentUserId);
+      if (deleteError) setError("Your reaction couldn't be changed. Try again.");
+      else setRows((current) => current.filter((row) => row.id !== existing.id));
+    } else {
+      const { data, error: insertError } = await client.from("akiba_group_message_reactions")
+        .insert({ group_id: groupId, message_id: messageId, user_id: currentUserId, reaction })
+        .select("id,user_id,reaction").single();
+      if (insertError) {
+        const { data: latest } = await client.from("akiba_group_message_reactions")
+          .select("id,user_id,reaction").eq("group_id", groupId).eq("message_id", messageId);
+        if (latest) setRows(latest as MessageReactionRow[]);
+        setError(insertError.code === "23505" ? "" : "Your reaction couldn't be added. Try again.");
+      } else if (data) setRows((current) => [...current, data as MessageReactionRow]);
+    }
+    setBusyReaction("");
+  }
+
+  const grouped = MESSAGE_REACTIONS.map((reaction) => ({
+    reaction, rows: rows.filter((row) => row.reaction === reaction),
+  })).filter((item) => item.rows.length > 0);
+
+  return (
+    <div className={styles.reactionArea}>
+      <div className={styles.reactionList}>
+        {grouped.map(({ reaction, rows: reactionRows }) => {
+          const selected = reactionRows.some((row) => row.user_id === currentUserId);
+          return <button type="button" key={reaction}
+            className={selected ? styles.reactionChipSelected : styles.reactionChip}
+            onClick={() => void toggleReaction(reaction)} disabled={Boolean(busyReaction) || disabled}
+            aria-label={reaction + " " + reactionRows.length + (selected ? ", remove your reaction" : ", react")}
+            aria-pressed={selected}><span>{reaction}</span><small>{reactionRows.length}</small></button>;
+        })}
+        <button type="button" className={styles.addReactionButton} onClick={() => setPickerOpen((open) => !open)}
+          disabled={disabled} aria-label={pickerOpen ? "Close reactions" : "Add a reaction"} aria-expanded={pickerOpen}>＋</button>
+      </div>
+      {pickerOpen && <div className={styles.reactionPicker} role="group" aria-label="Choose a reaction">
+        {MESSAGE_REACTIONS.map((reaction) => <button type="button" key={reaction}
+          onClick={() => { void toggleReaction(reaction); setPickerOpen(false); }}
+          disabled={Boolean(busyReaction)} aria-label={"React with " + reaction}>{reaction}</button>)}
+      </div>}
+      {error && <small className={styles.reactionError} role="alert">{error}</small>}
+    </div>
+  );
+}
