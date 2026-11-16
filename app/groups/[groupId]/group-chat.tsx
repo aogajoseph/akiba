@@ -52,6 +52,16 @@ function formatTime(value: string) {
   }).format(new Date(value));
 }
 
+function formatTypingIndicator(names: string[]) {
+  if (names.length === 1) return names[0] + " is typing…";
+  if (names.length === 2) return names[0] + " and " + names[1] + " are typing…";
+  if (names.length > 2) {
+    const others = names.length - 2;
+    return names[0] + ", " + names[1] + " and " + others + (others === 1 ? " other are typing…" : " others are typing…");
+  }
+  return "";
+}
+
 export default function GroupChat({ groupId }: { groupId: string }) {
   const [groupName, setGroupName] = useState("Group conversation");
   const [currentUserId, setCurrentUserId] = useState("");
@@ -85,6 +95,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const typingStopTimerRef = useRef<number | null>(null);
   const typingBroadcastAtRef = useRef(0);
   const typingTimeoutsRef = useRef<Map<string, number>>(new Map());
+  const typingNameCacheRef = useRef<Map<string, string>>(new Map());
 
   const hydrateMessages = useCallback(async (rows: MessageRow[], userId: string) => {
     const client = clientRef.current;
@@ -257,10 +268,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             if (event.group_id === groupId && event.message_id) setReactionRefreshKey((value) => value + 1);
           })
           .on("broadcast", { event: "typing" }, ({ payload }) => {
-            const event = payload as { group_id?: string; user_id?: string; display_name?: string };
+            const event = payload as { group_id?: string; user_id?: string };
             const typingUserId = event.user_id;
             if (event.group_id !== groupId || !typingUserId || typingUserId === currentUserIdRef.current) return;
-            setTypingUsers((current) => ({ ...current, [typingUserId]: "A member" }));
             const previous = typingTimeoutsRef.current.get(typingUserId);
             if (previous) window.clearTimeout(previous);
             const timeout = window.setTimeout(() => {
@@ -268,6 +278,24 @@ export default function GroupChat({ groupId }: { groupId: string }) {
               typingTimeoutsRef.current.delete(typingUserId);
             }, 2600);
             typingTimeoutsRef.current.set(typingUserId, timeout);
+            const cachedName = typingNameCacheRef.current.get(typingUserId);
+            if (cachedName) {
+              setTypingUsers((current) => ({ ...current, [typingUserId]: cachedName }));
+            } else {
+              setTypingUsers((current) => ({ ...current, [typingUserId]: "A member" }));
+              void client.from("akiba_profiles")
+                .select("display_name,username")
+                .eq("user_id", typingUserId)
+                .maybeSingle()
+                .then(({ data }) => {
+                  if (!data || !typingTimeoutsRef.current.has(typingUserId)) return;
+                  const name = data.display_name?.trim() || data.username || "A member";
+                  typingNameCacheRef.current.set(typingUserId, name);
+                  setTypingUsers((current) => current[typingUserId]
+                    ? { ...current, [typingUserId]: name }
+                    : current);
+                });
+            }
           })
           .on("broadcast", { event: "typing_stopped" }, ({ payload }) => {
             const event = payload as { group_id?: string; user_id?: string };
@@ -318,6 +346,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       if (typingStopTimerRef.current) window.clearTimeout(typingStopTimerRef.current);
       for (const timeout of typingTimeoutsRef.current.values()) window.clearTimeout(timeout);
       typingTimeoutsRef.current.clear();
+      typingNameCacheRef.current.clear();
       if (channel && clientRef.current) {
         void clientRef.current.removeChannel(channel);
       }
@@ -625,7 +654,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             </div>
           </article>
         ))}
-        {Object.keys(typingUsers).length > 0 && <div className={styles.typingIndicator} aria-live="polite">{Object.values(typingUsers).join(", ")} {Object.keys(typingUsers).length === 1 ? "is" : "are"} typing…</div>}
+        {Object.keys(typingUsers).length > 0 && <div className={styles.typingIndicator} aria-live="polite">{formatTypingIndicator(Object.values(typingUsers))}</div>}
         <div ref={messagesEndRef} />
       </div>
       {errorMessage && <p className={styles.inlineError} role="alert">{errorMessage}</p>}
