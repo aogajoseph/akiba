@@ -294,8 +294,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
           .on("broadcast", { event: "message_deleted" }, ({ payload }) => {
             const event = payload as { group_id?: string; message_id?: string };
             if (event.group_id === groupId && event.message_id) void loadMessage(event.message_id);
-          })
-          ;
+          });
         chatChannelRef.current = channel;
         channel.subscribe((channelStatus) => {
             if (!active) return;
