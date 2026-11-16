@@ -159,23 +159,32 @@ begin
   end if;
 
   for v_recipient in
-    select gm.user_id
+    select gm.user_id, coalesce(pref.notifications_muted, false) as notifications_muted
     from public.akiba_group_memberships gm
     left join public.akiba_group_chat_preferences pref
       on pref.user_id = gm.user_id and pref.group_id = new.group_id
     where gm.group_id = new.group_id
       and gm.status = 'active'
       and gm.user_id <> new.author_id
-      and coalesce(pref.notifications_muted, false) = false
   loop
-    insert into public.akiba_group_notifications
-      (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
-    values
-      (v_recipient.user_id, new.group_id, new.author_id, new.id,
-       'chat_message', 'New message in ' || v_group_name,
-       'A group member posted a new message.',
-       '/workspace/groups/' || new.group_id::text || '/chat')
-    on conflict (user_id, source_event_id) do nothing;
+    -- Keep unread badges current even when a member muted this group's inbox alerts.
+    perform realtime.send(
+      jsonb_build_object('group_id', new.group_id, 'message_id', new.id),
+      'group_unread_updated',
+      'user:' || v_recipient.user_id::text || ':notifications',
+      true
+    );
+
+    if not v_recipient.notifications_muted then
+      insert into public.akiba_group_notifications
+        (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
+      values
+        (v_recipient.user_id, new.group_id, new.author_id, new.id,
+         'chat_message', 'New message in ' || v_group_name,
+         'A group member posted a new message.',
+         '/workspace/groups/' || new.group_id::text || '/chat')
+      on conflict (user_id, source_event_id) do nothing;
+    end if;
   end loop;
 
   return new;
