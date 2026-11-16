@@ -221,6 +221,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
 
         setGroupName(group.name);
         setCurrentUserId(userId);
+        const { data: currentProfile } = await client.from("akiba_profiles").select("display_name,username").eq("user_id", userId).maybeSingle();
+        if (!active) return;
+        currentUserNameRef.current = currentProfile?.display_name?.trim() || currentProfile?.username || "Akiba member";
         clientRef.current = client;
         const { data: initialRows, error: initialError } = await client
           .from("akiba_group_messages")
@@ -262,23 +265,25 @@ export default function GroupChat({ groupId }: { groupId: string }) {
           })
           .on("broadcast", { event: "typing" }, ({ payload }) => {
             const event = payload as { group_id?: string; user_id?: string; display_name?: string };
-            if (event.group_id !== groupId || !event.user_id || event.user_id === currentUserIdRef.current) return;
-            setTypingUsers((current) => ({ ...current, [event.user_id as string]: event.display_name || "A member" }));
-            const previous = typingTimeoutsRef.current.get(event.user_id);
+            const typingUserId = event.user_id;
+            if (event.group_id !== groupId || !typingUserId || typingUserId === currentUserIdRef.current) return;
+            setTypingUsers((current) => ({ ...current, [typingUserId]: event.display_name || "A member" }));
+            const previous = typingTimeoutsRef.current.get(typingUserId);
             if (previous) window.clearTimeout(previous);
             const timeout = window.setTimeout(() => {
-              setTypingUsers((current) => { const next = { ...current }; delete next[event.user_id as string]; return next; });
-              typingTimeoutsRef.current.delete(event.user_id as string);
+              setTypingUsers((current) => { const next = { ...current }; delete next[typingUserId]; return next; });
+              typingTimeoutsRef.current.delete(typingUserId);
             }, 2600);
-            typingTimeoutsRef.current.set(event.user_id, timeout);
+            typingTimeoutsRef.current.set(typingUserId, timeout);
           })
           .on("broadcast", { event: "typing_stopped" }, ({ payload }) => {
             const event = payload as { group_id?: string; user_id?: string };
-            if (event.group_id !== groupId || !event.user_id) return;
-            const timeout = typingTimeoutsRef.current.get(event.user_id);
+            const typingUserId = event.user_id;
+            if (event.group_id !== groupId || !typingUserId) return;
+            const timeout = typingTimeoutsRef.current.get(typingUserId);
             if (timeout) window.clearTimeout(timeout);
-            typingTimeoutsRef.current.delete(event.user_id);
-            setTypingUsers((current) => { const next = { ...current }; delete next[event.user_id as string]; return next; });
+            typingTimeoutsRef.current.delete(typingUserId);
+            setTypingUsers((current) => { const next = { ...current }; delete next[typingUserId]; return next; });
           })
           .on("broadcast", { event: "attachments_created" }, ({ payload }) => {
             const event = payload as { group_id?: string; message_id?: string };
