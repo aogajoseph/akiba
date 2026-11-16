@@ -461,7 +461,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             <div className={styles.messageBody}>
               <div className={styles.messageMeta}><b>{message.isMine ? "You" : message.authorName}</b><time dateTime={message.created_at}>{formatTime(message.created_at)}</time></div>
               {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => document.getElementById("message-" + message.parent_message_id)?.scrollIntoView({ behavior: "smooth", block: "center" })}>↪ {message.replyPreview.slice(0, 120)}</button>}
-              <p>{message.deleted_at ? "This message was deleted" : message.body}</p>
+              <p className={message.deleted_at ? styles.deletedMessageText : undefined}>{message.deleted_at ? "This message was deleted" : message.body}</p>
               {message.edited_at && !message.deleted_at && <small className={styles.editedLabel}>Edited</small>}
               <div className={styles.messageActions}>
                 <button type="button" onClick={() => { setEditingMessage(null); setReplyTarget(message); }}>Reply</button>
