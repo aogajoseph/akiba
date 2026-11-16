@@ -284,9 +284,6 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
     if (!currentUserId) return;
     let active = true;
     onlineRef.current = [];
-    setOnline([]);
-    setLastSeen({});
-    setNames({});
     const client = createClient();
     let channel: ReturnType<typeof client.channel> | null = null;
 
@@ -306,11 +303,10 @@ export function GroupChatPresence({ groupId, currentUserId }: { groupId: string;
         ? await client.from("akiba_profiles").select("user_id,display_name,username").in("user_id", otherIds)
         : { data: [] };
       if (!active) return;
-      setNames((current) => {
-        const next = { ...current, [currentUserId]: displayName };
-        for (const person of memberProfiles ?? []) next[person.user_id] = person.display_name?.trim() || person.username || "Akiba member";
-        return next;
-      });
+      setNames(Object.fromEntries([
+        [currentUserId, displayName],
+        ...(memberProfiles ?? []).map((person) => [person.user_id, person.display_name?.trim() || person.username || "Akiba member"]),
+      ]));
 
       channel = client.channel("group:" + groupId + ":presence", {
         config: { private: true, presence: { key: currentUserId } },
