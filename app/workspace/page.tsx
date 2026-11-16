@@ -68,7 +68,6 @@ export default async function WorkspacePage() {
     ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl
     : null;
   const displayName = profile.display_name;
-  const groupNameById = new Map(groupRows.map((group) => [group.id, group.name]));
    const firstName = displayName.trim().split(/\s+/)[0];
 
   return (
@@ -143,7 +142,7 @@ export default async function WorkspacePage() {
           <div className="ak-metrics">
             <article className="ak-metric"><span className="ak-metric-icon pink">♧</span><span className="ak-metric-label">My Groups</span><strong>{groupsError ? "—" : groupRows.length}</strong><small>{groupRows.length === 1 ? "1 group to organise" : "Your shared spaces"}</small></article>
             <article className="ak-metric"><span className="ak-metric-icon violet">▤</span><span className="ak-metric-label">Group Messages</span><strong>{messageError ? "—" : messageCount ?? 0}</strong><small>{messageError ? "Couldn't load messages" : "Messages across your groups"}</small></article>
-            <article className="ak-metric"><span className="ak-metric-icon green">↗</span><span className="ak-metric-label">Group Updates</span><strong>{activityError ? "—" : activities.length}</strong><small>{activityError ? "Couldn't load updates" : "Recent recorded updates"}</small></article>
+            <article className="ak-metric"><span className="ak-metric-icon green">↗</span><span className="ak-metric-label">Group Updates</span><strong>{notificationsError ? "—" : notificationRows.length}</strong><small>{notificationsError ? "Couldn't load updates" : "Latest notifications"}</small></article>
             <article className="ak-metric"><span className="ak-metric-icon amber">✓</span><span className="ak-metric-label">Profile</span><strong className="ak-metric-status">Complete</strong><small>Your account is ready</small></article>
           </div>
 
