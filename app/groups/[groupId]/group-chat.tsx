@@ -7,6 +7,9 @@ import styles from "./group-chat.module.css";
 import { GroupChatAttachmentPicker, GroupChatAttachmentList, GroupChatPresence, GroupChatReactions, uploadGroupChatAttachments } from "./group-chat-extras";
 
 const PAGE_SIZE = 30;
+// The messages table enforces a non-empty body. This reserved marker keeps
+// attachment-only messages valid without exposing placeholder copy in chat.
+const ATTACHMENT_ONLY_BODY = "[attachment]";
 
 type MessageRow = {
   id: string;
@@ -79,8 +82,8 @@ export default function GroupChat({ groupId }: { groupId: string }) {
   const [hasMore, setHasMore] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [sendError, setSendError] = useState("");
-  const [attachmentRefreshKey, setAttachmentRefreshKey] = useState(0);
-  const [reactionRefreshKey, setReactionRefreshKey] = useState(0);
+  const [attachmentRefreshKeys, setAttachmentRefreshKeys] = useState<Record<string, number>>({});
+  const [reactionRefreshKeys, setReactionRefreshKeys] = useState<Record<string, number>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
   const [pendingAttachmentMessageId, setPendingAttachmentMessageId] = useState<string | null>(null);
@@ -267,7 +270,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
           })
           .on("broadcast", { event: "reaction_changed" }, ({ payload }) => {
             const event = payload as { group_id?: string; message_id?: string };
-            if (event.group_id === groupId && event.message_id) setReactionRefreshKey((value) => value + 1);
+            if (event.group_id === groupId && event.message_id) {
+              setReactionRefreshKeys((current) => ({ ...current, [event.message_id!]: (current[event.message_id!] ?? 0) + 1 }));
+            }
           })
           .on("broadcast", { event: "typing" }, ({ payload }) => {
             const event = payload as { group_id?: string; user_id?: string };
@@ -311,7 +316,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
           .on("broadcast", { event: "attachments_created" }, ({ payload }) => {
             const event = payload as { group_id?: string; message_id?: string };
             if (event.group_id === groupId && event.message_id) {
-              setAttachmentRefreshKey((value) => value + 1);
+              setAttachmentRefreshKeys((current) => ({ ...current, [event.message_id!]: (current[event.message_id!] ?? 0) + 1 }));
             }
           })
           .on("broadcast", { event: "message_deleted" }, ({ payload }) => {
@@ -440,13 +445,13 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     setSendError("");
 
     const query = pendingAttachmentMessageId
-      ? client.from("akiba_group_messages").update({ body }).eq("id", pendingAttachmentMessageId).eq("group_id", groupId)
+      ? client.from("akiba_group_messages").update({ body: body || ATTACHMENT_ONLY_BODY }).eq("id", pendingAttachmentMessageId).eq("group_id", groupId)
       : editingMessage
         ? client.from("akiba_group_messages").update({ body }).eq("id", editingMessage.id).eq("group_id", groupId)
         : client.from("akiba_group_messages").insert({
             group_id: groupId,
             author_id: currentUserId,
-            body,
+            body: body || ATTACHMENT_ONLY_BODY,
             parent_message_id: replyTarget?.id ?? null,
           });
     const { data, error } = await query
@@ -475,7 +480,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
       setReplyTarget(null);
       setEditingMessage(null);
       setPendingAttachmentMessageId(null);
-      if (!editingMessage && attachmentFiles.length) setAttachmentRefreshKey((value) => value + 1);
+      if (!editingMessage && attachmentFiles.length) {
+        setAttachmentRefreshKeys((current) => ({ ...current, [data.id]: (current[data.id] ?? 0) + 1 }));
+      }
       requestAnimationFrame(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }));
     } catch (uploadError) {
       // Keep the same message ID and the selected files so a retry completes
@@ -660,9 +667,9 @@ export default function GroupChat({ groupId }: { groupId: string }) {
             <div className={styles.messageBody}>
               <div className={styles.messageMeta}><b>{message.isMine ? "You" : message.authorName}</b><time dateTime={message.created_at}>{formatTime(message.created_at)}</time></div>
               {message.replyPreview && <button type="button" className={styles.replyPreview} onClick={() => message.parent_message_id && jumpToRepliedMessage(message.parent_message_id)}>↪ {message.replyPreview.slice(0, 120)}</button>}
-              {(message.deleted_at || message.body.trim()) && <p className={message.deleted_at ? styles.deletedMessageText : undefined}>{message.deleted_at ? "This message was deleted" : message.body}</p>}
-              <GroupChatAttachmentList groupId={groupId} messageId={message.id} deleted={Boolean(message.deleted_at)} refreshKey={attachmentRefreshKey} />
-              {!message.deleted_at && <GroupChatReactions groupId={groupId} messageId={message.id} currentUserId={currentUserId} refreshKey={reactionRefreshKey} />}
+              {(message.deleted_at || (message.body.trim() && message.body !== ATTACHMENT_ONLY_BODY)) && <p className={message.deleted_at ? styles.deletedMessageText : undefined}>{message.deleted_at ? "This message was deleted" : message.body}</p>}
+              <GroupChatAttachmentList groupId={groupId} messageId={message.id} deleted={Boolean(message.deleted_at)} refreshKey={attachmentRefreshKeys[message.id] ?? 0} />
+              {!message.deleted_at && <GroupChatReactions groupId={groupId} messageId={message.id} currentUserId={currentUserId} refreshKey={reactionRefreshKeys[message.id] ?? 0} />}
               {message.edited_at && !message.deleted_at && <small className={styles.editedLabel}>Edited</small>}
               <div className={styles.messageActions}>
                 <button type="button" onClick={() => { setEditingMessage(null); setReplyTarget(message); }}>Reply</button>
