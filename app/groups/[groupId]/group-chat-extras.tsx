@@ -219,7 +219,8 @@ export async function uploadGroupChatAttachments(groupId: string, currentUserId:
   const client = createClient();
   const uploadedPaths: string[] = [];
   try {
-    const rows = await Promise.all(files.map(async (file) => {
+    const rows = [];
+    for (const file of files) {
       const extension = EXTENSIONS[file.type];
       const storagePath = groupId + "/" + currentUserId + "/" + crypto.randomUUID() + "." + extension;
       const { error } = await client.storage.from(BUCKET).upload(storagePath, file, {
@@ -229,7 +230,7 @@ export async function uploadGroupChatAttachments(groupId: string, currentUserId:
       });
       if (error) throw new Error(error.message);
       uploadedPaths.push(storagePath);
-      return {
+      rows.push({
         group_id: groupId,
         message_id: messageId,
         uploaded_by: currentUserId,
@@ -237,8 +238,8 @@ export async function uploadGroupChatAttachments(groupId: string, currentUserId:
         file_name: file.name.slice(0, 255),
         mime_type: file.type,
         file_size: file.size,
-      };
-    }));
+      });
+    }
     const { error: metadataError } = await client.from("akiba_group_chat_attachments").insert(rows);
     if (metadataError) throw new Error(metadataError.message);
   } catch (error) {
