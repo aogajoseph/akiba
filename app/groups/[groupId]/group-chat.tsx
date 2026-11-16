@@ -367,7 +367,7 @@ export default function GroupChat({ groupId }: { groupId: string }) {
     } finally {
       setSending(false);
     }
-
+  }
 
   useEffect(() => {
     if (status !== "ready" || messages.length === 0) return;
