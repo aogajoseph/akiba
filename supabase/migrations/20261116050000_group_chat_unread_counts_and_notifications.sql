@@ -7,7 +7,6 @@ create table if not exists public.akiba_group_chat_preferences (
   group_id uuid not null references public.akiba_groups(id) on delete cascade,
   last_read_at timestamptz,
   last_read_message_id uuid references public.akiba_group_messages(id) on delete cascade,
-  notifications_muted boolean not null default false,
   updated_at timestamptz not null default now(),
   primary key (user_id, group_id),
   check ((last_read_at is null) = (last_read_message_id is null))
@@ -27,42 +26,6 @@ alter table public.akiba_group_notifications
     'membership_joined', 'membership_left', 'membership_removed',
     'group_admin_appointed', 'group_admin_demoted', 'group_deactivated'
   ));
-
-create or replace function public.akiba_get_group_chat_preferences(p_group_id uuid)
-returns table (notifications_muted boolean)
-language plpgsql
-security definer
-set search_path = ''
-as $fn$
-begin
-  if auth.uid() is null or not akiba_private.is_active_group_member(p_group_id) then
-    raise exception 'Active group membership is required';
-  end if;
-  return query
-    select coalesce(p.notifications_muted, false)
-    from (select 1) seed
-    left join public.akiba_group_chat_preferences p
-      on p.user_id = auth.uid() and p.group_id = p_group_id;
-end;
-$fn$;
-
-create or replace function public.akiba_set_group_chat_muted(p_group_id uuid, p_muted boolean)
-returns void
-language plpgsql
-security definer
-set search_path = ''
-as $fn$
-begin
-  if auth.uid() is null or not akiba_private.is_active_group_member(p_group_id) then
-    raise exception 'Active group membership is required';
-  end if;
-  insert into public.akiba_group_chat_preferences(user_id, group_id, notifications_muted, updated_at)
-  values (auth.uid(), p_group_id, coalesce(p_muted, false), clock_timestamp())
-  on conflict (user_id, group_id) do update
-    set notifications_muted = excluded.notifications_muted,
-        updated_at = excluded.updated_at;
-end;
-$fn$;
 
 create or replace function public.akiba_mark_group_chat_read(p_group_id uuid, p_message_id uuid)
 returns void
@@ -125,12 +88,8 @@ as $fn$
   group by m.group_id;
 $fn$;
 
-revoke all on function public.akiba_get_group_chat_preferences(uuid) from public, anon;
-revoke all on function public.akiba_set_group_chat_muted(uuid, boolean) from public, anon;
 revoke all on function public.akiba_mark_group_chat_read(uuid, uuid) from public, anon;
 revoke all on function public.akiba_list_my_group_chat_unread_counts() from public, anon;
-grant execute on function public.akiba_get_group_chat_preferences(uuid) to authenticated;
-grant execute on function public.akiba_set_group_chat_muted(uuid, boolean) to authenticated;
 grant execute on function public.akiba_mark_group_chat_read(uuid, uuid) to authenticated;
 grant execute on function public.akiba_list_my_group_chat_unread_counts() to authenticated;
 
