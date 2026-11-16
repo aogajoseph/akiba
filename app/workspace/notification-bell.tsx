@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -16,27 +16,46 @@ export type NotificationBellItem = {
 };
 
 type Props = {
-  unreadCount: number;
-  notifications: NotificationBellItem[];
+  unreadCount?: number;
+  notifications?: NotificationBellItem[];
 };
 
-export default function NotificationBell({ unreadCount: initialUnreadCount, notifications }: Props) {
+export default function NotificationBell({ unreadCount: initialUnreadCount, notifications: initialNotifications }: Props) {
   const [open, setOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
+  const [unreadCount, setUnreadCount] = useState(initialUnreadCount ?? 0);
+  const [notifications, setNotifications] = useState(initialNotifications ?? []);
   const [readIds, setReadIds] = useState<string[]>([]);
   const router = useRouter();
 
-  async function markRead(id: string, wasUnread: boolean) {
-    if (!wasUnread || readIds.includes(id)) return;
-    setReadIds((current) => [...current, id]);
-    setUnreadCount((count) => Math.max(0, count - 1));
+  useEffect(() => {
+    if (initialUnreadCount !== undefined && initialNotifications !== undefined) return;
+    let active = true;
     const client = createClient();
-    const { error } = await client.rpc("akiba_mark_group_notification_read", { p_notification_id: id });
-    if (error) {
-      setReadIds((current) => current.filter((item) => item !== id));
-      setUnreadCount((count) => count + 1);
-      return;
+    const load = async () => {
+      const [{ data: count }, { data: items }] = await Promise.all([
+        client.rpc("akiba_count_my_unread_group_notifications"),
+        client.rpc("akiba_list_my_group_notifications", { p_limit: 5 }),
+      ]);
+      if (!active) return;
+      setUnreadCount(Number(count ?? 0));
+      setNotifications((items ?? []) as NotificationBellItem[]);
+    };
+    void load();
+    return () => { active = false; };
+  }, [initialUnreadCount, initialNotifications]);
+
+  async function openNotification(id: string, href: string, wasUnread: boolean) {
+    if (wasUnread && !readIds.includes(id)) {
+      setReadIds((current) => [...current, id]);
+      setUnreadCount((count) => Math.max(0, count - 1));
+      const client = createClient();
+      const { error } = await client.rpc("akiba_mark_group_notification_read", { p_notification_id: id });
+      if (error) {
+        setReadIds((current) => current.filter((item) => item !== id));
+        setUnreadCount((count) => count + 1);
+      }
     }
+    router.push(href);
     router.refresh();
   }
 
@@ -65,7 +84,7 @@ export default function NotificationBell({ unreadCount: initialUnreadCount, noti
                     href={item.href}
                     className={"ak-notification-tray-item" + (isUnread ? " is-unread" : "")}
                     key={item.id}
-                    onClick={() => void markRead(item.id, isUnread)}
+                    onClick={(event) => { event.preventDefault(); void openNotification(item.id, item.href, isUnread); }}
                   >
                     <span className="ak-notification-tray-dot" />
                     <span><strong>{item.title}</strong><small>{item.body}</small><time>{new Intl.DateTimeFormat("en", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(item.created_at))}</time></span>
