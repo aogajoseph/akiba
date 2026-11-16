@@ -2,6 +2,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
+import NotificationRealtime from "@/app/workspace/notification-realtime";
+import NotificationBell from "@/app/workspace/notification-bell";
 import GroupChat from "@/app/groups/[groupId]/group-chat";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
@@ -38,6 +40,7 @@ export default async function GroupChatPage({ params }: Props) {
 
   return (
     <main className="ak-dashboard ak-workspace-app">
+      <NotificationRealtime />
       <aside className="ak-sidebar">
         <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
         <nav className="ak-nav" aria-label="Main navigation">
@@ -64,7 +67,7 @@ export default async function GroupChatPage({ params }: Props) {
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
           <div className="ak-workspace-top-crumb"><Link href="/workspace/groups">My Groups</Link><span>/</span><Link href={"/workspace/groups/" + group.id}>{group.name}</Link><span>/</span><strong>Chat</strong></div>
-          <div className="ak-topbar-right"><span className="ak-topbar-greeting">Your space, together</span><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
+          <div className="ak-topbar-right"><NotificationBell /><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(profile.display_name)}</div></div>
         </header>
 
         <div className="ak-dashboard-content ak-workspace-content">
