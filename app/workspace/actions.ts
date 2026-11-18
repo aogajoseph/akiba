@@ -11,7 +11,6 @@ const allowedTypes: Record<string, string[]> = {
   goal: ["rent_housing", "education", "business_investment", "land_property", "vehicle_purchase", "family_support", "shared_savings", "community_project", "other_goal"],
   chama: ["rotating_savings", "table_banking", "accumulating_savings", "investment_chama", "other_chama"],
 };
-const allowedFrequencies = ["one_time", "weekly", "biweekly", "monthly", "quarterly", "annually"];
 const imageTypes: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
 
 export async function createGroup(formData: FormData) {
@@ -24,9 +23,7 @@ export async function createGroup(formData: FormData) {
   const eventDate = String(formData.get("event_date") ?? "").trim();
   const eventLocation = String(formData.get("event_location") ?? "").trim();
   const deadline = String(formData.get("deadline") ?? "").trim();
-  const frequency = String(formData.get("contribution_frequency") ?? "").trim();
   const image = formData.get("group_image");
-  const chamaFrequencyRequired = purpose === "chama" && ["rotating_savings", "table_banking", "accumulating_savings"].includes(groupType);
   const targetAmount = targetRaw ? Number(targetRaw) : null;
   const validDate = (value: string) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value);
 
@@ -34,7 +31,7 @@ export async function createGroup(formData: FormData) {
     !allowedTypes[purpose].includes(groupType) || !/^[A-Z]{3}$/.test(currencyCode) || description.length > 500 ||
     (targetRaw !== "" && (!Number.isFinite(targetAmount) || (targetAmount ?? 0) <= 0)) ||
     !validDate(eventDate) || !validDate(deadline) || eventLocation.length > 200 ||
-    (frequency !== "" && !allowedFrequencies.includes(frequency)) || (chamaFrequencyRequired && !frequency)) {
+    false) {
     redirect("/workspace/new?error=" + encodeURIComponent("Please review the required fields and make sure the group details are valid."));
   }
 
@@ -64,7 +61,7 @@ export async function createGroup(formData: FormData) {
   const { error } = await supabase.from("akiba_groups").insert({
     id: groupId, name, purpose, group_type: groupType, currency_code: currencyCode, description,
     target_amount: targetAmount, event_date: eventDate || null, event_location: purpose === "event" ? eventLocation || null : null, deadline: deadline || null,
-    contribution_frequency: frequency || null, group_image_path: imagePath,
+    contribution_frequency: null, group_image_path: imagePath,
   });
 
   if (error) {
