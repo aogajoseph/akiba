@@ -131,7 +131,7 @@ export default async function GroupSettingsPage({ params, searchParams }: Props)
               <span className="ak-settings-warning-icon">!</span>
               <div>
                 <h2>Group Creator access only</h2>
-                <p>Only the Group Creator can access group settings. Contact the Group Creator if you think these details need to be changed.</p>
+                <p>Only the Group Creator can access group settings. Contact the Group Creator if you think the group details need to be changed.</p>
               </div>
             </section>
           ) : !isSupportedGroup ? (
