@@ -63,7 +63,6 @@ export default function GroupWorkspaceActions({
       {menuOpen && (
         <div className="ak-workspace-more-menu" role="menu">
           <button type="button" role="menuitem" onClick={copyInvitationLink}>Copy group link</button>
-          <button type="button" role="menuitem" disabled={!isCreator} onClick={() => { window.location.href = window.location.pathname + "/settings"; setMenuOpen(false); }}>Edit group</button>
         </div>
       )}
       {message && <div className="ak-workspace-action-message" role="status">{message}<button type="button" aria-label="Dismiss" onClick={() => setMessage("")}>×</button></div>}
