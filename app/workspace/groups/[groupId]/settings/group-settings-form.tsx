@@ -93,6 +93,17 @@ export default function GroupSettingsForm({
     setFields((current) => current.filter((field) => field.id !== id));
   }
 
+  function moveField(id: string, direction: -1 | 1) {
+    setFields((current) => {
+      const index = current.findIndex((field) => field.id === id);
+      const nextIndex = index + direction;
+      if (index < 0 || nextIndex < 0 || nextIndex >= current.length) return current;
+      const reordered = [...current];
+      [reordered[index], reordered[nextIndex]] = [reordered[nextIndex], reordered[index]];
+      return reordered;
+    });
+  }
+
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!formRef.current || pending) return;
@@ -228,7 +239,11 @@ export default function GroupSettingsForm({
               <div className="ak-settings-custom-field" key={field.id}>
                 <div className="ak-settings-custom-field-heading">
                   <strong>Additional detail {index + 1}</strong>
-                  <button type="button" onClick={() => removeField(field.id)}>Remove</button>
+                  <div className="ak-settings-custom-field-actions">
+                    <button type="button" onClick={() => moveField(field.id, -1)} disabled={index === 0} aria-label={`Move additional detail ${index + 1} up`}>↑</button>
+                    <button type="button" onClick={() => moveField(field.id, 1)} disabled={index === fields.length - 1} aria-label={`Move additional detail ${index + 1} down`}>↓</button>
+                    <button type="button" onClick={() => removeField(field.id)}>Remove</button>
+                  </div>
                 </div>
                 <div className="ak-settings-custom-field-grid">
                   <label className="ak-settings-field">
