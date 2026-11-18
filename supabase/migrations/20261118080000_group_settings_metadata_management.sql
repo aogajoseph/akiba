@@ -236,4 +236,47 @@ revoke all on function public.akiba_update_group_settings(uuid, text, text, text
 grant execute on function public.akiba_update_group_settings(uuid, text, text, text, text, date, date, numeric, text, text, jsonb)
   to authenticated;
 
+
+create or replace function public.akiba_group_currency_is_locked(p_group_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+begin
+  if actor_id is null then
+    raise exception 'Authentication is required';
+  end if;
+  if not exists (
+    select 1
+    from public.akiba_group_memberships m
+    where m.group_id = p_group_id
+      and m.user_id = actor_id
+      and m.status = 'active'
+  ) then
+    raise exception 'You are not an active member of this group';
+  end if;
+
+  return
+    exists (select 1 from public.akiba_contribution_intents where group_id = p_group_id)
+    or exists (
+      select 1
+      from public.akiba_payment_attempts a
+      join public.akiba_contribution_intents i on i.id = a.contribution_intent_id
+      where i.group_id = p_group_id
+    )
+    or exists (select 1 from public.akiba_financial_transactions where group_id = p_group_id)
+    or exists (select 1 from public.akiba_financial_ledger_entries where group_id = p_group_id)
+    or exists (select 1 from public.akiba_withdrawal_requests where group_id = p_group_id)
+    or exists (select 1 from public.akiba_financial_reservations where group_id = p_group_id)
+    or exists (select 1 from public.akiba_group_payment_accounts where group_id = p_group_id)
+    or exists (select 1 from public.akiba_withdrawal_approvals where group_id = p_group_id);
+end;
+$fn$;
+
+revoke all on function public.akiba_group_currency_is_locked(uuid) from public, anon;
+grant execute on function public.akiba_group_currency_is_locked(uuid) to authenticated;
+
 commit;
