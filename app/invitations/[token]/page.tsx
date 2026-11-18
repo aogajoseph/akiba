@@ -2,18 +2,18 @@ import Link from "next/link";
 import { createHash } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-import { acceptGroupInviteLink, acceptGroupInvitation, declineGroupInvitation } from "@/app/workspace/actions";
+import { requestGroupJoinByLink, acceptGroupInvitation, declineGroupInvitation } from "@/app/workspace/actions";
 import { switchToInvitationAccount } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
 
 type Props = {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; requested?: string }>;
 };
 
 export default async function InvitationPage({ params, searchParams }: Props) {
   const { token } = await params;
-  const { error: actionError } = await searchParams;
+  const { error: actionError, requested } = await searchParams;
   if (!/^[0-9a-f]{64}$/.test(token)) notFound();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -29,9 +29,11 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const hash = createHash("sha256").update(token).digest("hex");
-  const [{ data: reusableLink }, { data: invitation }] = await Promise.all([
+  const supabase = await createClient();
+  const [{ data: reusableLink }, { data: invitation }, { data: { user } }] = await Promise.all([
     admin.from("akiba_group_invite_links").select("group_id,created_by").eq("token_hash", hash).maybeSingle(),
     admin.from("akiba_group_invitations").select("group_id,inviter_id,status,expires_at,recipient_email").eq("token_hash", hash).maybeSingle(),
+    supabase.auth.getUser(),
   ]);
 
   const isReusableLink = Boolean(reusableLink);
@@ -44,7 +46,6 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     inviterId
       ? admin.from("akiba_profiles").select("display_name,username").eq("user_id", inviterId).maybeSingle()
       : Promise.resolve({ data: null }),
-    (await createClient()).auth.getUser(),
   ]);
   if (!group) notFound();
 
@@ -73,10 +74,14 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     }
   }
 
+  let joinRequestPending = false;
   if (isReusableLink && user && status === "pending") {
-    const { data: membership } = await (await createClient()).from("akiba_group_memberships")
-      .select("status").eq("group_id", groupId).eq("user_id", user.id).eq("status", "active").maybeSingle();
+    const [{ data: membership }, { data: joinRequest }] = await Promise.all([
+      supabase.from("akiba_group_memberships").select("status").eq("group_id", groupId).eq("user_id", user.id).eq("status", "active").maybeSingle(),
+      supabase.from("akiba_group_join_requests").select("id").eq("group_id", groupId).eq("user_id", user.id).eq("status", "pending").maybeSingle(),
+    ]);
     if (membership) redirect("/workspace/groups/" + groupId);
+    joinRequestPending = Boolean(joinRequest);
   }
 
   return (
@@ -116,12 +121,18 @@ export default async function InvitationPage({ params, searchParams }: Props) {
           </div>
         ) : (
           <div className="auth-form">
-            <p>Joining will add you as a Member of this group.</p>
             {isReusableLink ? (
-              <form action={acceptGroupInviteLink}>
-                <input type="hidden" name="token" value={token} />
-                <button className="workspace-primary" type="submit">Join group</button>
-              </form>
+              joinRequestPending || requested === "1" ? (
+                <div className="auth-message" role="status">Your request to join this group has been submitted. You will become a member only after the Group Creator approves it.</div>
+              ) : (
+                <>
+                  <p>Send a membership request to the Group Creator. You will not become a member until the request is approved.</p>
+                  <form action={requestGroupJoinByLink}>
+                    <input type="hidden" name="token" value={token} />
+                    <button className="workspace-primary" type="submit">Request to join group</button>
+                  </form>
+                </>
+              )
             ) : (
               <>
                 <form action={acceptGroupInvitation}>
