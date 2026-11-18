@@ -78,6 +78,186 @@ export async function createGroup(formData: FormData) {
 }
 
 
+type GroupCustomFieldInput = {
+  label: string;
+  field_type: "text" | "number" | "date" | "url";
+  value: string;
+};
+
+function isValidGroupDate(value: string) {
+  if (!value) return true;
+  if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
+  const parsed = new Date(value + "T00:00:00.000Z");
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
+}
+
+function validateGroupCustomFields(value: string): GroupCustomFieldInput[] | null {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(value || "[]");
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(parsed) || parsed.length > 10) return null;
+
+  const labels = new Set<string>();
+  const fields: GroupCustomFieldInput[] = [];
+  for (const item of parsed) {
+    if (!item || typeof item !== "object") return null;
+    const candidate = item as Record<string, unknown>;
+    const label = typeof candidate.label === "string" ? candidate.label.trim() : "";
+    const fieldType = candidate.field_type;
+    const fieldValue = typeof candidate.value === "string" ? candidate.value.trim() : "";
+    if (!label || label.length > 40 || !fieldValue || fieldValue.length > 500 ||
+        !["text", "number", "date", "url"].includes(String(fieldType))) return null;
+    const normalizedLabel = label.toLocaleLowerCase();
+    if (labels.has(normalizedLabel)) return null;
+    labels.add(normalizedLabel);
+
+    if (fieldType === "number" && !/^-?\\d+(?:\\.\\d{1,2})?$/.test(fieldValue)) return null;
+    if (fieldType === "date" && !isValidGroupDate(fieldValue)) return null;
+    if (fieldType === "url") {
+      try {
+        const url = new URL(fieldValue);
+        if (!["http:", "https:"].includes(url.protocol)) return null;
+      } catch {
+        return null;
+      }
+    }
+    fields.push({
+      label,
+      field_type: fieldType as GroupCustomFieldInput["field_type"],
+      value: fieldValue,
+    });
+  }
+  return fields;
+}
+
+export async function updateGroupSettings(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const name = String(formData.get("name") ?? "").trim();
+  const groupType = String(formData.get("group_type") ?? "").trim();
+  const description = String(formData.get("description") ?? "").trim();
+  const eventLocation = String(formData.get("event_location") ?? "").trim();
+  const eventDate = String(formData.get("event_date") ?? "").trim();
+  const deadline = String(formData.get("deadline") ?? "").trim();
+  const targetRaw = String(formData.get("target_amount") ?? "").trim();
+  const currencyCode = String(formData.get("currency_code") ?? "").trim().toUpperCase();
+  const customFields = validateGroupCustomFields(String(formData.get("custom_fields") ?? "[]"));
+  const image = formData.get("group_image");
+  const removeImage = String(formData.get("remove_group_image") ?? "") === "true";
+  const targetAmount = targetRaw ? Number(targetRaw) : null;
+  const settingsPath = "/workspace/groups/" + groupId + "/settings";
+
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) redirect("/workspace/groups");
+  if (name.length < 1 || name.length > 80 || description.length > 500 ||
+      !/^[A-Z]{3}$/.test(currencyCode) ||
+      (targetRaw !== "" && (!Number.isFinite(targetAmount) || (targetAmount ?? 0) <= 0 || (targetAmount ?? 0) > 999999999999.99)) ||
+      !isValidGroupDate(eventDate) || !isValidGroupDate(deadline) ||
+      eventLocation.length > 200 || !customFields) {
+    redirect(settingsPath + "?error=" + encodeURIComponent("Please review the group details and additional fields."));
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { data: group, error: groupError } = await supabase
+    .from("akiba_groups")
+    .select("id,created_by,purpose,status,group_image_path,currency_code")
+    .eq("id", groupId)
+    .maybeSingle();
+  if (groupError || !group) redirect("/workspace/groups");
+  if (group.created_by !== user.id) {
+    redirect(settingsPath + "?error=" + encodeURIComponent("Only the Group Creator can update group settings."));
+  }
+
+  const { data: membership } = await supabase
+    .from("akiba_group_memberships")
+    .select("role,status")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!membership || membership.role !== "group_creator" || membership.status !== "active") {
+    redirect(settingsPath + "?error=" + encodeURIComponent("Only the Group Creator can update group settings."));
+  }
+  if (group.status !== "active") {
+    redirect(settingsPath + "?error=" + encodeURIComponent("Deactivated groups are read-only."));
+  }
+  if (group.purpose !== "event" && group.purpose !== "goal") {
+    redirect(settingsPath + "?error=" + encodeURIComponent("Settings for this group type are not available yet."));
+  }
+  if (!allowedTypes[group.purpose]?.includes(groupType)) {
+    redirect(settingsPath + "?error=" + encodeURIComponent("Choose a valid category for this group."));
+  }
+  if (group.purpose === "goal" && (eventLocation || eventDate)) {
+    redirect(settingsPath + "?error=" + encodeURIComponent("Location and event date apply only to Event groups."));
+  }
+
+  let imagePath: string | null = group.group_image_path;
+  let uploadedImagePath: string | null = null;
+  if (image instanceof File && image.size > 0) {
+    const extension = imageTypes[image.type];
+    if (!extension || image.size > 5 * 1024 * 1024) {
+      redirect(settingsPath + "?error=" + encodeURIComponent("Choose a JPG, PNG or WebP image smaller than 5 MB."));
+    }
+    uploadedImagePath = user.id + "/" + groupId + "-" + randomUUID() + "." + extension;
+    const { error: uploadError } = await supabase.storage.from("group-images").upload(uploadedImagePath, image, {
+      contentType: image.type,
+      upsert: false,
+      cacheControl: "3600",
+    });
+    if (uploadError) {
+      console.error("Akiba group settings image upload failed", { message: uploadError.message });
+      redirect(settingsPath + "?error=" + encodeURIComponent("The new group image could not be uploaded."));
+    }
+    imagePath = uploadedImagePath;
+  } else if (removeImage) {
+    imagePath = null;
+  }
+
+  const { error: updateError } = await supabase.rpc("akiba_update_group_settings", {
+    p_group_id: groupId,
+    p_name: name,
+    p_group_type: groupType,
+    p_description: description,
+    p_event_location: group.purpose === "event" ? eventLocation || null : null,
+    p_event_date: group.purpose === "event" ? eventDate || null : null,
+    p_deadline: deadline || null,
+    p_target_amount: targetAmount,
+    p_currency_code: currencyCode,
+    p_group_image_path: imagePath,
+    p_custom_fields: customFields,
+  });
+
+  if (updateError) {
+    if (uploadedImagePath) await supabase.storage.from("group-images").remove([uploadedImagePath]);
+    const message = updateError.message.toLowerCase().includes("currency is locked")
+      ? "Currency cannot be changed after financial activity or payment setup has started."
+      : updateError.message.toLowerCase().includes("only kes")
+        ? "KES is currently the only supported currency for group currency changes."
+        : updateError.message.toLowerCase().includes("deactivated")
+          ? "Deactivated groups are read-only."
+          : updateError.message.toLowerCase().includes("only the group creator")
+            ? "Only the Group Creator can update group settings."
+            : updateError.message.toLowerCase().includes("additional detail")
+              ? updateError.message
+              : "The group settings could not be saved. Please review the details and try again.";
+    redirect(settingsPath + "?error=" + encodeURIComponent(message));
+  }
+
+  if (group.group_image_path && group.group_image_path !== imagePath) {
+    const { error: cleanupError } = await supabase.storage.from("group-images").remove([group.group_image_path]);
+    if (cleanupError) console.error("Akiba old group image cleanup failed", { message: cleanupError.message });
+  }
+
+  revalidatePath("/workspace/groups/" + groupId);
+  revalidatePath(settingsPath);
+  revalidatePath("/workspace/groups");
+  redirect(settingsPath + "?saved=1");
+}
+
+
 export async function setGroupAdmin(formData: FormData) {
   const groupId = String(formData.get("group_id") ?? "");
   const userId = String(formData.get("user_id") ?? "");
