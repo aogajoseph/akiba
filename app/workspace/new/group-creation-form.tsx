@@ -49,14 +49,6 @@ const catalogue = {
 } as const;
 
 type Category = keyof typeof catalogue;
-const frequencies = [
-  ["one_time", "One-time"],
-  ["weekly", "Weekly"],
-  ["biweekly", "Every two weeks"],
-  ["monthly", "Monthly"],
-  ["quarterly", "Quarterly"],
-  ["annually", "Annually"],
-] as const;
 const steps = [
   { title: "Identity" },
   { title: "Type" },
@@ -78,18 +70,14 @@ export function GroupCreationForm({ error }: { error?: string }) {
   const [eventDate, setEventDate] = useState("");
   const [eventLocation, setEventLocation] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [frequency, setFrequency] = useState("");
   const types = catalogue[category].types;
   const selectedType = useMemo(() => types.find(([value]) => value === groupType), [types, groupType]);
   const isChama = category === "chama";
   const isEvent = category === "event";
-  const frequencyRequired = isChama && ["rotating_savings", "table_banking", "accumulating_savings"].includes(groupType);
-  const showFrequency = isChama;
 
   function chooseCategory(value: Category) {
     setCategory(value);
     setGroupType(catalogue[value].types[0][0]);
-    setFrequency("");
   }
 
   function continueToNextStep() {
@@ -151,7 +139,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
             </button>
           ))}
         </div>
-        <label><span className="ak-field-heading">"Category" <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); setFrequency(""); }} required>
+        <label><span className="ak-field-heading">Category <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); }} required>
           {types.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
         </select><small>{selectedType?.[2]}</small></label>
         {isEvent && <label><span className="ak-field-heading">Event location <small className="ak-field-meta">Optional</small></span><input name="event_location" value={eventLocation} onChange={(event) => setEventLocation(event.target.value)} maxLength={200} placeholder="Venue or event location" /></label>}
@@ -163,7 +151,6 @@ export function GroupCreationForm({ error }: { error?: string }) {
         <label><span className="ak-field-heading">Target amount <small className="ak-field-meta">Optional</small></span><input name="target_amount" type="number" min="0.01" step="0.01" value={targetAmount} onChange={(event) => setTargetAmount(event.target.value)} placeholder="e.g. 100000" /><small>A shared target, not an amount each member is automatically required to pay.</small></label>
         {isEvent && <label><span className="ak-field-heading">Event date <small className="ak-field-meta">Optional</small></span><input name="event_date" type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>}
         <label><span className="ak-field-heading">Contribution deadline <small className="ak-field-meta">Optional</small></span><input name="deadline" type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} /><small>{isEvent ? "When you would ideally like contributions completed. This can differ from the event date." : isChama ? "The date by which the group's contributions should be completed, if applicable." : "When you hope to complete contributions towards this goal."}</small></label>
-        {showFrequency && <label><span className="ak-field-heading">Contribution frequency {frequencyRequired && <em className="ak-field-meta required">Required</em>}</span><select name="contribution_frequency" value={frequency} onChange={(event) => setFrequency(event.target.value)} required={frequencyRequired}><option value="">Choose a frequency</option>{frequencies.filter(([value]) => !frequencyRequired || value !== "one_time").map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><small>{isChama ? "How often members are expected to contribute under the group's arrangement." : "If contributions will be made regularly, select the expected interval."}</small></label>}
       </section>
 
       <section id="ak-create-step-3" className="ak-create-section ak-create-access" hidden={step !== 3}>
@@ -177,7 +164,6 @@ export function GroupCreationForm({ error }: { error?: string }) {
           {targetAmount && <div><small>TARGET AMOUNT</small><strong>{currency} {Number(targetAmount).toLocaleString()}</strong></div>}
           {eventDate && <div><small>EVENT DATE</small><strong>{eventDate}</strong></div>}
           {deadline && <div><small>CONTRIBUTION DEADLINE</small><strong>{deadline}</strong></div>}
-          {frequency && <div><small>CONTRIBUTION FREQUENCY</small><strong>{frequencies.find(([value]) => value === frequency)?.[1] ?? frequency}</strong></div>}
         </div>
         <div className="ak-private-note"><span>♙</span><div><strong>Private group</strong><small>Only the people invited to this group will have access.</small></div></div>
         <p className="ak-create-footnote">As the Group Creator, you must appoint three Group Admins before the group can start receiving contributions.</p>
