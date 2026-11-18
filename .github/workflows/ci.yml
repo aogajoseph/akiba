@@ -55,3 +55,5 @@ jobs:
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_creator_admin_entitlements.test.sql
       - name: Test group membership lifecycle
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_membership_lifecycle.test.sql
+      - name: Test creator-only group settings and metadata
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_settings.test.sql
