@@ -25,7 +25,6 @@ as $fn$
 declare
   actor_id uuid := auth.uid();
   group_row public.akiba_groups%rowtype;
-  field_position integer := 0;
 begin
   if actor_id is null then
     raise exception 'Authentication is required';
@@ -147,9 +146,9 @@ begin
 end;
 $fn$;
 
-revoke all on function public.akiba_update_group_settings(uuid, text, text, text, text, date, date, numeric, text, text, jsonb)
+revoke all on function public.akiba_update_group_settings(uuid, text, text, text, text, date, date, numeric, text, text)
   from public, anon;
-grant execute on function public.akiba_update_group_settings(uuid, text, text, text, text, date, date, numeric, text, text, jsonb)
+grant execute on function public.akiba_update_group_settings(uuid, text, text, text, text, date, date, numeric, text, text)
   to authenticated;
 
 
