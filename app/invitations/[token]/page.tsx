@@ -41,7 +41,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
   if (!groupId) notFound();
 
   const inviterId = reusableLink?.created_by ?? invitation?.inviter_id;
-  const [{ data: group }, { data: inviter }, { data: { user } }] = await Promise.all([
+  const [{ data: group }, { data: inviter }] = await Promise.all([
     admin.from("akiba_groups").select("id,name,description,status").eq("id", groupId).maybeSingle(),
     inviterId
       ? admin.from("akiba_profiles").select("display_name,username").eq("user_id", inviterId).maybeSingle()
