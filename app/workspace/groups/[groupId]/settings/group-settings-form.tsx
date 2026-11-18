@@ -233,7 +233,7 @@ export default function GroupSettingsForm({
                 <div className="ak-settings-custom-field-grid">
                   <label className="ak-settings-field">
                     <span>Label</span>
-                    <input value={field.label} onChange={(event) => updateField(field.id, { label: event.target.value })} maxLength={40} placeholder="e.g. Dress code" />
+                    <input value={field.label} onChange={(event) => updateField(field.id, { label: event.target.value })} maxLength={40} required placeholder="e.g. Dress code" />
                   </label>
                   <label className="ak-settings-field">
                     <span>Field type</span>
