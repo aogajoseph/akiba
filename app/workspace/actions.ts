@@ -620,5 +620,5 @@ export async function requestGroupJoinByLink(formData: FormData) {
           : "Your membership request could not be submitted. Please try again.";
     redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
   }
-  redirect("/invitations/" + token + "?requested=1");
+  redirect("/invitations/" + token);
 }
