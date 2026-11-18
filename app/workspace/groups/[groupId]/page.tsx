@@ -185,7 +185,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                 </div>
               </div>
             </div>
-            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} isCreator={isGroupCreator} invitationUrl={groupInvitationUrl} /></div>
+            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} invitationUrl={groupInvitationUrl} /></div>
           </section>
 
           <nav className="ak-group-tabs" aria-label="Group workspace">
