@@ -65,7 +65,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
   const [groupType, setGroupType] = useState<string>("birthday");
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
-  const [currency, setCurrency] = useState("KES");
+  const currency = "KES";
   const [targetAmount, setTargetAmount] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventLocation, setEventLocation] = useState("");
@@ -147,7 +147,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
 
       <section id="ak-create-step-2" className="ak-create-section" hidden={step !== 2}>
         <div className="ak-create-section-heading"><span>03</span><div><h2>Contributions & timing</h2><p>Only add the details that make sense for this group. You can update optional details later.</p></div></div>
-        <label><span className="ak-field-heading">Group currency <em className="ak-field-meta required">Required</em></span><input name="currency_code" value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} minLength={3} maxLength={3} pattern="[A-Za-z]{3}" required placeholder="e.g. KES" autoCapitalize="characters" /><small>Three-letter currency code, such as KES, USD or GBP.</small></label>
+        <label><span className="ak-field-heading">Group currency</span><input type="hidden" name="currency_code" value="KES" /><input value="KES · Kenyan Shilling" disabled readOnly aria-label="Group currency" /><small>KES is the default and currently supported currency for M-Pesa. Additional currencies will be introduced as payment support expands.</small></label>
         <label><span className="ak-field-heading">Target amount <small className="ak-field-meta">Optional</small></span><input name="target_amount" type="number" min="0.01" step="0.01" value={targetAmount} onChange={(event) => setTargetAmount(event.target.value)} placeholder="e.g. 100000" /><small>A shared target, not an amount each member is automatically required to pay.</small></label>
         {isEvent && <label><span className="ak-field-heading">Event date <small className="ak-field-meta">Optional</small></span><input name="event_date" type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>}
         <label><span className="ak-field-heading">Contribution deadline <small className="ak-field-meta">Optional</small></span><input name="deadline" type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} /><small>{isEvent ? "When you would ideally like contributions completed. This can differ from the event date." : isChama ? "The date by which the group's contributions should be completed, if applicable." : "When you hope to complete contributions towards this goal."}</small></label>
