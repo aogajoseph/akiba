@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
 import { updateGroupSettings } from "@/app/workspace/actions";
 
 type GroupPurpose = "event" | "goal";
@@ -93,7 +93,7 @@ export default function GroupSettingsForm({
     setFields((current) => current.filter((field) => field.id !== id));
   }
 
-  function submit(event: React.FormEvent<HTMLFormElement>) {
+  function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!formRef.current || pending) return;
     startTransition(() => {
