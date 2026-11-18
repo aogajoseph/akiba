@@ -5,7 +5,8 @@ insert into auth.users (id, aud, role, email, encrypted_password, email_confirme
 values
   ('00000000-0000-0000-0000-000000000313', 'authenticated', 'authenticated', 'creator-313@akiba.test', '', now(), now(), now()),
   ('00000000-0000-0000-0000-000000000314', 'authenticated', 'authenticated', 'requester-314@akiba.test', '', now(), now(), now()),
-  ('00000000-0000-0000-0000-000000000315', 'authenticated', 'authenticated', 'requester-315@akiba.test', '', now(), now(), now())
+  ('00000000-0000-0000-0000-000000000315', 'authenticated', 'authenticated', 'requester-315@akiba.test', '', now(), now(), now()),
+  ('00000000-0000-0000-0000-000000000316', 'authenticated', 'authenticated', 'member-316@akiba.test', '', now(), now(), now())
 on conflict (id) do nothing;
 
 insert into public.akiba_profiles(user_id, username, display_name)
@@ -19,6 +20,9 @@ select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000313
 insert into public.akiba_groups (id, name, purpose, group_type, currency_code, created_by)
 values ('10000000-0000-0000-0000-000000000015', 'Approval link test', 'goal', 'shared_savings', 'KES',
         '00000000-0000-0000-0000-000000000313');
+
+insert into public.akiba_group_memberships(group_id, user_id, role, status)
+values ('10000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000316', 'member', 'active');
 
 insert into public.akiba_group_invite_links(group_id, token, token_hash, created_by)
 values ('10000000-0000-0000-0000-000000000015', repeat('a', 64), encode(sha256(convert_to(repeat('a', 64), 'UTF8')), 'hex'),
@@ -78,6 +82,7 @@ begin
       and status = 'approved' and reviewed_by = '00000000-0000-0000-0000-000000000313'
   ) then raise exception 'Approved request did not record reviewer and status'; end if;
   if not exists (select 1 from public.akiba_group_notifications where user_id = '00000000-0000-0000-0000-000000000314' and event_type = 'membership_request_approved') then raise exception 'Applicant was not notified that the request was approved'; end if;
+  if not exists (select 1 from public.akiba_group_notifications where user_id = '00000000-0000-0000-0000-000000000316' and event_type = 'membership_joined') then raise exception 'Existing members were not notified that the new member joined after approval'; end if;
 end;
 $test$;
 
