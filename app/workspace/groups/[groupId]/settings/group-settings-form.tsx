@@ -70,7 +70,7 @@ export default function GroupSettingsForm({
     initialFields.map((field, index) => ({ ...field, id: "existing-" + index })),
   );
   const [removeImage, setRemoveImage] = useState(false);
-  const [currency, setCurrency] = useState(group.currency_code);
+  const [currency, setCurrency] = useState(currencyLocked ? group.currency_code : "KES");
   const isEvent = group.purpose === "event";
 
   function addField() {
@@ -207,10 +207,9 @@ export default function GroupSettingsForm({
             ) : (
               <>
                 <select name="currency_code" value={currency} onChange={(event) => setCurrency(event.target.value)}>
-                  {group.currency_code !== "KES" && <option value={group.currency_code}>{group.currency_code} · Current currency</option>}
                   <option value="KES">KES · Kenyan Shilling</option>
                 </select>
-                <small>KES is the default and currently supported currency for M-Pesa. A currency change is available only before financial activity or payment setup begins.</small>
+                <small>KES is currently supported for M-Pesa. Groups created with another currency will move to KES when saved, provided no financial activity or payment setup has started.</small>
               </>
             )}
           </div>
