@@ -564,7 +564,7 @@ export async function sendGroupInvitationEmailAction(
   };
 }
 
-export async function acceptGroupInviteLink(formData: FormData) {
+export async function requestGroupJoinByLink(formData: FormData) {
   const token = String(formData.get("token") ?? "");
   if (!/^[0-9a-f]{64}$/.test(token)) redirect("/login?error=" + encodeURIComponent("This group invitation link is invalid."));
   const supabase = await createClient();
@@ -574,14 +574,16 @@ export async function acceptGroupInviteLink(formData: FormData) {
     .select("display_name").eq("user_id", user.id).maybeSingle();
   if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/invitations/" + token));
   const tokenHash = createHash("sha256").update(token).digest("hex");
-  const { data: groupId, error } = await supabase.rpc("akiba_join_group_by_link", { p_token_hash: tokenHash });
-  if (error || !groupId) {
-    const message = error?.message.includes("Group capacity reached")
-      ? "Group capacity reached. Ask a group member to try again when a space becomes available."
-      : error?.message.includes("blocked")
-        ? "You cannot join this group."
-        : "This group invitation link is no longer available.";
+  const { error } = await supabase.rpc("akiba_request_group_join_by_link", { p_token_hash: tokenHash });
+  if (error) {
+    const message = error.message.includes("already a member")
+      ? "You are already a member of this group."
+      : error.message.includes("capacity")
+        ? "Group capacity reached. The group cannot accept another membership request right now."
+        : error.message.includes("blocked")
+          ? "You cannot request to join this group."
+          : "Your membership request could not be submitted. Please try again.";
     redirect("/invitations/" + token + "?error=" + encodeURIComponent(message));
   }
-  redirect("/workspace/groups/" + groupId);
+  redirect("/invitations/" + token + "?requested=1");
 }
