@@ -197,6 +197,13 @@ begin
     if char_length(field_value) not between 1 and 500 then
       raise exception 'Additional detail values must contain between 1 and 500 characters';
     end if;
+    if lower(field_label) = any(array[
+      'group name', 'group type', 'category', 'group image', 'description',
+      'location', 'event date', 'deadline', 'target amount', 'currency',
+      'contribution frequency'
+    ]::text[]) then
+      raise exception 'Use the standard group settings fields for "%" ', field_label;
+    end if;
     if lower(field_label) = any(seen_labels) then
       raise exception 'Additional detail labels must be unique';
     end if;
