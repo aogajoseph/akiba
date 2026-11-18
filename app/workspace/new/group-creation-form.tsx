@@ -151,7 +151,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
             </button>
           ))}
         </div>
-        <label><span className="ak-field-heading">{isEvent ? "Event type" : "Goal type"} <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); setFrequency(""); }} required>
+        <label><span className="ak-field-heading">"Category" <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); setFrequency(""); }} required>
           {types.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
         </select><small>{selectedType?.[2]}</small></label>
         {isEvent && <label><span className="ak-field-heading">Event location <small className="ak-field-meta">Optional</small></span><input name="event_location" value={eventLocation} onChange={(event) => setEventLocation(event.target.value)} maxLength={200} placeholder="Venue or event location" /></label>}
@@ -171,7 +171,8 @@ export function GroupCreationForm({ error }: { error?: string }) {
         <div className="ak-create-review">
           <div><small>GROUP NAME</small><strong>{groupName.trim() || "Not provided"}</strong></div>
           {description.trim() && <div><small>DESCRIPTION</small><span>{description}</span></div>}
-          <div><small>GROUP TYPE</small><strong>{catalogue[category].label} · {selectedType?.[1]}</strong></div>
+          <div><small>GROUP TYPE</small><strong>{catalogue[category].label}</strong></div>
+          <div><small>CATEGORY</small><strong>{selectedType?.[1]}</strong></div>
           <div><small>CURRENCY</small><strong>{currency || "KES"}</strong></div>
           {targetAmount && <div><small>TARGET AMOUNT</small><strong>{currency} {Number(targetAmount).toLocaleString()}</strong></div>}
           {eventDate && <div><small>EVENT DATE</small><strong>{eventDate}</strong></div>}
