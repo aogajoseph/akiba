@@ -28,7 +28,7 @@ export async function createGroup(formData: FormData) {
   const validDate = (value: string) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value);
 
   if (name.length < 1 || name.length > 80 || (purpose !== "event" && purpose !== "goal") ||
-    !Object.prototype.hasOwnProperty.call(allowedTypes, purpose) || !allowedTypes[purpose].includes(groupType) || !/^[A-Z]{3}$/.test(currencyCode) || description.length > 500 ||
+    !Object.prototype.hasOwnProperty.call(allowedTypes, purpose) || !allowedTypes[purpose].includes(groupType) || currencyCode !== "KES" || description.length > 500 ||
     (targetRaw !== "" && (!Number.isFinite(targetAmount) || (targetAmount ?? 0) <= 0)) ||
     !validDate(eventDate) || !validDate(deadline) || eventLocation.length > 200) {
     redirect("/workspace/new?error=" + encodeURIComponent("Please review the required fields and make sure the group details are valid."));
