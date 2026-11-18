@@ -30,7 +30,8 @@ export async function createGroup(formData: FormData) {
   if (name.length < 1 || name.length > 80 || (purpose !== "event" && purpose !== "goal") ||
     !Object.prototype.hasOwnProperty.call(allowedTypes, purpose) || !allowedTypes[purpose].includes(groupType) || currencyCode !== "KES" || description.length > 500 ||
     (targetRaw !== "" && (!Number.isFinite(targetAmount) || (targetAmount ?? 0) <= 0)) ||
-    !validDate(eventDate) || !validDate(deadline) || eventLocation.length > 200) {
+    !validDate(eventDate) || !validDate(deadline) || eventLocation.length > 200 ||
+    (purpose === "goal" && (eventDate !== "" || eventLocation !== ""))) {
     redirect("/workspace/new?error=" + encodeURIComponent("Please review the required fields and make sure the group details are valid."));
   }
 
@@ -59,7 +60,7 @@ export async function createGroup(formData: FormData) {
 
   const { error } = await supabase.from("akiba_groups").insert({
     id: groupId, name, purpose, group_type: groupType, currency_code: currencyCode, description,
-    target_amount: targetAmount, event_date: eventDate || null, event_location: purpose === "event" ? eventLocation || null : null, deadline: deadline || null,
+    target_amount: targetAmount, event_date: purpose === "event" ? eventDate || null : null, event_location: purpose === "event" ? eventLocation || null : null, deadline: deadline || null,
     contribution_frequency: null, group_image_path: imagePath,
   });
 
