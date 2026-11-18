@@ -113,9 +113,13 @@ $test$;
 
 -- Goal metadata excludes Event-only fields and can move to the supported currency
 -- before any financial or payment artifact exists.
-if (select public.akiba_group_currency_is_locked('10000000-0000-0000-0000-000000000402')) then
-  raise exception 'A new Goal group was unexpectedly currency-locked';
-end if;
+do $test$
+begin
+  if public.akiba_group_currency_is_locked('10000000-0000-0000-0000-000000000402') then
+    raise exception 'A new Goal group was unexpectedly currency-locked';
+  end if;
+end;
+$test$;
 
 select public.akiba_update_group_settings(
   '10000000-0000-0000-0000-000000000402',
