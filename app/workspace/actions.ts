@@ -97,6 +97,11 @@ function validateGroupCustomFields(value: string): GroupCustomFieldInput[] | nul
   if (!Array.isArray(parsed) || parsed.length > 10) return null;
 
   const labels = new Set<string>();
+  const reservedLabels = new Set([
+    "group name", "group type", "category", "group image", "description",
+    "location", "event date", "deadline", "target amount", "currency",
+    "contribution frequency",
+  ]);
   const fields: GroupCustomFieldInput[] = [];
   for (const item of parsed) {
     if (!item || typeof item !== "object") return null;
@@ -107,7 +112,7 @@ function validateGroupCustomFields(value: string): GroupCustomFieldInput[] | nul
     if (!label || label.length > 40 || !fieldValue || fieldValue.length > 500 ||
         !["text", "number", "date", "url"].includes(String(fieldType))) return null;
     const normalizedLabel = label.toLocaleLowerCase();
-    if (labels.has(normalizedLabel)) return null;
+    if (reservedLabels.has(normalizedLabel) || labels.has(normalizedLabel)) return null;
     labels.add(normalizedLabel);
 
     if (fieldType === "number" && !/^-?\\d+(?:\\.\\d{1,2})?$/.test(fieldValue)) return null;
