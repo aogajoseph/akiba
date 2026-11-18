@@ -62,7 +62,20 @@ declare
   active_count integer;
 begin
   if actor_id is null then raise exception 'Authentication is required'; end if;
-  if p_token_hash is null or p_token_hash !~ '^[0-9a-f]{64}
+  if p_token_hash is null or p_token_hash !~ '^[0-9a-f]{64}$' then
+    raise exception 'Invalid group invitation link';
+  end if;
+  if not exists (
+    select 1 from public.akiba_profiles
+    where user_id = actor_id and nullif(btrim(display_name), '') is not null
+  ) then
+    raise exception 'Complete your Akiba profile before requesting to join';
+  end if;
+
+  select group_id into target_group_id
+  from public.akiba_group_invite_links
+  where token_hash = p_token_hash;
+  if not found then raise exception 'This group invitation link is invalid'; end if;
 
   select * into group_row from public.akiba_groups
   where id = target_group_id for update;
