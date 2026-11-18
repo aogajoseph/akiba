@@ -70,6 +70,7 @@ begin
       and user_id = '00000000-0000-0000-0000-000000000314'
       and status = 'approved' and reviewed_by = '00000000-0000-0000-0000-000000000313'
   ) then raise exception 'Approved request did not record reviewer and status'; end if;
+  if not exists (select 1 from public.akiba_group_notifications where user_id = '00000000-0000-0000-0000-000000000314' and event_type = 'membership_request_approved') then raise exception 'Applicant was not notified that the request was approved'; end if;
 end;
 $test$;
 
@@ -115,6 +116,7 @@ begin
     where group_id = '10000000-0000-0000-0000-000000000015'
       and user_id = '00000000-0000-0000-0000-000000000315' and status = 'rejected'
   ) then raise exception 'Declined request status was not persisted'; end if;
+  if not exists (select 1 from public.akiba_group_notifications where user_id = '00000000-0000-0000-0000-000000000315' and event_type = 'membership_request_rejected') then raise exception 'Applicant was not notified that the request was declined'; end if;
 end;
 $test$;
 
