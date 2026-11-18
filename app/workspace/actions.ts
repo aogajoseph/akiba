@@ -8,7 +8,7 @@ import nodemailer from "nodemailer";
 
 const allowedTypes: Record<string, string[]> = {
   event: ["birthday", "wedding", "graduation", "funeral_bereavement", "party_celebration", "trip_vacation", "community_event", "meeting", "fundraiser", "other_event"],
-  goal: ["rent_housing", "education", "business_investment", "land_property", "vehicle_purchase", "family_support", "shared_savings", "community_project", "other_goal"],
+  goal: ["rent_housing", "education", "business_investment", "land_property", "vehicle_purchase", "fundraising", "project_purchase", "family_support", "shared_savings", "community_project", "other_goal"],
   chama: ["rotating_savings", "table_banking", "accumulating_savings", "investment_chama", "other_chama"],
 };
 const imageTypes: Record<string, string> = { "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" };
