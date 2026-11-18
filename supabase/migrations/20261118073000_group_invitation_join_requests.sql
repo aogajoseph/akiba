@@ -177,6 +177,12 @@ begin
     where group_id = group_row.id and status = 'active';
     if active_count >= plan_row.max_members then raise exception 'Group capacity reached'; end if;
 
+    perform akiba_private.create_group_notification(
+      group_row.id, request_row.id, actor_id, null, false,
+      'membership_joined', 'New member joined',
+      'The Group Creator approved a new member.'
+    );
+
     insert into public.akiba_group_memberships(group_id, user_id, role, status, joined_at, ended_at)
     values (group_row.id, request_row.user_id, 'member', 'active', now(), null)
     on conflict (group_id, user_id) do update
