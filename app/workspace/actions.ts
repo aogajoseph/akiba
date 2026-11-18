@@ -203,6 +203,41 @@ export async function updateGroupSettings(formData: FormData) {
 }
 
 
+export async function decideGroupJoinRequest(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const requestId = String(formData.get("request_id") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || !/^[0-9a-f-]{36}$/i.test(requestId) ||
+      (decision !== "approve" && decision !== "reject")) {
+    redirect("/workspace/groups");
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_decide_group_join_request", {
+    p_request_id: requestId,
+    p_decision: decision,
+  });
+  if (error) {
+    const message = error.message.includes("capacity")
+      ? "Group capacity reached. Remove an inactive member before approving another request."
+      : error.message.includes("Only the Group Creator")
+        ? "Only the Group Creator can review membership requests."
+        : error.message.includes("already been reviewed")
+          ? "This membership request has already been reviewed."
+          : "The membership request could not be updated. Please try again.";
+    membershipRedirect(groupId, message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId);
+  revalidatePath("/workspace/groups/" + groupId + "/membership");
+  redirect("/workspace/groups/" + groupId + "/membership?membershipUpdated=" +
+    encodeURIComponent(decision === "approve" ? "Membership request approved." : "Membership request declined."));
+}
+
+
 export async function setGroupAdmin(formData: FormData) {
   const groupId = String(formData.get("group_id") ?? "");
   const userId = String(formData.get("user_id") ?? "");
