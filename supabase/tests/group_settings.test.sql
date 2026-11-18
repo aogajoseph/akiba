@@ -26,8 +26,14 @@ values
 
 insert into public.akiba_group_memberships (group_id, user_id, role, status)
 values
-  ('10000000-0000-0000-0000-000000000401', '00000000-0000-0000-0000-000000000402', 'group_admin', 'active'),
+  ('10000000-0000-0000-0000-000000000401', '00000000-0000-0000-0000-000000000402', 'member', 'active'),
   ('10000000-0000-0000-0000-000000000401', '00000000-0000-0000-0000-000000000403', 'member', 'active');
+
+select public.akiba_set_group_admin(
+  '10000000-0000-0000-0000-000000000401',
+  '00000000-0000-0000-0000-000000000402',
+  'appoint'
+);
 
 -- The creator can edit an Event and manage its extensible metadata.
 select public.akiba_update_group_settings(
