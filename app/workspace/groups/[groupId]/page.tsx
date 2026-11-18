@@ -23,17 +23,13 @@ type Member = {
   profile?: { display_name: string | null; username: string; avatar_path: string | null };
 };
 
-const frequencyLabels: Record<string, string> = {
-  one_time: "One-time", weekly: "Weekly", biweekly: "Every two weeks",
-  monthly: "Monthly", quarterly: "Quarterly", annually: "Annually",
-};
 const groupTypeLabels: Record<string, string> = {
-  birthday: "Birthday", wedding: "Wedding", graduation: "Graduation",
+  birthday: "Birthday", wedding: "Wedding", graduation: "Graduation", meeting: "Meeting",
   funeral_bereavement: "Funeral & Bereavement", party_celebration: "Party & Celebration",
   trip_vacation: "Trip & Vacation", community_event: "Community Event", fundraiser: "Fundraiser",
   other_event: "Other Event", rent_housing: "Rent & Housing", education: "Education",
   business_investment: "Business & Investment", land_property: "Land & Property",
-  vehicle_purchase: "Vehicle Purchase", family_support: "Family Support",
+  vehicle_purchase: "Vehicle Purchase", fundraising: "Fundraising", project_purchase: "Project Purchase", family_support: "Family Support",
   shared_savings: "Shared Savings", community_project: "Community Project",
   other_goal: "Other Goal", rotating_savings: "Rotating Savings", table_banking: "Table Banking",
   accumulating_savings: "Accumulating Savings", investment_chama: "Investment Chama", other_chama: "Other Chama",
@@ -57,7 +53,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   if (!user) redirect("/login");
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,event_location,deadline,contribution_frequency,group_image_path,group_plan_code,status,deactivated_at,scheduled_delete_at,created_at").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,event_location,deadline,group_image_path,group_plan_code,status,deactivated_at,scheduled_delete_at,created_at").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
@@ -97,13 +93,13 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const requiredGroupAdmins = plan?.required_group_admins ?? 3;
   const leadershipReady = activeGroupAdminCount >= requiredGroupAdmins;
   const isGroupCreator = membership.role === "group_creator";
-  const purpose = group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal";
-  const typeLabel = groupTypeLabels[group.group_type] ?? "Group";
+  const purposeLabel = group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal";
+  const categoryLabel = groupTypeLabels[group.group_type] ?? "Other";
   const groupImageUrl = group.group_image_path ? supabase.storage.from("group-images").getPublicUrl(group.group_image_path).data.publicUrl : null;
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const target = group.target_amount === null ? null : Number(group.target_amount);
   const firstName = profile.display_name.trim().split(/\\s+/)[0];
-  const primaryDateMeta = group.event_date
+  const primaryDateMeta = group.purpose === "event" && group.event_date
     ? { label: "Date", value: formatDate(group.event_date) }
     : null;
   const deadlineMeta = group.deadline
@@ -155,13 +151,13 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                 <p>{group.description?.trim() || "A shared space for people to come together and make things happen."}</p>
                 <div className="ak-workspace-banner-meta" aria-label="Group details">
                   <div className="ak-workspace-banner-meta-row">
-                    {group.event_location && <span><svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>{group.event_location}</span>}
+                    {group.purpose === "event" && group.event_location && <span><svg aria-hidden="true" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 10c0 5-8 12-8 12S4 15 4 10a8 8 0 1 1 16 0Z" /><circle cx="12" cy="10" r="2.5" /></svg>{group.event_location}</span>}
                     {primaryDateMeta && <span>{primaryDateMeta.label}: {primaryDateMeta.value}</span>}
                     {deadlineMeta && <span>{deadlineMeta.label}: {deadlineMeta.value}</span>}
-                    {group.contribution_frequency && <span>Frequency: {frequencyLabels[String(group.contribution_frequency)] ?? String(group.contribution_frequency)}</span>}
                   </div>
                   <div className="ak-workspace-banner-meta-row">
-                    <span>{typeLabel}</span>
+                    <span>{purposeLabel}</span>
+                    <span>{categoryLabel}</span>
                     {target !== null && <span>Target: {money(target, group.currency_code)}</span>}
                   </div>
                 </div>
@@ -175,7 +171,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <Link href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
             <Link className="" href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat{chatUnreadCount > 0 && <span className="ak-group-tab-unread-badge">{chatUnreadCount > 99 ? "99+" : chatUnreadCount}</span>}</Link>
-            <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
+            <Link href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link>
           </nav>
           {group.status !== "active" && <div className="ak-workspace-card ak-group-deactivated-banner">
             <strong>This group has been deactivated.</strong>
@@ -229,10 +225,12 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <aside className="ak-workspace-side-column">
               <section className="ak-workspace-card ak-workspace-invite"><span className="ak-invite-symbol">＋</span><span className="ak-section-eyebrow">MAKE IT A GROUP EFFORT</span><h2>Bring your people in</h2><p>Invite people, view the membership directory and manage group roles from the Membership area.</p><Link className="ak-membership-open-link" href={`/workspace/groups/${group.id}/membership`}>Open Membership →</Link></section>
               <section className="ak-workspace-card"><div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">AT A GLANCE</span><h2>About this group</h2></div></div><dl className="ak-workspace-details">
-                <div><dt>Category</dt><dd>{purpose}</dd></div><div><dt>Group type</dt><dd>{typeLabel}</dd></div>
-                {group.event_date && <div><dt>Event date</dt><dd>{formatDate(group.event_date)}</dd></div>}
-                {group.deadline && <div><dt>Contribution deadline</dt><dd>{formatDate(group.deadline)}</dd></div>}
-                {group.contribution_frequency && <div><dt>Frequency</dt><dd>{frequencyLabels[String(group.contribution_frequency)] ?? String(group.contribution_frequency)}</dd></div>}
+                <div><dt>Group type</dt><dd>{purposeLabel}</dd></div>
+                <div><dt>Category</dt><dd>{categoryLabel}</dd></div>
+                {group.purpose === "event" && group.event_location && <div><dt>Location</dt><dd>{group.event_location}</dd></div>}
+                {group.purpose === "event" && group.event_date && <div><dt>Event date</dt><dd>{formatDate(group.event_date)}</dd></div>}
+                {group.deadline && <div><dt>Deadline</dt><dd>{formatDate(group.deadline)}</dd></div>}
+                {target !== null && <div><dt>Target amount</dt><dd>{money(target, group.currency_code)}</dd></div>}
                 <div><dt>Currency</dt><dd>{group.currency_code}</dd></div><div><dt>Created</dt><dd>{formatDate(group.created_at)}</dd></div>
               </dl></section>
             </aside>

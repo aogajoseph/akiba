@@ -28,11 +28,13 @@ const catalogue = {
       ["education", "Education", "School fees, tuition and education costs"],
       ["business_investment", "Business & Investment", "Business capital and shared investments"],
       ["land_property", "Land & Property", "Land purchases, construction and property"],
-      ["vehicle_purchase", "Purchase", "Buying a vehicle together"],
+      ["vehicle_purchase", "Vehicle Purchase", "Buying a vehicle together"],
+      ["fundraising", "Fundraising", "Raise money towards a shared goal"],
+      ["project_purchase", "Project Purchase", "Purchase equipment, materials or assets for a project"],
       ["family_support", "Family Support", "Shared family responsibilities and support"],
       ["shared_savings", "Shared Savings", "Saving towards a common financial goal"],
-      ["community_project", "Project", "Collective projects and community needs"],
-      ["other_goal", "Other", "Another shared goal or objective"],
+      ["community_project", "Community Project", "Collective projects and community needs"],
+      ["other_goal", "Other Goal", "Another shared goal or objective"],
     ],
   },
   chama: {
@@ -49,14 +51,6 @@ const catalogue = {
 } as const;
 
 type Category = keyof typeof catalogue;
-const frequencies = [
-  ["one_time", "One-time"],
-  ["weekly", "Weekly"],
-  ["biweekly", "Every two weeks"],
-  ["monthly", "Monthly"],
-  ["quarterly", "Quarterly"],
-  ["annually", "Annually"],
-] as const;
 const steps = [
   { title: "Identity" },
   { title: "Type" },
@@ -73,23 +67,19 @@ export function GroupCreationForm({ error }: { error?: string }) {
   const [groupType, setGroupType] = useState<string>("birthday");
   const [groupName, setGroupName] = useState("");
   const [description, setDescription] = useState("");
-  const [currency, setCurrency] = useState("KES");
+  const currency = "KES";
   const [targetAmount, setTargetAmount] = useState("");
   const [eventDate, setEventDate] = useState("");
   const [eventLocation, setEventLocation] = useState("");
   const [deadline, setDeadline] = useState("");
-  const [frequency, setFrequency] = useState("");
   const types = catalogue[category].types;
   const selectedType = useMemo(() => types.find(([value]) => value === groupType), [types, groupType]);
   const isChama = category === "chama";
   const isEvent = category === "event";
-  const frequencyRequired = isChama && ["rotating_savings", "table_banking", "accumulating_savings"].includes(groupType);
-  const showFrequency = isChama;
 
   function chooseCategory(value: Category) {
     setCategory(value);
     setGroupType(catalogue[value].types[0][0]);
-    setFrequency("");
   }
 
   function continueToNextStep() {
@@ -151,7 +141,7 @@ export function GroupCreationForm({ error }: { error?: string }) {
             </button>
           ))}
         </div>
-        <label><span className="ak-field-heading">{isEvent ? "Event type" : "Goal type"} <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); setFrequency(""); }} required>
+        <label><span className="ak-field-heading">Category <em className="ak-field-meta required">Required</em></span><select name="group_type" value={groupType} onChange={(event) => { setGroupType(event.target.value); }} required>
           {types.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
         </select><small>{selectedType?.[2]}</small></label>
         {isEvent && <label><span className="ak-field-heading">Event location <small className="ak-field-meta">Optional</small></span><input name="event_location" value={eventLocation} onChange={(event) => setEventLocation(event.target.value)} maxLength={200} placeholder="Venue or event location" /></label>}
@@ -159,11 +149,10 @@ export function GroupCreationForm({ error }: { error?: string }) {
 
       <section id="ak-create-step-2" className="ak-create-section" hidden={step !== 2}>
         <div className="ak-create-section-heading"><span>03</span><div><h2>Contributions & timing</h2><p>Only add the details that make sense for this group. You can update optional details later.</p></div></div>
-        <label><span className="ak-field-heading">Group currency <em className="ak-field-meta required">Required</em></span><input name="currency_code" value={currency} onChange={(event) => setCurrency(event.target.value.toUpperCase())} minLength={3} maxLength={3} pattern="[A-Za-z]{3}" required placeholder="e.g. KES" autoCapitalize="characters" /><small>Three-letter currency code, such as KES, USD or GBP.</small></label>
+        <label><span className="ak-field-heading">Group currency</span><input type="hidden" name="currency_code" value="KES" /><input value="KES · Kenyan Shilling" disabled readOnly aria-label="Group currency" /><small>KES is the default and currently supported currency for M-Pesa. Additional currencies will be introduced as payment support expands.</small></label>
         <label><span className="ak-field-heading">Target amount <small className="ak-field-meta">Optional</small></span><input name="target_amount" type="number" min="0.01" step="0.01" value={targetAmount} onChange={(event) => setTargetAmount(event.target.value)} placeholder="e.g. 100000" /><small>A shared target, not an amount each member is automatically required to pay.</small></label>
         {isEvent && <label><span className="ak-field-heading">Event date <small className="ak-field-meta">Optional</small></span><input name="event_date" type="date" value={eventDate} onChange={(event) => setEventDate(event.target.value)} /></label>}
         <label><span className="ak-field-heading">Contribution deadline <small className="ak-field-meta">Optional</small></span><input name="deadline" type="date" value={deadline} onChange={(event) => setDeadline(event.target.value)} /><small>{isEvent ? "When you would ideally like contributions completed. This can differ from the event date." : isChama ? "The date by which the group's contributions should be completed, if applicable." : "When you hope to complete contributions towards this goal."}</small></label>
-        {showFrequency && <label><span className="ak-field-heading">Contribution frequency {frequencyRequired && <em className="ak-field-meta required">Required</em>}</span><select name="contribution_frequency" value={frequency} onChange={(event) => setFrequency(event.target.value)} required={frequencyRequired}><option value="">Choose a frequency</option>{frequencies.filter(([value]) => !frequencyRequired || value !== "one_time").map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select><small>{isChama ? "How often members are expected to contribute under the group's arrangement." : "If contributions will be made regularly, select the expected interval."}</small></label>}
       </section>
 
       <section id="ak-create-step-3" className="ak-create-section ak-create-access" hidden={step !== 3}>
@@ -171,12 +160,12 @@ export function GroupCreationForm({ error }: { error?: string }) {
         <div className="ak-create-review">
           <div><small>GROUP NAME</small><strong>{groupName.trim() || "Not provided"}</strong></div>
           {description.trim() && <div><small>DESCRIPTION</small><span>{description}</span></div>}
-          <div><small>GROUP TYPE</small><strong>{catalogue[category].label} · {selectedType?.[1]}</strong></div>
+          <div><small>GROUP TYPE</small><strong>{catalogue[category].label}</strong></div>
+          <div><small>CATEGORY</small><strong>{selectedType?.[1]}</strong></div>
           <div><small>CURRENCY</small><strong>{currency || "KES"}</strong></div>
           {targetAmount && <div><small>TARGET AMOUNT</small><strong>{currency} {Number(targetAmount).toLocaleString()}</strong></div>}
           {eventDate && <div><small>EVENT DATE</small><strong>{eventDate}</strong></div>}
           {deadline && <div><small>CONTRIBUTION DEADLINE</small><strong>{deadline}</strong></div>}
-          {frequency && <div><small>CONTRIBUTION FREQUENCY</small><strong>{frequencies.find(([value]) => value === frequency)?.[1] ?? frequency}</strong></div>}
         </div>
         <div className="ak-private-note"><span>♙</span><div><strong>Private group</strong><small>Only the people invited to this group will have access.</small></div></div>
         <p className="ak-create-footnote">As the Group Creator, you must appoint three Group Admins before the group can start receiving contributions.</p>
