@@ -136,8 +136,8 @@ begin
   else
     if p_group_type not in (
       'rent_housing', 'education', 'business_investment', 'land_property',
-      'vehicle_purchase', 'family_support', 'shared_savings',
-      'community_project', 'other_goal'
+      'vehicle_purchase', 'fundraising', 'project_purchase', 'family_support',
+      'shared_savings', 'community_project', 'other_goal'
     ) then
       raise exception 'Choose a valid Goal category';
     end if;
