@@ -19,14 +19,6 @@ type Props = {
   searchParams?: Promise<{ saved?: string; error?: string }>;
 };
 
-type CustomFieldRow = {
-  id: string;
-  label: string;
-  field_type: "text" | "number" | "date" | "url";
-  value: string;
-  display_order: number;
-};
-
 function initials(value: string) {
   return value.trim().split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "A";
 }
@@ -60,13 +52,7 @@ export default async function GroupSettingsPage({ params, searchParams }: Props)
 
   const isCreator = group.created_by === user.id && membership.role === "group_creator";
   const isSupportedGroup = group.purpose === "event" || group.purpose === "goal";
-  const [customMetadataResult, currencyLockResult, groupUnreadRows, notificationUnreadCount, notificationPreview] = await Promise.all([
-    isCreator && isSupportedGroup
-      ? supabase.from("akiba_group_custom_metadata")
-          .select("id,label,field_type,value,display_order")
-          .eq("group_id", group.id)
-          .order("display_order", { ascending: true })
-      : Promise.resolve({ data: [] as CustomFieldRow[], error: null }),
+  const [currencyLockResult, groupUnreadRows, notificationUnreadCount, notificationPreview] = await Promise.all([
     isCreator && isSupportedGroup && group.status === "active"
       ? supabase.rpc("akiba_group_currency_is_locked", { p_group_id: group.id })
       : Promise.resolve({ data: true, error: null }),
@@ -75,8 +61,6 @@ export default async function GroupSettingsPage({ params, searchParams }: Props)
     supabase.rpc("akiba_list_my_group_notifications", { p_limit: 5 }),
   ]);
 
-  const metadataError = Boolean(customMetadataResult.error);
-  const customMetadataRows = (customMetadataResult.data ?? []) as CustomFieldRow[];
   const currencyLocked = Boolean(currencyLockResult.error) || currencyLockResult.data !== false;
   const chatUnreadCount = Number(((groupUnreadRows.data ?? []) as { group_id: string; unread_count: number | string }[]).find((row) => row.group_id === group.id)?.unread_count ?? 0);
   const notificationCount = Number(notificationUnreadCount.data ?? 0);
@@ -166,14 +150,6 @@ export default async function GroupSettingsPage({ params, searchParams }: Props)
                 <p>Deactivated groups cannot be edited. Historical group information remains available during the retention period.</p>
               </div>
             </section>
-          ) : metadataError ? (
-            <section className="ak-workspace-card ak-settings-access-warning" role="alert">
-              <span className="ak-settings-warning-icon">!</span>
-              <div>
-                <h2>Group details could not be loaded</h2>
-                <p>Refresh the page and try again. Your existing group information has not been changed.</p>
-              </div>
-            </section>
           ) : (
             <GroupSettingsForm
               group={{
@@ -188,7 +164,6 @@ export default async function GroupSettingsPage({ params, searchParams }: Props)
                 event_location: group.event_location,
                 deadline: group.deadline,
               }}
-              customFields={customMetadataRows.map(({ label, field_type, value }) => ({ label, field_type, value }))}
               imageUrl={groupImageUrl}
               currencyLocked={currencyLocked}
             />
