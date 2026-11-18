@@ -8,12 +8,12 @@ import { createClient } from "@/lib/supabase/server";
 
 type Props = {
   params: Promise<{ token: string }>;
-  searchParams: Promise<{ error?: string; requested?: string }>;
+  searchParams: Promise<{ error?: string }>;
 };
 
 export default async function InvitationPage({ params, searchParams }: Props) {
   const { token } = await params;
-  const { error: actionError, requested } = await searchParams;
+  const { error: actionError } = await searchParams;
   if (!/^[0-9a-f]{64}$/.test(token)) notFound();
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -128,7 +128,7 @@ export default async function InvitationPage({ params, searchParams }: Props) {
         ) : (
           <div className="auth-form">
             {isReusableLink ? (
-              joinRequestPending || requested === "1" ? (
+              joinRequestPending ? (
                 <div className="auth-message" role="status">Your request to join this group has been submitted. You will become a member only after the Group Creator approves it.</div>
               ) : (
                 <>
