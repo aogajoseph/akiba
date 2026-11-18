@@ -8,7 +8,7 @@ create table if not exists public.akiba_group_join_requests (
     check (status in ('pending', 'approved', 'rejected')),
   created_at timestamptz not null default now(),
   reviewed_at timestamptz,
-  reviewed_by uuid references auth.users(id) on delete set null,
+  reviewed_by uuid references auth.users(id) on delete restrict,
   constraint akiba_group_join_requests_review_state_check check (
     (status = 'pending' and reviewed_at is null and reviewed_by is null)
     or (status in ('approved', 'rejected') and reviewed_at is not null and reviewed_by is not null)
