@@ -71,10 +71,6 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
     supabase.rpc("akiba_list_my_group_notifications", { p_limit: 5 }),
   ]);
   if (!membership || membership.status !== "active") notFound();
-  const { data: customMetadataRows } = await supabase.from("akiba_group_custom_metadata")
-    .select("id,label,field_type,value,display_order")
-    .eq("group_id", group.id)
-    .order("display_order", { ascending: true });
   const chatUnreadCount = Number(((groupUnreadRows ?? []) as { group_id: string; unread_count: number | string }[]).find((row) => row.group_id === group.id)?.unread_count ?? 0);
   const notificationCount = Number(notificationUnreadCount ?? 0);
   const notificationRows = (notificationPreview ?? []) as NotificationBellItem[];
@@ -235,7 +231,6 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                 {group.purpose === "event" && group.event_date && <div><dt>Event date</dt><dd>{formatDate(group.event_date)}</dd></div>}
                 {group.deadline && <div><dt>Deadline</dt><dd>{formatDate(group.deadline)}</dd></div>}
                 {target !== null && <div><dt>Target amount</dt><dd>{money(target, group.currency_code)}</dd></div>}
-                {customMetadataRows?.map((field) => <div key={field.id}><dt>{field.label}</dt><dd>{field.value}</dd></div>)}
                 <div><dt>Currency</dt><dd>{group.currency_code}</dd></div><div><dt>Created</dt><dd>{formatDate(group.created_at)}</dd></div>
               </dl></section>
             </aside>
