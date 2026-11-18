@@ -23,6 +23,15 @@ create index if not exists akiba_group_join_requests_group_pending_idx
   where status = 'pending';
 
 alter table public.akiba_group_join_requests enable row level security;
+
+alter table public.akiba_group_notifications
+  drop constraint if exists akiba_group_notifications_event_type_check,
+  add constraint akiba_group_notifications_event_type_check check (event_type in (
+    'invitation_received', 'invitation_accepted', 'invitation_declined', 'invitation_cancelled',
+    'membership_joined', 'membership_left', 'membership_removed',
+    'group_admin_appointed', 'group_admin_demoted', 'group_deactivated',
+    'membership_request_received', 'membership_request_approved', 'membership_request_rejected'
+  ));
 drop policy if exists "requesters and group creators read join requests" on public.akiba_group_join_requests;
 create policy "requesters and group creators read join requests"
   on public.akiba_group_join_requests for select to authenticated
@@ -100,6 +109,15 @@ begin
   values (target_group_id, actor_id, 'membership_request_submitted',
     'A person requested to join the group.');
 
+  insert into public.akiba_group_notifications
+    (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
+  values
+    (group_row.created_by, target_group_id, actor_id, request_id,
+     'membership_request_received', 'New membership request',
+     'Someone requested to join your group.',
+     '/workspace/groups/' || target_group_id::text || '/membership')
+  on conflict (user_id, source_event_id) do nothing;
+
   return request_id;
 end;
 $fn$;
@@ -175,6 +193,15 @@ begin
     insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
     values (group_row.id, actor_id, 'membership_join_request_approved',
       'The Group Creator approved a membership request.');
+
+    insert into public.akiba_group_notifications
+      (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
+    values
+      (request_row.user_id, group_row.id, actor_id, request_row.id,
+       'membership_request_approved', 'Membership request approved',
+       'Your request was approved. You are now a member of the group.',
+       '/workspace/groups/' || group_row.id::text)
+    on conflict (user_id, source_event_id) do nothing;
   else
     update public.akiba_group_join_requests
     set status = 'rejected', reviewed_at = now(), reviewed_by = actor_id
@@ -183,6 +210,15 @@ begin
     insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
     values (group_row.id, actor_id, 'membership_join_request_rejected',
       'The Group Creator declined a membership request.');
+
+    insert into public.akiba_group_notifications
+      (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
+    values
+      (request_row.user_id, group_row.id, actor_id, request_row.id,
+       'membership_request_rejected', 'Membership request not approved',
+       'Your request to join this group was not approved.',
+       '/workspace/groups/' || group_row.id::text)
+    on conflict (user_id, source_event_id) do nothing;
   end if;
 
   return group_row.id;
