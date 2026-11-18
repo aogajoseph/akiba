@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from "react";
 import { updateGroupSettings } from "@/app/workspace/actions";
 
 type GroupPurpose = "event" | "goal";
@@ -35,6 +35,14 @@ export default function GroupSettingsForm({
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const [removeImage, setRemoveImage] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const selectedImagePreview = useMemo(
+    () => selectedImage ? URL.createObjectURL(selectedImage) : null,
+    [selectedImage],
+  );
+  useEffect(() => () => {
+    if (selectedImagePreview) URL.revokeObjectURL(selectedImagePreview);
+  }, [selectedImagePreview]);
   const [currency, setCurrency] = useState(currencyLocked ? group.currency_code : "KES");
   const isEvent = group.purpose === "event";
 
@@ -62,9 +70,27 @@ export default function GroupSettingsForm({
           <label className="ak-settings-field"><span>Description <small>Optional</small></span><textarea name="description" defaultValue={group.description ?? ""} maxLength={500} rows={4} placeholder="Tell members what this group is about." /><small>Up to 500 characters.</small></label>
           <div className="ak-settings-field">
             <span>Group image <small>Optional</small></span>
-            {imageUrl && !removeImage && <div className="ak-settings-image-preview"><img src={imageUrl} alt={group.name + " group"} /><button type="button" onClick={() => setRemoveImage(true)}>Remove current image</button></div>}
+            {selectedImagePreview ? (
+              <div className="ak-settings-image-preview">
+                <img src={selectedImagePreview} alt="Preview of the new group image" />
+                <p className="ak-settings-inline-note">New image preview · this image will be uploaded when you save.</p>
+              </div>
+            ) : imageUrl && !removeImage ? (
+              <div className="ak-settings-image-preview">
+                <img src={imageUrl} alt={group.name + " group"} />
+                <button type="button" onClick={() => setRemoveImage(true)}>Remove current image</button>
+              </div>
+            ) : null}
             {removeImage && <p className="ak-settings-inline-note">The current image will be removed when you save.</p>}
-            <input name="group_image" type="file" accept="image/png,image/jpeg,image/webp" onChange={() => setRemoveImage(false)} />
+            <input
+              name="group_image"
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              onChange={(event) => {
+                setSelectedImage(event.target.files?.[0] ?? null);
+                setRemoveImage(false);
+              }}
+            />
             <small>JPG, PNG or WebP · maximum 5 MB. Uploading a new image replaces the current one.</small>
           </div>
         </div>
