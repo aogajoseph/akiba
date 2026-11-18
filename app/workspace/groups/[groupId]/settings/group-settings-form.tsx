@@ -53,10 +53,6 @@ const categories: Record<GroupPurpose, { value: string; label: string }[]> = {
   ],
 };
 
-function categoryLabel(purpose: GroupPurpose, value: string) {
-  return categories[purpose].find((item) => item.value === value)?.label ?? value;
-}
-
 export default function GroupSettingsForm({
   group,
   customFields: initialFields,
