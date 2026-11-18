@@ -34,7 +34,7 @@ const catalogue = {
       ["family_support", "Family Support", "Shared family responsibilities and support"],
       ["shared_savings", "Shared Savings", "Saving towards a common financial goal"],
       ["community_project", "Community Project", "Collective projects and community needs"],
-      ["other_goal", "Other", "Another shared goal or objective"],
+      ["other_goal", "Other Goal", "Another shared goal or objective"],
     ],
   },
   chama: {
