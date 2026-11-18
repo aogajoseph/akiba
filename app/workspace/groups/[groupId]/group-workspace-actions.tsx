@@ -6,11 +6,9 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 
 export default function GroupWorkspaceActions({
   groupName,
-  isCreator,
   invitationUrl,
 }: {
   groupName: string;
-  isCreator: boolean;
   invitationUrl: string | null;
 }) {
   const [message, setMessage] = useState("");
@@ -22,7 +20,20 @@ export default function GroupWorkspaceActions({
       return;
     }
     try {
-      await navigator.clipboard.writeText(invitationUrl);
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(invitationUrl);
+      } else {
+        const field = document.createElement("textarea");
+        field.value = invitationUrl;
+        field.setAttribute("readonly", "");
+        field.style.position = "fixed";
+        field.style.opacity = "0";
+        document.body.appendChild(field);
+        field.select();
+        const copied = document.execCommand("copy");
+        field.remove();
+        if (!copied) throw new Error("Clipboard unavailable");
+      }
       setMessage("Group invitation link copied. Share it on any platform.");
       setMenuOpen(false);
     } catch {
@@ -62,7 +73,7 @@ export default function GroupWorkspaceActions({
       </div>
       {menuOpen && (
         <div className="ak-workspace-more-menu" role="menu">
-          <button type="button" role="menuitem" onClick={copyInvitationLink}>Copy group link</button>
+          <button type="button" role="menuitem" onClick={copyInvitationLink}>Copy Group link</button>
         </div>
       )}
       {message && <div className="ak-workspace-action-message" role="status">{message}<button type="button" aria-label="Dismiss" onClick={() => setMessage("")}>×</button></div>}
