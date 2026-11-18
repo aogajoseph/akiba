@@ -75,64 +75,11 @@ export async function createGroup(formData: FormData) {
 }
 
 
-type GroupCustomFieldInput = {
-  label: string;
-  field_type: "text" | "number" | "date" | "url";
-  value: string;
-};
-
 function isValidGroupDate(value: string) {
   if (!value) return true;
   if (!/^\\d{4}-\\d{2}-\\d{2}$/.test(value)) return false;
   const parsed = new Date(value + "T00:00:00.000Z");
   return Number.isFinite(parsed.getTime()) && parsed.toISOString().slice(0, 10) === value;
-}
-
-function validateGroupCustomFields(value: string): GroupCustomFieldInput[] | null {
-  let parsed: unknown;
-  try {
-    parsed = JSON.parse(value || "[]");
-  } catch {
-    return null;
-  }
-  if (!Array.isArray(parsed) || parsed.length > 10) return null;
-
-  const labels = new Set<string>();
-  const reservedLabels = new Set([
-    "group name", "group type", "category", "group image", "description",
-    "location", "event date", "deadline", "target amount", "currency",
-    "contribution frequency",
-  ]);
-  const fields: GroupCustomFieldInput[] = [];
-  for (const item of parsed) {
-    if (!item || typeof item !== "object") return null;
-    const candidate = item as Record<string, unknown>;
-    const label = typeof candidate.label === "string" ? candidate.label.trim() : "";
-    const fieldType = candidate.field_type;
-    const fieldValue = typeof candidate.value === "string" ? candidate.value.trim() : "";
-    if (!label || label.length > 40 || !fieldValue || fieldValue.length > 500 ||
-        !["text", "number", "date", "url"].includes(String(fieldType))) return null;
-    const normalizedLabel = label.toLocaleLowerCase();
-    if (reservedLabels.has(normalizedLabel) || labels.has(normalizedLabel)) return null;
-    labels.add(normalizedLabel);
-
-    if (fieldType === "number" && !/^-?\\d+(?:\\.\\d{1,2})?$/.test(fieldValue)) return null;
-    if (fieldType === "date" && !isValidGroupDate(fieldValue)) return null;
-    if (fieldType === "url") {
-      try {
-        const url = new URL(fieldValue);
-        if (!["http:", "https:"].includes(url.protocol)) return null;
-      } catch {
-        return null;
-      }
-    }
-    fields.push({
-      label,
-      field_type: fieldType as GroupCustomFieldInput["field_type"],
-      value: fieldValue,
-    });
-  }
-  return fields;
 }
 
 export async function updateGroupSettings(formData: FormData) {
@@ -145,7 +92,6 @@ export async function updateGroupSettings(formData: FormData) {
   const deadline = String(formData.get("deadline") ?? "").trim();
   const targetRaw = String(formData.get("target_amount") ?? "").trim();
   const currencyCode = String(formData.get("currency_code") ?? "").trim().toUpperCase();
-  const customFields = validateGroupCustomFields(String(formData.get("custom_fields") ?? "[]"));
   const image = formData.get("group_image");
   const removeImage = String(formData.get("remove_group_image") ?? "") === "true";
   const targetAmount = targetRaw ? Number(targetRaw) : null;
@@ -156,8 +102,8 @@ export async function updateGroupSettings(formData: FormData) {
       !/^[A-Z]{3}$/.test(currencyCode) ||
       (targetRaw !== "" && (!Number.isFinite(targetAmount) || (targetAmount ?? 0) <= 0 || (targetAmount ?? 0) > 999999999999.99)) ||
       !isValidGroupDate(eventDate) || !isValidGroupDate(deadline) ||
-      eventLocation.length > 200 || !customFields) {
-    redirect(settingsPath + "?error=" + encodeURIComponent("Please review the group details and additional fields."));
+      eventLocation.length > 200) {
+    redirect(settingsPath + "?error=" + encodeURIComponent("Please review the group details."));
   }
 
   const supabase = await createClient();
@@ -229,7 +175,6 @@ export async function updateGroupSettings(formData: FormData) {
     p_target_amount: targetAmount,
     p_currency_code: currencyCode,
     p_group_image_path: imagePath,
-    p_custom_fields: customFields,
   });
 
   if (updateError) {
@@ -242,9 +187,7 @@ export async function updateGroupSettings(formData: FormData) {
           ? "Deactivated groups are read-only."
           : updateError.message.toLowerCase().includes("only the group creator")
             ? "Only the Group Creator can update group settings."
-            : updateError.message.toLowerCase().includes("additional detail")
-              ? updateError.message
-              : "The group settings could not be saved. Please review the details and try again.";
+            : "The group settings could not be saved. Please review the details and try again.";
     redirect(settingsPath + "?error=" + encodeURIComponent(message));
   }
 
