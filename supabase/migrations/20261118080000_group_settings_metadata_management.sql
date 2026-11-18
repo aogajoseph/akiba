@@ -1,6 +1,26 @@
 -- Group Settings: creator-only editing and extensible group metadata.
 begin;
 
+-- Keep the Group Type (Event or Goal) separate from its editable Category.
+-- Goal categories include fundraising and project-purchase use cases.
+alter table public.akiba_groups
+  drop constraint if exists akiba_groups_group_type_check;
+
+alter table public.akiba_groups
+  add constraint akiba_groups_group_type_check check (
+    (purpose = 'event' and group_type in (
+      'birthday','wedding','graduation','funeral_bereavement','party_celebration',
+      'trip_vacation','community_event','meeting','fundraiser','other_event'
+    )) or
+    (purpose = 'goal' and group_type in (
+      'rent_housing','education','business_investment','land_property','vehicle_purchase',
+      'fundraising','project_purchase','family_support','shared_savings','community_project','other_goal'
+    )) or
+    (purpose = 'chama' and group_type in (
+      'rotating_savings','table_banking','accumulating_savings','investment_chama','other_chama'
+    ))
+  );
+
 create table if not exists public.akiba_group_custom_metadata (
   id uuid primary key default gen_random_uuid(),
   group_id uuid not null references public.akiba_groups(id) on delete cascade,
