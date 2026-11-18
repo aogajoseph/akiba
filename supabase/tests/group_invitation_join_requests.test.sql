@@ -8,6 +8,13 @@ values
   ('00000000-0000-0000-0000-000000000315', 'authenticated', 'authenticated', 'requester-315@akiba.test', '', now(), now(), now())
 on conflict (id) do nothing;
 
+insert into public.akiba_profiles(user_id, username, display_name)
+values
+  ('00000000-0000-0000-0000-000000000313', 'creator_313', 'Creator 313'),
+  ('00000000-0000-0000-0000-000000000314', 'requester_314', 'Requester 314'),
+  ('00000000-0000-0000-0000-000000000315', 'requester_315', 'Requester 315')
+on conflict (user_id) do update set display_name = excluded.display_name;
+
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000313', true);
 insert into public.akiba_groups (id, name, purpose, group_type, currency_code, created_by)
 values ('10000000-0000-0000-0000-000000000015', 'Approval link test', 'goal', 'shared_savings', 'KES',
