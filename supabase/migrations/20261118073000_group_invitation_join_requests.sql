@@ -124,7 +124,7 @@ declare
   active_count integer;
 begin
   if actor_id is null then raise exception 'Authentication is required'; end if;
-  if p_request_id is null or p_decision not in ('approve', 'reject') then
+  if p_request_id is null or p_decision is null or p_decision not in ('approve', 'reject') then
     raise exception 'Invalid membership request decision';
   end if;
 
