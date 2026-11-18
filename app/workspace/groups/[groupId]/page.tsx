@@ -96,7 +96,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const isGroupCreator = membership.role === "group_creator";
   let groupInvitationUrl: string | null = null;
   const configuredSiteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
-  if (configuredSiteUrl && group.status === "active" && members.length < (plan?.max_members ?? 100)) {
+  if (configuredSiteUrl && group.status === "active" && !membersError && members.length < (plan?.max_members ?? 100)) {
     try {
       const siteUrl = new URL(configuredSiteUrl);
       if (siteUrl.protocol === "https:" || siteUrl.hostname === "localhost") {
