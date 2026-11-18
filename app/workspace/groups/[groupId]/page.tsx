@@ -29,7 +29,7 @@ const groupTypeLabels: Record<string, string> = {
   trip_vacation: "Trip & Vacation", community_event: "Community Event", fundraiser: "Fundraiser",
   other_event: "Other Event", rent_housing: "Rent & Housing", education: "Education",
   business_investment: "Business & Investment", land_property: "Land & Property",
-  vehicle_purchase: "Vehicle Purchase", family_support: "Family Support",
+  vehicle_purchase: "Vehicle Purchase", fundraising: "Fundraising", project_purchase: "Project Purchase", family_support: "Family Support",
   shared_savings: "Shared Savings", community_project: "Community Project",
   other_goal: "Other Goal", rotating_savings: "Rotating Savings", table_banking: "Table Banking",
   accumulating_savings: "Accumulating Savings", investment_chama: "Investment Chama", other_chama: "Other Chama",
