@@ -42,12 +42,16 @@ export default async function InvitationPage({ params, searchParams }: Props) {
 
   const inviterId = reusableLink?.created_by ?? invitation?.inviter_id;
   const [{ data: group }, { data: inviter }] = await Promise.all([
-    admin.from("akiba_groups").select("id,name,description,status").eq("id", groupId).maybeSingle(),
+    admin.from("akiba_groups").select("id,name,purpose,group_type,description,status,group_image_path").eq("id", groupId).maybeSingle(),
     inviterId
       ? admin.from("akiba_profiles").select("display_name,username").eq("user_id", inviterId).maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
   if (!group) notFound();
+  const groupImageUrl = group.group_image_path
+    ? admin.storage.from("group-images").getPublicUrl(group.group_image_path).data.publicUrl
+    : null;
+  const groupPurpose = group.purpose === "event" ? "Event" : group.purpose === "goal" ? "Goal" : "Group";
 
   const status = isReusableLink
     ? group.status === "active" ? "pending" : "unavailable"
@@ -89,7 +93,9 @@ export default async function InvitationPage({ params, searchParams }: Props) {
       <section className="auth-card">
         <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
         <div className="workspace-eyebrow">{isReusableLink ? "Join this group" : "You're invited"}</div>
+        {groupImageUrl && <img src={groupImageUrl} alt="" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 12, margin: "12px 0" }} />}
         <h1>{group.name}</h1>
+        <p className="auth-switch">{groupPurpose}</p>
         <p>{group.description?.trim() || "You've been invited to join a group on Akiba."}</p>
         <p className="auth-switch">{isReusableLink ? "Shared by " : "Invited by "}{inviterName}</p>
         {actionError && !accountMismatchError && <p className="auth-error" role="alert">{actionError}</p>}
