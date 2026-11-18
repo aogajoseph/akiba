@@ -12,6 +12,33 @@ insert into public.akiba_payment_providers (id, provider_code, display_name)
 values ('20000000-0000-0000-0000-000000000401', 'group_settings_test', 'Group Settings Test')
 on conflict (id) do nothing;
 
+do $test$
+begin
+  if not has_function_privilege(
+    'authenticated',
+    'public.akiba_update_group_settings(uuid,text,text,text,text,date,date,numeric,text,text,jsonb)',
+    'EXECUTE'
+  ) then
+    raise exception 'Authenticated users cannot execute the group settings RPC';
+  end if;
+  if has_function_privilege(
+    'anon',
+    'public.akiba_update_group_settings(uuid,text,text,text,text,date,date,numeric,text,text,jsonb)',
+    'EXECUTE'
+  ) then
+    raise exception 'Anonymous users can execute the group settings RPC';
+  end if;
+  if not has_table_privilege('authenticated', 'public.akiba_group_custom_metadata', 'SELECT') then
+    raise exception 'Authenticated group members cannot read custom metadata';
+  end if;
+  if has_table_privilege('authenticated', 'public.akiba_group_custom_metadata', 'INSERT')
+     or has_table_privilege('authenticated', 'public.akiba_group_custom_metadata', 'UPDATE')
+     or has_table_privilege('authenticated', 'public.akiba_group_custom_metadata', 'DELETE') then
+    raise exception 'Authenticated users have direct write privileges on custom metadata';
+  end if;
+end;
+$test$;
+
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000401', true);
 
 insert into public.akiba_groups
