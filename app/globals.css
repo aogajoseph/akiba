@@ -1416,3 +1416,7 @@
   .ak-settings-save-row{align-items:stretch;flex-direction:column}
   .ak-settings-save-row .workspace-primary{width:100%}
 }
+
+.ak-settings-custom-field-actions{display:flex;align-items:center;gap:8px}
+.ak-settings-custom-field-actions button:not(:last-child){display:grid;place-items:center;width:25px;height:25px;border:1px solid #e6e7ee;border-radius:6px;background:#fff;color:#68708a;font-size:12px}
+.ak-settings-custom-field-actions button:disabled{opacity:.35;cursor:not-allowed}
