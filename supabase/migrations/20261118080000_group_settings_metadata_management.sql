@@ -23,7 +23,7 @@ create policy "active members read group custom metadata"
   on public.akiba_group_custom_metadata for select to authenticated
   using (akiba_private.is_active_group_member(group_id));
 
-revoke all on public.akiba_group_custom_metadata from anon, authenticated;
+revoke all on public.akiba_group_custom_metadata from public, anon, authenticated;
 grant select on public.akiba_group_custom_metadata to authenticated;
 
 comment on table public.akiba_group_custom_metadata is
