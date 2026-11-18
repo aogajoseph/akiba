@@ -1377,19 +1377,8 @@
 .ak-settings-readonly small{color:#9298aa;font-size:9px;font-weight:400}
 .ak-settings-image-preview{display:flex;align-items:center;gap:12px}
 .ak-settings-image-preview img{width:66px;height:66px;border:1px solid #e8e8ef;border-radius:10px;object-fit:cover}
-.ak-settings-image-preview button,.ak-settings-custom-field-heading button{border:0;background:none;color:#b33c68;font-size:9px;font-weight:700;cursor:pointer}
 .ak-settings-inline-note{margin:0;color:#b33c68;font-size:9px}
-.ak-settings-empty-fields{padding:18px;border:1px dashed #e2e4ec;border-radius:9px;background:#fcfbfd}
-.ak-settings-empty-fields strong{color:#424863;font-size:10px}
-.ak-settings-empty-fields p{margin:5px 0 0;color:#9298aa;font-size:9px;line-height:1.5}
-.ak-settings-custom-fields{display:grid;gap:10px}
-.ak-settings-custom-field{padding:13px;border:1px solid #ececf1;border-radius:10px;background:#fcfcfd}
-.ak-settings-custom-field-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
-.ak-settings-custom-field-heading strong{color:#424863;font-size:10px}
-.ak-settings-custom-field-grid{display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:10px}
 .ak-settings-custom-value{grid-column:auto}
-.ak-settings-add-field{justify-self:start;min-height:38px;padding:9px 13px;border:1px solid #dfe7e2;border-radius:8px;background:#f6faf7;color:#176b50;font-size:10px;font-weight:700;cursor:pointer}
-.ak-settings-add-field:disabled{opacity:.5;cursor:not-allowed}
 .ak-settings-save-row{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:4px 2px 12px}
 .ak-settings-save-row p{margin:0;color:#8991a9;font-size:9px}
 .ak-settings-save-row .workspace-primary{min-width:150px}
@@ -1401,7 +1390,6 @@
 @media(max-width:760px){
   .ak-settings-page-heading{align-items:flex-start;flex-direction:column}
   .ak-settings-fields{grid-template-columns:1fr}
-  .ak-settings-custom-field-grid{grid-template-columns:1fr 1fr}
   .ak-settings-custom-value{grid-column:1/-1}
 }
 @media(max-width:640px){
@@ -1411,12 +1399,8 @@
   .ak-settings-page-image{width:52px;height:52px;flex-basis:52px}
   .ak-settings-page-heading h1{font-size:19px}
   .ak-settings-section{padding:15px}
-  .ak-settings-custom-field-grid{grid-template-columns:1fr}
   .ak-settings-custom-value{grid-column:auto}
   .ak-settings-save-row{align-items:stretch;flex-direction:column}
   .ak-settings-save-row .workspace-primary{width:100%}
 }
 
-.ak-settings-custom-field-actions{display:flex;align-items:center;gap:8px}
-.ak-settings-custom-field-actions button:not(:last-child){display:grid;place-items:center;width:25px;height:25px;border:1px solid #e6e7ee;border-radius:6px;background:#fff;color:#68708a;font-size:12px}
-.ak-settings-custom-field-actions button:disabled{opacity:.35;cursor:not-allowed}
