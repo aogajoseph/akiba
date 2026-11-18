@@ -114,7 +114,7 @@ export default function GroupSettingsForm({
         field_type,
         value,
       }))));
-      updateGroupSettings(formData);
+      return updateGroupSettings(formData);
     });
   }
 
