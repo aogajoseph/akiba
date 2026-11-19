@@ -38,6 +38,7 @@ create index if not exists akiba_group_deletion_storage_jobs_pending_idx
   where status in ('pending','failed');
 alter table public.akiba_group_deletion_storage_jobs enable row level security;
 revoke all on public.akiba_group_deletion_storage_jobs from public, anon, authenticated;
+grant all on public.akiba_group_deletion_storage_jobs to service_role;
 
 -- One authoritative financial snapshot is shared by deactivation, hard deletion,
 -- reactivation decisions and the six-month retention worker.
