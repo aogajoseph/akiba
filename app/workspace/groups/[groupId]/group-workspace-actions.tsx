@@ -4,16 +4,23 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
+import { setGroupNotificationsMuted } from "@/app/workspace/actions";
 
 export default function GroupWorkspaceActions({
+  groupId,
   groupName,
   invitationUrl,
+  initialNotificationsMuted,
 }: {
+  groupId: string;
   groupName: string;
   invitationUrl: string | null;
+  initialNotificationsMuted: boolean;
 }) {
   const [message, setMessage] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
+  const [notificationsMuted, setNotificationsMuted] = useState(initialNotificationsMuted);
+  const [savingMute, setSavingMute] = useState(false);
   const [menuPosition, setMenuPosition] = useState<{ top: number; right: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
@@ -72,6 +79,22 @@ export default function GroupWorkspaceActions({
     }
   }
 
+  async function toggleNotifications() {
+    if (savingMute) return;
+    const nextMuted = !notificationsMuted;
+    setSavingMute(true);
+    try {
+      const result = await setGroupNotificationsMuted(groupId, nextMuted);
+      if (result.success) setNotificationsMuted(result.isMuted);
+      setMessage(result.message);
+      setMenuOpen(false);
+    } catch {
+      setMessage("Notification settings could not be updated. Please try again.");
+    } finally {
+      setSavingMute(false);
+    }
+  }
+
   async function shareGroup() {
     if (!invitationUrl) {
       setMessage("A group invitation link is not available right now.");
@@ -105,6 +128,9 @@ export default function GroupWorkspaceActions({
       {menuOpen && menuPosition && typeof document !== "undefined" && createPortal(
         <div ref={menuRef} className="ak-workspace-more-menu" style={menuPosition} role="menu">
           <button type="button" role="menuitem" onClick={copyInvitationLink}>Copy Group link</button>
+          <button type="button" role="menuitem" onClick={toggleNotifications} disabled={savingMute} aria-busy={savingMute}>
+            {savingMute ? "Saving…" : notificationsMuted ? "Unmute notifications" : "Mute notifications"}
+          </button>
         </div>,
         document.body
       )}
