@@ -38,7 +38,7 @@ export default async function ReportGroupPage({ params, searchParams }: Props) {
             {query?.submitted === "1" ? (
               <div className="ak-group-report-success" role="status">
                 <strong>Your report has been submitted.</strong>
-                <p>Thank you for bringing this to our attention. An authorized reviewer can assess the report. Submitting a report does not automatically suspend or remove a group.</p>
+                <p>Thank you for bringing this to our attention. We&apos;re reviewing your report and will take action as soon as possible. Submitting a report does not automatically suspend or remove a group.</p>
                 <Link href={"/workspace/groups/" + group.id}>Return to group</Link>
               </div>
             ) : (
