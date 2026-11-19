@@ -29,11 +29,11 @@ const groupTypeLabels: Record<string, string> = {
   funeral_bereavement: "Funeral & Bereavement", party_celebration: "Party & Celebration",
   trip_vacation: "Trip & Vacation", community_event: "Community Event", fundraiser: "Fundraiser",
   other_event: "Other Event", rent_housing: "Rent & Housing", education: "Education",
-  business_investment: "Business & Investment", land_property: "Land & Property",
-  vehicle_purchase: "Vehicle Purchase", fundraising: "Fundraising", project_purchase: "Project Purchase", family_support: "Family Support",
-  shared_savings: "Shared Savings", community_project: "Community Project",
-  other_goal: "Other Goal", rotating_savings: "Rotating Savings", table_banking: "Table Banking",
-  accumulating_savings: "Accumulating Savings", investment_chama: "Investment Chama", other_chama: "Other Chama",
+  business_investment: "Business & Investment", land_property: "Land & Property", vehicle_purchase: "Vehicle Purchase",
+  fundraising: "Fundraising", project_purchase: "Project Purchase", family_support: "Family Support",
+  shared_savings: "Shared Savings", community_project: "Community Project", other_goal: "Other Goal",
+  rotating_savings: "Rotating Savings", table_banking: "Table Banking", accumulating_savings: "Accumulating Savings",
+  investment_chama: "Investment Chama", other_chama: "Other Chama",
 };
 function initials(value: string) {
   return value.trim().split(/\\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "A";
@@ -54,7 +54,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   if (!user) redirect("/login");
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,event_location,deadline,group_image_path,group_plan_code,status,deactivated_at,scheduled_delete_at,created_at").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,target_amount,event_date,event_location,deadline,group_image_path,group_plan_code,status,deactivated_at,scheduled_delete_at,created_at,created_by").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
@@ -96,7 +96,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const activeGroupAdminCount = members.filter((member) => member.role === "group_admin").length;
   const requiredGroupAdmins = plan?.required_group_admins ?? 3;
   const leadershipReady = activeGroupAdminCount >= requiredGroupAdmins;
-  const isGroupCreator = membership.role === "group_creator";
+  const isGroupCreator = group.created_by === user.id && membership.role === "group_creator";
   let groupInvitationUrl: string | null = null;
   const configuredSiteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
   if (configuredSiteUrl && group.status === "active" && !membersError && members.length < (plan?.max_members ?? 100)) {
@@ -195,7 +195,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}`}><DashboardOutlinedIcon />Overview</Link>
             <Link href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
-            <Link className="" href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat{chatUnreadCount > 0 && <span className="ak-group-tab-unread-badge">{chatUnreadCount > 99 ? "99+" : chatUnreadCount}</span>}</Link>
+            <Link href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat{chatUnreadCount > 0 && <span className="ak-group-tab-unread-badge">{chatUnreadCount > 99 ? "99+" : chatUnreadCount}</span>}</Link>
             <Link href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link>
           </nav>
           {group.status !== "active" && <div className="ak-workspace-card ak-group-deactivated-banner">
@@ -249,6 +249,12 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
 
             <aside className="ak-workspace-side-column">
               <section className="ak-workspace-card ak-workspace-invite"><span className="ak-invite-symbol">＋</span><span className="ak-section-eyebrow">MAKE IT A GROUP EFFORT</span><h2>Bring your people in</h2><p>Invite people, view the membership directory and manage group roles from the Membership area.</p><Link className="ak-membership-open-link" href={`/workspace/groups/${group.id}/membership`}>Open Membership →</Link></section>
+              {isGroupCreator && <section className="ak-workspace-card ak-workspace-quick-links" aria-labelledby="group-quick-links-title">
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">SHORTCUTS</span><h2 id="group-quick-links-title">Quick links</h2></div></div>
+                <Link className="ak-membership-open-link" href={`/workspace/groups/${group.id}/settings`}>
+                  <SettingsOutlinedIcon fontSize="small" /> Edit Group <span aria-hidden="true">→</span>
+                </Link>
+              </section>}
               <section className="ak-workspace-card"><div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">AT A GLANCE</span><h2>About this group</h2></div></div><dl className="ak-workspace-details">
                 <div><dt>Group type</dt><dd>{purposeLabel}</dd></div>
                 <div><dt>Category</dt><dd>{categoryLabel}</dd></div>
