@@ -130,11 +130,11 @@ export default function GroupWorkspaceActions({
       </div>
       {menuOpen && menuPosition && typeof document !== "undefined" && createPortal(
         <div ref={menuRef} className="ak-workspace-more-menu" style={menuPosition} role="menu">
-          {isGroupCreator && <Link href={`/workspace/groups/${groupId}/settings`} role="menuitem" onClick={() => setMenuOpen(false)}>Edit Group</Link>}
           <button type="button" role="menuitem" onClick={copyInvitationLink}>Copy Group link</button>
           <button type="button" role="menuitem" onClick={toggleNotifications} disabled={savingMute} aria-busy={savingMute}>
             {savingMute ? "Saving…" : notificationsMuted ? "Unmute notifications" : "Mute notifications"}
           </button>
+          {isGroupCreator && <Link href={`/workspace/groups/${groupId}/settings`} role="menuitem" onClick={() => setMenuOpen(false)}>Edit Group</Link>}
         </div>,
         document.body
       )}
