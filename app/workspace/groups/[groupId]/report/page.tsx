@@ -34,7 +34,7 @@ export default async function ReportGroupPage({ params, searchParams }: Props) {
           <section className="ak-group-report-panel">
             <span className="ak-section-eyebrow">GROUP SAFETY</span>
             <h1>Report Group</h1>
-            <p className="ak-group-report-intro">You're reporting <strong>{group.name}</strong>. Choose the reason that best describes your concern.</p>
+            <p className="ak-group-report-intro">You&apos;re reporting <strong>{group.name}</strong>. Choose the reason that best describes your concern.</p>
             {query?.submitted === "1" ? (
               <div className="ak-group-report-success" role="status">
                 <strong>Your report has been submitted.</strong>
