@@ -170,7 +170,7 @@ Deno.serve(async (request) => {
         job.bucket_id === "group-images"
           ? new RegExp("^[0-9a-f-]{36}/" + job.group_id + "(?:-[0-9a-f-]{36})?\\.(?:jpg|jpeg|png|webp)$", "i").test(job.object_path)
           : job.bucket_id === "akiba-group-chat-attachments"
-            ? new RegExp("^" + escapedGroupId + "/[0-9a-f-]{36}/[0-9a-f-]{36}\\.[a-z0-9]{1,8}$", "i").test(job.object_path)
+            ? new RegExp("^" + job.group_id + "/[0-9a-f-]{36}/[0-9a-f-]{36}\\.[a-z0-9]{1,8}$", "i").test(job.object_path)
             : /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:jpg|png|webp|pdf)$/i.test(job.object_path);
 
       if (!validPath) {
