@@ -668,3 +668,95 @@ export async function requestGroupJoinByLink(formData: FormData) {
   }
   redirect("/invitations/" + token);
 }
+
+
+export async function submitGroupReport(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const reason = String(formData.get("reason") ?? "");
+  const description = String(formData.get("description") ?? "").trim();
+  const returnPath = "/workspace/groups/" + groupId + "/report";
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) redirect("/workspace/groups");
+  const validReasons = new Set([
+    "fraud_suspected_scam", "impersonation", "harassment_abusive_behaviour",
+    "inappropriate_content", "misleading_group_information",
+    "suspicious_financial_activity", "other",
+  ]);
+  if (!validReasons.has(reason) || description.length > 2000) {
+    redirect(returnPath + "?error=" + encodeURIComponent("Please check the report reason and explanation."));
+  }
+
+  const files = formData.getAll("evidence").filter((value): value is File => value instanceof File && value.size > 0);
+  const allowedEvidence: Record<string, { extension: string; signature: (bytes: Uint8Array) => boolean }> = {
+    "image/jpeg": { extension: "jpg", signature: (b) => b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff },
+    "image/png": { extension: "png", signature: (b) => b.slice(0, 8).join(",") === "137,80,78,71,13,10,26,10" },
+    "image/webp": { extension: "webp", signature: (b) => String.fromCharCode(...b.slice(0, 4)) === "RIFF" && String.fromCharCode(...b.slice(8, 12)) === "WEBP" },
+    "application/pdf": { extension: "pdf", signature: (b) => String.fromCharCode(...b.slice(0, 5)) === "%PDF-" },
+  };
+  if (files.length > 5 || files.some((file) =>
+    file.size > 5 * 1024 * 1024 || !allowedEvidence[file.type]
+  )) {
+    redirect(returnPath + "?error=" + encodeURIComponent("Attach up to five JPG, PNG, WebP or PDF files, each no larger than 5 MB."));
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent(returnPath));
+
+  const { data: reportId, error: createError } = await supabase.rpc("akiba_submit_group_report", {
+    p_group_id: groupId,
+    p_reason: reason,
+    p_description: description,
+  });
+  if (createError || !reportId) {
+    const message = createError?.message.includes("submission limit")
+      ? "You've reached the report submission limit. Please try again later."
+      : createError?.message.includes("already reported")
+        ? "You've already reported this group recently."
+        : "Your report could not be submitted. Please try again.";
+    redirect(returnPath + "?error=" + encodeURIComponent(message));
+  }
+
+  const uploadedPaths: string[] = [];
+  const evidence: { storage_path: string; file_name: string; mime_type: string; file_size: number }[] = [];
+  try {
+    for (const file of files) {
+      const rule = allowedEvidence[file.type];
+      const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+      if (!rule.signature(bytes)) throw new Error("Evidence file content does not match its declared type");
+      const storagePath = reportId + "/" + user.id + "/" + randomUUID() + "." + rule.extension;
+      const { error: uploadError } = await supabase.storage
+        .from("akiba-group-report-evidence")
+        .upload(storagePath, file, { contentType: file.type, upsert: false });
+      if (uploadError) throw uploadError;
+      uploadedPaths.push(storagePath);
+      evidence.push({
+        storage_path: storagePath,
+        file_name: file.name.slice(0, 255),
+        mime_type: file.type,
+        file_size: file.size,
+      });
+    }
+    if (evidence.length) {
+      const { error: registerError } = await supabase.rpc("akiba_register_group_report_evidence", {
+        p_report_id: reportId,
+        p_evidence: evidence,
+      });
+      if (registerError) throw registerError;
+    }
+  } catch (error) {
+    if (uploadedPaths.length) {
+      const { error: cleanupError } = await supabase.storage
+        .from("akiba-group-report-evidence").remove(uploadedPaths);
+      if (cleanupError) console.error("Akiba report evidence cleanup failed", { message: cleanupError.message });
+    }
+    const { error: deleteError } = await supabase.rpc("akiba_delete_incomplete_group_report", { p_report_id: reportId });
+    if (deleteError) console.error("Akiba incomplete report cleanup failed", { message: deleteError.message });
+    console.error("Akiba group report submission failed", {
+      message: error instanceof Error ? error.message : "Evidence upload failed",
+    });
+    redirect(returnPath + "?error=" + encodeURIComponent("Your report could not be completed. Please try again."));
+  }
+
+  revalidatePath("/workspace/groups/" + groupId);
+  redirect(returnPath + "?submitted=1");
+}
