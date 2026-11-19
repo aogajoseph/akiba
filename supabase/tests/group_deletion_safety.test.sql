@@ -29,6 +29,17 @@ begin
     raise exception 'A group with no financial history should be eligible: %', eligibility;
   end if;
 
+  -- Ordinary membership deletion must still be blocked for the Group Creator.
+  begin
+    delete from public.akiba_group_memberships
+    where group_id = '10000000-0000-0000-0000-000000000901'
+      and user_id = '00000000-0000-0000-0000-000000000901';
+    raise exception 'Direct deletion unexpectedly removed the Group Creator membership';
+  exception when others then
+    get stacked diagnostics message = message_text;
+    if message not like '%Group Creator membership cannot be deleted%' then raise; end if;
+  end;
+
   begin
     perform public.akiba_hard_delete_group('10000000-0000-0000-0000-000000000901', 'Wrong name');
     raise exception 'Hard deletion unexpectedly accepted an incorrect group-name confirmation';
