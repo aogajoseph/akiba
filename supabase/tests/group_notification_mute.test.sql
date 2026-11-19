@@ -8,6 +8,8 @@ select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid,
 from generate_series(501, 503) as n
 on conflict (id) do nothing;
 
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000501', true);
+
 insert into public.akiba_groups (id, name, purpose, group_type, currency_code, created_by)
 values (
   '10000000-0000-0000-0000-000000000501',
