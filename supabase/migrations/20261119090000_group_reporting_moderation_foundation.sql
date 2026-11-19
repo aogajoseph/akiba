@@ -45,7 +45,7 @@ create table if not exists public.akiba_group_reports (
   status text not null default 'pending' check (status in ('pending','under_review','resolved','dismissed')),
   assigned_to uuid references public.akiba_internal_moderators(user_id) on delete set null,
   resolution text check (resolution is null or char_length(resolution) <= 2000),
-  reviewed_by uuid references public.akiba_internal_moderators(user_id) on delete set null,
+  reviewed_by uuid references public.akiba_internal_moderators(user_id) on delete restrict,
   created_at timestamptz not null default now(),
   reviewed_at timestamptz,
   constraint akiba_group_report_review_state_check check (
@@ -100,7 +100,7 @@ create policy "internal moderators read report evidence metadata"
 create table if not exists public.akiba_group_report_audit (
   id uuid primary key default gen_random_uuid(),
   report_id uuid not null references public.akiba_group_reports(id) on delete cascade,
-  actor_user_id uuid references auth.users(id) on delete set null,
+  actor_user_id uuid,
   action text not null check (action in ('submitted','assigned','status_changed','resolution_recorded')),
   previous_status text,
   new_status text,
