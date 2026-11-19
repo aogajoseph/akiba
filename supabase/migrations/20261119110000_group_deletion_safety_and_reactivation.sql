@@ -370,6 +370,9 @@ begin
   delete from public.akiba_group_reports where group_id = p_group_id;
   delete from public.akiba_group_chat_attachments where group_id = p_group_id;
   delete from public.akiba_group_message_reactions where group_id = p_group_id;
+  -- Messages can reply to other messages in the same group; clear the self-FK
+  -- before deleting the complete conversation under its RESTRICT constraint.
+  update public.akiba_group_messages set parent_message_id = null where group_id = p_group_id;
   delete from public.akiba_group_messages where group_id = p_group_id;
   delete from public.akiba_group_join_requests where group_id = p_group_id;
   delete from public.akiba_group_invitations where group_id = p_group_id;
@@ -424,6 +427,7 @@ begin
     perform set_config('akiba.system_group_purge', 'on', true);
     delete from public.akiba_group_invitations where group_id = group_row.id;
     delete from public.akiba_group_blocks where group_id = group_row.id;
+    update public.akiba_group_messages set parent_message_id = null where group_id = group_row.id;
     delete from public.akiba_group_messages where group_id = group_row.id;
     delete from public.akiba_group_membership_events where group_id = group_row.id;
     delete from public.akiba_group_activity where group_id = group_row.id;
