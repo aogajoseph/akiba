@@ -80,12 +80,13 @@ values (
   '00000000-0000-0000-0000-000000000901'
 );
 insert into public.akiba_finance_activity_events
-  (group_id, actor_id, event_type, source_type, event_payload)
+  (group_id, actor_id, event_type, source_type, source_id, event_payload)
 values (
   '10000000-0000-0000-0000-000000000902',
   '00000000-0000-0000-0000-000000000901',
   'test_financial_setup',
   'test',
+  '30000000-0000-0000-0000-000000000902',
   '{"test":true}'::jsonb
 );
 
