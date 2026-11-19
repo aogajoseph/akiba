@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import Link from "next/link";
 import ShareOutlinedIcon from "@mui/icons-material/ShareOutlined";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 import { setGroupNotificationsMuted } from "@/app/workspace/actions";
@@ -11,11 +12,13 @@ export default function GroupWorkspaceActions({
   groupName,
   invitationUrl,
   initialNotificationsMuted,
+  isGroupCreator,
 }: {
   groupId: string;
   groupName: string;
   invitationUrl: string | null;
   initialNotificationsMuted: boolean;
+  isGroupCreator: boolean;
 }) {
   const [message, setMessage] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -127,6 +130,7 @@ export default function GroupWorkspaceActions({
       </div>
       {menuOpen && menuPosition && typeof document !== "undefined" && createPortal(
         <div ref={menuRef} className="ak-workspace-more-menu" style={menuPosition} role="menu">
+          {isGroupCreator && <Link href={`/workspace/groups/${groupId}/settings`} role="menuitem" onClick={() => setMenuOpen(false)}>Edit Group</Link>}
           <button type="button" role="menuitem" onClick={copyInvitationLink}>Copy Group link</button>
           <button type="button" role="menuitem" onClick={toggleNotifications} disabled={savingMute} aria-busy={savingMute}>
             {savingMute ? "Saving…" : notificationsMuted ? "Unmute notifications" : "Mute notifications"}
