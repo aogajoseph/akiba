@@ -377,7 +377,7 @@ $test$;
 
 -- Deactivation begins the retention period immediately and blocks invitations.
 update public.akiba_groups
-set group_image_path = '10000000-0000-0000-0000-000000000012/00000000-0000-0000-0000-000000000999.jpg'
+set group_image_path = '00000000-0000-0000-0000-000000000302/10000000-0000-0000-0000-000000000012.jpg'
 where id = '10000000-0000-0000-0000-000000000012';
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000302', true);
 do $test$
@@ -454,7 +454,7 @@ begin
     select 1 from public.akiba_group_deletion_records
     where group_id = '10000000-0000-0000-0000-000000000012'
       and image_cleanup_status = 'pending'
-      and image_path_for_cleanup = '10000000-0000-0000-0000-000000000012/00000000-0000-0000-0000-000000000999.jpg'
+      and image_path_for_cleanup = '00000000-0000-0000-0000-000000000302/10000000-0000-0000-0000-000000000012.jpg'
   ) then raise exception 'The group image was not queued for Storage API cleanup'; end if;
   if exists (
     select 1 from public.akiba_group_notifications
