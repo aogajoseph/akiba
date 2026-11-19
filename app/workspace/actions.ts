@@ -4,6 +4,7 @@ import { createHash, randomBytes, randomUUID } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import nodemailer from "nodemailer";
 
 const allowedTypes: Record<string, string[]> = {
@@ -716,6 +717,7 @@ export async function submitGroupReport(formData: FormData) {
     redirect(returnPath + "?error=" + encodeURIComponent(message));
   }
 
+  const service = createServiceClient();
   const uploadedPaths: string[] = [];
   const evidence: { storage_path: string; file_name: string; mime_type: string; file_size: number }[] = [];
   try {
@@ -724,7 +726,7 @@ export async function submitGroupReport(formData: FormData) {
       const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
       if (!rule.signature(bytes)) throw new Error("Evidence file content does not match its declared type");
       const storagePath = reportId + "/" + user.id + "/" + randomUUID() + "." + rule.extension;
-      const { error: uploadError } = await supabase.storage
+      const { error: uploadError } = await service.storage
         .from("akiba-group-report-evidence")
         .upload(storagePath, file, { contentType: file.type, upsert: false });
       if (uploadError) throw uploadError;
@@ -745,7 +747,7 @@ export async function submitGroupReport(formData: FormData) {
     }
   } catch (error) {
     if (uploadedPaths.length) {
-      const { error: cleanupError } = await supabase.storage
+      const { error: cleanupError } = await service.storage
         .from("akiba-group-report-evidence").remove(uploadedPaths);
       if (cleanupError) console.error("Akiba report evidence cleanup failed", { message: cleanupError.message });
     }
