@@ -9,6 +9,7 @@ import {
   setGroupAdmin,
   stepDownGroupAdmin,
   unblockGroupMember,
+  decideGroupJoinRequest,
 } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
@@ -63,13 +64,16 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
   if (groupError || !group) notFound();
   if (!profile?.display_name?.trim()) redirect("/onboarding?next=" + encodeURIComponent("/workspace/groups/" + groupId + "/membership"));
 
-  const [{ data: membership }, { data: plan }, { data: memberRows, error: membersError }, { data: invitations }, { data: blocks }] = await Promise.all([
+  const [{ data: membership }, { data: plan }, { data: memberRows, error: membersError }, { data: invitations }, { data: blocks }, { data: joinRequests }] = await Promise.all([
     supabase.from("akiba_group_memberships").select("role,status,joined_at").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_group_plan_entitlements").select("max_members,max_group_admins,required_group_admins").eq("plan_code", group.group_plan_code).maybeSingle(),
     supabase.from("akiba_group_memberships").select("user_id,role,joined_at").eq("group_id", group.id).eq("status", "active").order("joined_at", { ascending: true }),
     supabase.from("akiba_group_invitations").select("id,inviter_id,recipient_email,recipient_username,status,expires_at,created_at").eq("group_id", group.id).eq("status", "pending").order("created_at", { ascending: false }).limit(25),
     group.created_by === user.id
       ? supabase.from("akiba_group_blocks").select("user_id,blocked_at").eq("group_id", group.id).order("blocked_at", { ascending: false })
+      : Promise.resolve({ data: [], error: null }),
+    group.created_by === user.id
+      ? supabase.from("akiba_group_join_requests").select("id,user_id,created_at").eq("group_id", group.id).eq("status", "pending").order("created_at", { ascending: true }).limit(50)
       : Promise.resolve({ data: [], error: null }),
   ]);
   if (!membership || membership.status !== "active") notFound();
@@ -80,6 +84,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     ...memberIds,
     ...(invitations ?? []).map((invite) => invite.inviter_id),
     ...(blocks ?? []).map((block) => block.user_id),
+    ...(joinRequests ?? []).map((request) => request.user_id),
   ]));
   const { data: profiles } = relatedIds.length
     ? await supabase.from("akiba_profiles").select("user_id,display_name,username,avatar_path").in("user_id", relatedIds)
@@ -189,6 +194,42 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
           {group.status !== "active" && (
             <section className="ak-workspace-card"><strong>This group has been deactivated.</strong><p>Invitations and membership changes are no longer available.</p>
               {group.status === "deactivated" && group.scheduled_delete_at && <p>Scheduled for deletion: {formatDate(group.scheduled_delete_at)}</p>}
+            </section>
+          )}
+
+          {isCreator && group.status === "active" && (
+            <section className="ak-workspace-card ak-membership-requests">
+              <div className="ak-workspace-card-heading">
+                <div><span className="ak-section-eyebrow">MEMBERSHIP REVIEW</span><h2>Join requests</h2><p>People who opened a group invitation link and asked to join. They become members only after you approve.</p></div>
+                <span className="ak-count-pill">{joinRequests?.length ?? 0} pending</span>
+              </div>
+              {!joinRequests?.length ? (
+                <div className="ak-workspace-empty"><strong>No pending join requests</strong><p>New requests from shared invitation links will appear here.</p></div>
+              ) : (
+                <div className="ak-workspace-member-list">{joinRequests.map((request) => {
+                  const requester = profilesById.get(request.user_id);
+                  const name = requester?.display_name?.trim() || "Akiba member";
+                  const photo = requester?.avatar_path ? supabase.storage.from("avatars").getPublicUrl(requester.avatar_path).data.publicUrl : null;
+                  return <div className="ak-workspace-member" key={request.id}>
+                    {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
+                    <div><strong>{name}</strong><small>{requester?.username ? "@" + requester.username : "Akiba member"} · Requested {formatDate(request.created_at)}</small></div>
+                    <div className="ak-workspace-member-role">
+                      <form action={decideGroupJoinRequest}>
+                        <input type="hidden" name="group_id" value={group.id} />
+                        <input type="hidden" name="request_id" value={request.id} />
+                        <input type="hidden" name="decision" value="approve" />
+                        <button type="submit">Approve</button>
+                      </form>
+                      <form action={decideGroupJoinRequest}>
+                        <input type="hidden" name="group_id" value={group.id} />
+                        <input type="hidden" name="request_id" value={request.id} />
+                        <input type="hidden" name="decision" value="reject" />
+                        <button type="submit">Decline</button>
+                      </form>
+                    </div>
+                  </div>;
+                })}</div>
+              )}
             </section>
           )}
 
