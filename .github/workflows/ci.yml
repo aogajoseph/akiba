@@ -59,5 +59,7 @@ jobs:
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_invitation_join_requests.test.sql
       - name: Test group notification mute and critical alert delivery
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_notification_mute.test.sql
+      - name: Test confidential group reporting and moderation
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_reporting.test.sql
       - name: Test creator-only group settings and metadata
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/group_settings.test.sql
