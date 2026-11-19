@@ -135,6 +135,7 @@ export default function GroupWorkspaceActions({
             {savingMute ? "Saving…" : notificationsMuted ? "Unmute notifications" : "Mute notifications"}
           </button>
           {isGroupCreator && <Link href={`/workspace/groups/${groupId}/settings`} role="menuitem" onClick={() => setMenuOpen(false)}>Edit Group</Link>}
+          {isGroupCreator && <Link href={`/workspace/groups/${groupId}/delete`} role="menuitem" onClick={() => setMenuOpen(false)}>Delete Group</Link>}
           <Link href={`/workspace/groups/${groupId}/report`} role="menuitem" onClick={() => setMenuOpen(false)}>Report Group</Link>
         </div>,
         document.body
