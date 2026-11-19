@@ -188,7 +188,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                 </div>
               </div>
             </div>
-            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupId={group.id} groupName={group.name} invitationUrl={groupInvitationUrl} initialNotificationsMuted={groupNotificationsMuted} /></div>
+            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupId={group.id} groupName={group.name} invitationUrl={groupInvitationUrl} initialNotificationsMuted={groupNotificationsMuted} isGroupCreator={isGroupCreator} /></div>
           </section>
 
           <nav className="ak-group-tabs" aria-label="Group workspace">
@@ -249,12 +249,6 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
 
             <aside className="ak-workspace-side-column">
               <section className="ak-workspace-card ak-workspace-invite"><span className="ak-invite-symbol">＋</span><span className="ak-section-eyebrow">MAKE IT A GROUP EFFORT</span><h2>Bring your people in</h2><p>Invite people, view the membership directory and manage group roles from the Membership area.</p><Link className="ak-membership-open-link" href={`/workspace/groups/${group.id}/membership`}>Open Membership →</Link></section>
-              {isGroupCreator && <section className="ak-workspace-card ak-workspace-quick-links" aria-labelledby="group-quick-links-title">
-                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">SHORTCUTS</span><h2 id="group-quick-links-title">Quick links</h2></div></div>
-                <Link className="ak-membership-open-link" href={`/workspace/groups/${group.id}/settings`}>
-                  <SettingsOutlinedIcon fontSize="small" /> Edit Group <span aria-hidden="true">→</span>
-                </Link>
-              </section>}
               <section className="ak-workspace-card"><div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">AT A GLANCE</span><h2>About this group</h2></div></div><dl className="ak-workspace-details">
                 <div><dt>Group type</dt><dd>{purposeLabel}</dd></div>
                 <div><dt>Category</dt><dd>{categoryLabel}</dd></div>
