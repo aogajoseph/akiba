@@ -64,17 +64,20 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
     .select("max_members,required_group_admins,max_group_admins")
     .eq("plan_code", group.group_plan_code).maybeSingle();
 
-  const [{ data: membership }, { data: groupUnreadRows }, { data: notificationUnreadCount }, { data: notificationPreview }] = await Promise.all([
+  const [{ data: membership }, { data: groupUnreadRows }, { data: notificationUnreadCount }, { data: notificationPreview }, { data: notificationPreference }] = await Promise.all([
     supabase.from("akiba_group_memberships")
       .select("role,status,joined_at").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
     supabase.rpc("akiba_list_my_group_chat_unread_counts"),
     supabase.rpc("akiba_count_my_unread_group_notifications"),
     supabase.rpc("akiba_list_my_group_notifications", { p_limit: 5 }),
+    supabase.from("akiba_group_notification_preferences")
+      .select("is_muted").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
   ]);
   if (!membership || membership.status !== "active") notFound();
   const chatUnreadCount = Number(((groupUnreadRows ?? []) as { group_id: string; unread_count: number | string }[]).find((row) => row.group_id === group.id)?.unread_count ?? 0);
   const notificationCount = Number(notificationUnreadCount ?? 0);
   const notificationRows = (notificationPreview ?? []) as NotificationBellItem[];
+  const groupNotificationsMuted = Boolean(notificationPreference?.is_muted);
 
   const { data: memberRows, error: membersError } = await supabase.from("akiba_group_memberships")
     .select("user_id,role,joined_at").eq("group_id", group.id).eq("status", "active").order("joined_at", { ascending: true });
@@ -185,7 +188,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                 </div>
               </div>
             </div>
-            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} invitationUrl={groupInvitationUrl} /></div>
+            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupId={group.id} groupName={group.name} invitationUrl={groupInvitationUrl} initialNotificationsMuted={groupNotificationsMuted} /></div>
           </section>
 
           <nav className="ak-group-tabs" aria-label="Group workspace">

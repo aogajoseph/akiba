@@ -487,6 +487,52 @@ export async function stepDownGroupAdmin(formData: FormData) {
 }
 
 
+export type GroupNotificationMuteResult = {
+  success: boolean;
+  isMuted: boolean;
+  message: string;
+};
+
+export async function setGroupNotificationsMuted(
+  groupId: string,
+  isMuted: boolean,
+): Promise<GroupNotificationMuteResult> {
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) {
+    return { success: false, isMuted: !isMuted, message: "This group could not be identified." };
+  }
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) {
+    return { success: false, isMuted: !isMuted, message: "Please sign in to update notification settings." };
+  }
+
+  const { error } = await supabase.rpc("akiba_set_group_notification_mute", {
+    p_group_id: groupId,
+    p_is_muted: isMuted,
+  });
+  if (error) {
+    console.error("Akiba group notification preference update failed", { message: error.message });
+    return {
+      success: false,
+      isMuted: !isMuted,
+      message: error.message.includes("Active group membership")
+        ? "Only active group members can change this setting."
+        : "Notification settings could not be updated. Please try again.",
+    };
+  }
+
+  revalidatePath("/workspace/groups/" + groupId);
+  revalidatePath("/workspace/notifications");
+  return {
+    success: true,
+    isMuted,
+    message: isMuted
+      ? "Ordinary group activity is muted. Financial and security alerts remain enabled."
+      : "Group notifications are now enabled.",
+  };
+}
+
+
 export async function markGroupNotificationRead(formData: FormData) {
   const notificationId = String(formData.get("notification_id") ?? "");
   if (!/^[0-9a-f-]{36}$/i.test(notificationId)) redirect("/workspace/notifications");
