@@ -467,7 +467,7 @@ export async function hardDeleteGroup(formData: FormData) {
   }
   revalidatePath("/workspace");
   revalidatePath("/workspace/groups");
-  redirect("/workspace?message=" + encodeURIComponent("Group permanently deleted. Associated files are queued for secure cleanup."));
+  redirect("/workspace/groups?deleted=1");
 }
 
 
