@@ -132,43 +132,16 @@ set public = false,
     file_size_limit = excluded.file_size_limit,
     allowed_mime_types = excluded.allowed_mime_types;
 
+-- Authenticated clients receive no write policy on this bucket. Evidence is
+-- uploaded only by the server after file-signature validation using the
+-- server-only Supabase service client. Reads remain reviewer-only.
 drop policy if exists "reporters upload evidence for own pending reports" on storage.objects;
-create policy "reporters upload evidence for own pending reports"
-  on storage.objects for insert to authenticated
-  with check (
-    bucket_id = 'akiba-group-report-evidence'
-    and (storage.foldername(name))[1] ~* '^[0-9a-f-]{36}$'
-    and (storage.foldername(name))[2] = (select auth.uid())::text
-    and exists (
-      select 1 from public.akiba_group_reports r
-      where r.id = ((storage.foldername(name))[1])::uuid
-        and r.reporter_user_id = (select auth.uid())
-        and r.status = 'pending'
-    )
-  );
-
 drop policy if exists "internal moderators read report evidence objects" on storage.objects;
 create policy "internal moderators read report evidence objects"
   on storage.objects for select to authenticated
   using (bucket_id = 'akiba-group-report-evidence' and akiba_private.is_internal_moderator());
 
 drop policy if exists "reporters remove unregistered evidence from pending reports" on storage.objects;
-create policy "reporters remove unregistered evidence from pending reports"
-  on storage.objects for delete to authenticated
-  using (
-    bucket_id = 'akiba-group-report-evidence'
-    and (storage.foldername(name))[1] ~* '^[0-9a-f-]{36}$'
-    and (storage.foldername(name))[2] = (select auth.uid())::text
-    and exists (
-      select 1 from public.akiba_group_reports r
-      where r.id = ((storage.foldername(name))[1])::uuid
-        and r.reporter_user_id = (select auth.uid())
-        and r.status = 'pending'
-    )
-    and not exists (
-      select 1 from public.akiba_group_report_evidence e where e.storage_path = name
-    )
-  );
 
 create or replace function public.akiba_submit_group_report(
   p_group_id uuid,
