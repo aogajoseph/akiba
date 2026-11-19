@@ -26,6 +26,18 @@
 5. The hourly Edge Function claims pending/failed image-cleanup records and calls `storage.from('group-images').remove([path])`. It validates that the object path is a UUID group prefix followed by a UUID filename with an approved image extension.
 6. A successful removal clears the stored object path and marks cleanup complete. Failures are retained for retry; after 20 attempts they remain failed for manual investigation rather than being silently discarded.
 
+
+## Deactivation and hard-deletion safeguards
+
+- Immediate hard deletion is permitted only when there has never been any financial footprint: no contribution intents or payment attempts (including failed/expired attempts), no withdrawal requests or approvals, no payout attempts, no reservations, no finance activity events, no payment-account setup, no financial transactions and no ledger entries.
+- The authoritative group balance is the net of credits and debits in the `group_funds` ledger account. Active reservations are counted separately as held funds.
+- Deactivation is blocked while any contribution/payment operation, withdrawal, payout or reconciliation is unresolved, while funds are held, or while the group ledger balance is non-zero. A settled financial history with a zero balance does not prevent deactivation.
+- Financial history permanently disqualifies a group from immediate hard deletion, even when every transaction is settled and the balance is zero.
+- A Group Creator may reactivate a deactivated (not yet retention-purged) group. Reactivation clears the six-month deadline, restores normal group operation, and writes a lifecycle audit record so outstanding financial matters can be settled.
+- The six-month retention worker repeats the unresolved-operation, held-funds and balance checks before scrubbing social/group profile data. It preserves financial evidence and the stable group row/ID.
+- Hard deletion requires the exact current group name. Authorization, financial history, unresolved activity, held funds and balance are checked again atomically under a lock in the database RPC.
+- Hard-deletion audit evidence is stored without a foreign key to the deleted group. Group images, chat attachments and private report evidence are queued for Storage API cleanup; SQL never deletes Storage objects directly.
+
 ## Decisions still requiring Legal approval
 
 - Confirm the six-month period against applicable Kenyan and other operating-country financial, tax, AML/CFT, consumer-protection and data-protection requirements.
