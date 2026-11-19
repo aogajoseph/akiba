@@ -1425,3 +1425,9 @@
 .ak-group-report-success p{color:#63756a}
 .ak-group-report-success a{color:#b52c76;font-weight:750;text-decoration:none}
 @media(max-width:640px){.ak-group-report-panel{margin:12px auto;padding:20px 16px}.ak-group-report-panel h1{font-size:23px}}
+
+
+/* Group deletion confirmation */
+.ak-group-report-form input[type="text"]{width:100%;padding:12px;border:1px solid #e3e6ef;border-radius:9px;background:#fff;color:#343750;font:inherit;font-size:12px}
+.ak-group-report-form input[type="text"]:focus{outline:2px solid #b52c76;outline-offset:1px}
+.ak-group-report-form .ak-member-danger{justify-self:start;margin-top:8px}
