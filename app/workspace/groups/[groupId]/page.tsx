@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { createHash, randomBytes } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { setGroupAdmin } from "@/app/workspace/actions";
@@ -93,6 +94,27 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const requiredGroupAdmins = plan?.required_group_admins ?? 3;
   const leadershipReady = activeGroupAdminCount >= requiredGroupAdmins;
   const isGroupCreator = membership.role === "group_creator";
+  let groupInvitationUrl: string | null = null;
+  const configuredSiteUrl = process.env.VERCEL_URL ? "https://" + process.env.VERCEL_URL : process.env.NEXT_PUBLIC_SITE_URL;
+  if (configuredSiteUrl && group.status === "active" && !membersError && members.length < (plan?.max_members ?? 100)) {
+    try {
+      const siteUrl = new URL(configuredSiteUrl);
+      if (siteUrl.protocol === "https:" || siteUrl.hostname === "localhost") {
+        const token = randomBytes(32).toString("hex");
+        const tokenHash = createHash("sha256").update(token).digest("hex");
+        const { data: persistentToken, error: linkError } = await supabase.rpc("akiba_get_or_create_group_invite_link", {
+          p_group_id: group.id, p_token: token, p_token_hash: tokenHash,
+        });
+        if (!linkError && persistentToken && /^[0-9a-f]{64}$/.test(persistentToken)) {
+          groupInvitationUrl = new URL("/invitations/" + persistentToken, siteUrl).toString();
+        } else if (linkError) {
+          console.error("Akiba group invitation link could not be loaded", { message: linkError.message });
+        }
+      }
+    } catch (linkError) {
+      console.error("Akiba group invitation URL could not be prepared", { message: linkError instanceof Error ? linkError.message : "Unknown error" });
+    }
+  }
   const purposeLabel = group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal";
   const categoryLabel = groupTypeLabels[group.group_type] ?? "Other";
   const groupImageUrl = group.group_image_path ? supabase.storage.from("group-images").getPublicUrl(group.group_image_path).data.publicUrl : null;
@@ -163,7 +185,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                 </div>
               </div>
             </div>
-            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} isCreator={isGroupCreator} /></div>
+            <div className="ak-workspace-hero-actions"><GroupWorkspaceActions groupName={group.name} invitationUrl={groupInvitationUrl} /></div>
           </section>
 
           <nav className="ak-group-tabs" aria-label="Group workspace">

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createHash } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { createClient as createSupabaseAdminClient } from "@supabase/supabase-js";
-import { acceptGroupInviteLink, acceptGroupInvitation, declineGroupInvitation } from "@/app/workspace/actions";
+import { requestGroupJoinByLink, acceptGroupInvitation, declineGroupInvitation } from "@/app/workspace/actions";
 import { switchToInvitationAccount } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
 
@@ -29,9 +29,11 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     auth: { autoRefreshToken: false, persistSession: false },
   });
   const hash = createHash("sha256").update(token).digest("hex");
-  const [{ data: reusableLink }, { data: invitation }] = await Promise.all([
+  const supabase = await createClient();
+  const [{ data: reusableLink }, { data: invitation }, { data: { user } }] = await Promise.all([
     admin.from("akiba_group_invite_links").select("group_id,created_by").eq("token_hash", hash).maybeSingle(),
     admin.from("akiba_group_invitations").select("group_id,inviter_id,status,expires_at,recipient_email").eq("token_hash", hash).maybeSingle(),
+    supabase.auth.getUser(),
   ]);
 
   const isReusableLink = Boolean(reusableLink);
@@ -39,14 +41,17 @@ export default async function InvitationPage({ params, searchParams }: Props) {
   if (!groupId) notFound();
 
   const inviterId = reusableLink?.created_by ?? invitation?.inviter_id;
-  const [{ data: group }, { data: inviter }, { data: { user } }] = await Promise.all([
-    admin.from("akiba_groups").select("id,name,description,status").eq("id", groupId).maybeSingle(),
+  const [{ data: group }, { data: inviter }] = await Promise.all([
+    admin.from("akiba_groups").select("id,name,purpose,group_type,description,status,group_image_path").eq("id", groupId).maybeSingle(),
     inviterId
       ? admin.from("akiba_profiles").select("display_name,username").eq("user_id", inviterId).maybeSingle()
       : Promise.resolve({ data: null }),
-    (await createClient()).auth.getUser(),
   ]);
   if (!group) notFound();
+  const groupImageUrl = group.group_image_path
+    ? admin.storage.from("group-images").getPublicUrl(group.group_image_path).data.publicUrl
+    : null;
+  const groupPurpose = group.purpose === "event" ? "Event" : group.purpose === "goal" ? "Goal" : "Group";
 
   const status = isReusableLink
     ? group.status === "active" ? "pending" : "unavailable"
@@ -73,10 +78,14 @@ export default async function InvitationPage({ params, searchParams }: Props) {
     }
   }
 
+  let joinRequestPending = false;
   if (isReusableLink && user && status === "pending") {
-    const { data: membership } = await (await createClient()).from("akiba_group_memberships")
-      .select("status").eq("group_id", groupId).eq("user_id", user.id).eq("status", "active").maybeSingle();
+    const [{ data: membership }, { data: joinRequest }] = await Promise.all([
+      supabase.from("akiba_group_memberships").select("status").eq("group_id", groupId).eq("user_id", user.id).eq("status", "active").maybeSingle(),
+      supabase.from("akiba_group_join_requests").select("id").eq("group_id", groupId).eq("user_id", user.id).eq("status", "pending").maybeSingle(),
+    ]);
     if (membership) redirect("/workspace/groups/" + groupId);
+    joinRequestPending = Boolean(joinRequest);
   }
 
   return (
@@ -84,7 +93,9 @@ export default async function InvitationPage({ params, searchParams }: Props) {
       <section className="auth-card">
         <Link href="/" className="auth-brand"><img className="auth-brand-logo" src="/akiba-logo.png" alt="" />Akiba</Link>
         <div className="workspace-eyebrow">{isReusableLink ? "Join this group" : "You're invited"}</div>
+        {groupImageUrl && <img src={groupImageUrl} alt="" style={{ width: "100%", maxHeight: 180, objectFit: "cover", borderRadius: 12, margin: "12px 0" }} />}
         <h1>{group.name}</h1>
+        <p className="auth-switch">{groupPurpose}</p>
         <p>{group.description?.trim() || "You've been invited to join a group on Akiba."}</p>
         <p className="auth-switch">{isReusableLink ? "Shared by " : "Invited by "}{inviterName}</p>
         {actionError && !accountMismatchError && <p className="auth-error" role="alert">{actionError}</p>}
@@ -116,12 +127,18 @@ export default async function InvitationPage({ params, searchParams }: Props) {
           </div>
         ) : (
           <div className="auth-form">
-            <p>Joining will add you as a Member of this group.</p>
             {isReusableLink ? (
-              <form action={acceptGroupInviteLink}>
-                <input type="hidden" name="token" value={token} />
-                <button className="workspace-primary" type="submit">Join group</button>
-              </form>
+              joinRequestPending ? (
+                <div className="auth-message" role="status">Your request to join this group has been submitted. You will become a member only after the Group Creator approves it.</div>
+              ) : (
+                <>
+                  <p>Send a membership request to the Group Creator. You will not become a member until the request is approved.</p>
+                  <form action={requestGroupJoinByLink}>
+                    <input type="hidden" name="token" value={token} />
+                    <button className="workspace-primary" type="submit">Request to join group</button>
+                  </form>
+                </>
+              )
             ) : (
               <>
                 <form action={acceptGroupInvitation}>
