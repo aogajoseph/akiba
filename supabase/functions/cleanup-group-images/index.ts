@@ -165,8 +165,7 @@ Deno.serve(async (request) => {
     console.error("Group deletion Storage cleanup queue could not be loaded.", storageJobsError.code);
   } else {
     for (const job of (storageJobs ?? []) as StorageCleanupJob[]) {
-      const escapedGroupId = job.group_id.replace(/[.*+?^${}()|[\]\\]/g, "\\  return Response.json(result);
-});");
+      const escapedGroupId = job.group_id;
       const validPath =
         job.bucket_id === "group-images"
           ? new RegExp("^" + escapedGroupId + "/[0-9a-f-]{36}\\.(?:jpg|jpeg|png|webp)$", "i").test(job.object_path)
