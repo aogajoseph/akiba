@@ -26,7 +26,8 @@ function shortDate(value: string) {
   return new Intl.DateTimeFormat("en", { day: "numeric", month: "short" }).format(new Date(value));
 }
 
-export default async function MyGroupsPage() {
+export default async function MyGroupsPage({ searchParams }: { searchParams?: Promise<{ deleted?: string }> }) {
+  const query = searchParams ? await searchParams : {};
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login?next=" + encodeURIComponent("/workspace/groups"));
@@ -108,6 +109,7 @@ export default async function MyGroupsPage() {
             <Link href="/workspace/new" className="ak-primary"><span>＋</span> Create New Group</Link>
           </div>
 
+          {query.deleted === "1" && <div className="ak-group-report-privacy" role="status"><strong>Group permanently deleted.</strong><p>The group and its non-financial content have been removed. Associated files are queued for secure cleanup.</p><Link href="/workspace/groups" className="ak-group-report-cancel">Back to My Groups</Link></div>}
           <section className="ak-workspace-card">
             <div className="ak-workspace-card-heading">
               <div><span className="ak-section-eyebrow">GROUP DIRECTORY</span><h2>Your groups</h2><p>{groupsError ? "We couldn't confirm the full list." : groups.length + (groups.length === 1 ? " group" : " groups") + " you belong to"}</p></div>
