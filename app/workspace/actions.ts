@@ -467,7 +467,7 @@ export async function hardDeleteGroup(formData: FormData) {
   }
   revalidatePath("/workspace");
   revalidatePath("/workspace/groups");
-  redirect("/workspace/groups?deleted=1");
+  redirect("/workspace/groups/deleted");
 }
 
 
