@@ -97,6 +97,19 @@ begin
       where i.group_id = p_group_id and p.status in ('initiated','pending','unknown')
     )
     or exists (
+      select 1
+      from public.akiba_provider_events e
+      join public.akiba_payment_attempts p
+        on e.provider_id = p.provider_id
+       and e.source_reference in (p.provider_merchant_ref, p.provider_attempt_ref, p.request_reference)
+      join public.akiba_contribution_intents i on i.id = p.contribution_intent_id
+      where i.group_id = p_group_id
+        and (
+          e.processing_status in ('received','processing')
+          or (e.processing_status = 'failed' and e.retryable)
+        )
+    )
+    or exists (
       select 1 from public.akiba_withdrawal_requests w
       where w.group_id = p_group_id
         and w.status in ('pending_approval','approved','processing','failed_pending_reconciliation')
