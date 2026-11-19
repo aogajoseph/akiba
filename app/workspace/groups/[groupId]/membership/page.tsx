@@ -101,7 +101,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     ? members.filter((member) => [member.profile?.display_name, member.profile?.username, roleLabel(member.role)]
         .some((value) => value?.toLocaleLowerCase().includes(memberSearch)))
     : members;
-  const isCreator = membership.role === "group_creator";
+  const isCreator = group.created_by === user.id && membership.role === "group_creator";
   const isAdmin = membership.role === "group_admin";
   const maxMembers = plan?.max_members ?? 100;
   const activeAdminCount = members.filter((member) => member.role === "group_admin").length;
