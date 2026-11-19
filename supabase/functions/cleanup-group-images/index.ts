@@ -7,6 +7,15 @@ type CleanupJob = {
   image_cleanup_attempts: number;
 };
 
+type StorageCleanupJob = {
+  id: string;
+  group_id: string;
+  bucket_id: "group-images" | "akiba-group-chat-attachments" | "akiba-group-report-evidence";
+  object_path: string;
+  status: "pending" | "failed" | "processing";
+  attempts: number;
+};
+
 const supabaseUrl = Deno.env.get("SUPABASE_URL");
 const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
@@ -20,9 +29,10 @@ const supabase = createClient(supabaseUrl, serviceRoleKey, {
 
 function validImagePath(groupId: string, path: string) {
   if (!/^[0-9a-f-]{36}$/i.test(groupId)) return false;
-  const escapedGroupId = groupId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  // Group images are stored under the uploader's UUID folder. The filename
+  // begins with the group UUID and may include a replacement-image UUID suffix.
   return new RegExp(
-    `^${escapedGroupId}/[0-9a-f-]{36}\\.(?:jpg|jpeg|png|webp)$`,
+    "^[0-9a-f-]{36}/" + groupId + "(?:-[0-9a-f-]{36})?\\.(?:jpg|jpeg|png|webp)$",
     "i",
   ).test(path);
 }
@@ -138,6 +148,97 @@ Deno.serve(async (request) => {
       console.error("Group image cleanup completion could not be recorded.", completeError.code);
     } else {
       result.completed += 1;
+    }
+  }
+
+  // Hard-deletion cleanup queue supports group images, chat attachments and
+  // private report evidence. SQL never deletes Storage objects directly.
+  const staleBefore = new Date(Date.now() - 30 * 60 * 1000).toISOString();
+  const { data: storageJobs, error: storageJobsError } = await supabase
+    .from("akiba_group_deletion_storage_jobs")
+    .select("id,group_id,bucket_id,object_path,status,attempts")
+    .or("status.in.(pending,failed),and(status.eq.processing,updated_at.lt." + staleBefore + ")")
+    .lt("attempts", 20)
+    .order("created_at", { ascending: true })
+    .limit(50);
+
+  if (storageJobsError) {
+    console.error("Group deletion Storage cleanup queue could not be loaded.", storageJobsError.code);
+  } else {
+    for (const job of (storageJobs ?? []) as StorageCleanupJob[]) {
+      const validPath =
+        job.bucket_id === "group-images"
+          ? new RegExp("^[0-9a-f-]{36}/" + job.group_id + "(?:-[0-9a-f-]{36})?\\.(?:jpg|jpeg|png|webp)$", "i").test(job.object_path)
+          : job.bucket_id === "akiba-group-chat-attachments"
+            ? new RegExp("^" + job.group_id + "/[0-9a-f-]{36}/[0-9a-f-]{36}\\.[a-z0-9]{1,8}$", "i").test(job.object_path)
+            : /^[0-9a-f-]{36}\/[0-9a-f-]{36}\/[0-9a-f-]{36}\.(?:jpg|png|webp|pdf)$/i.test(job.object_path);
+
+      if (!validPath) {
+        await supabase.from("akiba_group_deletion_storage_jobs").update({
+          status: "failed",
+          attempts: job.attempts + 1,
+          last_error: "Stored object path failed bucket-specific validation.",
+          updated_at: new Date().toISOString(),
+        }).eq("id", job.id).eq("status", job.status);
+        result.failed += 1;
+        continue;
+      }
+
+      const { data: claimed, error: claimError } = await supabase
+        .from("akiba_group_deletion_storage_jobs")
+        .update({
+          status: "processing",
+          attempts: job.attempts + 1,
+          last_error: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", job.id)
+        .eq("status", job.status)
+        .eq("attempts", job.attempts)
+        .select("id")
+        .maybeSingle();
+
+      if (claimError) {
+        result.failed += 1;
+        continue;
+      }
+      if (!claimed) {
+        result.skipped += 1;
+        continue;
+      }
+      result.claimed += 1;
+
+      const { error: removeError } = await supabase.storage
+        .from(job.bucket_id)
+        .remove([job.object_path]);
+
+      if (removeError) {
+        await supabase.from("akiba_group_deletion_storage_jobs").update({
+          status: "failed",
+          last_error: removeError.message.slice(0, 500),
+          updated_at: new Date().toISOString(),
+        }).eq("id", job.id).eq("status", "processing");
+        result.failed += 1;
+        continue;
+      }
+
+      const { error: completeError } = await supabase
+        .from("akiba_group_deletion_storage_jobs")
+        .update({
+          status: "completed",
+          last_error: null,
+          completed_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", job.id)
+        .eq("status", "processing");
+
+      if (completeError) {
+        result.failed += 1;
+        console.error("Group deletion Storage cleanup completion could not be recorded.", completeError.code);
+      } else {
+        result.completed += 1;
+      }
     }
   }
 

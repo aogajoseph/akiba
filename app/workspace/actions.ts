@@ -420,11 +420,54 @@ export async function deactivateGroup(formData: FormData) {
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
   const { error } = await supabase.rpc("akiba_deactivate_group", { p_group_id: groupId });
-  if (error) membershipRedirect(groupId, error.message.includes("Resolve outstanding withdrawals")
-    ? "Resolve outstanding withdrawals before deactivating the group."
-    : "The group could not be deactivated.");
+  if (error) membershipRedirect(groupId,
+    error.message.toLowerCase().includes("resolve all pending")
+      ? "Settle every pending payment, withdrawal, payout reconciliation, held amount and group balance before deactivating this group."
+      : "The group could not be deactivated.");
   revalidatePath("/workspace");
+  revalidatePath("/workspace/groups/" + groupId);
   redirect("/workspace?message=Group%20deactivated");
+}
+
+export async function reactivateGroup(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) redirect("/workspace");
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+  const { error } = await supabase.rpc("akiba_reactivate_group", { p_group_id: groupId });
+  if (error) membershipRedirect(groupId, "The group could not be reactivated. Only its Group Creator can reactivate a group that has not completed its six-month retention process.");
+  revalidatePath("/workspace");
+  revalidatePath("/workspace/groups/" + groupId);
+  revalidatePath("/workspace/groups/" + groupId + "/membership");
+  redirect("/workspace/groups/" + groupId + "/membership?membershipUpdated=" + encodeURIComponent("Group reactivated. Financial matters can now be reviewed and settled."));
+}
+
+export async function hardDeleteGroup(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const confirmName = String(formData.get("confirm_name") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) redirect("/workspace/groups");
+  const returnPath = "/workspace/groups/" + groupId + "/delete";
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login?next=" + encodeURIComponent(returnPath));
+  const { error } = await supabase.rpc("akiba_hard_delete_group", {
+    p_group_id: groupId,
+    p_confirm_name: confirmName,
+  });
+  if (error) {
+    const message = error.message.toLowerCase().includes("financial history")
+      ? "This group has financial history and cannot be permanently deleted. Its financial records must be preserved."
+      : error.message.toLowerCase().includes("resolve all pending")
+        ? "Settle all pending financial activity, held funds and the group balance before attempting deletion."
+        : error.message.toLowerCase().includes("confirmation")
+          ? "The group name did not match. Type the exact group name to confirm deletion."
+          : "The group could not be permanently deleted. Please refresh and check its eligibility.";
+    redirect(returnPath + "?error=" + encodeURIComponent(message));
+  }
+  revalidatePath("/workspace");
+  revalidatePath("/workspace/groups");
+  redirect("/workspace/groups/deleted");
 }
 
 

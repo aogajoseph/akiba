@@ -10,6 +10,7 @@ import {
   stepDownGroupAdmin,
   unblockGroupMember,
   decideGroupJoinRequest,
+  reactivateGroup,
 } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
@@ -18,6 +19,7 @@ import MessageBell from "@/app/workspace/message-bell";
 import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
 import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
 import InviteGroupModal from "./invite-group-modal";
+import DeactivateGroupForm from "./deactivate-group-form";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
@@ -99,7 +101,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
     ? members.filter((member) => [member.profile?.display_name, member.profile?.username, roleLabel(member.role)]
         .some((value) => value?.toLocaleLowerCase().includes(memberSearch)))
     : members;
-  const isCreator = membership.role === "group_creator";
+  const isCreator = group.created_by === user.id && membership.role === "group_creator";
   const isAdmin = membership.role === "group_admin";
   const maxMembers = plan?.max_members ?? 100;
   const activeAdminCount = members.filter((member) => member.role === "group_admin").length;
@@ -192,8 +194,16 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
           {query.membershipUpdated && <p className="ak-workspace-footnote" role="status">{query.membershipUpdated}</p>}
 
           {group.status !== "active" && (
-            <section className="ak-workspace-card"><strong>This group has been deactivated.</strong><p>Invitations and membership changes are no longer available.</p>
+            <section className="ak-workspace-card">
+              <strong>This group has been deactivated.</strong><p>Invitations and membership changes are no longer available.</p>
               {group.status === "deactivated" && group.scheduled_delete_at && <p>Scheduled for deletion: {formatDate(group.scheduled_delete_at)}</p>}
+              {isCreator && group.status === "deactivated" && (
+                <form action={reactivateGroup}>
+                  <input type="hidden" name="group_id" value={group.id} />
+                  <button type="submit">Reactivate group</button>
+                  <p className="ak-workspace-footnote">Reactivation restores the group so unresolved financial matters can be reviewed and settled. Your action is recorded.</p>
+                </form>
+              )}
             </section>
           )}
 
@@ -319,6 +329,16 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                 )}
                 <p className="ak-workspace-footnote">Email invitations expire after 7 days. Pending invitations do not reserve a membership slot.</p>
               </section>
+
+              {isCreator && group.status === "active" && (
+                <section className="ak-workspace-card">
+                  <span className="ak-section-eyebrow">GROUP LIFECYCLE</span>
+                  <h2>Deactivate group</h2>
+                  <p>Deactivation is available only after all pending financial activity, withdrawals, payout reconciliation, held funds and the group balance are settled. Groups with financial history retain their financial records.</p>
+                  <DeactivateGroupForm groupId={group.id} />
+                  <p className="ak-workspace-footnote">The group remains viewable for six months. You can review permanent deletion eligibility from the group actions menu.</p>
+                </section>
+              )}
 
               {isCreator && group.status === "active" && (
                 <section className="ak-workspace-card">

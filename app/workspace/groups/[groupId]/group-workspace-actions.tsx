@@ -136,6 +136,10 @@ export default function GroupWorkspaceActions({
           </button>
           {isGroupCreator && <Link href={`/workspace/groups/${groupId}/settings`} role="menuitem" onClick={() => setMenuOpen(false)}>Edit Group</Link>}
           <Link href={`/workspace/groups/${groupId}/report`} role="menuitem" onClick={() => setMenuOpen(false)}>Report Group</Link>
+          {isGroupCreator && <>
+            <div className="ak-menu-divider" role="separator" />
+            <Link className="ak-menu-item-danger" href={`/workspace/groups/${groupId}/delete`} role="menuitem" onClick={() => setMenuOpen(false)}>Delete Group</Link>
+          </>}
         </div>,
         document.body
       )}
