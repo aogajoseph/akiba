@@ -64,7 +64,7 @@ create table public.akiba_withdrawal_approval_roster (
   withdrawal_request_id uuid not null references public.akiba_withdrawal_requests(id) on delete restrict,
   group_id uuid not null references public.akiba_groups(id) on delete restrict,
   admin_user_id uuid not null references auth.users(id) on delete restrict,
-  membership_id uuid not null references public.akiba_group_memberships(id) on delete restrict,
+  membership_id uuid references public.akiba_group_memberships(id) on delete set null,
   snapshotted_at timestamptz not null default clock_timestamp(),
   unique (withdrawal_request_id, admin_user_id),
   unique (withdrawal_request_id, membership_id)
