@@ -773,6 +773,8 @@ declare
   request_row public.akiba_withdrawal_requests%rowtype;
   flag_row public.akiba_withdrawal_flags%rowtype;
   payout_attempt_exists boolean;
+  reservation_rows integer;
+  payout_row record;
 begin
   if actor_id is null then raise exception 'Authentication is required'; end if;
   if p_withdrawal_request_id is null then raise exception 'A withdrawal request is required'; end if;
@@ -817,6 +819,29 @@ begin
       resolved_at = clock_timestamp()
   where withdrawal_request_id = request_row.id
     and status = 'active';
+  get diagnostics reservation_rows = row_count;
+  if reservation_rows <> 1 then
+    raise exception 'The active withdrawal reservation is missing; cancellation was rolled back';
+  end if;
+
+  for payout_row in
+    select id from public.akiba_payout_attempts
+    where withdrawal_request_id = request_row.id
+      and status = 'queued'
+    for update
+  loop
+    update public.akiba_payout_attempts
+    set status = 'cancelled',
+        updated_at = clock_timestamp()
+    where id = payout_row.id;
+
+    insert into public.akiba_finance_activity_events
+      (group_id, actor_id, event_type, source_type, source_id, event_payload)
+    values
+      (request_row.group_id, actor_id, 'withdrawal_payout_attempt_cancelled',
+       'payout_attempt', payout_row.id,
+       jsonb_build_object('withdrawal_request_id', request_row.id));
+  end loop;
 
   for flag_row in
     select * from public.akiba_withdrawal_flags
