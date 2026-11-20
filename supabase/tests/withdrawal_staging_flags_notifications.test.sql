@@ -161,7 +161,7 @@ values
    '00000000-0000-0000-0000-000000000001', 'KES', 1000, 1000,
    0, 0, 0, 'test-v1',
    '20000000-0000-0000-0000-000000000001', 'test-quote-1',
-   clock_timestamp() + interval '2 hours', 'Test recipient',
+   clock_timestamp() + interval '1 day', 'Test recipient',
    'test-destination-token', 'test-destination-fingerprint', '{"type":"test"}'::jsonb,
    'Withdrawal staging regression test');
 
@@ -317,7 +317,7 @@ begin
      '00000000-0000-0000-0000-000000000001', 'KES', 1000, 1000,
      0, 0, 0, 'test-v1',
      '20000000-0000-0000-0000-000000000001', 'test-quote-2',
-     clock_timestamp() + interval '2 hours', 'Test recipient',
+     clock_timestamp() + interval '1 day', 'Test recipient',
      'test-destination-token-2', 'test-destination-fingerprint-2', '{"type":"test"}'::jsonb,
      'No-flag staging regression test');
 
@@ -349,6 +349,21 @@ begin
     raise exception 'Payout-queued withdrawal reservation must remain active';
   end if;
 
+  insert into public.akiba_payout_attempts
+    (withdrawal_request_id, provider_id, request_reference, provider_fee_minor)
+  values
+    ('40000000-0000-0000-0000-000000000002',
+     '20000000-0000-0000-0000-000000000001',
+     'withdrawal-test-payout-attempt', 0);
+
+  select count(*) into notification_count
+  from public.akiba_group_notifications
+  where group_id = '10000000-0000-0000-0000-000000000001'
+    and event_type = 'financial_withdrawal_payout_attempt_queued';
+  if notification_count <> active_member_count then
+    raise exception 'Payout-attempt creation must notify every active member';
+  end if;
+
   -- One unresolved withdrawal per group remains a database-enforced invariant.
   begin
     insert into public.akiba_withdrawal_requests
@@ -361,7 +376,7 @@ begin
        '00000000-0000-0000-0000-000000000001', 'KES', 1000, 1000,
        0, 0, 0, 'test-v1',
        '20000000-0000-0000-0000-000000000001', 'test-quote-3',
-       clock_timestamp() + interval '2 hours', 'Test recipient',
+       clock_timestamp() + interval '1 day', 'Test recipient',
        'test-destination-token-3', 'test-destination-fingerprint-3', '{"type":"test"}'::jsonb,
        'Duplicate unresolved request test');
     raise exception 'Second unresolved withdrawal unexpectedly succeeded';
@@ -379,6 +394,13 @@ begin
   where withdrawal_request_id = '40000000-0000-0000-0000-000000000002';
   if request_status <> 'cancelled' or reservation_status <> 'released' then
     raise exception 'Creator cancellation before payout submission must release the reservation';
+  end if;
+
+  select status into flag_status
+  from public.akiba_payout_attempts
+  where request_reference = 'withdrawal-test-payout-attempt';
+  if flag_status <> 'cancelled' then
+    raise exception 'Creator cancellation must cancel an unsubmitted queued payout attempt';
   end if;
 
   if has_table_privilege('authenticated','public.akiba_withdrawal_flags','INSERT')
