@@ -431,6 +431,8 @@ declare
   simulation_capability text;
   notification_count integer;
   message text;
+  staging_deadline timestamptz;
+  selected_provider_id uuid;
 begin
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
   begin
@@ -500,6 +502,46 @@ begin
   ) <> request_id then
     raise exception 'An exact idempotent retry must return the original withdrawal request';
   end if;
+
+  begin
+    update public.akiba_withdrawal_requests
+    set idempotency_key = 'changed-idempotency-key'
+    where id = request_id;
+    raise exception 'Withdrawal idempotency key unexpectedly changed after creation';
+  exception when others then
+    get stacked diagnostics message = message_text;
+    if message not like '%Withdrawal terms are immutable%' then raise; end if;
+  end;
+
+  -- All three snapshotted Admins must approve before the fixed staging period.
+  perform set_config('request.jwt.claim.sub', '00000000-00000000-0000-0000-000000000002', true);
+  perform public.akiba_decide_withdrawal_request(request_id, 'approved', null);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
+  perform public.akiba_decide_withdrawal_request(request_id, 'approved', null);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000004', true);
+  perform public.akiba_decide_withdrawal_request(request_id, 'approved', null);
+
+  select staging_deadline_at into staging_deadline
+  from public.akiba_withdrawal_requests where id = request_id;
+  perform * from public.akiba_process_due_withdrawal_staging(10, staging_deadline + interval '1 second');
+
+  select status, provider_id into request_status, selected_provider_id
+  from public.akiba_withdrawal_requests where id = request_id;
+  if request_status <> 'payout_queued' then
+    raise exception 'Unflagged sandbox workflow request did not reach payout_queued';
+  end if;
+
+  -- The simulator is intentionally not payout-capable, even after approvals
+  -- and staging. It must never create a payout attempt.
+  begin
+    insert into public.akiba_payout_attempts
+      (withdrawal_request_id, provider_id, request_reference, provider_fee_minor)
+    values (request_id, selected_provider_id, 'sandbox-simulator-must-not-pay', 0);
+    raise exception 'Sandbox workflow simulator unexpectedly accepted a payout attempt';
+  exception when others then
+    get stacked diagnostics message = message_text;
+    if message not like '%does not currently support sandbox payout execution%' then raise; end if;
+  end;
 
   begin
     perform public.akiba_create_sandbox_withdrawal_request(
