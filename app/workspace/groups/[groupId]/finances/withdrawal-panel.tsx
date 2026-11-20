@@ -163,12 +163,11 @@ export default function WithdrawalPanel({
             const rejectedCount = requestApprovals.filter((item) => item.decision === "rejected").length;
             const myActiveFlag = activeFlags.find((item) => item.member_id === currentUserId);
             const isInitiator = request.initiator_id === currentUserId;
-            const deadlineOpen = request.staging_deadline_at
-              ? new Date(request.staging_deadline_at).getTime() > Date.now()
-              : false;
+            // The server RPC enforces the exact deadline. The UI follows the
+            // persisted staging state; the minute worker closes expired periods.
             const canDecide = request.status === "pending_approval" && isAdmin && myRosterEntry && !myApproval;
-            const canFlag = request.status === "staging" && deadlineOpen && !myActiveFlag;
-            const canRemoveFlag = request.status === "staging" && deadlineOpen && Boolean(myActiveFlag);
+            const canFlag = request.status === "staging" && Boolean(request.staging_deadline_at) && !myActiveFlag;
+            const canRemoveFlag = request.status === "staging" && Boolean(request.staging_deadline_at) && Boolean(myActiveFlag);
             const canCancel = isCreator && isInitiator &&
               ["pending_approval", "staging", "payout_queued"].includes(request.status);
 
