@@ -42,6 +42,30 @@ begin
         raise;
       end if;
   end;
+
+  begin
+    perform public.post_mpesa_contribution(
+      'ws_CO_test_callback_only', 'TESTRECEIPT1', 1000, 'KES', gen_random_uuid(), null
+    );
+    raise exception 'RPC accepted callback-only evidence';
+  exception
+    when others then
+      if sqlerrm not like 'Both authenticated callback and provider verification evidence are required%' then
+        raise;
+      end if;
+  end;
+
+  begin
+    perform public.post_mpesa_contribution(
+      'ws_CO_test_query_only', 'TESTRECEIPT2', 1000, 'KES', null, gen_random_uuid()
+    );
+    raise exception 'RPC accepted provider-query-only evidence';
+  exception
+    when others then
+      if sqlerrm not like 'Both authenticated callback and provider verification evidence are required%' then
+        raise;
+      end if;
+  end;
 end;
 $test$;
 
