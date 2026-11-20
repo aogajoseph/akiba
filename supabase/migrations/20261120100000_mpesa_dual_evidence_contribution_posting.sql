@@ -11,8 +11,8 @@ alter table public.akiba_provider_events
 alter table public.akiba_provider_events
   add constraint akiba_provider_events_callback_auth_method_check
   check (
-    callback_auth_method is null
-    or callback_auth_method in ('shared_url_token')
+    (callback_authenticated_at is null) = (callback_auth_method is null)
+    and (callback_auth_method is null or callback_auth_method in ('shared_url_token'))
   );
 
 create table if not exists public.akiba_provider_verifications (
@@ -122,7 +122,9 @@ begin
      or v_callback.provider_receipt_number is distinct from p_provider_receipt_number
      or v_callback.amount_minor is distinct from p_amount_minor
      or v_callback.currency_code is distinct from p_currency_code
-     or v_callback.processed_at is not null then
+     or v_callback.processed_at is not null
+     or v_callback.processing_status is distinct from 'processing'
+     or v_callback.retryable is distinct from true then
     raise exception 'Authenticated success callback evidence is missing or does not match';
   end if;
 
