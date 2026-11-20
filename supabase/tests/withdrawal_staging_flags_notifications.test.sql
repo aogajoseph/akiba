@@ -416,4 +416,87 @@ begin
 end;
 $test$;
 
+
+-- Creator-facing request creation uses only the synthetic sandbox workflow
+-- provider. It reserves funds and starts approvals, but cannot create a payout
+-- attempt or represent a real provider quote or money movement.
+do $sandbox_request$
+declare
+  request_id uuid;
+  request_status text;
+  reservation_status text;
+  reservation_amount bigint;
+  quote_version text;
+  payout_capability text;
+  simulation_capability text;
+  notification_count integer;
+  message text;
+begin
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+  begin
+    perform public.akiba_create_sandbox_withdrawal_request(
+      '10000000-0000-0000-0000-000000000001', 5000,
+      'Sandbox recipient', 'DEMO-RECIPIENT-01', 'Non-Creator authorization test'
+    );
+    raise exception 'A Group Admin unexpectedly created a withdrawal request';
+  exception when others then
+    get stacked diagnostics message = message_text;
+    if message not like '%Only the active Group Creator%' then raise; end if;
+  end;
+
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+  request_id := public.akiba_create_sandbox_withdrawal_request(
+    '10000000-0000-0000-0000-000000000001', 5000,
+    'Sandbox recipient', 'DEMO-RECIPIENT-01', 'Sandbox request creation regression test'
+  );
+
+  select status, fee_schedule_version
+    into request_status, quote_version
+  from public.akiba_withdrawal_requests
+  where id = request_id;
+
+  select status, amount_minor
+    into reservation_status, reservation_amount
+  from public.akiba_financial_reservations
+  where withdrawal_request_id = request_id;
+
+  select p.capabilities ->> 'payout', p.capabilities ->> 'workflow_simulation'
+    into payout_capability, simulation_capability
+  from public.akiba_withdrawal_requests r
+  join public.akiba_payment_providers p on p.id = r.provider_id
+  where r.id = request_id;
+
+  if request_status <> 'pending_approval' then
+    raise exception 'Sandbox request did not enter pending_approval';
+  end if;
+  if reservation_status <> 'active' or reservation_amount <> 5000 then
+    raise exception 'Sandbox request did not atomically reserve the exact requested amount';
+  end if;
+  if quote_version <> 'sandbox-simulation-zero-fee-v1' then
+    raise exception 'Sandbox request did not use the explicit simulation quote version';
+  end if;
+  if payout_capability <> 'false' or simulation_capability <> 'true' then
+    raise exception 'Workflow simulator must not advertise actual payout capability';
+  end if;
+
+  select count(*) into notification_count
+  from public.akiba_group_notifications
+  where group_id = '10000000-0000-0000-0000-000000000001'
+    and event_type = 'financial_withdrawal_requested';
+  if notification_count <> 6 then
+    raise exception 'Withdrawal request must notify every active member; got %', notification_count;
+  end if;
+
+  begin
+    perform public.akiba_create_sandbox_withdrawal_request(
+      '10000000-0000-0000-0000-000000000001', 5000,
+      'Another recipient', 'DEMO-RECIPIENT-02', 'Duplicate unresolved request test'
+    );
+    raise exception 'A second unresolved withdrawal unexpectedly succeeded';
+  exception when unique_violation then
+    null;
+  end;
+end;
+$sandbox_request$;
+
 rollback;
