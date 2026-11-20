@@ -109,7 +109,7 @@ describe("createContributionIntent", () => {
 
   it("rejects reuse of an idempotency key with different contribution terms", async () => {
     await expect(createContributionIntent(
-      { ...input, amountMinor: 20000n },
+      { ...input, amountMinor: BigInt(20000) },
       repository({ findByIdempotencyKey: async () => intent() }),
     )).rejects.toMatchObject({ code: "IDEMPOTENCY_KEY_REUSED" });
   });
