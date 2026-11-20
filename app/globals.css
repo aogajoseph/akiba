@@ -1515,3 +1515,15 @@
  .ak-finance-provider-modal{padding:17px}
  .ak-finance-provider-modal .ak-workspace-card-heading h2{font-size:17px}
 }
+
+
+/* Sandbox-only Creator withdrawal request form */
+.ak-withdrawal-create{display:grid;gap:10px;margin:12px 0 4px}
+.ak-withdrawal-create>summary{display:inline-flex;align-items:center;justify-self:start;min-height:40px;padding:0 15px;border-radius:8px;background:#bd2b78;color:#fff;font-size:11px;font-weight:750;cursor:pointer;list-style:none}
+.ak-withdrawal-create>summary::-webkit-details-marker{display:none}
+.ak-withdrawal-create[open]>summary{background:#8f225c}
+.ak-withdrawal-create-form{display:grid;gap:10px;max-width:520px;padding:15px;border:1px solid #eceaf1;border-radius:10px;background:#fcfbfd}
+.ak-withdrawal-create-form label{display:grid;gap:5px;color:#777c91;font-size:10px;font-weight:650}
+.ak-withdrawal-create-form input,.ak-withdrawal-create-form textarea{width:100%;min-height:39px;padding:9px 10px;border:1px solid #e4e3eb;border-radius:8px;background:#fff;color:#343750;font:inherit;font-size:11px}
+.ak-withdrawal-create-form textarea{resize:vertical}
+.ak-withdrawal-create-form .ak-finance-helper{margin:0;color:#858ba0;font-size:10px;line-height:1.55}
