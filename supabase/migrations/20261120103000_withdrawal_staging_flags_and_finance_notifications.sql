@@ -126,6 +126,7 @@ as $fn$
 declare
   required_count integer;
   active_admin_count integer;
+  active_creator_count integer;
 begin
   select greatest(e.required_group_admins, 3) into required_count
   from public.akiba_groups g
@@ -133,6 +134,15 @@ begin
   where g.id = p_group_id;
   if required_count is null then
     raise exception 'Group or group plan was not found';
+  end if;
+
+  select count(*) into active_creator_count
+  from public.akiba_group_memberships
+  where group_id = p_group_id
+    and role = 'group_creator'
+    and status = 'active';
+  if active_creator_count <> 1 then
+    raise exception 'Exactly one active Group Creator is required before contributions or withdrawals';
   end if;
 
   select count(*) into active_admin_count
@@ -241,6 +251,10 @@ declare
   provider_enabled boolean;
   provider_capabilities jsonb;
 begin
+  -- Serialize leadership readiness and request creation with membership
+  -- role changes so the approval roster cannot race an Admin demotion.
+  perform 1 from public.akiba_groups where id = new.group_id for update;
+
   select is_enabled, capabilities
     into provider_enabled, provider_capabilities
   from public.akiba_payment_providers
@@ -567,6 +581,10 @@ begin
        or (new.role is not distinct from old.role and new.status is not distinct from old.status) then
       return new;
     end if;
+  end if;
+
+  if membership_role = 'group_admin' then
+    perform 1 from public.akiba_groups where id = target_group_id for update;
   end if;
 
   if membership_role = 'group_admin' and exists (
@@ -905,6 +923,7 @@ declare
   request_row public.akiba_withdrawal_requests%rowtype;
   flag_row public.akiba_withdrawal_flags%rowtype;
   released_rows integer;
+  active_reservation_count integer;
 begin
   processed_count := 0;
   cancelled_count := 0;
@@ -920,6 +939,14 @@ begin
     limit least(greatest(coalesce(p_batch_size,25),1),100)
     for update skip locked
   loop
+    select count(*) into active_reservation_count
+    from public.akiba_financial_reservations
+    where withdrawal_request_id = request_row.id
+      and status = 'active';
+    if active_reservation_count <> 1 then
+      raise exception 'The active withdrawal reservation is missing or duplicated; staging transition was rolled back';
+    end if;
+
     if exists (
       select 1 from public.akiba_withdrawal_flags f
       where f.withdrawal_request_id = request_row.id
