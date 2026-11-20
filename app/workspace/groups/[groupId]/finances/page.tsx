@@ -161,23 +161,60 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
   ).length;
   const availableBalanceMinor = groupLedgerBalanceMinor - activeReservationMinor;
   const targetMinor = group.target_amount === null ? 0 : Number(group.target_amount) * 100;
-  const progressPercent = targetMinor > 0 ? Math.round((availableBalanceMinor / targetMinor) * 100) : 0;
+  const progressPercent = targetMinor > 0 ? Math.round((Math.max(0, availableBalanceMinor) / targetMinor) * 100) : 0;
   const progressWidth = Math.max(0, Math.min(100, progressPercent));
   const withdrawalReadError = Boolean(
     balanceError || withdrawalTransactionError || withdrawalRequestError ||
     withdrawalApprovalError || approvalRosterError || withdrawalFlagError ||
     reservationError || financeEventError
   );
+  const statementRows = [
+    ...history.map((item) => ({
+      id: "contribution:" + item.id,
+      occurredAt: item.effective_at,
+      description: item.description || "Group contribution",
+      reference: item.reference,
+      amountMinor: item.amount_minor,
+      kind: "Ledger posting",
+      currency: item.currency_code,
+    })),
+    ...(withdrawalTransactions ?? []).map((item) => ({
+      id: "withdrawal:" + item.id,
+      occurredAt: item.effective_at,
+      description: item.description || "Completed group withdrawal",
+      reference: item.reference,
+      amountMinor: (balanceLines ?? [])
+        .filter((line) => line.transaction_id === item.id && line.direction === "debit")
+        .reduce((sum, line) => sum + Number(line.amount_minor), 0),
+      kind: "Ledger posting",
+      currency: item.currency_code,
+    })),
+    ...(financeEvents ?? []).map((event) => ({
+      id: "event:" + event.id,
+      occurredAt: event.created_at,
+      description: String(event.event_type).replace(/_/g, " "),
+      reference: event.source_type.replace(/_/g, " "),
+      amountMinor: null as number | null,
+      kind: "Workflow event",
+      currency: group.currency_code,
+    })),
+  ].sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()).slice(0, 50);
   const service = createServiceClient();
   const { data: payoutProvider } = await service.from("akiba_payment_providers")
     .select("is_enabled,capabilities")
     .eq("provider_code", "safaricom_daraja")
     .maybeSingle();
+  const payoutCapabilities =
+    payoutProvider?.capabilities &&
+    typeof payoutProvider.capabilities === "object" &&
+    !Array.isArray(payoutProvider.capabilities)
+      ? payoutProvider.capabilities as Record<string, unknown>
+      : {};
   const payoutEnabled = Boolean(
     payoutProvider?.is_enabled &&
-    payoutProvider.capabilities?.payout === true &&
-    payoutProvider.capabilities?.fee_quotes === true &&
-    payoutProvider.capabilities?.environment === "sandbox"
+    payoutCapabilities.payout === true &&
+    payoutCapabilities.fee_quotes === true &&
+    payoutCapabilities.environment === "sandbox"
   );
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const sandboxEnabled = process.env.MPESA_ENVIRONMENT === "sandbox" &&
@@ -311,15 +348,17 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
             </div>
             {withdrawalReadError ? (
               <div className="ak-workspace-empty"><strong>Financial activity could not be loaded</strong><p>Refresh the page to try again.</p></div>
-            ) : (financeEvents ?? []).length === 0 ? (
-              <div className="ak-workspace-empty"><strong>No financial activity yet</strong><p>Contributions, withdrawal decisions, flags and other financial actions will appear here.</p></div>
+            ) : statementRows.length === 0 ? (
+              <div className="ak-workspace-empty"><strong>No financial activity yet</strong><p>Contributions, withdrawals, approvals, flags and other financial actions will appear here.</p></div>
             ) : (
               <div className="ak-finance-history-list">
-                {(financeEvents ?? []).map((event) => (
-                  <article className="ak-finance-history-row" key={event.id}>
-                    <span className="ak-finance-history-icon">{event.event_type.includes("rejected") || event.event_type.includes("cancelled") ? "!" : "•"}</span>
-                    <div><strong>{String(event.event_type).replace(/_/g, " ")}</strong><small>{formatDate(event.created_at)} · {event.source_type.replace(/_/g, " ")}</small></div>
-                    <span className="ak-finance-event-kind">Activity</span>
+                {statementRows.map((item) => (
+                  <article className="ak-finance-history-row" key={item.id}>
+                    <span className="ak-finance-history-icon">{item.kind === "Ledger posting" ? "✓" : "•"}</span>
+                    <div><strong>{item.description}</strong><small>{formatDate(item.occurredAt)} · {item.kind} · {item.reference}</small></div>
+                    {item.amountMinor === null
+                      ? <span className="ak-finance-event-kind">Activity</span>
+                      : <strong>{money(item.amountMinor, item.currency)}</strong>}
                   </article>
                 ))}
               </div>
