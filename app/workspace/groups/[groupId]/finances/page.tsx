@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
@@ -237,30 +238,33 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
   const statementRows = [...ledgerStatementRows, ...workflowStatementRows]
     .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
     .slice(0, 50);
-  let payoutEnabled = false;
+  let sandboxWorkflowEnabled = false;
   try {
     const service = createServiceClient();
-    const { data: payoutProvider } = await service.from("akiba_payment_providers")
+    const { data: workflowProvider } = await service.from("akiba_payment_providers")
       .select("is_enabled,capabilities")
-      .eq("provider_code", "safaricom_daraja")
+      .eq("provider_code", "sandbox_workflow_simulator")
       .maybeSingle();
-    const payoutCapabilities =
-      payoutProvider?.capabilities &&
-      typeof payoutProvider.capabilities === "object" &&
-      !Array.isArray(payoutProvider.capabilities)
-        ? payoutProvider.capabilities as Record<string, unknown>
+    const workflowCapabilities =
+      workflowProvider?.capabilities &&
+      typeof workflowProvider.capabilities === "object" &&
+      !Array.isArray(workflowProvider.capabilities)
+        ? workflowProvider.capabilities as Record<string, unknown>
         : {};
-    payoutEnabled = Boolean(
-      payoutProvider?.is_enabled &&
-      payoutCapabilities.payout === true &&
-      payoutCapabilities.fee_quotes === true &&
-      payoutCapabilities.environment === "sandbox"
+    sandboxWorkflowEnabled = Boolean(
+      group.status === "active" &&
+      workflowProvider?.is_enabled &&
+      workflowCapabilities.workflow_simulation === true &&
+      workflowCapabilities.fee_quotes === true &&
+      workflowCapabilities.payout === false &&
+      workflowCapabilities.environment === "sandbox"
     );
   } catch {
-    // Fail closed: the Creator's withdrawal CTA remains disabled if provider
-    // payout capability cannot be verified from the trusted server client.
-    payoutEnabled = false;
+    // Fail closed: only the dedicated sandbox workflow simulator can enable
+    // the Creator request form. Safaricom B2C remains a separate exercise.
+    sandboxWorkflowEnabled = false;
   }
+  const requestIdempotencyKey = randomUUID();
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const sandboxEnabled = process.env.MPESA_ENVIRONMENT === "sandbox" &&
     process.env.MPESA_SANDBOX_COLLECTION_ENABLED === "true" &&
@@ -380,7 +384,9 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
             groupId={group.id}
             currentUserId={user.id}
             currentUserRole={membership.role}
-            payoutEnabled={payoutEnabled}
+            leadershipReady={leadershipReady}
+            sandboxWorkflowEnabled={sandboxWorkflowEnabled}
+            requestIdempotencyKey={requestIdempotencyKey}
             readError={withdrawalReadError}
             requests={withdrawalRequests ?? []}
             approvals={withdrawalApprovals ?? []}
