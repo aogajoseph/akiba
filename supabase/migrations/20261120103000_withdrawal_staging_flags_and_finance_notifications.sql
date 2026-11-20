@@ -874,12 +874,6 @@ begin
         updated_at = clock_timestamp()
     where id = payout_row.id;
 
-    insert into public.akiba_finance_activity_events
-      (group_id, actor_id, event_type, source_type, source_id, event_payload)
-    values
-      (request_row.group_id, actor_id, 'withdrawal_payout_attempt_cancelled',
-       'payout_attempt', payout_row.id,
-       jsonb_build_object('withdrawal_request_id', request_row.id));
   end loop;
 
   for flag_row in
@@ -1130,6 +1124,57 @@ create trigger akiba_payment_attempt_finance_activity
 after insert or update of status on public.akiba_payment_attempts
 for each row execute function akiba_private.emit_payment_attempt_finance_activity();
 
+-- Payout-attempt status changes are auditable workflow events. The provider
+-- payout executor is intentionally not enabled until sandbox capability exists.
+create or replace function akiba_private.emit_payout_attempt_finance_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  request_row public.akiba_withdrawal_requests%rowtype;
+  v_event_type text;
+begin
+  if tg_op = 'INSERT' then
+    v_event_type := 'withdrawal_payout_attempt_queued';
+  elsif old.status is distinct from new.status then
+    v_event_type := 'withdrawal_payout_attempt_' || new.status;
+  else
+    return new;
+  end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = new.withdrawal_request_id;
+  if not found then raise exception 'Payout attempt withdrawal request was not found'; end if;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (request_row.group_id, request_row.initiator_id, v_event_type,
+     'payout_attempt', new.id,
+     jsonb_build_object(
+       'withdrawal_request_id', request_row.id,
+       'amount_minor', request_row.total_debit_minor,
+       'currency_code', request_row.currency_code,
+       'provider_id', new.provider_id,
+       'provider_payout_ref', new.provider_payout_ref,
+       'provider_fee_minor', new.provider_fee_minor,
+       'status', new.status,
+       'reconciliation_status', new.reconciliation_status
+     ))
+  on conflict (group_id, event_type, source_type, source_id) do nothing;
+
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_payout_attempt_finance_activity on public.akiba_payout_attempts;
+create trigger akiba_payout_attempt_finance_activity
+after insert or update of status on public.akiba_payout_attempts
+for each row execute function akiba_private.emit_payout_attempt_finance_activity();
+
 -- Finance activity is the durable outbox. Attempt immediate fan-out, but
 -- catch notification failures so they cannot roll back a committed money event.
 alter table public.akiba_finance_activity_events
@@ -1197,7 +1242,13 @@ begin
     when 'withdrawal_cancelled_flagged' then 'Withdrawal cancelled'
     when 'withdrawal_cancelled_by_creator' then 'Withdrawal cancelled by Creator'
     when 'withdrawal_payout_queued' then 'Withdrawal cleared for payout'
+    when 'withdrawal_payout_attempt_queued' then 'Payout attempt queued'
+    when 'withdrawal_payout_attempt_submitted' then 'Payout submitted'
+    when 'withdrawal_payout_attempt_processing' then 'Payout processing'
+    when 'withdrawal_payout_attempt_succeeded' then 'Payout confirmed'
+    when 'withdrawal_payout_attempt_failed' then 'Payout failed'
     when 'withdrawal_payout_attempt_cancelled' then 'Queued payout cancelled'
+    when 'withdrawal_payout_attempt_unknown' then 'Payout outcome uncertain'
     else 'Group financial activity'
   end;
 
@@ -1318,6 +1369,7 @@ revoke all on function akiba_private.guard_group_admin_unresolved_withdrawal() f
 revoke all on function akiba_private.guard_payout_attempt_insert() from public, anon, authenticated;
 revoke all on function akiba_private.emit_contribution_finance_activity() from public, anon, authenticated;
 revoke all on function akiba_private.emit_payment_attempt_finance_activity() from public, anon, authenticated;
+revoke all on function akiba_private.emit_payout_attempt_finance_activity() from public, anon, authenticated;
 revoke all on function akiba_private.fanout_finance_activity_event(uuid) from public, anon, authenticated;
 revoke all on function akiba_private.notify_finance_activity_event() from public, anon, authenticated;
 
