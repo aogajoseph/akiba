@@ -1,8 +1,8 @@
 # Akiba Finance Architecture (v1)
 
-**Status:** Phase 1 architecture baseline  
+**Status:** Governing finance architecture — Phase 3 sandbox implementation  
 **Applies to:** Group contributions, withdrawals, payment orchestration, group financial activity, and Akiba revenue separation  
-**Implementation rule:** This document defines product and engineering invariants. It does not authorize production migrations, live payment activation, merging, or deployment.
+**Implementation rule:** This document defines product and engineering invariants. It does not authorize production migrations, live payment activation, merging, or deployment. Permanent provider/custody decision: [ADR-001](adr/ADR-001-globe-technology-provider-and-non-custodial-payments.md).
 
 ## 1. Purpose and governing principles
 
@@ -281,3 +281,37 @@ Personal financial histories, identifiable contribution records, and group conve
 8. Complete security, operational, legal, partner-contract, and reconciliation reviews before considering live payment activation.
 
 All new work remains on `feat/group-finance-foundation` until reviewed. No production migration, live provider activation, merge to `main`, or deployment is authorized by this document alone.
+
+## 12. Permanent architecture decision — Globe is a technology provider
+
+**Accepted ADR:** [ADR-001: Globe Technologies remains a technology provider; custody and payment execution are delegated](adr/ADR-001-globe-technology-provider-and-non-custodial-payments.md).
+
+> **Globe Technologies is a technology provider, not a financial custodian or payment operator. All custody and payment execution must be delegated to appropriately licensed and contracted third-party partners.**
+
+This is a permanent architectural constraint across Akiba and future Globe products unless formally amended through Globe's authorized governance. It is not a legal opinion or a claim that every technology/orchestration activity is automatically outside financial regulation.
+
+### 12.1 Provider-independent core
+
+The following remain inside Akiba's core and must not be rewritten when a partner is added or replaced:
+
+- Group accounting and append-only double-entry ledger.
+- Group leadership readiness and Creator/Admin/member authority.
+- Immutable withdrawal terms and request-time approval roster.
+- Atomic reservations, rejection/cancellation rules and one-unresolved-request lock.
+- Two-hour staging, member-owned flags and deadline outcomes.
+- Finance activity events, member notifications and audit history.
+- Normalized payout outcome handling, reconciliation policy and exact-once ledger posting.
+
+A partner adapter is responsible for partner-specific quote acquisition, destination tokenization/validation, payout submission, callback authentication/parsing, status inquiry, idempotency mapping and settlement evidence. Adapters return normalized facts; they never write ledger rows or independently approve, release reservations, or complete a withdrawal.
+
+### 12.2 Multiple licensed partners
+
+Provider records and adapters are capability-driven. Akiba must support multiple independently configured partners, each with an explicit environment, supported currencies, collection/payout capabilities, quote capability, destination rules, callback/status mechanisms, idempotency behavior, settlement reporting and contractual scope. A capability is not assumed from another capability or from a provider's brand. The selected provider and its immutable quote/terms remain bound to the withdrawal request and approval fingerprint.
+
+The central workflow and ledger consume normalized provider events and evidence. Partner replacement or routing changes are implemented in provider configuration and adapter/orchestration code, not by changing the core ledger schema or governance state machine.
+
+### 12.3 Sandbox simulator and B2C exercise
+
+The sandbox_workflow_simulator is strictly a workflow demonstrator. Its synthetic zero-fee quote and non-routable destination label allow the Creator request, reservation, Admin approvals, staging and flag lifecycle to be exercised. It has payout=false, cannot create a payout attempt, and must never produce a completed withdrawal.
+
+Safaricom Daraja B2C remains a separate sandbox-only technical exercise. It is not the selected provider for the workflow simulator and is not a live payout or custody arrangement. Any future partner adapter must be contracted and legally reviewed before live activation.
