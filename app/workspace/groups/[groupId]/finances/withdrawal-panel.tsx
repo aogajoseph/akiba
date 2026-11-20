@@ -1,5 +1,6 @@
 import {
   cancelWithdrawalRequest,
+  createWithdrawalRequest,
   decideWithdrawalRequest,
   flagWithdrawal,
   removeWithdrawalFlag,
@@ -44,7 +45,8 @@ type Props = {
   groupId: string;
   currentUserId: string;
   currentUserRole: string;
-  payoutEnabled: boolean;
+  sandboxWorkflowEnabled: boolean;
+  requestIdempotencyKey: string;
   readError: boolean;
   requests: WithdrawalRequest[];
   approvals: Approval[];
@@ -99,7 +101,8 @@ export default function WithdrawalPanel({
   groupId,
   currentUserId,
   currentUserRole,
-  payoutEnabled,
+  sandboxWorkflowEnabled,
+  requestIdempotencyKey,
   readError,
   requests,
   approvals,
@@ -108,8 +111,7 @@ export default function WithdrawalPanel({
 }: Props) {
   const isCreator = currentUserRole === "group_creator";
   const isAdmin = currentUserRole === "group_admin";
-  const requestEnabled = false; // No sandbox payout/fee-quote adapter is available yet.
-  const canRequest = isCreator && payoutEnabled && requestEnabled;
+  const canRequest = isCreator && sandboxWorkflowEnabled;
 
   return (
     <section className="ak-workspace-card ak-withdrawal-panel">
@@ -119,30 +121,49 @@ export default function WithdrawalPanel({
           <h2>Withdrawals and approvals</h2>
           <p>Only the Group Creator can request a withdrawal. Every Group Admin must approve it before the two-hour member review begins.</p>
         </div>
-        <button
-          type="button"
-          className="ak-finance-secondary-button"
-          disabled={!canRequest}
-          title={
+        {canRequest ? (
+          <details className="ak-withdrawal-create">
+            <summary className="ak-finance-primary-button">Request withdrawal</summary>
+            <form action={createWithdrawalRequest} className="ak-finance-form ak-withdrawal-create-form">
+              <input type="hidden" name="group_id" value={groupId} />
+              <input type="hidden" name="idempotency_key" value={requestIdempotencyKey} />
+              <label>
+                Recipient amount (KES)
+                <input name="amount_kes" type="number" inputMode="numeric" min="1" max="250000" step="1" defaultValue="1" required />
+              </label>
+              <label>
+                Recipient name
+                <input name="recipient_name" type="text" maxLength={160} autoComplete="off" required />
+              </label>
+              <label>
+                Sandbox destination label
+                <input name="destination_label" type="text" maxLength={48} placeholder="DEMO-RECIPIENT-01" autoComplete="off" required />
+              </label>
+              <label>
+                Purpose of withdrawal
+                <textarea name="reason" maxLength={500} rows={3} required />
+              </label>
+              <button type="submit" className="ak-finance-primary-button">Create sandbox request</button>
+              <p className="ak-finance-helper">Sandbox workflow only. The destination is a non-routable test label, fees are simulated as KES 0, and no payment is sent. This creates the request and reservation for Admin approval.</p>
+            </form>
+          </details>
+        ) : (
+          <button type="button" className="ak-finance-secondary-button" disabled title={
             !isCreator
               ? "Only the Group Creator can request a withdrawal."
-              : !payoutEnabled
-                ? "Sandbox payout and verified fee quotes are not enabled by the payment provider."
-                : "The secure withdrawal request and provider fee-quote workflow is not available yet."
-          }
-        >
-          Withdraw
-        </button>
+              : "Sandbox withdrawal workflow simulation is unavailable."
+          }>Withdraw</button>
+        )}
       </div>
 
       {!isCreator && (
         <p className="ak-finance-disabled">Only the Group Creator can request a withdrawal. You can review requests and take actions permitted by your Group Admin or member role.</p>
       )}
-      {isCreator && !payoutEnabled && (
-        <p className="ak-finance-disabled">Withdrawal requests are temporarily unavailable. The current Safaricom sandbox setup supports collections but not verified payouts or fee quotes. Group funds will not be released until a payout-capable sandbox flow is proven.</p>
+      {isCreator && !sandboxWorkflowEnabled && (
+        <p className="ak-finance-disabled">Sandbox withdrawal workflow simulation is unavailable. No live or real-money payout option is enabled.</p>
       )}
-      {isCreator && payoutEnabled && !requestEnabled && (
-        <p className="ak-finance-disabled">The provider reports payout capability, but the trusted fee-quote and withdrawal request flow is not yet implemented. The request button remains disabled until those controls are verified.</p>
+      {isCreator && sandboxWorkflowEnabled && (
+        <p className="ak-finance-disabled">This is a workflow demonstration only: the sandbox simulator creates no payment instruction, does not move funds, and cannot mark a withdrawal as paid. The zero-fee quote is synthetic, not a partner quote.</p>
       )}
 
       {readError ? (
