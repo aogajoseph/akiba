@@ -805,3 +805,140 @@ export async function submitGroupReport(formData: FormData) {
   revalidatePath("/workspace/groups/" + groupId);
   redirect(returnPath + "?submitted=1");
 }
+
+
+function financeActionRedirect(groupId: string, key: "financeError" | "financeUpdated", message: string): never {
+  redirect("/workspace/groups/" + groupId + "/finances?" + key + "=" + encodeURIComponent(message));
+}
+
+function validFinanceIds(groupId: string, requestId: string): boolean {
+  return /^[0-9a-f-]{36}$/i.test(groupId) && /^[0-9a-f-]{36}$/i.test(requestId);
+}
+
+export async function decideWithdrawalRequest(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const requestId = String(formData.get("request_id") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  const rejectionReason = String(formData.get("rejection_reason") ?? "").trim();
+
+  if (!validFinanceIds(groupId, requestId) ||
+      (decision !== "approved" && decision !== "rejected") ||
+      (decision === "rejected" && (rejectionReason.length < 1 || rejectionReason.length > 500))) {
+    if (/^[0-9a-f-]{36}$/i.test(groupId)) {
+      financeActionRedirect(groupId, "financeError", "Provide a valid withdrawal decision and, if rejecting, a reason.");
+    }
+    redirect("/workspace/groups");
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_decide_withdrawal_request", {
+    p_withdrawal_request_id: requestId,
+    p_decision: decision,
+    p_rejection_reason: decision === "rejected" ? rejectionReason : null,
+  });
+  if (error) {
+    const message = error.message.includes("request-time approval roster")
+      ? "Only an active Group Admin included in the original approval roster can decide this withdrawal."
+      : error.message.includes("no longer accepting decisions")
+        ? "This withdrawal is no longer accepting approvals."
+        : error.message.includes("initiator")
+          ? "The Group Creator cannot approve their own withdrawal."
+          : "Your withdrawal decision could not be saved. Refresh and try again.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  revalidatePath("/workspace/groups/" + groupId);
+  financeActionRedirect(groupId, "financeUpdated", decision === "approved"
+    ? "Your approval was recorded."
+    : "The withdrawal was rejected and its reservation released.");
+}
+
+export async function flagWithdrawal(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const requestId = String(formData.get("request_id") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!validFinanceIds(groupId, requestId) || reason.length < 1 || reason.length > 500) {
+    if (/^[0-9a-f-]{36}$/i.test(groupId)) {
+      financeActionRedirect(groupId, "financeError", "Provide a short reason for flagging this withdrawal.");
+    }
+    redirect("/workspace/groups");
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_flag_withdrawal", {
+    p_withdrawal_request_id: requestId,
+    p_reason: reason,
+  });
+  if (error) {
+    const message = error.message.includes("already have an active flag")
+      ? "You already have an active flag on this withdrawal."
+      : error.message.includes("flagging period")
+        ? "The two-hour flagging period has ended."
+        : "Your withdrawal flag could not be recorded. Refresh and try again.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  financeActionRedirect(groupId, "financeUpdated", "Your flag was recorded. This withdrawal cannot proceed while it remains active.");
+}
+
+export async function removeWithdrawalFlag(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const flagId = String(formData.get("flag_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || !/^[0-9a-f-]{36}$/i.test(flagId)) {
+    redirect("/workspace/groups");
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_remove_withdrawal_flag", {
+    p_flag_id: flagId,
+  });
+  if (error) {
+    const message = error.message.includes("only a flag that you created")
+      ? "You can remove only a flag that you created."
+      : error.message.includes("flagging period")
+        ? "The two-hour flagging period has ended."
+        : "This flag could not be removed. It may already be closed.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  financeActionRedirect(groupId, "financeUpdated", "Your flag was removed. The original staging deadline has not changed.");
+}
+
+export async function cancelWithdrawalRequest(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const requestId = String(formData.get("request_id") ?? "");
+  if (!validFinanceIds(groupId, requestId)) redirect("/workspace/groups");
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_cancel_withdrawal_request", {
+    p_withdrawal_request_id: requestId,
+  });
+  if (error) {
+    const message = error.message.includes("Only the active Group Creator")
+      ? "Only the Group Creator who requested this withdrawal may cancel it."
+      : error.message.includes("uncertain outcome")
+        ? "A payout may already be in progress. The reservation will remain until provider reconciliation."
+        : "This withdrawal can no longer be cancelled.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  revalidatePath("/workspace/groups/" + groupId);
+  financeActionRedirect(groupId, "financeUpdated", "The withdrawal was cancelled and its reservation released.");
+}
