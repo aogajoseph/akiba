@@ -1,6 +1,7 @@
 import { PaymentError } from "../../errors";
 import type { ProviderConnectionConfig } from "../../types";
 import { getDarajaAccessToken } from "./oauth";
+import { isRetryableDarajaHttpStatus } from "./reconciliation";
 
 interface DarajaResponse {
   ResponseCode?: unknown;
@@ -116,7 +117,7 @@ async function darajaPost(
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
       "Safaricom returned an unsuccessful response.",
-      { retryable: response.status >= 500 },
+      { retryable: isRetryableDarajaHttpStatus(response.status) },
     );
   }
   return result;
