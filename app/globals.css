@@ -1490,3 +1490,28 @@
  .ak-withdrawal-reject-form input,.ak-withdrawal-flag-form input{width:100%}
  .ak-withdrawal-flags li{align-items:flex-start;flex-direction:column}
 }
+
+
+/* Finance contribution provider selection */
+.ak-finance-provider-choice{display:grid;gap:10px}
+.ak-finance-provider-choice>p{margin:0;color:#858ba0;font-size:10px;line-height:1.55}
+.ak-finance-selected-provider{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding:10px 12px;border:1px solid #eceaf1;border-radius:9px;background:#fbfafc;color:#68657d;font-size:10px}
+.ak-finance-selected-provider .ak-finance-secondary-button{margin:0}
+.ak-finance-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(23,20,37,.56)}
+.ak-finance-provider-modal{width:min(100%,460px);max-height:min(90vh,620px);overflow:auto;padding:22px;border:1px solid #eceaf1;border-radius:14px;background:#fff;box-shadow:0 24px 80px rgba(20,16,35,.24)}
+.ak-finance-provider-modal .ak-workspace-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.ak-finance-provider-modal .ak-workspace-card-heading h2{margin:5px 0;color:#302d48;font-size:19px}
+.ak-finance-provider-modal .ak-workspace-card-heading p{margin:0;color:#858ba0;font-size:10px;line-height:1.55}
+.ak-finance-provider-modal .ak-finance-secondary-button{flex:0 0 auto;margin:0}
+.ak-finance-provider-options{display:grid;gap:9px;margin-bottom:14px}
+.ak-finance-provider-option{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;padding:13px;border:1px solid #e9e7ef;border-radius:10px;background:#fff;color:#37344f;text-align:left;cursor:pointer}
+.ak-finance-provider-option:hover,.ak-finance-provider-option:focus-visible,.ak-finance-provider-option.selected{border-color:#c52a78;background:#fff9fc;outline:none}
+.ak-finance-provider-option>span:nth-child(2){display:grid;gap:4px}
+.ak-finance-provider-option strong{font-size:11px}
+.ak-finance-provider-option small{color:#858ba0;font-size:9px;line-height:1.5}
+.ak-finance-provider-option>span:last-child{color:#b91f68;font-size:17px}
+@media(max-width:480px){
+ .ak-finance-modal-backdrop{padding:12px}
+ .ak-finance-provider-modal{padding:17px}
+ .ak-finance-provider-modal .ak-workspace-card-heading h2{font-size:17px}
+}
