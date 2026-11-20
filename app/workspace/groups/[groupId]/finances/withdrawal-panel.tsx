@@ -79,11 +79,13 @@ function dateTime(value: string | null) {
 function statusLabel(status: string) {
   const labels: Record<string, string> = {
     pending_approval: "Awaiting Admin approvals",
+    approved: "Approved · staging transition pending",
     staging: "Two-hour member review",
     payout_queued: "Cleared for payout",
     payout_submitted: "Payout submitted",
     payout_processing: "Payout processing",
     reconciliation_required: "Provider reconciliation required",
+    failed_pending_reconciliation: "Provider reconciliation required",
     rejected: "Rejected",
     cancelled: "Cancelled by Creator",
     cancelled_flagged: "Cancelled after member flag",
