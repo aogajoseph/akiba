@@ -169,6 +169,11 @@ security definer
 set search_path to ''
 as $fn$
 begin
+  -- Freeze the roster timestamp on the request row itself. The AFTER INSERT
+  -- roster snapshot is in the same transaction, so a failed snapshot rolls
+  -- back the request without requiring a nested UPDATE that would trip the
+  -- immutable-terms guard.
+  new.approval_roster_frozen_at := coalesce(new.approval_roster_frozen_at, clock_timestamp());
   new.terms_fingerprint := encode(extensions.digest(convert_to(concat_ws('|',
     new.id::text, new.approval_version::text, new.group_id::text, new.currency_code,
     new.recipient_amount_minor::text, new.total_debit_minor::text, new.akiba_fee_minor::text,
@@ -316,10 +321,8 @@ begin
     raise exception 'At least three active Group Admins must be snapshotted for a withdrawal';
   end if;
 
-  update public.akiba_withdrawal_requests
-  set approval_roster_frozen_at = clock_timestamp()
-  where id = new.id;
-
+  -- approval_roster_frozen_at was set by the BEFORE INSERT fingerprint
+  -- trigger; the roster and request therefore commit or roll back together.
   return new;
 end;
 $fn$;
