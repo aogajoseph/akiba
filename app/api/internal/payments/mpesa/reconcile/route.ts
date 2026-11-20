@@ -3,7 +3,7 @@ import { createServiceClient } from "@/lib/supabase/service";
 import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
 import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
 import { PaymentError } from "@/lib/payments/errors";
-import { hasPostableCallbackEvidence, hasPostableContributionEvidence, reconciliationRetryDelayMinutes } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
+import { hasPostableContributionEvidence, reconciliationRetryDelayMinutes } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -139,7 +139,7 @@ export async function GET(request: NextRequest) {
 
   const { data: dueEvents, error: eventsError } = await service
     .from("akiba_provider_events")
-    .select("id,provider_event_ref,source_reference,payload_digest,provider_result_code,amount_minor,currency_code,provider_receipt_number,attempt_count")
+    .select("id,provider_event_ref,source_reference,payload_digest,provider_result_code,amount_minor,currency_code,provider_receipt_number,callback_authenticated_at,callback_auth_method,attempt_count")
     .eq("provider_id", provider.id)
     .eq("event_type", "mpesa_stk_callback")
     .eq("retryable", true)
@@ -217,71 +217,44 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-      // Complete authenticated success callbacks are self-contained payment
-      // evidence. Post them before considering STK Query, so Daraja query
-      // throttling/outages cannot block a valid callback from reaching the
-      // ledger. The database RPC is atomic and idempotent.
-      if (event.provider_result_code === "0") {
-        const callbackEvidenceIsValid = hasPostableCallbackEvidence({
-          callbackResultCode: event.provider_result_code,
-          providerResultCode: event.provider_result_code,
-          receipt: event.provider_receipt_number,
-          amountMinor: Number(event.amount_minor),
-          expectedAmountMinor: Number(attempt.amount_minor),
-          eventCurrency: event.currency_code,
-          attemptCurrency: attempt.currency_code,
-        });
-
-        if (!callbackEvidenceIsValid) {
-          await service.from("akiba_provider_events").update({
-            processing_status: "failed",
-            retryable: false,
-            processing_note: "Success callback is missing a valid receipt or its amount/currency does not match the stored attempt; manual review required.",
-          }).eq("id", event.id).eq("payload_digest", event.payload_digest);
-          manualReview += 1;
-          continue;
-        }
-
-        const { data: currentCallback, error: currentCallbackError } = await service
-          .from("akiba_provider_events")
-          .select("id")
-          .eq("id", event.id)
-          .eq("payload_digest", event.payload_digest)
-          .eq("processing_status", "processing")
-          .eq("retryable", true)
-          .is("processed_at", null)
-          .maybeSingle();
-        if (currentCallbackError || !currentCallback) {
-          skipped += 1;
-          continue;
-        }
-
-        const { error: callbackPostError } = await service.rpc("post_mpesa_contribution", {
-          p_checkout_request_id: event.provider_event_ref,
-          p_provider_receipt_number: event.provider_receipt_number,
-          p_amount_minor: String(Number(event.amount_minor)),
-          p_currency_code: "KES",
-          p_provider_result_code: "0",
-        });
-        if (callbackPostError) throw callbackPostError;
-
-        await service.from("akiba_provider_events").update({
-          processing_status: "processed",
-          processed_at: new Date().toISOString(),
-          retryable: false,
-          processing_note: null,
-        }).eq("id", event.id).eq("payload_digest", event.payload_digest);
-        processed += 1;
-        continue;
-      }
-
       const configResult = readDarajaCollectionConfig();
       if (!configResult.ok) {
         throw new PaymentError("PROVIDER_UNAVAILABLE", "Provider configuration unavailable", { retryable: true });
       }
       const providerStatus = await queryStkPush(event.provider_event_ref, configResult.config);
+      const providerReferenceMatches =
+        providerStatus.checkoutRequestId === event.provider_event_ref &&
+        (!providerStatus.merchantRequestId ||
+          !attempt.provider_merchant_ref ||
+          providerStatus.merchantRequestId === attempt.provider_merchant_ref);
+      const verificationStatus =
+        providerReferenceMatches && providerStatus.resultCode === "0"
+          ? "success"
+          : providerStatus.resultCode === null
+            ? "pending"
+            : "failure";
+      const { data: verification, error: verificationInsertError } = await service
+        .from("akiba_provider_verifications")
+        .insert({
+          provider_id: provider.id,
+          payment_attempt_id: attempt.id,
+          callback_event_id: event.id,
+          checkout_request_id: providerStatus.checkoutRequestId ?? "",
+          merchant_request_id: providerStatus.merchantRequestId,
+          result_code: providerStatus.resultCode,
+          result_description: providerStatus.resultDescription?.slice(0, 500) ?? null,
+          verification_status: verificationStatus,
+          response_digest: providerStatus.responseDigest,
+          verified_at: providerStatus.verifiedAt,
+        })
+        .select("id")
+        .single();
+      if (verificationInsertError || !verification) {
+        throw new PaymentError("PROVIDER_UNAVAILABLE", "Safaricom verification evidence could not be durably stored.", { retryable: true });
+      }
+
       if (
-        providerStatus.checkoutRequestId !== event.provider_event_ref ||
+        !providerReferenceMatches ||
         (providerStatus.merchantRequestId &&
           attempt.provider_merchant_ref &&
           providerStatus.merchantRequestId !== attempt.provider_merchant_ref)
@@ -325,15 +298,24 @@ export async function GET(request: NextRequest) {
           ? event.provider_receipt_number
           : "";
 
-        if (!hasPostableContributionEvidence({
-          callbackResultCode: callbackCode,
-          providerResultCode: providerStatus.resultCode,
-          receipt,
-          amountMinor,
-          expectedAmountMinor: expectedMinor,
-          eventCurrency: event.currency_code,
-          attemptCurrency: attempt.currency_code,
-        })) {
+        if (
+          !event.callback_authenticated_at ||
+          event.callback_auth_method !== "shared_url_token" ||
+          !hasPostableContributionEvidence({
+            callbackResultCode: callbackCode,
+            providerResultCode: providerStatus.resultCode,
+            callbackCheckoutRequestId: event.provider_event_ref,
+            providerCheckoutRequestId: providerStatus.checkoutRequestId,
+            callbackMerchantRequestId: event.source_reference,
+            providerMerchantRequestId: providerStatus.merchantRequestId,
+            expectedMerchantRequestId: attempt.provider_merchant_ref,
+            receipt,
+            amountMinor,
+            expectedAmountMinor: expectedMinor,
+            eventCurrency: event.currency_code,
+            attemptCurrency: attempt.currency_code,
+          })
+        ) {
           await service.from("akiba_provider_events").update({
             processing_status: "failed",
             retryable: false,
@@ -366,7 +348,8 @@ export async function GET(request: NextRequest) {
           p_provider_receipt_number: receipt,
           p_amount_minor: String(amountMinor),
           p_currency_code: "KES",
-          p_provider_result_code: "0",
+          p_callback_event_id: event.id,
+          p_provider_verification_id: verification.id,
         });
         if (postError) throw postError;
 
