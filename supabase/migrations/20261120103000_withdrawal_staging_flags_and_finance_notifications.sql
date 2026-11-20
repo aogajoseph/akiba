@@ -1080,6 +1080,56 @@ create trigger akiba_contribution_finance_activity
 after insert or update of status on public.akiba_contribution_intents
 for each row execute function akiba_private.emit_contribution_finance_activity();
 
+-- Payment-attempt state transitions are separate financial workflow events
+-- from the contribution intent and the eventual ledger posting.
+create or replace function akiba_private.emit_payment_attempt_finance_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  intent_row public.akiba_contribution_intents%rowtype;
+  v_event_type text;
+begin
+  if tg_op = 'INSERT' then
+    v_event_type := 'payment_attempt_initiated';
+  elsif old.status is distinct from new.status then
+    v_event_type := 'payment_attempt_' || new.status;
+  else
+    return new;
+  end if;
+
+  select * into intent_row
+  from public.akiba_contribution_intents
+  where id = new.contribution_intent_id;
+  if not found then raise exception 'Payment attempt contribution intent was not found'; end if;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (intent_row.group_id, intent_row.contributor_id, v_event_type,
+     'payment_attempt', new.id,
+     jsonb_build_object(
+       'contribution_intent_id', intent_row.id,
+       'amount_minor', new.amount_minor,
+       'currency_code', new.currency_code,
+       'provider_id', new.provider_id,
+       'provider_attempt_ref', new.provider_attempt_ref,
+       'request_reference', new.request_reference,
+       'status', new.status
+     ))
+  on conflict (group_id, event_type, source_type, source_id) do nothing;
+
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_payment_attempt_finance_activity on public.akiba_payment_attempts;
+create trigger akiba_payment_attempt_finance_activity
+after insert or update of status on public.akiba_payment_attempts
+for each row execute function akiba_private.emit_payment_attempt_finance_activity();
+
 -- Finance activity is the durable outbox. Attempt immediate fan-out, but
 -- catch notification failures so they cannot roll back a committed money event.
 alter table public.akiba_finance_activity_events
@@ -1131,6 +1181,12 @@ begin
     when 'contribution_cancelled' then 'Contribution cancelled'
     when 'contribution_expired' then 'Contribution expired'
     when 'contribution_manual_review' then 'Contribution needs review'
+    when 'payment_attempt_initiated' then 'Payment attempt started'
+    when 'payment_attempt_submitted' then 'Payment request sent'
+    when 'payment_attempt_succeeded' then 'Payment confirmed'
+    when 'payment_attempt_failed' then 'Payment attempt failed'
+    when 'payment_attempt_cancelled' then 'Payment attempt cancelled'
+    when 'payment_attempt_expired' then 'Payment attempt expired'
     when 'withdrawal_requested' then 'Withdrawal requested'
     when 'withdrawal_approved' then 'Withdrawal approval received'
     when 'withdrawal_rejected' then 'Withdrawal rejected'
@@ -1261,6 +1317,7 @@ revoke all on function akiba_private.apply_withdrawal_approval_decision() from p
 revoke all on function akiba_private.guard_group_admin_unresolved_withdrawal() from public, anon, authenticated;
 revoke all on function akiba_private.guard_payout_attempt_insert() from public, anon, authenticated;
 revoke all on function akiba_private.emit_contribution_finance_activity() from public, anon, authenticated;
+revoke all on function akiba_private.emit_payment_attempt_finance_activity() from public, anon, authenticated;
 revoke all on function akiba_private.fanout_finance_activity_event(uuid) from public, anon, authenticated;
 revoke all on function akiba_private.notify_finance_activity_event() from public, anon, authenticated;
 
