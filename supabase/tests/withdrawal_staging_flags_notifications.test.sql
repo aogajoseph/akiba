@@ -16,7 +16,7 @@ values
 on conflict (id) do update
 set is_enabled = excluded.is_enabled, capabilities = excluded.capabilities;
 
-select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
 
 insert into public.akiba_groups
   (id, name, purpose, group_type, currency_code, created_by)
@@ -92,10 +92,10 @@ begin
     raise exception 'Expected six active members in notification test group, got %', active_member_count;
   end if;
 
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
   perform public.akiba_decide_withdrawal_request(
     '40000000-0000-0000-0000-000000000001','approved',null);
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
   perform public.akiba_decide_withdrawal_request(
     '40000000-0000-0000-0000-000000000001','approved',null);
 
@@ -106,7 +106,7 @@ begin
     raise exception 'Withdrawal entered staging before every snapshotted Admin approved';
   end if;
 
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000004', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000004', true);
   perform public.akiba_decide_withdrawal_request(
     '40000000-0000-0000-0000-000000000001','approved',null);
 
@@ -122,7 +122,7 @@ begin
   end if;
 
   -- Admin demotion is blocked for the full unresolved lifecycle.
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
   begin
     perform public.akiba_set_group_admin(
       '10000000-0000-0000-0000-000000000001',
@@ -136,16 +136,16 @@ begin
   end;
 
   -- A member can flag and remove only their own flag before the fixed deadline.
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000005', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000005', true);
   flag_id := public.akiba_flag_withdrawal(
     '40000000-0000-0000-0000-000000000001','I do not recognize this recipient.');
   perform public.akiba_remove_withdrawal_flag(flag_id);
 
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000006', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000006', true);
   second_flag_id := public.akiba_flag_withdrawal(
     '40000000-0000-0000-0000-000000000001','Please verify the withdrawal purpose.');
 
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000005', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000005', true);
   begin
     perform public.akiba_remove_withdrawal_flag(second_flag_id);
     raise exception 'A member unexpectedly removed another member flag';
@@ -203,13 +203,13 @@ begin
      'test-destination-token-2', 'test-destination-fingerprint-2', '{"type":"test"}'::jsonb,
      'No-flag staging regression test');
 
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
   perform public.akiba_decide_withdrawal_request(
     '40000000-0000-0000-0000-000000000002','approved',null);
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
   perform public.akiba_decide_withdrawal_request(
     '40000000-0000-0000-0000-000000000002','approved',null);
-  select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000004', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000004', true);
   perform public.akiba_decide_withdrawal_request(
     '40000000-0000-0000-0000-000000000002','approved',null);
 
