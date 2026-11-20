@@ -34,6 +34,11 @@ select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000001','0000
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000003','appoint');
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000004','appoint');
 
+-- Muted members must still receive critical financial notifications.
+insert into public.akiba_group_notification_preferences (user_id, group_id, is_muted)
+values ('00000000-0000-0000-0000-000000000006',
+        '10000000-0000-0000-0000-000000000001', true);
+
 insert into public.akiba_financial_transactions
   (id, group_id, currency_code, transaction_type, reference, description, effective_at, created_by, metadata)
 values
