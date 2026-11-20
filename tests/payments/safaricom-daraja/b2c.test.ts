@@ -3,7 +3,7 @@ import {
   b2cCallbackMatchesAttempt,
   parseB2CResultEvidence,
   readDarajaB2CPayoutConfig,
-} from "@/lib/payments/providers/safaricom-daraja/b2c";
+} from "../../../lib/payments/providers/safaricom-daraja/b2c";
 
 const validEnv = {
   MPESA_ENVIRONMENT: "sandbox",
