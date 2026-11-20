@@ -57,6 +57,24 @@ insert into public.akiba_group_notification_preferences (user_id, group_id, is_m
 values ('00000000-0000-0000-0000-000000000006',
         '10000000-0000-0000-0000-000000000001', true);
 
+-- Simulate a notification table failure. The finance event and contribution
+-- intent must still commit; the outbox worker must repair delivery later.
+create or replace function public.akiba_test_fail_finance_notification()
+returns trigger
+language plpgsql
+as $fail$
+begin
+  if new.user_id = '00000000-0000-0000-0000-000000000006'::uuid then
+    raise exception 'simulated notification insert outage';
+  end if;
+  return new;
+end;
+$fail$;
+
+create trigger akiba_test_fail_finance_notification
+before insert on public.akiba_group_notifications
+for each row execute function public.akiba_test_fail_finance_notification();
+
 insert into public.akiba_contribution_intents
   (group_id, contributor_id, provider_id, currency_code, amount_minor, idempotency_key)
 values
@@ -64,6 +82,35 @@ values
    '00000000-0000-0000-0000-000000000005',
    '20000000-0000-0000-0000-000000000001',
    'KES', 500, 'withdrawal-notification-contribution');
+
+do $notification_outage$
+declare
+  intent_id uuid;
+  outbox_pending boolean;
+begin
+  select id into intent_id
+  from public.akiba_contribution_intents
+  where idempotency_key = 'withdrawal-notification-contribution';
+  if intent_id is null then
+    raise exception 'Contribution intent was rolled back by notification failure';
+  end if;
+
+  select notification_published_at is null and notification_last_error is not null
+    into outbox_pending
+  from public.akiba_finance_activity_events
+  where source_type = 'contribution_intent'
+    and source_id = intent_id
+    and event_type = 'contribution_initiated';
+  if outbox_pending is distinct from true then
+    raise exception 'Finance event did not retain retryable notification outbox state';
+  end if;
+end;
+$notification_outage$;
+
+drop trigger akiba_test_fail_finance_notification on public.akiba_group_notifications;
+drop function public.akiba_test_fail_finance_notification();
+
+select * from public.akiba_process_due_finance_notifications(50, clock_timestamp() + interval '5 minutes');
 
 insert into public.akiba_financial_transactions
   (id, group_id, currency_code, transaction_type, reference, description, effective_at, created_by, metadata)
