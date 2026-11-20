@@ -344,7 +344,7 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
           <section className="ak-workspace-card ak-finance-history ak-finance-activity-statement">
             <div className="ak-workspace-card-heading">
               <div><span className="ak-section-eyebrow">FINANCIAL RECORD</span><h2>Activity statement</h2><p>Money postings and workflow actions are shown separately; approvals and flags do not create ledger entries.</p></div>
-              <span className="ak-count-pill">{withdrawalReadError ? "Unavailable" : (financeEvents ?? []).length + " events"}</span>
+              <span className="ak-count-pill">{withdrawalReadError ? "Unavailable" : statementRows.length + " entries"}</span>
             </div>
             {withdrawalReadError ? (
               <div className="ak-workspace-empty"><strong>Financial activity could not be loaded</strong><p>Refresh the page to try again.</p></div>
