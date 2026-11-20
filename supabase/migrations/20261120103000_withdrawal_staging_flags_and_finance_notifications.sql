@@ -176,7 +176,7 @@ begin
   new.approval_roster_frozen_at := coalesce(new.approval_roster_frozen_at, clock_timestamp());
   new.terms_fingerprint := encode(extensions.digest(convert_to(concat_ws('|',
     new.id::text, new.approval_version::text, new.group_id::text, new.currency_code,
-    new.recipient_amount_minor::text, new.total_debit_minor::text, new.akiba_fee_minor::text,
+    new.recipient_amount_minor::text, new.akiba_fee_minor::text,
     new.provider_fee_minor::text, new.recipient_name,
     new.fee_rate_bps::text, new.fee_schedule_version,
     new.provider_id::text, coalesce(new.provider_quote_ref, ''),
@@ -198,7 +198,7 @@ for each row execute function akiba_private.set_withdrawal_terms_fingerprint();
 update public.akiba_withdrawal_requests r
 set terms_fingerprint = encode(extensions.digest(convert_to(concat_ws('|',
   r.id::text, r.approval_version::text, r.group_id::text, r.currency_code,
-  r.recipient_amount_minor::text, r.total_debit_minor::text, r.akiba_fee_minor::text,
+  r.recipient_amount_minor::text, r.akiba_fee_minor::text,
   r.provider_fee_minor::text, r.recipient_name,
   r.fee_rate_bps::text, r.fee_schedule_version,
   r.provider_id::text, coalesce(r.provider_quote_ref, ''),
@@ -218,14 +218,14 @@ as $fn$
 begin
   if row(
     new.approval_version, new.group_id, new.initiator_id, new.currency_code,
-    new.recipient_amount_minor, new.total_debit_minor, new.akiba_fee_minor, new.provider_fee_minor,
+    new.recipient_amount_minor, new.akiba_fee_minor, new.provider_fee_minor,
     new.fee_rate_bps, new.fee_schedule_version, new.provider_id,
     new.provider_quote_ref, new.quote_expires_at, new.recipient_name,
     new.destination_token, new.destination_fingerprint,
     new.destination_snapshot, new.reason, new.terms_fingerprint
   ) is distinct from row(
     old.approval_version, old.group_id, old.initiator_id, old.currency_code,
-    old.recipient_amount_minor, old.total_debit_minor, old.akiba_fee_minor, old.provider_fee_minor,
+    old.recipient_amount_minor, old.akiba_fee_minor, old.provider_fee_minor,
     old.fee_rate_bps, old.fee_schedule_version, old.provider_id,
     old.provider_quote_ref, old.quote_expires_at, old.recipient_name,
     old.destination_token, old.destination_fingerprint,
