@@ -372,13 +372,13 @@ begin
   -- One unresolved withdrawal per group remains a database-enforced invariant.
   begin
     insert into public.akiba_withdrawal_requests
-      (group_id, initiator_id, currency_code, recipient_amount_minor, total_debit_minor,
+      (group_id, initiator_id, currency_code, recipient_amount_minor,
        akiba_fee_minor, provider_fee_minor, fee_rate_bps, fee_schedule_version,
        provider_id, provider_quote_ref, quote_expires_at, recipient_name,
        destination_token, destination_fingerprint, destination_snapshot, reason)
     values
       ('10000000-0000-0000-0000-000000000001',
-       '00000000-0000-0000-0000-000000000001', 'KES', 1000, 1000,
+       '00000000-0000-0000-0000-000000000001', 'KES', 1000,
        0, 0, 0, 'test-v1',
        '20000000-0000-0000-0000-000000000001', 'test-quote-3',
        clock_timestamp() + interval '1 day', 'Test recipient',
