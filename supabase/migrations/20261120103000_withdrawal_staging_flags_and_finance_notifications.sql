@@ -1036,16 +1036,22 @@ create trigger akiba_contribution_finance_activity
 after insert or update of status on public.akiba_contribution_intents
 for each row execute function akiba_private.emit_contribution_finance_activity();
 
--- Create one durable inbox notification per active member for every finance
--- activity event. The existing inbox trigger handles realtime broadcasts;
--- financial_* events are never suppressed by group mute preferences.
-create or replace function akiba_private.notify_finance_activity_event()
-returns trigger
+-- Finance activity is the durable outbox. Attempt immediate fan-out, but
+-- catch notification failures so they cannot roll back a committed money event.
+alter table public.akiba_finance_activity_events
+  add column if not exists notification_published_at timestamptz,
+  add column if not exists notification_attempt_count integer not null default 0,
+  add column if not exists notification_next_attempt_at timestamptz not null default clock_timestamp(),
+  add column if not exists notification_last_error text;
+
+create or replace function akiba_private.fanout_finance_activity_event(p_event_id uuid)
+returns void
 language plpgsql
 security definer
 set search_path to ''
 as $fn$
 declare
+  event_row public.akiba_finance_activity_events%rowtype;
   actor_label text;
   notification_title text;
   notification_body text;
@@ -1053,16 +1059,28 @@ declare
   currency_text text;
   notification_type text;
 begin
+  select * into event_row
+  from public.akiba_finance_activity_events
+  where id = p_event_id
+  for update;
+  if not found then raise exception 'Finance activity event not found'; end if;
+  if event_row.notification_published_at is not null then return; end if;
+
   select nullif(btrim(p.display_name), '') into actor_label
   from public.akiba_profiles p
-  where p.user_id = new.actor_id;
+  where p.user_id = event_row.actor_id;
   actor_label := coalesce(actor_label, 'A group member');
 
   notification_type := 'financial_' ||
-    regexp_replace(lower(new.event_type), '[^a-z0-9_]+', '_', 'g');
+    regexp_replace(lower(event_row.event_type), '[^a-z0-9_]+', '_', 'g');
 
-  notification_title := case new.event_type
+  notification_title := case event_row.event_type
+    when 'contribution_initiated' then 'Contribution started'
     when 'contribution_received' then 'Contribution received'
+    when 'contribution_failed' then 'Contribution failed'
+    when 'contribution_cancelled' then 'Contribution cancelled'
+    when 'contribution_expired' then 'Contribution expired'
+    when 'contribution_manual_review' then 'Contribution needs review'
     when 'withdrawal_requested' then 'Withdrawal requested'
     when 'withdrawal_approved' then 'Withdrawal approval received'
     when 'withdrawal_rejected' then 'Withdrawal rejected'
@@ -1071,33 +1089,113 @@ begin
     when 'withdrawal_flag_removed' then 'A withdrawal flag was removed'
     when 'withdrawal_flag_closed' then 'Withdrawal flag automatically closed'
     when 'withdrawal_cancelled_flagged' then 'Withdrawal cancelled'
+    when 'withdrawal_cancelled_by_creator' then 'Withdrawal cancelled by Creator'
     when 'withdrawal_payout_queued' then 'Withdrawal cleared for payout'
+    when 'withdrawal_payout_attempt_cancelled' then 'Queued payout cancelled'
     else 'Group financial activity'
   end;
 
-  amount_text := coalesce(new.event_payload ->> 'amount_minor',
-                          new.event_payload ->> 'total_debit_minor',
-                          new.event_payload ->> 'recipient_amount_minor');
-  currency_text := new.event_payload ->> 'currency_code';
+  amount_text := coalesce(event_row.event_payload ->> 'amount_minor',
+                          event_row.event_payload ->> 'total_debit_minor',
+                          event_row.event_payload ->> 'recipient_amount_minor');
+  currency_text := event_row.event_payload ->> 'currency_code';
 
-  notification_body := actor_label || ' · ' || replace(new.event_type, '_', ' ');
+  notification_body := actor_label || ' · ' || replace(event_row.event_type, '_', ' ');
   if amount_text ~ '^[0-9]+$' and currency_text ~ '^[A-Z]{3}$' then
     notification_body := notification_body || ' · ' || amount_text || ' ' || currency_text || ' minor units';
   end if;
 
   insert into public.akiba_group_notifications
     (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
-  select m.user_id, new.group_id, new.actor_id, new.id,
+  select m.user_id, event_row.group_id, event_row.actor_id, event_row.id,
     notification_type, notification_title, notification_body,
-    '/workspace/groups/' || new.group_id::text || '/finances'
+    '/workspace/groups/' || event_row.group_id::text || '/finances'
   from public.akiba_group_memberships m
-  where m.group_id = new.group_id
+  where m.group_id = event_row.group_id
     and m.status = 'active'
   on conflict (user_id, source_event_id) do nothing;
 
+  update public.akiba_finance_activity_events
+  set notification_published_at = clock_timestamp(),
+      notification_attempt_count = notification_attempt_count + 1,
+      notification_next_attempt_at = clock_timestamp(),
+      notification_last_error = null
+  where id = event_row.id;
+end;
+$fn$;
+
+create or replace function akiba_private.notify_finance_activity_event()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+begin
+  begin
+    perform akiba_private.fanout_finance_activity_event(new.id);
+  exception when others then
+    update public.akiba_finance_activity_events
+    set notification_attempt_count = notification_attempt_count + 1,
+        notification_next_attempt_at = clock_timestamp()
+          + make_interval(mins => least(60, power(2, notification_attempt_count)::integer)),
+        notification_last_error = left(sqlerrm, 500)
+    where id = new.id
+      and notification_published_at is null;
+    raise warning 'Finance notification fan-out deferred for event %: %', new.id, sqlerrm;
+  end;
   return new;
 end;
 $fn$;
+
+create or replace function public.akiba_process_due_finance_notifications(
+  p_batch_size integer default 50,
+  p_now timestamptz default clock_timestamp()
+)
+returns table(processed_count integer, delivered_count integer, failed_count integer)
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  event_row public.akiba_finance_activity_events%rowtype;
+begin
+  processed_count := 0;
+  delivered_count := 0;
+  failed_count := 0;
+
+  for event_row in
+    select * from public.akiba_finance_activity_events
+    where notification_published_at is null
+      and notification_next_attempt_at <= p_now
+    order by created_at, id
+    limit least(greatest(coalesce(p_batch_size,50),1),200)
+    for update skip locked
+  loop
+    processed_count := processed_count + 1;
+    begin
+      perform akiba_private.fanout_finance_activity_event(event_row.id);
+      delivered_count := delivered_count + 1;
+    exception when others then
+      update public.akiba_finance_activity_events
+      set notification_attempt_count = notification_attempt_count + 1,
+          notification_next_attempt_at = p_now
+            + make_interval(mins => least(60, power(2, notification_attempt_count)::integer)),
+          notification_last_error = left(sqlerrm, 500)
+      where id = event_row.id
+        and notification_published_at is null;
+      failed_count := failed_count + 1;
+      raise warning 'Finance notification retry scheduled for event %: %', event_row.id, sqlerrm;
+    end;
+  end loop;
+
+  return next;
+end;
+$fn$;
+
+revoke all on function public.akiba_process_due_finance_notifications(integer,timestamptz)
+  from public, anon, authenticated;
+grant execute on function public.akiba_process_due_finance_notifications(integer,timestamptz)
+  to service_role;
 
 drop trigger if exists akiba_finance_activity_notify_members on public.akiba_finance_activity_events;
 create trigger akiba_finance_activity_notify_members
@@ -1113,6 +1211,7 @@ revoke all on function akiba_private.apply_withdrawal_approval_decision() from p
 revoke all on function akiba_private.guard_group_admin_unresolved_withdrawal() from public, anon, authenticated;
 revoke all on function akiba_private.guard_payout_attempt_insert() from public, anon, authenticated;
 revoke all on function akiba_private.emit_contribution_finance_activity() from public, anon, authenticated;
+revoke all on function akiba_private.fanout_finance_activity_event(uuid) from public, anon, authenticated;
 revoke all on function akiba_private.notify_finance_activity_event() from public, anon, authenticated;
 
 -- Run the staging processor every minute inside Postgres. It never submits
@@ -1134,6 +1233,20 @@ begin
     'akiba-withdrawal-staging-every-minute',
     '* * * * *',
     'select * from public.akiba_process_due_withdrawal_staging(25, clock_timestamp());'
+  );
+
+  select jobid into existing_job_id
+  from cron.job
+  where jobname = 'akiba-finance-notifications-every-minute'
+  limit 1;
+  if existing_job_id is not null then
+    perform cron.unschedule(existing_job_id);
+  end if;
+
+  perform cron.schedule(
+    'akiba-finance-notifications-every-minute',
+    '* * * * *',
+    'select * from public.akiba_process_due_finance_notifications(50, clock_timestamp());'
   );
 end;
 $cron$;
