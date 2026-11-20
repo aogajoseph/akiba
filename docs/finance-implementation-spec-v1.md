@@ -219,45 +219,49 @@ Live tables observed during Phase 1:
 - akiba_withdrawal_requests: request terms, initiator, fees, destination snapshot, status and financial transaction link.
 - akiba_withdrawal_approvals: Admin decisions, approval version and terms fingerprint.
 - akiba_payout_attempts: payout provider request/reference, status and reconciliation status.
-- akiba_finance_activity_events: deduplicated group activity/outbox events with published_at.
+- akiba_finance_activity_events: deduplicated group activity events with published_at.
+- akiba_provider_verifications: added by the feature-branch migration to retain independent Safaricom STK Query evidence, response digest, provider references and verification time.
+- akiba_withdrawal_approval_roster: added by the feature-branch migration to freeze the required Admin set at request creation.
+- akiba_withdrawal_flags: added by the feature-branch migration to retain member-owned flags and system/member closure history.
+- akiba_group_notifications: existing durable in-app inbox; the feature-branch migration adds a finance-event fan-out trigger for every active member, including the actor.
 
-The live schema already has useful uniqueness foundations: one payment attempt per contribution, unique provider receipt, one reservation per withdrawal, one live payout attempt per withdrawal, and deduplicated finance activity events.
+The live schema already has useful uniqueness foundations: one payment attempt per contribution, unique provider receipt, one reservation per withdrawal, one live payout attempt per withdrawal, and deduplicated finance activity events. The new tables and trigger behavior described above exist only in the feature branch until its migrations are separately approved and applied.
 
-## 6. Live-schema gaps found
+## 6. Live-schema gaps and branch implementation status
 
-These are observed mismatches and implementation blockers, not permission to modify production:
+The following describe the production schema observed during this review and the changes now authored on the feature branch. Branch migrations have not been applied to production.
 
-1. Withdrawal states are legacy/incomplete. The live request status check currently accepts pending_approval, approved, processing, completed, rejected, cancelled, failed_pending_reconciliation, and failed. It does not represent staging, cancelled_flagged, payout_queued, payout_submitted, or reconciliation_required as the canonical request state machine.
-2. Unresolved-withdrawal index is incomplete. Its predicate covers only pending_approval, approved, processing, and failed_pending_reconciliation. It must cover every canonical unresolved state.
-3. No withdrawal flag table was found. A durable flag table with member ownership, active/removed/system-closed lifecycle and history is required.
-4. No separate durable provider-verification evidence table was found. Current provider event rows store callback evidence, but independent Safaricom query facts are not durably represented as a second evidence record.
-5. Existing posting RPC does not enforce dual evidence. The live post_mpesa_contribution RPC accepts checkout reference, receipt, amount, currency and result code; it checks these against attempt/intent and posts a balanced transaction, but does not require or verify an independent Safaricom query record.
-6. Callback route posts before independent query. The current branch's callback handler directly invokes the posting RPC after callback-only validation. The reconciliation worker also has a callback-only fast path before querying Safaricom. Both violate the approved rule and must be removed before any contribution posting path can be accepted.
-7. Evidence helper is misleading. hasPostableContributionEvidence currently delegates to callback-only validation. Its name implies dual evidence but does not enforce it.
-8. Callback authentication is a shared URL token. The current route checks MPESA_CALLBACK_TOKEN in the query string. Treat this as bearer-secret authentication, not a provider-signed payload. Protect it from logs/leaks, compare safely, rotate it, and still require independent provider verification. Do not describe it as a cryptographic Safaricom signature.
-9. Notification delivery needs recipient-level guarantees. Finance activity events already have a deduplicated event key and unpublished-event index, but the full durable recipient/channel outbox and retry/deduplication contract must be verified/implemented so every active member receives every financial event.
-10. Withdrawal approval snapshot needs explicit storage. Approval rows record decisions and fingerprints, but the exact immutable set of required Admin IDs at request creation must be persisted and enforced, not inferred from current membership later.
-11. Payout support is not established by collection support. Provider configuration must be checked for payout capability independently; no live payout should be activated until sandbox payout and reconciliation are end-to-end proven.
+1. **Withdrawal states and group lock:** production still has the legacy status check and partial unique index. The branch migration adds staging, flagged cancellation, payout queue/submission/processing and reconciliation states, updates the terminal-state constraint, and expands the unresolved-withdrawal index.
+2. **Approval roster:** production does not yet persist the immutable request-time Admin roster. The branch migration adds the roster table, snapshots every active Group Admin at request creation, requires every snapshotted Admin to approve, and starts the two-hour staging clock only on the final approval.
+3. **Flags:** production has no withdrawal flag table. The branch migration adds member-owned flags, active uniqueness, owner-only removal, immutable history and system closure at the original staging deadline.
+4. **Staging processor:** the branch adds an atomic database processor and a one-minute pg_cron schedule. A remaining active flag cancels the request, releases the reservation and closes active flags. No active flag moves the request to payout_queued while retaining the reservation.
+5. **Dual-evidence contribution posting:** production's current post_mpesa_contribution RPC still has the old callback-only signature. The branch migration creates durable provider-verification records and replaces that RPC with a service-role-only signature requiring both callback-event and independent-query evidence IDs. The old callback-only signature is dropped in the migration.
+6. **Callback and reconciliation routes:** the branch callback handler now persists authenticated callback evidence and returns without posting. The reconciliation worker queries Safaricom for every candidate, stores the query response digest and references, checks callback/query agreement, then invokes the new RPC. Callback success alone and query success alone cannot post.
+7. **Evidence helper:** hasPostableContributionEvidence now requires both success result codes and matching checkout references; it also checks merchant-reference agreement when available. The callback-only validation helper is separate and cannot authorize posting.
+8. **Callback authentication:** the callback route still uses MPESA_CALLBACK_TOKEN in the query string. This is bearer-secret authentication, not a cryptographic Safaricom signature. The branch records the authentication method and timestamp, and the database posting RPC requires those fields. Protect the token from logs/leaks and rotate it; independent provider verification remains mandatory.
+9. **Notifications:** production already has a durable in-app notification table, per-user/source-event uniqueness, mute suppression for ordinary group activity and realtime broadcasts. The branch migration adds a finance-event trigger that creates one notification for every active group member, including the actor. Financial events bypass group mute. Inbox rows are durable; realtime broadcast failures do not erase them.
+10. **Admin demotion:** production's current guards cover only legacy unresolved statuses. The branch adds a separate membership trigger covering all new unresolved states, so Admin demotion/removal is blocked until the withdrawal resolves.
+11. **Payout capability:** production Safaricom configuration is disabled and advertises payout=false and fee_quotes=false. The branch blocks new withdrawal requests unless a provider is enabled with both payout and trusted fee-quote capabilities. The UI keeps the Withdraw action disabled while that capability is absent. The branch intentionally does not submit payouts or pretend collection support is payout support.
 
-## 7. Required future schema work
+### Remaining implementation boundary
 
-The implementation branch should plan, review and test (without applying to production until separately approved):
+The branch now contains the state machine, flags, approval snapshot, cancellation path, notification fan-out, staging processor, contribution dual-evidence boundary and finance UI. It does not yet contain a trusted Safaricom payout/fee-quote adapter or a payout executor. Therefore an unflagged withdrawal can reach payout_queued, but its reservation remains active until a provider-supported payout workflow is built and verified end-to-end in sandbox.
 
-- Canonical request states and transition guard/RPC.
-- Immutable withdrawal approval-roster snapshot.
-- Staging start/deadline timestamps, immutable after final approval.
-- Withdrawal flag table with active flag uniqueness and append-only history.
-- Durable provider verification evidence separate from callback event evidence.
-- Revised unresolved-withdrawal partial unique index.
-- Guard preventing Admin demotion while unresolved request exists.
-- Posting RPC requiring callback evidence ID plus provider verification evidence ID; retire obsolete signature and ensure only trusted server role can execute.
-- Payout attempt state mapping and provider evidence fields that preserve unknown/ambiguous outcomes.
-- Reservation lifecycle guards and atomic consumption/release RPC.
-- Durable event-recipient notification outbox with unique recipient/event/channel key, retries and delivery state.
-- Constraints/foreign keys ensuring group and currency consistency across request, reservation, transaction and ledger lines.
-- Tests for every transition, concurrency race, retry, duplicate callback, duplicate provider query, flag/deadline race, demotion race, and ambiguous payout outcome.
+## 7. Remaining schema and provider work
 
-Do not create or apply migrations until schema design is reviewed against this specification and the complete current branch migration history. Do not make live database changes as part of Phase 1.
+The feature branch has authored migrations for the state machine, immutable Admin roster, staging timestamps, flag lifecycle, dual-evidence provider records, revised unresolved-withdrawal index, Admin demotion guard, durable finance notification fan-out and atomic reservation release at cancellation/flagged deadline.
+
+Still required before payout can be considered end-to-end:
+
+- A trusted provider fee-quote flow that persists verifiable quote details and binds amount, fees, destination fingerprint, provider and expiry to the request.
+- Safaricom sandbox B2C/payout capability and credentials, if the provider offers the required sandbox support.
+- An idempotent payout submission adapter and callback/query reconciliation that preserves unknown outcomes and never releases reservations on transport timeout.
+- Atomic reservation consumption and withdrawal ledger posting after authoritative provider completion.
+- Provider settlement/reconciliation evidence distinct from group accounting and Akiba revenue.
+- End-to-end tests for payout submission, duplicate requests, callback/query disagreement, ambiguous outcomes, confirmed completion and confirmed no-payout failure.
+- A reviewed compliance assessment of the actual payment flow and partner contracts.
+
+Do not apply branch migrations to production, enable provider capabilities, merge or deploy without separate approval.
 
 ## 8. Required test matrix before merge
 
@@ -307,8 +311,10 @@ Do not create or apply migrations until schema design is reviewed against this s
 ## 9. Phase 1 review outcome
 
 **Architecture specification:** defined.  
-**Live schema comparison:** performed.  
-**Implementation blockers:** identified, including the callback-only posting defect.  
-**Production migration / live provider / merge / deployment:** not authorized and not performed.
+**Implementation-level state and database invariants:** documented.  
+**Feature-branch implementation:** dual-evidence posting boundary, withdrawal approval snapshot, two-hour staging, member flags, Creator cancellation, reservation safeguards, finance activity fan-out, finance summary/activity UI and staging scheduler authored.  
+**Validation:** unit and SQL regression tests added to CI. A successful CI result has not yet been established; Supabase Preview remains unavailable because project branching is disabled.  
+**Payout sandbox:** blocked by current provider configuration (payout and fee quotes are disabled); no payout executor is claimed complete.  
+**Production migration / provider activation / merge / deployment:** not authorized and not performed.
 
-The next implementation work must first correct the dual-evidence contribution path and database posting boundary, then build withdrawal staging/flags and complete the end-to-end sandbox workflow. The branch must pass the full transition, concurrency, RLS/privilege, and provider reconciliation test matrix before any merge is proposed.
+Before merge, run the full migration reset and test suite, resolve every CI/type/build failure, review concurrency and RLS behavior, and complete sandbox payout capability verification. No migration has been applied to the live Supabase project.
