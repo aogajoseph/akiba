@@ -45,6 +45,7 @@ type Props = {
   groupId: string;
   currentUserId: string;
   currentUserRole: string;
+  leadershipReady: boolean;
   sandboxWorkflowEnabled: boolean;
   requestIdempotencyKey: string;
   readError: boolean;
@@ -101,6 +102,7 @@ export default function WithdrawalPanel({
   groupId,
   currentUserId,
   currentUserRole,
+  leadershipReady,
   sandboxWorkflowEnabled,
   requestIdempotencyKey,
   readError,
@@ -111,7 +113,7 @@ export default function WithdrawalPanel({
 }: Props) {
   const isCreator = currentUserRole === "group_creator";
   const isAdmin = currentUserRole === "group_admin";
-  const canRequest = isCreator && sandboxWorkflowEnabled;
+  const canRequest = isCreator && leadershipReady && sandboxWorkflowEnabled;
 
   return (
     <section className="ak-workspace-card ak-withdrawal-panel">
@@ -151,6 +153,8 @@ export default function WithdrawalPanel({
           <button type="button" className="ak-finance-secondary-button" disabled title={
             !isCreator
               ? "Only the Group Creator can request a withdrawal."
+              : !leadershipReady
+              ? "The group needs one active Creator and at least three active Group Admins."
               : "Sandbox withdrawal workflow simulation is unavailable."
           }>Withdraw</button>
         )}
@@ -159,10 +163,13 @@ export default function WithdrawalPanel({
       {!isCreator && (
         <p className="ak-finance-disabled">Only the Group Creator can request a withdrawal. You can review requests and take actions permitted by your Group Admin or member role.</p>
       )}
-      {isCreator && !sandboxWorkflowEnabled && (
+      {isCreator && !leadershipReady && (
+        <p className="ak-finance-disabled">Withdrawal requests are unavailable until the group has one active Group Creator and at least three active Group Admins.</p>
+      )}
+      {isCreator && leadershipReady && !sandboxWorkflowEnabled && (
         <p className="ak-finance-disabled">Sandbox withdrawal workflow simulation is unavailable. No live or real-money payout option is enabled.</p>
       )}
-      {isCreator && sandboxWorkflowEnabled && (
+      {isCreator && leadershipReady && sandboxWorkflowEnabled && (
         <p className="ak-finance-disabled">This is a workflow demonstration only: the sandbox simulator creates no payment instruction, does not move funds, and cannot mark a withdrawal as paid. The zero-fee quote is synthetic, not a partner quote.</p>
       )}
 
