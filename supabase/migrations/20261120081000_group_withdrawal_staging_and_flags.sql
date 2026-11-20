@@ -898,36 +898,43 @@ begin
 end;
 $fn$;
 
--- All active group members, including the actor, receive a durable notification
--- for every finance activity event. The unique (user_id, source_event_id) key
--- makes notification delivery idempotent; financial_action bypasses mute.
-create or replace function akiba_private.notify_finance_activity_event()
+-- Snapshot every active member as a durable recipient in the same transaction
+-- as the finance event. A separate worker creates inbox notifications with retry.
+create table if not exists public.akiba_finance_notification_outbox (
+  id uuid primary key default gen_random_uuid(),
+  event_id uuid not null references public.akiba_finance_activity_events(id) on delete restrict,
+  recipient_user_id uuid not null references auth.users(id) on delete cascade,
+  status text not null default 'pending' check (status in ('pending', 'delivered')),
+  attempt_count integer not null default 0 check (attempt_count >= 0),
+  next_attempt_at timestamptz not null default clock_timestamp(),
+  last_error text,
+  created_at timestamptz not null default clock_timestamp(),
+  delivered_at timestamptz,
+  unique (event_id, recipient_user_id),
+  check ((status = 'delivered') = (delivered_at is not null))
+);
+
+create index if not exists akiba_finance_notification_outbox_due_idx
+  on public.akiba_finance_notification_outbox(next_attempt_at, created_at)
+  where status = 'pending';
+
+alter table public.akiba_finance_notification_outbox enable row level security;
+revoke all on public.akiba_finance_notification_outbox
+  from public, anon, authenticated, service_role;
+
+create or replace function akiba_private.enqueue_finance_activity_notifications()
 returns trigger
 language plpgsql
 security definer
 set search_path = ''
 as $fn$
-declare
-  notification_body text;
 begin
-  notification_body := initcap(replace(new.event_type, '_', ' '));
-
-  insert into public.akiba_group_notifications (
-    user_id, group_id, actor_id, source_event_id,
-    event_type, title, body, href
-  )
-  select m.user_id,
-         new.group_id,
-         new.actor_id,
-         new.id,
-         'financial_action',
-         'Group financial activity',
-         notification_body,
-         '/workspace/groups/' || new.group_id::text || '/finances'
+  insert into public.akiba_finance_notification_outbox(event_id, recipient_user_id)
+  select new.id, m.user_id
   from public.akiba_group_memberships m
   where m.group_id = new.group_id
     and m.status = 'active'
-  on conflict (user_id, source_event_id) do nothing;
+  on conflict (event_id, recipient_user_id) do nothing;
 
   return new;
 end;
@@ -935,9 +942,79 @@ $fn$;
 
 drop trigger if exists akiba_finance_activity_notify_members
   on public.akiba_finance_activity_events;
-create trigger akiba_finance_activity_notify_members
+drop trigger if exists akiba_finance_activity_enqueue_notifications
+  on public.akiba_finance_activity_events;
+create trigger akiba_finance_activity_enqueue_notifications
 after insert on public.akiba_finance_activity_events
-for each row execute function akiba_private.notify_finance_activity_event();
+for each row execute function akiba_private.enqueue_finance_activity_notifications();
+
+create or replace function akiba_private.process_finance_notification_outbox(p_limit integer default 100)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  outbox_row public.akiba_finance_notification_outbox%rowtype;
+  event_row public.akiba_finance_activity_events%rowtype;
+  processed_count integer := 0;
+begin
+  for outbox_row in
+    select *
+    from public.akiba_finance_notification_outbox
+    where status = 'pending'
+      and next_attempt_at <= clock_timestamp()
+    order by next_attempt_at, created_at
+    limit greatest(1, least(coalesce(p_limit, 100), 500))
+    for update skip locked
+  loop
+    begin
+      select * into event_row
+      from public.akiba_finance_activity_events
+      where id = outbox_row.event_id;
+
+      if not found then
+        raise exception 'Finance activity event is missing';
+      end if;
+
+      insert into public.akiba_group_notifications (
+        user_id, group_id, actor_id, source_event_id,
+        event_type, title, body, href
+      )
+      values (
+        outbox_row.recipient_user_id,
+        event_row.group_id,
+        event_row.actor_id,
+        event_row.id,
+        'financial_action',
+        'Group financial activity',
+        initcap(replace(event_row.event_type, '_', ' ')),
+        '/workspace/groups/' || event_row.group_id::text || '/finances'
+      )
+      on conflict (user_id, source_event_id) do nothing;
+
+      update public.akiba_finance_notification_outbox
+      set status = 'delivered',
+          delivered_at = clock_timestamp(),
+          last_error = null
+      where id = outbox_row.id
+        and status = 'pending';
+    exception when others then
+      update public.akiba_finance_notification_outbox
+      set attempt_count = attempt_count + 1,
+          next_attempt_at = clock_timestamp()
+            + make_interval(mins => least(60, power(2, least(attempt_count, 6))::integer)),
+          last_error = left(sqlerrm, 500)
+      where id = outbox_row.id
+        and status = 'pending';
+    end;
+
+    processed_count := processed_count + 1;
+  end loop;
+
+  return processed_count;
+end;
+$fn$;
 
 -- Keep deactivation blocked for every newly introduced unresolved state.
 create or replace function akiba_private.group_financial_safety(p_group_id uuid)
@@ -1047,6 +1124,8 @@ revoke all on function public.akiba_cancel_withdrawal_request(uuid) from public,
 grant execute on function public.akiba_cancel_withdrawal_request(uuid) to authenticated;
 revoke all on function akiba_private.process_due_withdrawal_staging(integer)
   from public, anon, authenticated, service_role;
+revoke all on function akiba_private.process_finance_notification_outbox(integer)
+  from public, anon, authenticated, service_role;
 
 do $schedule$
 declare
@@ -1065,6 +1144,20 @@ begin
     'akiba-process-withdrawal-staging',
     '* * * * *',
     'select akiba_private.process_due_withdrawal_staging(100);'
+  );
+
+  select jobid into existing_job_id
+  from cron.job
+  where jobname = 'akiba-process-finance-notification-outbox'
+  limit 1;
+  if existing_job_id is not null then
+    perform cron.unschedule(existing_job_id);
+  end if;
+
+  perform cron.schedule(
+    'akiba-process-finance-notification-outbox',
+    '* * * * *',
+    'select akiba_private.process_finance_notification_outbox(100);'
   );
 end;
 $schedule$;
