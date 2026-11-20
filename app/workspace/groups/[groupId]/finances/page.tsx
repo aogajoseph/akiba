@@ -303,7 +303,7 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
               <strong>{withdrawalReadError ? "—" : targetMinor > 0 ? progressPercent + "%" : "No target set"}</strong>
             </div>
             <div className="ak-finance-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={withdrawalReadError ? 0 : progressWidth} aria-valuetext={withdrawalReadError ? "Unavailable" : targetMinor > 0 ? progressPercent + "% of target" : "No target set"}>
-              <span style={{ width: progressWidth + "%" }} />
+              <span style={{ width: (withdrawalReadError ? 0 : progressWidth) + "%" }} />
             </div>
             <div className="ak-finance-progress-meta">
               <strong>{withdrawalReadError ? "—" : money(availableBalanceMinor, group.currency_code)} available</strong>
