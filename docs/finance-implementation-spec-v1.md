@@ -1,6 +1,6 @@
 # Akiba Finance Implementation Specification (v1)
 
-**Status:** Phase 1 implementation-level specification  
+**Status:** Governing implementation specification — Phase 3 sandbox withdrawal workflow  
 **Branch:** feat/group-finance-foundation  
 **Scope:** State transitions, authorization, database invariants, ledger posting, provider evidence, staging, flags, payouts, activity and notifications.  
 **Authority:** Implements docs/finance-architecture-v1.md. Does not authorize production migrations, live payment activation, merge, or deployment.
@@ -379,6 +379,7 @@ The core ledger and withdrawal state machine are provider-independent. Future li
 - Added authenticated PostgreSQL RPC akiba_create_sandbox_withdrawal_request. It derives the actor from auth.uid(), verifies active Creator authority, active group status and leadership readiness, validates amount/recipient/test destination/purpose, and creates a synthetic zero-fee quote with a three-hour expiry.
 - The destination is a non-routable sandbox label. No real mobile-money destination or partner credential is stored by this flow.
 - Added a per-group/Creator idempotency key. An exact retry returns the original request; changed terms under the same key are rejected.
+- Added the provider-neutral adapter contract and environment-aware registry in lib/payments/withdrawals/types.ts and lib/payments/withdrawals/registry.ts. Each contracted partner implements the same normalized quote, submit, callback and status-evidence interface; the core workflow and ledger do not import provider-specific code.
 - The existing request guard checks the ledger-derived available balance and provider quote policy. Existing insert triggers snapshot every active Admin, create the full-deduction reservation, emit the withdrawal_requested finance event and fan out durable notifications to the event-time active-member snapshot.
 - The sandbox simulator is deliberately not payout-capable. The payout-attempt guard still requires payout=true, so the simulator cannot create a payout attempt, submit a payment, consume a reservation or mark a request completed.
 - Added a Creator-facing Finance form. Group Admins and Members cannot create requests; only the Creator can. The form states clearly that fees are synthetic KES 0, the destination is a test label, and no payment is sent.
