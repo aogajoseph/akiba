@@ -304,9 +304,9 @@ Do not apply branch migrations to production, enable provider capabilities, merg
 - Available balance subtracts active reservations.
 - Provider settlement discrepancy blocks payout pending reconciliation.
 - Every financial action/state transition creates one activity event.
-- Every active member at event time receives one durable notification per configured channel.
-- Notification retries do not duplicate notifications.
-- Activity/notification failures do not roll back committed money movement; outbox retry repairs delivery.
+- Every active member receives one durable in-app notification for each finance activity event, including the actor and members who muted ordinary group activity.
+- Notification retries do not duplicate inbox rows.
+- Notification fan-out failures do not roll back a committed money movement; the outbox retry worker repairs delivery.
 
 ## 9. Phase 1 review outcome
 
