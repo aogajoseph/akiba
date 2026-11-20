@@ -801,7 +801,7 @@ begin
   select exists (
     select 1 from public.akiba_payout_attempts p
     where p.withdrawal_request_id = request_row.id
-      and p.status in ('submitted','processing','unknown')
+      and p.status in ('submitted','processing','unknown','succeeded')
   ) into payout_attempt_exists;
   if payout_attempt_exists then
     raise exception 'A payout has already been submitted or has an uncertain outcome; reconciliation is required';
