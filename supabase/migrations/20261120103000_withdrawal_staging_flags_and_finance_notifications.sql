@@ -323,9 +323,9 @@ where r.status in ('pending_approval','approved')
 -- migration, rather than being released immediately on deployment.
 update public.akiba_withdrawal_requests
 set status = 'staging',
-    staging_started_at = clock_timestamp(),
-    staging_deadline_at = clock_timestamp() + interval '2 hours',
-    updated_at = clock_timestamp()
+    staging_started_at = now(),
+    staging_deadline_at = now() + interval '2 hours',
+    updated_at = now()
 where status = 'approved'
   and staging_started_at is null;
 
@@ -790,8 +790,8 @@ begin
     where status = 'staging'
       and staging_deadline_at <= p_now
     order by staging_deadline_at, id
-    for update skip locked
     limit least(greatest(coalesce(p_batch_size,25),1),100)
+    for update skip locked
   loop
     if exists (
       select 1 from public.akiba_withdrawal_flags f
