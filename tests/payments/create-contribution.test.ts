@@ -27,7 +27,7 @@ const input: CreateContributionInput = {
   contributorId: "member-1",
   providerCode: "safaricom_daraja",
   currencyCode: "KES",
-  amountMinor: 15000n,
+  amountMinor: BigInt(15000),
   idempotencyKey: "contribution-key-1",
 };
 
