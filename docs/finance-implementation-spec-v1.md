@@ -359,3 +359,48 @@ Before merge, run the full migration reset and test suite against the final comb
 - Confirm that the contribution history displays only confirmed ledger postings, while pending/failed attempts remain workflow/payment states and do not inflate group funds.
 
 **Phase 2 exclusions:** B2C payout execution, withdrawal fee quotations, withdrawal submission, payout reconciliation, and live payment activation belong to later work. The separate B2C helper foundation is not part of the agreed Phase 2 contribution deliverables. All collection remains sandbox-only; no production credentials, live provider activation, production migration, merge, or deployment is authorized by this specification.
+
+
+## 11. Phase 3 — Creator withdrawal workflow (sandbox)
+
+**Agreed scope:** implement Creator request creation, immutable Admin approvals, atomic reservations, rejection/cancellation, two-hour staging, member-owned flags, deadline processing and all-member financial notifications. No live payment execution is included.
+
+### 11.1 Permanent provider/custody ADR
+
+This phase is governed by [ADR-001](adr/ADR-001-globe-technology-provider-and-non-custodial-payments.md):
+
+> Globe Technologies is a technology provider, not a financial custodian or payment operator. All custody and payment execution must be delegated to appropriately licensed and contracted third-party partners.
+
+The core ledger and withdrawal state machine are provider-independent. Future licensed partners must be integrated through replaceable adapters that normalize quotes, destination references, payout instructions, callbacks/status evidence and settlement reports. Adapters do not write ledger entries or control approvals/reservations.
+
+### 11.2 Sandbox workflow request path
+
+- Added the dedicated provider catalogue entry sandbox_workflow_simulator. It is explicitly marked environment=sandbox, workflow_simulation=true, payout=false and fee_quotes=true.
+- Added authenticated PostgreSQL RPC akiba_create_sandbox_withdrawal_request. It derives the actor from auth.uid(), verifies active Creator authority, active group status and leadership readiness, validates amount/recipient/test destination/purpose, and creates a synthetic zero-fee quote with a three-hour expiry.
+- The destination is a non-routable sandbox label. No real mobile-money destination or partner credential is stored by this flow.
+- Added a per-group/Creator idempotency key. An exact retry returns the original request; changed terms under the same key are rejected.
+- The existing request guard checks the ledger-derived available balance and provider quote policy. Existing insert triggers snapshot every active Admin, create the full-deduction reservation, emit the withdrawal_requested finance event and fan out durable notifications to the event-time active-member snapshot.
+- The sandbox simulator is deliberately not payout-capable. The payout-attempt guard still requires payout=true, so the simulator cannot create a payout attempt, submit a payment, consume a reservation or mark a request completed.
+- Added a Creator-facing Finance form. Group Admins and Members cannot create requests; only the Creator can. The form states clearly that fees are synthetic KES 0, the destination is a test label, and no payment is sent.
+- The existing approval, rejection, Creator cancellation, Admin demotion guard, two-hour staging, flag/unflag, deadline processor and notification machinery remain authoritative and unchanged.
+
+### 11.3 B2C technical exercise
+
+The Safaricom Daraja B2C helper remains sandbox-only and is intentionally not wired into the workflow simulator or the core withdrawal state machine. It is a separate API-mechanics exercise. It must not be used to imply that Globe has custody, that Safaricom is the selected contracted custodian for Akiba groups, or that live payout execution is available.
+
+### 11.4 Phase 3 acceptance checks
+
+- Creator-only request authorization and leadership readiness are enforced inside PostgreSQL, not only by the UI.
+- Amounts are integer minor units; synthetic quote and destination data are explicitly sandbox-only.
+- Exact idempotent retries return the original request; changed terms are rejected.
+- Request, immutable approval roster, reservation and request activity event commit atomically.
+- The complete group deduction is reserved; concurrent or duplicate unresolved requests cannot overspend or bypass the one-request lock.
+- Every required Admin must approve; the Creator cannot approve; one rejection terminates and releases the reservation.
+- Admin demotion remains blocked through all unresolved states.
+- Final approval starts one fixed two-hour clock; flags do not reset it; only the flag owner can remove their flag.
+- A remaining flag at deadline cancels, releases the reservation and closes active flags; no active flags queues the request while retaining the reservation.
+- Every financial transition notifies all active members, including the actor and muted members, through the durable deduplicated notification path.
+- The simulator cannot create a payout attempt or produce a completed withdrawal.
+- CI must pass on the final branch head. Full sandbox Preview acceptance remains an operational test and must not be claimed until actually exercised.
+
+**Phase 3 exclusions:** live provider onboarding, partner custody/settlement contracts, live credentials, payout submission, production migration, production activation, merge and production deployment. These require separate approvals and the ADR-001 live-activation gates.
