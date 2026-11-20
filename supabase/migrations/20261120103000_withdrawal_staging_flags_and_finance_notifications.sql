@@ -274,14 +274,15 @@ begin
   if not found
      or provider_enabled is distinct from true
      or provider_capabilities ->> 'payout' is distinct from 'true'
-     or provider_capabilities ->> 'fee_quotes' is distinct from 'true' then
+     or provider_capabilities ->> 'fee_quotes' is distinct from 'true'
+     or provider_capabilities ->> 'environment' is distinct from 'sandbox' then
     raise exception 'This payment provider is not enabled for verified payout and fee-quote processing';
   end if;
 
   if nullif(btrim(new.provider_quote_ref), '') is null
      or new.quote_expires_at is null
-     or new.quote_expires_at <= clock_timestamp() then
-    raise exception 'A valid, unexpired provider fee quote is required';
+     or new.quote_expires_at <= clock_timestamp() + interval '2 hours' then
+    raise exception 'A provider fee quote must remain valid through the full two-hour staging period';
   end if;
   return new;
 end;
@@ -675,9 +676,18 @@ begin
     and is_enabled = true;
   if not found
      or provider_capabilities ->> 'payout' is distinct from 'true'
+     or provider_capabilities ->> 'fee_quotes' is distinct from 'true'
      or provider_capabilities ->> 'environment' is distinct from 'sandbox' then
     raise exception 'The selected provider does not currently support sandbox payout execution';
   end if;
+  if exists (
+    select 1 from public.akiba_withdrawal_flags
+    where withdrawal_request_id = request_row.id
+      and status = 'active'
+  ) then
+    raise exception 'An active member flag blocks payout submission';
+  end if;
+
   if request_row.quote_expires_at is null
      or request_row.quote_expires_at <= clock_timestamp() then
     raise exception 'The approved provider fee quote has expired; obtain a new quote and a fresh approval cycle';
@@ -1211,13 +1221,24 @@ alter table public.akiba_finance_activity_events
   add column if not exists notification_published_at timestamptz,
   add column if not exists notification_attempt_count integer not null default 0,
   add column if not exists notification_next_attempt_at timestamptz not null default clock_timestamp(),
-  add column if not exists notification_last_error text;
+  add column if not exists notification_last_error text,
+  add column if not exists notification_recipients_snapshotted_at timestamptz;
 
 -- Do not replay historical activity into every member's inbox during rollout.
 update public.akiba_finance_activity_events
 set notification_published_at = created_at,
     notification_next_attempt_at = created_at
 where notification_published_at is null;
+
+create table public.akiba_finance_notification_recipients (
+  event_id uuid not null references public.akiba_finance_activity_events(id) on delete cascade,
+  recipient_user_id uuid not null references auth.users(id) on delete cascade,
+  snapshotted_at timestamptz not null default clock_timestamp(),
+  primary key (event_id, recipient_user_id)
+);
+
+alter table public.akiba_finance_notification_recipients enable row level security;
+revoke all on public.akiba_finance_notification_recipients from public, anon, authenticated, service_role;
 
 create or replace function akiba_private.fanout_finance_activity_event(p_event_id uuid)
 returns void
@@ -1292,14 +1313,17 @@ begin
     notification_body := notification_body || ' · ' || amount_text || ' ' || currency_text || ' minor units';
   end if;
 
+  if event_row.notification_recipients_snapshotted_at is null then
+    raise exception 'Finance notification recipients were not snapshotted at event time';
+  end if;
+
   insert into public.akiba_group_notifications
     (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
-  select m.user_id, event_row.group_id, event_row.actor_id, event_row.id,
+  select r.recipient_user_id, event_row.group_id, event_row.actor_id, event_row.id,
     notification_type, notification_title, notification_body,
     '/workspace/groups/' || event_row.group_id::text || '/finances'
-  from public.akiba_group_memberships m
-  where m.group_id = event_row.group_id
-    and m.status = 'active'
+  from public.akiba_finance_notification_recipients r
+  where r.event_id = event_row.id
   on conflict (user_id, source_event_id) do nothing;
 
   update public.akiba_finance_activity_events
@@ -1318,6 +1342,17 @@ security definer
 set search_path to ''
 as $fn$
 begin
+  insert into public.akiba_finance_notification_recipients(event_id, recipient_user_id)
+  select new.id, m.user_id
+  from public.akiba_group_memberships m
+  where m.group_id = new.group_id
+    and m.status = 'active'
+  on conflict (event_id, recipient_user_id) do nothing;
+
+  update public.akiba_finance_activity_events
+  set notification_recipients_snapshotted_at = clock_timestamp()
+  where id = new.id;
+
   begin
     perform akiba_private.fanout_finance_activity_event(new.id);
   exception when others then
