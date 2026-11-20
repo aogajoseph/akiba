@@ -105,7 +105,8 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
     supabase.from("akiba_financial_transactions")
       .select("id,reference,description,currency_code,effective_at,created_by,transaction_type")
       .eq("group_id", group.id)
-      .order("effective_at", { ascending: true }),
+      .order("effective_at", { ascending: false })
+      .limit(50),
     supabase.from("akiba_withdrawal_requests")
       .select("id,group_id,initiator_id,currency_code,recipient_amount_minor,total_debit_minor,recipient_name,reason,status,created_at,staging_started_at,staging_deadline_at")
       .eq("group_id", group.id)
