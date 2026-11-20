@@ -223,7 +223,10 @@ export async function GET(request: NextRequest) {
         providerStatus.checkoutRequestId === event.provider_event_ref &&
         (!providerStatus.merchantRequestId ||
           !attempt.provider_merchant_ref ||
-          providerStatus.merchantRequestId === attempt.provider_merchant_ref);
+          providerStatus.merchantRequestId === attempt.provider_merchant_ref) &&
+        (!event.source_reference ||
+          !providerStatus.merchantRequestId ||
+          providerStatus.merchantRequestId === event.source_reference);
       const verificationStatus =
         providerReferenceMatches && providerStatus.resultCode === "0"
           ? "success"
