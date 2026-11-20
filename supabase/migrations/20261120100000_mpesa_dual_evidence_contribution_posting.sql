@@ -169,11 +169,14 @@ begin
     raise exception 'Provider-confirmed amount or currency does not match the contribution';
   end if;
 
-  if v_intent.status = 'succeeded' and v_intent.financial_transaction_id is not null then
-    if v_attempt.provider_receipt_number <> p_provider_receipt_number then
-      raise exception 'A repeated success supplied a different receipt number';
+  if v_intent.status = 'succeeded' or v_attempt.status = 'succeeded' then
+    if v_intent.status = 'succeeded'
+       and v_attempt.status = 'succeeded'
+       and v_intent.financial_transaction_id is not null
+       and v_attempt.provider_receipt_number = p_provider_receipt_number then
+      return v_intent.financial_transaction_id;
     end if;
-    return v_intent.financial_transaction_id;
+    raise exception 'Contribution payment and ledger state disagree; manual review is required';
   end if;
 
   if v_attempt.status in ('failed', 'cancelled', 'expired') then
