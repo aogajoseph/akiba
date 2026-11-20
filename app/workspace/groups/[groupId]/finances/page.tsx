@@ -300,16 +300,17 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
           <section className="ak-workspace-card ak-finance-progress">
             <div className="ak-workspace-card-heading">
               <div><span className="ak-section-eyebrow">GROUP TARGET</span><h2>Funding progress</h2></div>
-              <strong>{targetMinor > 0 ? progressPercent + "%" : "No target set"}</strong>
+              <strong>{withdrawalReadError ? "—" : targetMinor > 0 ? progressPercent + "%" : "No target set"}</strong>
             </div>
-            <div className="ak-finance-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={progressWidth} aria-valuetext={targetMinor > 0 ? progressPercent + "% of target" : "No target set"}>
+            <div className="ak-finance-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={withdrawalReadError ? 0 : progressWidth} aria-valuetext={withdrawalReadError ? "Unavailable" : targetMinor > 0 ? progressPercent + "% of target" : "No target set"}>
               <span style={{ width: progressWidth + "%" }} />
             </div>
             <div className="ak-finance-progress-meta">
               <strong>{withdrawalReadError ? "—" : money(availableBalanceMinor, group.currency_code)} available</strong>
               <span>{targetMinor > 0 ? "Target " + money(targetMinor, group.currency_code) : "Set a group target to track progress"}</span>
             </div>
-            {progressPercent > 100 && <small>The group has exceeded its target. The progress indicator is capped at 100%.</small>}
+            {withdrawalReadError && <small>Progress is unavailable because the financial balance could not be verified.</small>}
+            {!withdrawalReadError && progressPercent > 100 && <small>The group has exceeded its target. The progress indicator is capped at 100%.</small>}
           </section>
 
           <div className="ak-finance-grid">
