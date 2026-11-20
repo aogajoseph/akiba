@@ -313,8 +313,49 @@ Do not apply branch migrations to production, enable provider capabilities, merg
 **Architecture specification:** defined.  
 **Implementation-level state and database invariants:** documented.  
 **Feature-branch implementation:** dual-evidence posting boundary, withdrawal approval snapshot, two-hour staging, member flags, Creator cancellation, reservation safeguards, finance activity fan-out, finance summary/activity UI and staging scheduler authored.  
-**Validation:** unit and SQL regression tests added to CI. A successful CI result has not yet been established; Supabase Preview remains unavailable because project branching is disabled.  
+**Validation:** the Phase 1 implementation CI run completed successfully (GitHub Actions run 44688939865). Supabase Preview database validation remains skipped because Supabase project branching is disabled.  
 **Payout sandbox:** blocked by current provider configuration (payout and fee quotes are disabled); no payout executor is claimed complete.  
 **Production migration / provider activation / merge / deployment:** not authorized and not performed.
 
-Before merge, run the full migration reset and test suite, resolve every CI/type/build failure, review concurrency and RLS behavior, and complete sandbox payout capability verification. No migration has been applied to the live Supabase project.
+Before merge, run the full migration reset and test suite against the final combined branch, review concurrency and RLS behavior, and complete the applicable sandbox payment verification. No migration has been applied to the live Supabase project.
+
+
+## 10. Phase 2 — Contribution system
+
+**Agreed scope:** sandbox-only contribution flow. This phase is limited to the following deliverables and does not include withdrawal payout execution:
+
+1. Leadership gate enforced by PostgreSQL and server-side authorization.
+2. All active group members may contribute once leadership is established.
+3. Provider-selection modal.
+4. M-Pesa STK Push.
+5. Durable callback handling and missing-callback recovery.
+6. Independent provider confirmation and exact-once ledger posting.
+7. Notifications to all active group members.
+8. Contribution activity cards and transaction history.
+
+### 10.1 Existing implementation verified on the feature branch
+
+- PostgreSQL leadership readiness is enforced by `akiba_private.assert_group_leadership_ready` and the `akiba_contribution_leadership_guard` trigger before a contribution intent is inserted. The gate requires exactly one active Creator and the plan's required number of active Group Admins; the Creator is not counted as an Admin.
+- Server-side contribution orchestration checks active membership, group existence, group currency, provider availability, collection capability and idempotency. The M-Pesa route independently authenticates the user and restricts collection to the configured sandbox test group.
+- The M-Pesa STK Push adapter persists the contribution intent and payment attempt before calling Safaricom. Repeated requests reuse the same idempotency key and do not create another STK prompt.
+- The callback endpoint authenticates the configured shared URL token, validates and durably records callback evidence, and acknowledges duplicates safely. Callback evidence alone never posts a contribution.
+- The scheduled reconciliation worker discovers missing callbacks, creates incomplete recovery placeholders, queries Safaricom STK Query independently, persists provider-verification evidence, and invokes the database posting RPC only when the callback and provider facts agree.
+- The six-argument `post_mpesa_contribution` RPC is service-role-only and requires matching authenticated callback and independent provider-verification evidence. The posting transaction creates balanced ledger entries and a deduplicated `contribution_received` activity event.
+- The finance activity notification fan-out snapshots active members at event commit and creates deduplicated in-app notifications for all recipients, including the actor and members who muted ordinary group notifications.
+- The Finance page displays confirmed contribution history from ledger postings and keeps workflow events separate from ledger movement.
+
+### 10.2 Phase 2 work added during this review
+
+- Added a provider-selection modal to the Finance contribution panel. M-Pesa is the only selectable provider in this release; the selection interface is structured so additional collection providers can be added without changing group accounting.
+- The selected provider code is sent to the server and validated against the M-Pesa endpoint's supported provider.
+- Added unit coverage for contribution-intent orchestration: active-member authorization, group/currency validation, provider availability/capability, exact idempotency retries, changed-payload rejection and concurrent idempotency conflicts.
+
+### 10.3 Remaining Phase 2 validation
+
+- Run CI on the latest Phase 2 commits and resolve all failures.
+- Verify the provider modal and contribution flow in the sandbox Preview environment when a deployment is available.
+- Exercise leadership-incomplete and leadership-ready groups, ordinary active-member contributions, duplicate initiation, successful and failed STK callbacks, missing/late callbacks, provider-query outage, callback/query disagreement, and duplicate reconciliation.
+- Verify that each successful contribution creates exactly one balanced ledger posting and one finance activity event, and that every active group member receives one deduplicated notification.
+- Confirm that the contribution history displays only confirmed ledger postings, while pending/failed attempts remain workflow/payment states and do not inflate group funds.
+
+**Phase 2 exclusions:** B2C payout execution, withdrawal fee quotations, withdrawal submission, payout reconciliation, and live payment activation belong to later work. The separate B2C helper foundation is not part of the agreed Phase 2 contribution deliverables. All collection remains sandbox-only; no production credentials, live provider activation, production migration, merge, or deployment is authorized by this specification.
