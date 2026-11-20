@@ -233,24 +233,46 @@ export async function GET(request: NextRequest) {
           : providerStatus.resultCode === null
             ? "pending"
             : "failure";
-      const { data: verification, error: verificationInsertError } = await service
+      const verificationValues = {
+        provider_id: provider.id,
+        payment_attempt_id: attempt.id,
+        callback_event_id: event.id,
+        checkout_request_id: providerStatus.checkoutRequestId ?? "",
+        merchant_request_id: providerStatus.merchantRequestId,
+        result_code: providerStatus.resultCode,
+        result_description: providerStatus.resultDescription?.slice(0, 500) ?? null,
+        verification_status: verificationStatus,
+        response_digest: providerStatus.responseDigest,
+        verified_at: providerStatus.verifiedAt,
+      };
+      const { data: insertedVerification, error: verificationInsertError } = await service
         .from("akiba_provider_verifications")
-        .insert({
-          provider_id: provider.id,
-          payment_attempt_id: attempt.id,
-          callback_event_id: event.id,
-          checkout_request_id: providerStatus.checkoutRequestId ?? "",
-          merchant_request_id: providerStatus.merchantRequestId,
-          result_code: providerStatus.resultCode,
-          result_description: providerStatus.resultDescription?.slice(0, 500) ?? null,
-          verification_status: verificationStatus,
-          response_digest: providerStatus.responseDigest,
-          verified_at: providerStatus.verifiedAt,
-        })
+        .insert(verificationValues)
         .select("id")
-        .single();
-      if (verificationInsertError || !verification) {
+        .maybeSingle();
+
+      let verification = insertedVerification;
+      if (verificationInsertError?.code === "23505") {
+        // A worker retry may receive the same provider response digest. Reuse
+        // the durable evidence row rather than creating a second record or
+        // treating an idempotent retry as a provider failure.
+        const { data: existingVerification, error: existingVerificationError } = await service
+          .from("akiba_provider_verifications")
+          .select("id")
+          .eq("payment_attempt_id", attempt.id)
+          .eq("response_digest", providerStatus.responseDigest)
+          .eq("callback_event_id", event.id)
+          .maybeSingle();
+        if (existingVerificationError) {
+          throw new PaymentError("PROVIDER_UNAVAILABLE", "Existing Safaricom verification evidence could not be loaded.", { retryable: true });
+        }
+        verification = existingVerification;
+      } else if (verificationInsertError) {
         throw new PaymentError("PROVIDER_UNAVAILABLE", "Safaricom verification evidence could not be durably stored.", { retryable: true });
+      }
+
+      if (!verification) {
+        throw new PaymentError("PROVIDER_UNAVAILABLE", "Safaricom verification evidence is unavailable.", { retryable: true });
       }
 
       if (
