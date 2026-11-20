@@ -39,6 +39,14 @@ insert into public.akiba_group_notification_preferences (user_id, group_id, is_m
 values ('00000000-0000-0000-0000-000000000006',
         '10000000-0000-0000-0000-000000000001', true);
 
+insert into public.akiba_contribution_intents
+  (group_id, contributor_id, provider_id, currency_code, amount_minor, idempotency_key)
+values
+  ('10000000-0000-0000-0000-000000000001',
+   '00000000-0000-0000-0000-000000000005',
+   '20000000-0000-0000-0000-000000000001',
+   'KES', 500, 'withdrawal-notification-contribution');
+
 insert into public.akiba_financial_transactions
   (id, group_id, currency_code, transaction_type, reference, description, effective_at, created_by, metadata)
 values
@@ -95,6 +103,14 @@ begin
     and status = 'active';
   if active_member_count <> 6 then
     raise exception 'Expected six active members in notification test group, got %', active_member_count;
+  end if;
+
+  select count(*) into notification_count
+  from public.akiba_group_notifications
+  where group_id = '10000000-0000-0000-0000-000000000001'
+    and event_type = 'financial_contribution_initiated';
+  if notification_count <> active_member_count then
+    raise exception 'Every active member, including a muted contributor, must receive contribution initiation notice';
   end if;
 
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
