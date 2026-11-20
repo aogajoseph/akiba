@@ -354,13 +354,13 @@ where r.status in ('pending_approval','approved')
     where roster.withdrawal_request_id = r.id
   );
 
--- Legacy approved requests receive a fresh two-hour staging window after this
--- migration, rather than being released immediately on deployment.
+-- Legacy "approved" requests were approved under the previous rules and
+-- cannot be assumed to satisfy the new all-Admin approval requirement. Keep
+-- their reservations held and require manual reconciliation; never auto-stage.
 update public.akiba_withdrawal_requests
-set status = 'staging',
-    staging_started_at = now(),
-    staging_deadline_at = now() + interval '2 hours',
-    updated_at = now()
+set status = 'reconciliation_required',
+    resolution_note = 'Legacy approval state requires review under the request-time all-Admin approval policy.',
+    updated_at = clock_timestamp()
 where status = 'approved'
   and staging_started_at is null;
 
