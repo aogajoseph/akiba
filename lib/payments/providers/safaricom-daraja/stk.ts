@@ -184,7 +184,7 @@ export async function createStkPush(
 }
 
 export interface StkQueryResult {
-  checkoutRequestId: string;
+  checkoutRequestId: string | null;
   merchantRequestId: string | null;
   resultCode: string | null;
   resultDescription: string | null;
@@ -214,7 +214,7 @@ export async function queryStkPush(
     checkoutRequestId:
       typeof response.CheckoutRequestID === "string"
         ? response.CheckoutRequestID
-        : checkoutRequestId,
+        : null,
     merchantRequestId:
       typeof response.MerchantRequestID === "string"
         ? response.MerchantRequestID
