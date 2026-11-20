@@ -954,4 +954,27 @@ revoke all on function akiba_private.guard_group_admin_unresolved_withdrawal() f
 revoke all on function akiba_private.guard_payout_attempt_insert() from public, anon, authenticated;
 revoke all on function akiba_private.notify_finance_activity_event() from public, anon, authenticated;
 
+-- Run the staging processor every minute inside Postgres. It never submits
+-- payouts; it only resolves flags and moves unflagged requests to payout_queued.
+do $cron$
+declare
+  existing_job_id bigint;
+begin
+  select jobid into existing_job_id
+  from cron.job
+  where jobname = 'akiba-withdrawal-staging-every-minute'
+  limit 1;
+
+  if existing_job_id is not null then
+    perform cron.unschedule(existing_job_id);
+  end if;
+
+  perform cron.schedule(
+    'akiba-withdrawal-staging-every-minute',
+    '* * * * *',
+    'select * from public.akiba_process_due_withdrawal_staging(25, clock_timestamp());'
+  );
+end;
+$cron$;
+
 commit;
