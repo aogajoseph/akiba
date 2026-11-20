@@ -126,7 +126,7 @@ export default function WithdrawalPanel({
               ? "Only the Group Creator can request a withdrawal."
               : !payoutEnabled
                 ? "Sandbox payout and verified fee quotes are not enabled by the payment provider."
-                : "The withdrawal request form is not available until the sandbox payout flow is verified."
+                : "The secure withdrawal request and provider fee-quote workflow is not available yet."
           }
         >
           Withdraw
@@ -138,6 +138,9 @@ export default function WithdrawalPanel({
       )}
       {isCreator && !payoutEnabled && (
         <p className="ak-finance-disabled">Withdrawal requests are temporarily unavailable. The current Safaricom sandbox setup supports collections but not verified payouts or fee quotes. Group funds will not be released until a payout-capable sandbox flow is proven.</p>
+      )}
+      {isCreator && payoutEnabled && !requestEnabled && (
+        <p className="ak-finance-disabled">The provider reports payout capability, but the trusted fee-quote and withdrawal request flow is not yet implemented. The request button remains disabled until those controls are verified.</p>
       )}
 
       {readError ? (
