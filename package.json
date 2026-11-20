@@ -21,7 +21,8 @@
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.3.4",
-    "@mui/material": "^7.3.4"
+    "@mui/material": "^7.3.4",
+    "nodemailer": "7.0.10"
   },
   "devDependencies": {
     "@types/node": "^22.15.30",
@@ -30,6 +31,7 @@
     "eslint": "^9.29.0",
     "eslint-config-next": "16.2.10",
     "typescript": "^5.8.3",
+    "@types/nodemailer": "6.4.21",
     "vitest": "^3.2.4"
   }
 }
