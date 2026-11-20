@@ -83,9 +83,16 @@ values
    '20000000-0000-0000-0000-000000000001',
    'KES', 500, 'withdrawal-notification-contribution');
 
+insert into public.akiba_payment_attempts
+  (contribution_intent_id, provider_id, amount_minor, currency_code, request_reference)
+select id, provider_id, amount_minor, currency_code, 'withdrawal-notification-payment-attempt'
+from public.akiba_contribution_intents
+where idempotency_key = 'withdrawal-notification-contribution';
+
 do $notification_outage$
 declare
   intent_id uuid;
+  attempt_id uuid;
   outbox_pending boolean;
 begin
   select id into intent_id
@@ -103,6 +110,23 @@ begin
     and event_type = 'contribution_initiated';
   if outbox_pending is distinct from true then
     raise exception 'Finance event did not retain retryable notification outbox state';
+  end if;
+
+  select id into attempt_id
+  from public.akiba_payment_attempts
+  where request_reference = 'withdrawal-notification-payment-attempt';
+  if attempt_id is null then
+    raise exception 'Payment attempt was not created for notification test';
+  end if;
+
+  select notification_published_at is null and notification_last_error is not null
+    into outbox_pending
+  from public.akiba_finance_activity_events
+  where source_type = 'payment_attempt'
+    and source_id = attempt_id
+    and event_type = 'payment_attempt_initiated';
+  if outbox_pending is distinct from true then
+    raise exception 'Payment-attempt activity event did not retain retryable notification state';
   end if;
 end;
 $notification_outage$;
@@ -176,6 +200,14 @@ begin
     and event_type = 'financial_contribution_initiated';
   if notification_count <> active_member_count then
     raise exception 'Every active member, including a muted contributor, must receive contribution initiation notice';
+  end if;
+
+  select count(*) into notification_count
+  from public.akiba_group_notifications
+  where group_id = '10000000-0000-0000-0000-000000000001'
+    and event_type = 'financial_payment_attempt_initiated';
+  if notification_count <> active_member_count then
+    raise exception 'Every active member must receive payment-attempt initiation notice';
   end if;
 
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
