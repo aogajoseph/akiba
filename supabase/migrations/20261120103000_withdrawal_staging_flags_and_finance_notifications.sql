@@ -1424,6 +1424,107 @@ create trigger akiba_finance_activity_notify_members
 after insert on public.akiba_finance_activity_events
 for each row execute function akiba_private.notify_finance_activity_event();
 
+-- Keep group deactivation and six-month retention aware of every new
+-- unresolved withdrawal state, not only the legacy workflow statuses.
+create or replace function akiba_private.group_financial_safety(p_group_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to ''
+as $fn$
+declare
+  has_history boolean := false;
+  has_unresolved boolean := false;
+  balance_minor numeric := 0;
+  held_minor numeric := 0;
+begin
+  select coalesce(sum(case when e.direction = 'credit' then e.amount_minor else -e.amount_minor end), 0)
+    into balance_minor
+  from public.akiba_financial_ledger_entries e
+  where e.group_id = p_group_id and e.account_code = 'group_funds';
+
+  select coalesce(sum(r.amount_minor), 0)
+    into held_minor
+  from public.akiba_financial_reservations r
+  where r.group_id = p_group_id and r.status = 'active';
+
+  has_history :=
+    exists (select 1 from public.akiba_financial_transactions where group_id = p_group_id)
+    or exists (select 1 from public.akiba_financial_ledger_entries where group_id = p_group_id)
+    or exists (select 1 from public.akiba_contribution_intents where group_id = p_group_id)
+    or exists (
+      select 1 from public.akiba_payment_attempts p
+      join public.akiba_contribution_intents i on i.id = p.contribution_intent_id
+      where i.group_id = p_group_id
+    )
+    or exists (select 1 from public.akiba_withdrawal_requests where group_id = p_group_id)
+    or exists (select 1 from public.akiba_withdrawal_approvals where group_id = p_group_id)
+    or exists (
+      select 1 from public.akiba_payout_attempts p
+      join public.akiba_withdrawal_requests w on w.id = p.withdrawal_request_id
+      where w.group_id = p_group_id
+    )
+    or exists (select 1 from public.akiba_financial_reservations where group_id = p_group_id)
+    or exists (select 1 from public.akiba_finance_activity_events where group_id = p_group_id)
+    or exists (select 1 from public.akiba_group_payment_accounts where group_id = p_group_id);
+
+  has_unresolved :=
+    exists (
+      select 1 from public.akiba_contribution_intents i
+      where i.group_id = p_group_id
+        and i.status not in ('succeeded','failed','cancelled','expired')
+    )
+    or exists (
+      select 1 from public.akiba_payment_attempts p
+      join public.akiba_contribution_intents i on i.id = p.contribution_intent_id
+      where i.group_id = p_group_id and p.status in ('initiated','pending','unknown')
+    )
+    or exists (
+      select 1
+      from public.akiba_provider_events e
+      join public.akiba_payment_attempts p
+        on e.provider_id = p.provider_id
+       and e.source_reference in (p.provider_merchant_ref, p.provider_attempt_ref, p.request_reference)
+      join public.akiba_contribution_intents i on i.id = p.contribution_intent_id
+      where i.group_id = p_group_id
+        and (
+          e.processing_status in ('received','processing')
+          or (e.processing_status = 'failed' and e.retryable)
+        )
+    )
+    or exists (
+      select 1 from public.akiba_withdrawal_requests w
+      where w.group_id = p_group_id
+        and w.status in (
+          'pending_approval','approved','staging','payout_queued',
+          'payout_submitted','payout_processing','reconciliation_required',
+          'processing','failed_pending_reconciliation'
+        )
+    )
+    or exists (
+      select 1 from public.akiba_payout_attempts p
+      join public.akiba_withdrawal_requests w on w.id = p.withdrawal_request_id
+      where w.group_id = p_group_id
+        and (
+          p.status in ('queued','submitted','processing','unknown')
+          or p.reconciliation_status in ('pending','unmatched')
+        )
+    )
+    or exists (
+      select 1 from public.akiba_financial_reservations r
+      where r.group_id = p_group_id and r.status = 'active'
+    );
+
+  return jsonb_build_object(
+    'has_financial_history', has_history,
+    'has_unresolved_financial_activity', has_unresolved,
+    'balance_minor', balance_minor,
+    'held_minor', held_minor
+  );
+end;
+$fn$;
+
 revoke all on function akiba_private.set_withdrawal_terms_fingerprint() from public, anon, authenticated;
 revoke all on function akiba_private.guard_withdrawal_terms_immutable() from public, anon, authenticated;
 revoke all on function akiba_private.guard_withdrawal_provider_capability() from public, anon, authenticated;
