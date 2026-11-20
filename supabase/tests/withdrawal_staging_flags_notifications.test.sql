@@ -75,6 +75,8 @@ create trigger akiba_test_fail_finance_notification
 before insert on public.akiba_group_notifications
 for each row execute function public.akiba_test_fail_finance_notification();
 
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000005', true);
+
 insert into public.akiba_contribution_intents
   (group_id, contributor_id, provider_id, currency_code, amount_minor, idempotency_key)
 values
@@ -135,6 +137,8 @@ drop trigger akiba_test_fail_finance_notification on public.akiba_group_notifica
 drop function public.akiba_test_fail_finance_notification();
 
 select * from public.akiba_process_due_finance_notifications(50, clock_timestamp() + interval '5 minutes');
+
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
 
 insert into public.akiba_financial_transactions
   (id, group_id, currency_code, transaction_type, reference, description, effective_at, created_by, metadata)
@@ -306,6 +310,7 @@ begin
 
   -- A second request with no active flags reaches payout_queued and keeps its
   -- reservation. It must not be treated as paid or release the reservation.
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
   insert into public.akiba_withdrawal_requests
     (id, group_id, initiator_id, currency_code, recipient_amount_minor, total_debit_minor,
      akiba_fee_minor, provider_fee_minor, fee_rate_bps, fee_schedule_version,
