@@ -498,7 +498,10 @@ begin
   if not found
      or request_row.status <> 'payout_queued'
      or request_row.staging_deadline_at is null
-     or request_row.staging_deadline_at > clock_timestamp() then
+     or request_row.staging_deadline_at > clock_timestamp()
+     or request_row.provider_quote_ref is null
+     or request_row.quote_expires_at is null
+     or request_row.quote_expires_at <= clock_timestamp() then
     raise exception 'Payout submission requires a staging period that has elapsed without an active flag';
   end if;
 
