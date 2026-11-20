@@ -229,7 +229,9 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
       kind: "Workflow event · no ledger posting",
       currency: payload.currency_code ? String(payload.currency_code) : group.currency_code,
       actorName: event.actor_id ? actorNameById.get(event.actor_id) ?? "Group member" : "Akiba system",
-      balanceImpact: "No ledger movement",
+      balanceImpact: parsedAmount !== null && Number.isFinite(parsedAmount) && parsedAmount > 0
+        ? "Workflow amount " + money(parsedAmount, payload.currency_code ? String(payload.currency_code) : group.currency_code) + " · no ledger movement"
+        : "No ledger movement",
     };
   });
   const statementRows = [...ledgerStatementRows, ...workflowStatementRows]
