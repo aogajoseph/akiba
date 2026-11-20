@@ -127,6 +127,8 @@ export async function POST(request: NextRequest) {
     amount_minor: amountMinor,
     currency_code: amountMinor === null ? null : "KES",
     provider_receipt_number: receipt,
+    callback_authenticated_at: new Date().toISOString(),
+    callback_auth_method: "shared_url_token",
     retryable: true,
     next_retry_at: new Date().toISOString(),
     processing_status: "received",
@@ -197,11 +199,11 @@ export async function POST(request: NextRequest) {
     callbackMetadataItemCount: Object.keys(metadata).length,
   });
 
-  // A complete authenticated success callback is sufficient to post. The
-  // posting RPC locks the attempt/intent and is idempotent, so a concurrent
-  // worker or duplicate callback cannot create a second contribution.
+  // Callback evidence is necessary but never sufficient to post. The
+  // reconciliation worker must independently query Safaricom and pass both
+  // durable evidence record IDs to the database posting RPC.
   if (callbackResultCode === "0") {
-    const postable = hasPostableCallbackEvidence({
+    const callbackEvidenceIsValid = hasPostableCallbackEvidence({
       callbackResultCode,
       providerResultCode: callbackResultCode,
       receipt,
@@ -211,57 +213,20 @@ export async function POST(request: NextRequest) {
       attemptCurrency: attempt.currency_code,
     });
 
-    if (!postable) {
+    if (!callbackEvidenceIsValid) {
       await service.from("akiba_provider_events").update({
         processing_status: "failed",
         retryable: false,
-        processing_note: "Success callback is missing a valid receipt or its amount/currency does not match the stored attempt; manual review required.",
+        processing_note: "Success callback is missing a valid receipt or its amount/currency does not match the stored attempt; manual review required. No contribution was posted.",
       }).eq("id", eventId).eq("payload_digest", digest);
-      // The callback is safely stored. Acknowledge it so Safaricom does not
-      // repeatedly deliver an event that Akiba has already retained.
-      return json({ ResultCode: 0, ResultDesc: "Callback stored for manual payment review" });
+      return json({ ResultCode: 0, ResultDesc: "Callback stored for manual payment review; no contribution posted" });
     }
 
-    const { error: postError } = await service.rpc("post_mpesa_contribution", {
-      p_checkout_request_id: checkoutId,
-      p_provider_receipt_number: receipt,
-      p_amount_minor: String(amountMinor),
-      p_currency_code: "KES",
-      p_provider_result_code: "0",
-    });
-
-    if (postError) {
-      const retryAt = new Date(Date.now() + reconciliationRetryDelayMinutes(1) * 60_000).toISOString();
-      await service.from("akiba_provider_events").update({
-        processing_status: "failed",
-        retryable: true,
-        attempt_count: 1,
-        next_retry_at: retryAt,
-        processing_note: "Valid success callback stored; ledger posting failed temporarily and will be retried without requiring STK Query.",
-      }).eq("id", eventId).eq("payload_digest", digest);
-      console.error("[payments][daraja][callback] Atomic contribution posting deferred", {
-        providerEventId: eventId,
-        checkoutRequestIdSuffix: checkoutId.slice(-6),
-      });
-      return json({ ResultCode: 0, ResultDesc: "Callback stored; contribution posting will be retried" });
-    }
-
-    const { error: processedError } = await service.from("akiba_provider_events").update({
-      processing_status: "processed",
-      processed_at: new Date().toISOString(),
-      retryable: false,
-      processing_note: null,
+    await service.from("akiba_provider_events").update({
+      processing_note: "Authenticated success callback stored; awaiting independent Safaricom STK Query verification.",
     }).eq("id", eventId).eq("payload_digest", digest);
 
-    if (processedError) {
-      // The financial RPC has already committed atomically. A later replay is
-      // safe because the RPC returns the existing transaction for this receipt.
-      console.error("[payments][daraja][callback] Contribution posted but callback event finalization failed", {
-        providerEventId: eventId,
-        checkoutRequestIdSuffix: checkoutId.slice(-6),
-      });
-    }
-    return json({ ResultCode: 0, ResultDesc: "Contribution successfully recorded" });
+    return json({ ResultCode: 0, ResultDesc: "Callback stored; independent provider verification pending" });
   }
 
   // Non-success callbacks remain durably queued for the existing worker to
