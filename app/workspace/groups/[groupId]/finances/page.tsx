@@ -199,23 +199,30 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
       currency: group.currency_code,
     })),
   ].sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()).slice(0, 50);
-  const service = createServiceClient();
-  const { data: payoutProvider } = await service.from("akiba_payment_providers")
-    .select("is_enabled,capabilities")
-    .eq("provider_code", "safaricom_daraja")
-    .maybeSingle();
-  const payoutCapabilities =
-    payoutProvider?.capabilities &&
-    typeof payoutProvider.capabilities === "object" &&
-    !Array.isArray(payoutProvider.capabilities)
-      ? payoutProvider.capabilities as Record<string, unknown>
-      : {};
-  const payoutEnabled = Boolean(
-    payoutProvider?.is_enabled &&
-    payoutCapabilities.payout === true &&
-    payoutCapabilities.fee_quotes === true &&
-    payoutCapabilities.environment === "sandbox"
-  );
+  let payoutEnabled = false;
+  try {
+    const service = createServiceClient();
+    const { data: payoutProvider } = await service.from("akiba_payment_providers")
+      .select("is_enabled,capabilities")
+      .eq("provider_code", "safaricom_daraja")
+      .maybeSingle();
+    const payoutCapabilities =
+      payoutProvider?.capabilities &&
+      typeof payoutProvider.capabilities === "object" &&
+      !Array.isArray(payoutProvider.capabilities)
+        ? payoutProvider.capabilities as Record<string, unknown>
+        : {};
+    payoutEnabled = Boolean(
+      payoutProvider?.is_enabled &&
+      payoutCapabilities.payout === true &&
+      payoutCapabilities.fee_quotes === true &&
+      payoutCapabilities.environment === "sandbox"
+    );
+  } catch {
+    // Fail closed: the Creator's withdrawal CTA remains disabled if provider
+    // payout capability cannot be verified from the trusted server client.
+    payoutEnabled = false;
+  }
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const sandboxEnabled = process.env.MPESA_ENVIRONMENT === "sandbox" &&
     process.env.MPESA_SANDBOX_COLLECTION_ENABLED === "true" &&
