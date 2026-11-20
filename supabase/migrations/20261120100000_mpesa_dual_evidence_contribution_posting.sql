@@ -73,7 +73,7 @@ begin
      or length(btrim(p_provider_receipt_number)) = 0
      or p_amount_minor is null
      or p_amount_minor <= 0
-     or p_currency_code <> 'KES'
+     or p_currency_code is distinct from 'KES'
      or p_callback_event_id is null
      or p_provider_verification_id is null then
     raise exception 'Both authenticated callback and provider verification evidence are required';
@@ -116,12 +116,12 @@ begin
 
   if not found
      or v_callback.callback_authenticated_at is null
-     or v_callback.callback_auth_method <> 'shared_url_token'
-     or v_callback.provider_result_code <> '0'
+     or v_callback.callback_auth_method is distinct from 'shared_url_token'
+     or v_callback.provider_result_code is distinct from '0'
      or v_callback.payload_digest like 'callback-missing:%'
-     or v_callback.provider_receipt_number <> p_provider_receipt_number
-     or v_callback.amount_minor <> p_amount_minor
-     or v_callback.currency_code <> p_currency_code
+     or v_callback.provider_receipt_number is distinct from p_provider_receipt_number
+     or v_callback.amount_minor is distinct from p_amount_minor
+     or v_callback.currency_code is distinct from p_currency_code
      or v_callback.processed_at is not null then
     raise exception 'Authenticated success callback evidence is missing or does not match';
   end if;
@@ -142,8 +142,8 @@ begin
 
   if not found
      or v_verification.verification_method <> 'daraja_stk_query'
-     or v_verification.verification_status <> 'success'
-     or v_verification.result_code <> '0'
+     or v_verification.verification_status is distinct from 'success'
+     or v_verification.result_code is distinct from '0'
      or v_verification.verified_at is null then
     raise exception 'Independent successful Safaricom verification evidence is missing or does not match';
   end if;
