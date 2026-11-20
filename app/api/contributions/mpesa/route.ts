@@ -62,6 +62,7 @@ export async function POST(request: NextRequest) {
   }
 
   const groupId = typeof body.groupId === "string" ? body.groupId : "";
+  const requestedProviderCode = typeof body.providerCode === "string" ? body.providerCode : "safaricom_daraja";
   const phoneNumber = normalizeKenyanPhone(body.phoneNumber);
   const amountText = typeof body.amountMinor === "string"
     ? body.amountMinor
@@ -71,6 +72,10 @@ export async function POST(request: NextRequest) {
   const idempotencyKey =
     request.headers.get("Idempotency-Key") ||
     (typeof body.idempotencyKey === "string" ? body.idempotencyKey : "");
+
+  if (requestedProviderCode !== "safaricom_daraja") {
+    return json({ ok: false, error: "The selected payment provider is not supported for this contribution." }, 400);
+  }
 
   if (!groupId || !phoneNumber || !/^[1-9]\d*$/.test(amountText)) {
     return json({
