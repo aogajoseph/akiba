@@ -77,6 +77,6 @@ export const safaricomDarajaAdapter: PaymentProviderAdapter = {
     if (result.resultCode === "0") status = "succeeded";
     else if (result.resultCode === "1032") status = "cancelled";
     else if (result.resultCode !== null) status = "failed";
-    return { status, providerRequestReference: result.checkoutRequestId };
+    return { status, providerRequestReference: result.checkoutRequestId ?? requestReference };
   },
 };
