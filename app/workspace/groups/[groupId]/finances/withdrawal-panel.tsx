@@ -45,6 +45,7 @@ type Props = {
   currentUserId: string;
   currentUserRole: string;
   payoutEnabled: boolean;
+  readError: boolean;
   requests: WithdrawalRequest[];
   approvals: Approval[];
   roster: ApprovalRoster[];
@@ -97,6 +98,7 @@ export default function WithdrawalPanel({
   currentUserId,
   currentUserRole,
   payoutEnabled,
+  readError,
   requests,
   approvals,
   roster,
@@ -138,7 +140,9 @@ export default function WithdrawalPanel({
         <p className="ak-finance-disabled">Withdrawal requests are temporarily unavailable. The current Safaricom sandbox setup supports collections but not verified payouts or fee quotes. Group funds will not be released until a payout-capable sandbox flow is proven.</p>
       )}
 
-      {requests.length === 0 ? (
+      {readError ? (
+        <div className="ak-workspace-empty"><strong>Withdrawal information could not be loaded</strong><p>Refresh the page to try again.</p></div>
+      ) : requests.length === 0 ? (
         <div className="ak-workspace-empty">
           <strong>No withdrawal requests</strong>
           <p>When the Group Creator requests a withdrawal, its approvals, review period, flags and payout status will appear here.</p>
