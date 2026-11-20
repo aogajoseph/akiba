@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
   const receipt = normalizeMpesaReceipt(metadata.MpesaReceiptNumber);
   const digest = createHash("sha256").update(rawBody).digest("hex");
 
-  console.info("[payments][daraja][callback] Authenticated callback received", {
+  console.info("[payments][daraja][callback] Token-authenticated callback received", {
     checkoutRequestIdSuffix: checkoutId.slice(-6),
     callbackResultCode,
     merchantRequestReferencePresent: merchantId !== null,
@@ -191,7 +191,7 @@ export async function POST(request: NextRequest) {
 
   if (!eventId) return json({ ResultCode: 1, ResultDesc: "Could not record callback" }, 503);
 
-  console.info("[payments][daraja][callback] Callback durably recorded", {
+  console.info("[payments][daraja][callback] Token-authenticated callback durably recorded", {
     providerEventId: eventId,
     paymentAttemptId: attempt.id,
     checkoutRequestIdSuffix: checkoutId.slice(-6),
