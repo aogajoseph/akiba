@@ -370,7 +370,6 @@ export async function GET(request: NextRequest) {
           p_provider_receipt_number: receipt,
           p_amount_minor: String(amountMinor),
           p_currency_code: "KES",
-          p_provider_result_code: providerStatus.resultCode,
           p_callback_event_id: event.id,
           p_provider_verification_id: verification.id,
         });
