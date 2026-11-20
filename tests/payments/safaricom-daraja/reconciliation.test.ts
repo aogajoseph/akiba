@@ -85,6 +85,15 @@ describe("Safaricom callback evidence", () => {
     })).toBe(true);
   });
 
+  it("rejects callback/query merchant-reference disagreement even without an attempt merchant reference", () => {
+    expect(hasPostableContributionEvidence({
+      ...validEvidence,
+      expectedMerchantRequestId: null,
+      callbackMerchantRequestId: "callback-merchant",
+      providerMerchantRequestId: "query-merchant",
+    })).toBe(false);
+  });
+
   it("rejects a success callback with a missing receipt or mismatched amount", () => {
     expect(hasPostableCallbackEvidence({ ...validEvidence, receipt: null })).toBe(false);
     expect(hasPostableCallbackEvidence({ ...validEvidence, amountMinor: 99 })).toBe(false);
