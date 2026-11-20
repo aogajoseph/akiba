@@ -514,7 +514,7 @@ begin
   end;
 
   -- All three snapshotted Admins must approve before the fixed staging period.
-  perform set_config('request.jwt.claim.sub', '00000000-00000000-0000-0000-000000000002', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
   perform public.akiba_decide_withdrawal_request(request_id, 'approved', null);
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000003', true);
   perform public.akiba_decide_withdrawal_request(request_id, 'approved', null);
