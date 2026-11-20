@@ -673,8 +673,10 @@ begin
   from public.akiba_payment_providers
   where id = request_row.provider_id
     and is_enabled = true;
-  if not found or provider_capabilities ->> 'payout' is distinct from 'true' then
-    raise exception 'The selected provider does not currently support payout execution';
+  if not found
+     or provider_capabilities ->> 'payout' is distinct from 'true'
+     or provider_capabilities ->> 'environment' is distinct from 'sandbox' then
+    raise exception 'The selected provider does not currently support sandbox payout execution';
   end if;
   if request_row.quote_expires_at is null
      or request_row.quote_expires_at <= clock_timestamp() then
