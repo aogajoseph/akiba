@@ -128,6 +128,9 @@ declare
   active_admin_count integer;
   active_creator_count integer;
 begin
+  perform 1 from public.akiba_groups where id = p_group_id for update;
+  if not found then raise exception 'Group was not found'; end if;
+
   select greatest(e.required_group_admins, 3) into required_count
   from public.akiba_groups g
   join public.akiba_group_plan_entitlements e on e.plan_code = g.group_plan_code
@@ -483,6 +486,8 @@ declare
   roster_count integer;
   approved_count integer;
   v_started_at timestamptz;
+  changed_rows integer;
+  reservation_rows integer;
 begin
   if new.decision = 'rejected' then
     update public.akiba_withdrawal_requests
@@ -492,12 +497,20 @@ begin
         updated_at = clock_timestamp()
     where id = new.withdrawal_request_id
       and status = 'pending_approval';
+    get diagnostics changed_rows = row_count;
+    if changed_rows <> 1 then
+      raise exception 'Withdrawal request is no longer awaiting approval';
+    end if;
 
     update public.akiba_financial_reservations
     set status = 'released',
         resolved_at = new.decided_at
     where withdrawal_request_id = new.withdrawal_request_id
       and status = 'active';
+    get diagnostics reservation_rows = row_count;
+    if reservation_rows <> 1 then
+      raise exception 'Withdrawal rejection requires exactly one active reservation';
+    end if;
 
     insert into public.akiba_finance_activity_events
       (group_id, actor_id, event_type, source_type, source_id, event_payload)
@@ -534,6 +547,10 @@ begin
           updated_at = v_started_at
       where id = new.withdrawal_request_id
         and status = 'pending_approval';
+      get diagnostics changed_rows = row_count;
+      if changed_rows <> 1 then
+        raise exception 'Withdrawal request could not enter staging after final approval';
+      end if;
 
       insert into public.akiba_finance_activity_events
         (group_id, actor_id, event_type, source_type, source_id, event_payload)
@@ -639,6 +656,17 @@ begin
   end if;
   if new.provider_id <> request_row.provider_id then
     raise exception 'Payout provider must match the approved withdrawal provider';
+  end if;
+
+  perform 1 from public.akiba_financial_reservations
+  where withdrawal_request_id = request_row.id
+    and group_id = request_row.group_id
+    and currency_code = request_row.currency_code
+    and amount_minor = request_row.total_debit_minor
+    and status = 'active'
+  for update;
+  if not found then
+    raise exception 'Payout execution requires the exact active withdrawal reservation';
   end if;
 
   select capabilities into provider_capabilities
