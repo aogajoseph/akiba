@@ -32,7 +32,25 @@ from generate_series(2, 6) as n;
 
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000002','appoint');
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000003','appoint');
+
+do $leadership$
+begin
+  begin
+    perform akiba_private.assert_group_leadership_ready('10000000-0000-0000-0000-000000000001');
+    raise exception 'Two active Group Admins unexpectedly satisfied leadership readiness';
+  exception when others then
+    if sqlerrm not like '%at least 3 active Group Admins%' then raise; end if;
+  end;
+end;
+$leadership$;
+
 select public.akiba_set_group_admin('10000000-0000-0000-0000-000000000001','00000000-0000-0000-0000-000000000004','appoint');
+
+do $leadership_ready$
+begin
+  perform akiba_private.assert_group_leadership_ready('10000000-0000-0000-0000-000000000001');
+end;
+$leadership_ready$;
 
 -- Muted members must still receive critical financial notifications.
 insert into public.akiba_group_notification_preferences (user_id, group_id, is_muted)
