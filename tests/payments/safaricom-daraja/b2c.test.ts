@@ -6,6 +6,7 @@ import {
 } from "../../../lib/payments/providers/safaricom-daraja/b2c";
 
 const validEnv = {
+  NODE_ENV: "test",
   MPESA_ENVIRONMENT: "sandbox",
   MPESA_SANDBOX_PAYOUT_ENABLED: "true",
   MPESA_CONSUMER_KEY: "sandbox-key",
