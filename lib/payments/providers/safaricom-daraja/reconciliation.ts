@@ -7,6 +7,11 @@ export interface RecoveryEventEvidence {
 export interface ContributionEvidence {
   callbackResultCode: string | null;
   providerResultCode: string | null;
+  callbackCheckoutRequestId: string | null;
+  providerCheckoutRequestId: string | null;
+  callbackMerchantRequestId: string | null;
+  providerMerchantRequestId: string | null;
+  expectedMerchantRequestId: string | null;
   receipt: string | null;
   amountMinor: number;
   expectedAmountMinor: number;
@@ -43,9 +48,28 @@ export function hasPostableCallbackEvidence(evidence: ContributionEvidence): boo
     evidence.attemptCurrency === "KES";
 }
 
-/** Retained for callers that also require independent provider-query agreement. */
+/**
+ * Posting requires both the authenticated callback and an independent
+ * successful STK Query response for the same checkout request. The query
+ * endpoint does not return receipt/amount, so those callback facts are
+ * checked against the immutable attempt/intent separately.
+ */
 export function hasPostableContributionEvidence(evidence: ContributionEvidence): boolean {
-  return hasPostableCallbackEvidence(evidence);
+  if (!hasPostableCallbackEvidence(evidence)) return false;
+  if (
+    !evidence.callbackCheckoutRequestId ||
+    evidence.callbackCheckoutRequestId !== evidence.providerCheckoutRequestId
+  ) return false;
+  if (
+    evidence.expectedMerchantRequestId &&
+    evidence.callbackMerchantRequestId !== evidence.expectedMerchantRequestId
+  ) return false;
+  if (
+    evidence.expectedMerchantRequestId &&
+    evidence.providerMerchantRequestId &&
+    evidence.providerMerchantRequestId !== evidence.expectedMerchantRequestId
+  ) return false;
+  return true;
 }
 
 export function isRetryableDarajaHttpStatus(status: number): boolean {
