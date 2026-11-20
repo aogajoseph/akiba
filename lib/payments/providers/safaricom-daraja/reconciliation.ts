@@ -4,19 +4,22 @@ export interface RecoveryEventEvidence {
   provider_receipt_number?: string | null;
 }
 
-export interface ContributionEvidence {
+export interface CallbackEvidence {
   callbackResultCode: string | null;
   providerResultCode: string | null;
-  callbackCheckoutRequestId: string | null;
-  providerCheckoutRequestId: string | null;
-  callbackMerchantRequestId: string | null;
-  providerMerchantRequestId: string | null;
-  expectedMerchantRequestId: string | null;
   receipt: string | null;
   amountMinor: number;
   expectedAmountMinor: number;
   eventCurrency: string | null;
   attemptCurrency: string | null;
+}
+
+export interface ContributionEvidence extends CallbackEvidence {
+  callbackCheckoutRequestId: string | null;
+  providerCheckoutRequestId: string | null;
+  callbackMerchantRequestId: string | null;
+  providerMerchantRequestId: string | null;
+  expectedMerchantRequestId: string | null;
 }
 
 /** Safaricom M-Pesa receipt identifiers are ten alphanumeric characters. */
@@ -35,7 +38,7 @@ export function isMissingCallbackPlaceholder(event: RecoveryEventEvidence): bool
 }
 
 /** A success callback is postable only when its own facts match the stored attempt. */
-export function hasPostableCallbackEvidence(evidence: ContributionEvidence): boolean {
+export function hasPostableCallbackEvidence(evidence: CallbackEvidence): boolean {
   return evidence.callbackResultCode === "0" &&
     evidence.providerResultCode === "0" &&
     typeof evidence.receipt === "string" &&
