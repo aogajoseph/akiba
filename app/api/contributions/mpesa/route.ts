@@ -95,6 +95,11 @@ export async function POST(request: NextRequest) {
     return json({ ok: false, error: "The sandbox contribution limit is 250,000 KES." }, 400);
   }
 
+  if (!process.env.MPESA_SANDBOX_TEST_GROUP_ID ||
+      groupId !== process.env.MPESA_SANDBOX_TEST_GROUP_ID) {
+    return json({ ok: false, error: "M-Pesa sandbox contributions are restricted to the configured Test group." }, 403);
+  }
+
   if (
     process.env.MPESA_ENVIRONMENT !== "sandbox" ||
     process.env.MPESA_SANDBOX_COLLECTION_ENABLED !== "true"
@@ -333,16 +338,6 @@ export async function POST(request: NextRequest) {
       }, uncertain ? 202 : 502);
     }
   } catch (error) {
-    const databaseMessage = error && typeof error === "object" && "message" in error
-      ? String((error as { message?: unknown }).message ?? "")
-      : "";
-    if (databaseMessage.includes("Group leadership is incomplete")) {
-      return json({
-        ok: false,
-        code: "GROUP_LEADERSHIP_INCOMPLETE",
-        error: "This group must have its required Group Admins appointed before contributions can begin.",
-      }, 409);
-    }
     if (error instanceof PaymentError) {
       const status =
         error.code === "CONTRIBUTOR_NOT_ACTIVE" ? 403 :
