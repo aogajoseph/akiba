@@ -36,6 +36,11 @@ describe("Safaricom callback evidence", () => {
   const validEvidence = {
     callbackResultCode: "0",
     providerResultCode: "0",
+    callbackCheckoutRequestId: "ws_CO_test_123",
+    providerCheckoutRequestId: "ws_CO_test_123",
+    callbackMerchantRequestId: "merchant_test",
+    providerMerchantRequestId: "merchant_test",
+    expectedMerchantRequestId: "merchant_test",
     receipt: "AB12CD34EF",
     amountMinor: 100,
     expectedAmountMinor: 100,
@@ -47,8 +52,37 @@ describe("Safaricom callback evidence", () => {
     expect(hasPostableContributionEvidence(validEvidence)).toBe(true);
   });
 
-  it("accepts a complete success callback without depending on STK Query", () => {
+  it("validates callback facts independently but does not treat them as sufficient to post", () => {
     expect(hasPostableCallbackEvidence(validEvidence)).toBe(true);
+    expect(hasPostableContributionEvidence({
+      ...validEvidence,
+      providerCheckoutRequestId: null,
+    })).toBe(false);
+  });
+
+  it("requires the callback and provider query to reference the same checkout request", () => {
+    expect(hasPostableContributionEvidence({
+      ...validEvidence,
+      providerCheckoutRequestId: "ws_CO_other",
+    })).toBe(false);
+  });
+
+  it("rejects mismatched merchant references when the attempt has one", () => {
+    expect(hasPostableContributionEvidence({
+      ...validEvidence,
+      providerMerchantRequestId: "different_merchant",
+    })).toBe(false);
+    expect(hasPostableContributionEvidence({
+      ...validEvidence,
+      callbackMerchantRequestId: "different_merchant",
+    })).toBe(false);
+  });
+
+  it("allows provider query responses that omit the optional merchant reference", () => {
+    expect(hasPostableContributionEvidence({
+      ...validEvidence,
+      providerMerchantRequestId: null,
+    })).toBe(true);
   });
 
   it("rejects a success callback with a missing receipt or mismatched amount", () => {
@@ -60,6 +94,14 @@ describe("Safaricom callback evidence", () => {
     expect(hasPostableContributionEvidence({
       ...validEvidence,
       callbackResultCode: null,
+    })).toBe(false);
+  });
+
+  it("does not post on callback success without an independent provider query", () => {
+    expect(hasPostableContributionEvidence({
+      ...validEvidence,
+      providerResultCode: null,
+      providerCheckoutRequestId: null,
     })).toBe(false);
   });
 
