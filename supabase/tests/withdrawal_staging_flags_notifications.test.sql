@@ -531,6 +531,10 @@ begin
     raise exception 'Unflagged sandbox workflow request did not reach payout_queued';
   end if;
 
+  -- Approval calls above run as each Admin. Restore the Creator identity
+  -- before exercising Creator-scoped idempotency and duplicate-request paths.
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+
   -- The simulator is intentionally not payout-capable, even after approvals
   -- and staging. It must never create a payout attempt.
   begin
