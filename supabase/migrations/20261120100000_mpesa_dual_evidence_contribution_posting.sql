@@ -37,6 +37,9 @@ create table if not exists public.akiba_provider_verifications (
 create index if not exists akiba_provider_verifications_attempt_verified_idx
   on public.akiba_provider_verifications(payment_attempt_id, verified_at desc);
 
+create unique index if not exists akiba_provider_verifications_attempt_digest_unique
+  on public.akiba_provider_verifications(payment_attempt_id, response_digest);
+
 create index if not exists akiba_provider_verifications_callback_verified_idx
   on public.akiba_provider_verifications(callback_event_id, verified_at desc);
 
