@@ -5,6 +5,12 @@
 
 begin;
 
+alter table public.akiba_withdrawal_requests
+  add column if not exists idempotency_key text;
+create unique index if not exists akiba_withdrawal_request_idempotency_idx
+  on public.akiba_withdrawal_requests(group_id, initiator_id, idempotency_key)
+  where idempotency_key is not null;
+
 insert into public.akiba_payment_providers (
   provider_code, display_name, is_enabled, capabilities
 )
@@ -94,7 +100,8 @@ create or replace function public.akiba_create_sandbox_withdrawal_request(
   p_recipient_amount_minor bigint,
   p_recipient_name text,
   p_destination_label text,
-  p_reason text
+  p_reason text,
+  p_idempotency_key text
 )
 returns uuid
 language plpgsql
@@ -110,6 +117,8 @@ declare
   simulator_capabilities jsonb;
   request_id uuid;
   normalized_destination text;
+  destination_fingerprint_value text;
+  existing_request public.akiba_withdrawal_requests%rowtype;
 begin
   if actor_id is null then
     raise exception 'Authentication is required';
@@ -122,11 +131,15 @@ begin
      or char_length(btrim(coalesce(p_recipient_name, ''))) not between 1 and 160
      or char_length(btrim(coalesce(p_destination_label, ''))) not between 3 and 48
      or btrim(coalesce(p_destination_label, '')) !~ '^[A-Za-z0-9][A-Za-z0-9 _.-]{2,47}$'
-     or char_length(btrim(coalesce(p_reason, ''))) not between 1 and 500 then
+     or char_length(btrim(coalesce(p_reason, ''))) not between 1 and 500
+     or char_length(btrim(coalesce(p_idempotency_key, ''))) not between 8 and 160 then
     raise exception 'Enter a valid amount, recipient, sandbox destination label and withdrawal purpose';
   end if;
 
   normalized_destination := upper(btrim(p_destination_label));
+  destination_fingerprint_value := encode(
+    extensions.digest(convert_to(normalized_destination, 'UTF8'), 'sha256'), 'hex'
+  );
 
   select currency_code, status
     into group_currency, group_status
@@ -139,6 +152,23 @@ begin
   end if;
   if group_status <> 'active' then
     raise exception 'Withdrawals are unavailable for a deactivated group';
+  end if;
+
+  select * into existing_request
+  from public.akiba_withdrawal_requests
+  where group_id = p_group_id
+    and initiator_id = actor_id
+    and idempotency_key = btrim(p_idempotency_key)
+  for update;
+
+  if found then
+    if existing_request.recipient_amount_minor = p_recipient_amount_minor
+       and existing_request.recipient_name = btrim(p_recipient_name)
+       and existing_request.destination_fingerprint = destination_fingerprint_value
+       and existing_request.reason = btrim(p_reason) then
+      return existing_request.id;
+    end if;
+    raise exception 'Withdrawal idempotency key was already used with different request terms';
   end if;
 
   if not exists (
@@ -171,22 +201,24 @@ begin
     group_id, initiator_id, currency_code, recipient_amount_minor,
     akiba_fee_minor, provider_fee_minor, fee_rate_bps, fee_schedule_version,
     provider_id, provider_quote_ref, quote_expires_at, recipient_name,
-    destination_token, destination_fingerprint, destination_snapshot, reason
+    destination_token, destination_fingerprint, destination_snapshot, reason,
+    idempotency_key
   ) values (
     p_group_id, actor_id, group_currency, p_recipient_amount_minor,
     0, 0, 0, 'sandbox-simulation-zero-fee-v1',
     simulator_provider_id, 'SIM-' || gen_random_uuid()::text,
     clock_timestamp() + interval '3 hours',
     btrim(p_recipient_name),
-    'sandbox:' || encode(extensions.digest(convert_to(normalized_destination, 'UTF8'), 'sha256'), 'hex'),
-    encode(extensions.digest(convert_to(normalized_destination, 'UTF8'), 'sha256'), 'hex'),
+    'sandbox:' || destination_fingerprint_value,
+    destination_fingerprint_value,
     jsonb_build_object(
       'mode', 'sandbox_workflow_only',
       'destination_label', normalized_destination,
       'payment_execution', 'disabled',
       'provider_code', 'sandbox_workflow_simulator'
     ),
-    btrim(p_reason)
+    btrim(p_reason),
+    btrim(p_idempotency_key)
   )
   returning id into request_id;
 
@@ -194,10 +226,10 @@ begin
 end;
 $fn$;
 
-revoke all on function public.akiba_create_sandbox_withdrawal_request(uuid,bigint,text,text,text) from public, anon;
-grant execute on function public.akiba_create_sandbox_withdrawal_request(uuid,bigint,text,text,text) to authenticated;
+revoke all on function public.akiba_create_sandbox_withdrawal_request(uuid,bigint,text,text,text,text) from public, anon;
+grant execute on function public.akiba_create_sandbox_withdrawal_request(uuid,bigint,text,text,text,text) to authenticated;
 
-comment on function public.akiba_create_sandbox_withdrawal_request(uuid,bigint,text,text,text) is
+comment on function public.akiba_create_sandbox_withdrawal_request(uuid,bigint,text,text,text,text) is
   'Creates a Creator-authorized sandbox-only withdrawal workflow using a synthetic zero-fee quote and non-routable destination label. It cannot execute a payout or move funds.';
 
 commit;
