@@ -54,7 +54,6 @@ create function public.post_mpesa_contribution(
   p_provider_receipt_number text,
   p_amount_minor bigint,
   p_currency_code text,
-  p_provider_result_code text,
   p_callback_event_id uuid,
   p_provider_verification_id uuid
 )
@@ -78,11 +77,12 @@ begin
      or p_provider_receipt_number !~ '^[A-Z0-9]{10}$'
      or p_amount_minor is null
      or p_amount_minor <= 0
-     or p_currency_code <> 'KES'
-     or p_provider_result_code <> '0'
-     or p_callback_event_id is null
-     or p_provider_verification_id is null then
-    raise exception 'Both valid callback and provider verification evidence are required';
+     or p_currency_code <> 'KES' then
+    raise exception 'A valid M-Pesa contribution amount, currency and receipt are required';
+  end if;
+
+  if p_callback_event_id is null or p_provider_verification_id is null then
+    raise exception 'Both authenticated callback and provider verification evidence are required';
   end if;
 
   select id into v_provider_id
@@ -246,8 +246,8 @@ begin
   update public.akiba_payment_attempts
   set status = 'succeeded',
       provider_receipt_number = p_provider_receipt_number,
-      provider_result_code = p_provider_result_code,
-      response_code = p_provider_result_code,
+      provider_result_code = v_verification.result_code,
+      response_code = v_verification.result_code,
       response_summary = 'Safaricom independently verified the authenticated M-Pesa callback.',
       confirmed_at = clock_timestamp(),
       updated_at = clock_timestamp()
@@ -284,10 +284,10 @@ end;
 $function$;
 
 revoke all on function public.post_mpesa_contribution(
-  text, text, bigint, text, text, uuid, uuid
+  text, text, bigint, text, uuid, uuid
 ) from public, anon, authenticated;
 grant execute on function public.post_mpesa_contribution(
-  text, text, bigint, text, text, uuid, uuid
+  text, text, bigint, text, uuid, uuid
 ) to service_role;
 
 commit;
