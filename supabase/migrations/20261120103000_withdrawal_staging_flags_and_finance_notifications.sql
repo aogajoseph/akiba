@@ -74,7 +74,7 @@ create index akiba_withdrawal_approval_roster_group_idx
   on public.akiba_withdrawal_approval_roster(group_id, withdrawal_request_id);
 
 alter table public.akiba_withdrawal_approval_roster enable row level security;
-revoke all on public.akiba_withdrawal_approval_roster from public, anon, authenticated;
+revoke all on public.akiba_withdrawal_approval_roster from public, anon, authenticated, service_role;
 grant select on public.akiba_withdrawal_approval_roster to authenticated;
 create policy akiba_withdrawal_approval_roster_active_members_read
   on public.akiba_withdrawal_approval_roster
@@ -108,7 +108,7 @@ create index akiba_withdrawal_flags_due_idx
   on public.akiba_withdrawal_flags(withdrawal_request_id, status);
 
 alter table public.akiba_withdrawal_flags enable row level security;
-revoke all on public.akiba_withdrawal_flags from public, anon, authenticated;
+revoke all on public.akiba_withdrawal_flags from public, anon, authenticated, service_role;
 grant select on public.akiba_withdrawal_flags to authenticated;
 create policy akiba_withdrawal_flags_active_members_read
   on public.akiba_withdrawal_flags
