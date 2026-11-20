@@ -66,8 +66,9 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
   ]);
   if (!membership || membership.status !== "active") notFound();
   const activeGroupAdminCount = (leadershipMembers ?? []).filter((member) => member.role === "group_admin").length;
+  const activeGroupCreatorCount = (leadershipMembers ?? []).filter((member) => member.role === "group_creator").length;
   const requiredGroupAdmins = Math.max(3, groupPlan?.required_group_admins ?? 3);
-  const leadershipReady = activeGroupAdminCount >= requiredGroupAdmins;
+  const leadershipReady = activeGroupCreatorCount === 1 && activeGroupAdminCount >= requiredGroupAdmins;
 
   const [
     { data: transactions, error: transactionError, count: transactionCount },
