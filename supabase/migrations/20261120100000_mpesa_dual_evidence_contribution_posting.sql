@@ -156,6 +156,12 @@ begin
     raise exception 'Safaricom query merchant reference does not match the payment attempt';
   end if;
 
+  if v_callback.source_reference is not null
+     and v_verification.merchant_request_id is not null
+     and v_callback.source_reference <> v_verification.merchant_request_id then
+    raise exception 'Callback and Safaricom query merchant references do not agree';
+  end if;
+
   if v_attempt.currency_code <> p_currency_code
      or v_intent.currency_code <> p_currency_code
      or v_attempt.amount_minor <> p_amount_minor
