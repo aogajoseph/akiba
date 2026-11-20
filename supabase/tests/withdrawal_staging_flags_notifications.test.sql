@@ -436,7 +436,8 @@ begin
   begin
     perform public.akiba_create_sandbox_withdrawal_request(
       '10000000-0000-0000-0000-000000000001', 5000,
-      'Sandbox recipient', 'DEMO-RECIPIENT-01', 'Non-Creator authorization test'
+      'Sandbox recipient', 'DEMO-RECIPIENT-01', 'Non-Creator authorization test',
+      'creator-request-idempotency-001'
     );
     raise exception 'A Group Admin unexpectedly created a withdrawal request';
   exception when others then
@@ -447,7 +448,8 @@ begin
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
   request_id := public.akiba_create_sandbox_withdrawal_request(
     '10000000-0000-0000-0000-000000000001', 5000,
-    'Sandbox recipient', 'DEMO-RECIPIENT-01', 'Sandbox request creation regression test'
+    'Sandbox recipient', 'DEMO-RECIPIENT-01', 'Sandbox request creation regression test',
+    'creator-request-idempotency-001'
   );
 
   select status, fee_schedule_version
@@ -480,17 +482,42 @@ begin
   end if;
 
   select count(*) into notification_count
-  from public.akiba_group_notifications
-  where group_id = '10000000-0000-0000-0000-000000000001'
-    and event_type = 'financial_withdrawal_requested';
+  from public.akiba_group_notifications n
+  where n.source_event_id = (
+    select e.id from public.akiba_finance_activity_events e
+    where e.source_type = 'withdrawal_request'
+      and e.source_id = request_id
+      and e.event_type = 'withdrawal_requested'
+  );
   if notification_count <> 6 then
     raise exception 'Withdrawal request must notify every active member; got %', notification_count;
   end if;
 
+  if public.akiba_create_sandbox_withdrawal_request(
+    '10000000-0000-0000-0000-000000000001', 5000,
+    'Sandbox recipient', 'DEMO-RECIPIENT-01', 'Sandbox request creation regression test',
+    'creator-request-idempotency-001'
+  ) <> request_id then
+    raise exception 'An exact idempotent retry must return the original withdrawal request';
+  end if;
+
+  begin
+    perform public.akiba_create_sandbox_withdrawal_request(
+      '10000000-0000-0000-0000-000000000001', 6000,
+      'Sandbox recipient', 'DEMO-RECIPIENT-01', 'Sandbox request creation regression test',
+      'creator-request-idempotency-001'
+    );
+    raise exception 'Reusing an idempotency key with changed terms unexpectedly succeeded';
+  exception when others then
+    get stacked diagnostics message = message_text;
+    if message not like '%idempotency key was already used%' then raise; end if;
+  end;
+
   begin
     perform public.akiba_create_sandbox_withdrawal_request(
       '10000000-0000-0000-0000-000000000001', 5000,
-      'Another recipient', 'DEMO-RECIPIENT-02', 'Duplicate unresolved request test'
+      'Another recipient', 'DEMO-RECIPIENT-02', 'Duplicate unresolved request test',
+      'creator-request-idempotency-002'
     );
     raise exception 'A second unresolved withdrawal unexpectedly succeeded';
   exception when unique_violation then
