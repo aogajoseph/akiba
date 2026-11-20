@@ -170,8 +170,12 @@ begin
     new.id::text, new.group_id::text, new.currency_code,
     new.recipient_amount_minor::text, new.total_debit_minor::text, new.akiba_fee_minor::text,
     new.provider_fee_minor::text, new.recipient_name,
-    coalesce(new.destination_fingerprint, ''), new.fee_schedule_version,
-    new.provider_id::text, coalesce(new.provider_quote_ref, '')
+    new.fee_rate_bps::text, new.fee_schedule_version,
+    new.provider_id::text, coalesce(new.provider_quote_ref, ''),
+    coalesce(new.quote_expires_at::text, ''),
+    coalesce(new.destination_token, ''),
+    coalesce(new.destination_fingerprint, ''),
+    coalesce(new.destination_snapshot::text, '{}')
   ), 'UTF8'), 'sha256'), 'hex');
   return new;
 end;
@@ -188,8 +192,12 @@ set terms_fingerprint = encode(extensions.digest(convert_to(concat_ws('|',
   r.id::text, r.group_id::text, r.currency_code,
   r.recipient_amount_minor::text, r.total_debit_minor::text, r.akiba_fee_minor::text,
   r.provider_fee_minor::text, r.recipient_name,
-  coalesce(r.destination_fingerprint, ''), r.fee_schedule_version,
-  r.provider_id::text, coalesce(r.provider_quote_ref, '')
+  r.fee_rate_bps::text, r.fee_schedule_version,
+  r.provider_id::text, coalesce(r.provider_quote_ref, ''),
+  coalesce(r.quote_expires_at::text, ''),
+  coalesce(r.destination_token, ''),
+  coalesce(r.destination_fingerprint, ''),
+  coalesce(r.destination_snapshot::text, '{}')
 ), 'UTF8'), 'sha256'), 'hex')
 where r.terms_fingerprint is null;
 
