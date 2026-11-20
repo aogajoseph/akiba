@@ -762,6 +762,95 @@ grant execute on function public.akiba_flag_withdrawal(uuid,text) to authenticat
 revoke all on function public.akiba_remove_withdrawal_flag(uuid) from public, anon;
 grant execute on function public.akiba_remove_withdrawal_flag(uuid) to authenticated;
 
+create or replace function public.akiba_cancel_withdrawal_request(p_withdrawal_request_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  request_row public.akiba_withdrawal_requests%rowtype;
+  flag_row public.akiba_withdrawal_flags%rowtype;
+  payout_attempt_exists boolean;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  if p_withdrawal_request_id is null then raise exception 'A withdrawal request is required'; end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = p_withdrawal_request_id
+  for update;
+  if not found then raise exception 'Withdrawal request not found'; end if;
+  if request_row.initiator_id <> actor_id
+     or not exists (
+       select 1 from public.akiba_group_memberships m
+       where m.group_id = request_row.group_id
+         and m.user_id = actor_id
+         and m.role = 'group_creator'
+         and m.status = 'active'
+     ) then
+    raise exception 'Only the active Group Creator who requested this withdrawal may cancel it';
+  end if;
+  if request_row.status not in ('pending_approval','staging','payout_queued') then
+    raise exception 'This withdrawal can no longer be cancelled';
+  end if;
+
+  select exists (
+    select 1 from public.akiba_payout_attempts p
+    where p.withdrawal_request_id = request_row.id
+      and p.status in ('submitted','processing','unknown')
+  ) into payout_attempt_exists;
+  if payout_attempt_exists then
+    raise exception 'A payout has already been submitted or has an uncertain outcome; reconciliation is required';
+  end if;
+
+  update public.akiba_withdrawal_requests
+  set status = 'cancelled',
+      resolved_at = clock_timestamp(),
+      resolution_note = 'Cancelled by the Group Creator before payout submission.',
+      updated_at = clock_timestamp()
+  where id = request_row.id;
+
+  update public.akiba_financial_reservations
+  set status = 'released',
+      resolved_at = clock_timestamp()
+  where withdrawal_request_id = request_row.id
+    and status = 'active';
+
+  for flag_row in
+    select * from public.akiba_withdrawal_flags
+    where withdrawal_request_id = request_row.id
+      and status = 'active'
+    for update
+  loop
+    update public.akiba_withdrawal_flags
+    set status = 'closed_by_system',
+        closed_at = clock_timestamp(),
+        closure_reason = 'Automatically closed because the Group Creator cancelled the withdrawal.'
+    where id = flag_row.id;
+
+    insert into public.akiba_finance_activity_events
+      (group_id, actor_id, event_type, source_type, source_id, event_payload)
+    values
+      (request_row.group_id, actor_id, 'withdrawal_flag_closed',
+       'withdrawal_flag', flag_row.id,
+       jsonb_build_object('withdrawal_request_id', request_row.id, 'closure_reason', 'creator_cancelled'));
+  end loop;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (request_row.group_id, actor_id, 'withdrawal_cancelled_by_creator',
+     'withdrawal_request', request_row.id,
+     jsonb_build_object('currency_code', request_row.currency_code,
+       'amount_minor', request_row.total_debit_minor));
+end;
+$fn$;
+
+revoke all on function public.akiba_cancel_withdrawal_request(uuid) from public, anon;
+grant execute on function public.akiba_cancel_withdrawal_request(uuid) to authenticated;
+
 -- Process staging deadlines atomically. A flag still active at the deadline
 -- cancels the withdrawal and releases the reservation. No flag queues payout,
 -- but the reservation remains until a payout-capable provider is available.
