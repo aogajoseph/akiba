@@ -45,16 +45,16 @@ set search_path to ''
 as $fn$
 declare
   provider_enabled boolean;
-  provider_code text;
+  provider_code_value text;
   provider_capabilities jsonb;
   is_workflow_simulation boolean;
 begin
   perform 1 from public.akiba_groups where id = new.group_id for update;
 
-  select is_enabled, provider_code, capabilities
-    into provider_enabled, provider_code, provider_capabilities
-  from public.akiba_payment_providers
-  where id = new.provider_id;
+  select p.is_enabled, p.provider_code, p.capabilities
+    into provider_enabled, provider_code_value, provider_capabilities
+  from public.akiba_payment_providers p
+  where p.id = new.provider_id;
 
   is_workflow_simulation := coalesce(provider_capabilities ->> 'workflow_simulation', 'false') = 'true';
 
@@ -70,7 +70,7 @@ begin
   end if;
 
   if is_workflow_simulation and (
-    provider_code <> 'sandbox_workflow_simulator'
+    provider_code_value <> 'sandbox_workflow_simulator'
     or new.fee_schedule_version <> 'sandbox-simulation-zero-fee-v1'
     or new.akiba_fee_minor <> 0
     or new.provider_fee_minor <> 0
