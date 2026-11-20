@@ -81,7 +81,7 @@ function statusLabel(status: string) {
     pending_approval: "Awaiting Admin approvals",
     approved: "Approved · staging transition pending",
     staging: "Two-hour member review",
-    payout_queued: "Cleared for payout",
+    payout_queued: "Waiting for provider payout submission",
     payout_submitted: "Payout submitted",
     payout_processing: "Payout processing",
     reconciliation_required: "Provider reconciliation required",
@@ -234,6 +234,17 @@ export default function WithdrawalPanel({
                     )}
                     {rejectedCount > 0 && <small>At least one Admin has rejected this request. It is being resolved.</small>}
                   </div>
+                )}
+
+                {request.status === "payout_queued" && (
+                  <p className="ak-finance-disabled">
+                    The two-hour review ended with no active flags. The withdrawal is queued, but the reservation remains in place until a supported sandbox payout provider accepts the instruction and confirms its outcome.
+                  </p>
+                )}
+                {request.status === "reconciliation_required" && (
+                  <p className="ak-finance-disabled">
+                    The provider outcome is uncertain. The reserved funds remain unavailable until reconciliation confirms whether the payout completed.
+                  </p>
                 )}
 
                 {request.status === "staging" && (
