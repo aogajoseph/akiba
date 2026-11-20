@@ -31,12 +31,9 @@ function authorized(request: NextRequest): boolean {
 }
 
 /**
- * Reconcile callback facts that were durably recorded but could not be
- * durably recorded by the callback endpoint or discovered as missing.
- *
- * This endpoint is intended for a trusted scheduler. Complete authenticated
- * success callbacks are posted from their validated receipt/amount evidence;
- * STK Query is reserved for missing or non-success callback reconciliation.
+ * Reconcile durable callback events against an independent Safaricom STK
+ * Query. A successful callback alone is never sufficient to post a contribution.
+ * Both evidence records are passed to the database posting boundary.
  */
 export async function GET(request: NextRequest) {
   if (!authorized(request)) return json({ ok: false, error: "Not authorized" }, 401);
