@@ -75,6 +75,7 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
     { data: ledgerLines, error: ledgerError },
     { data: balanceLines, error: balanceError },
     { data: withdrawalTransactions, error: withdrawalTransactionError },
+    { data: allTransactions, error: allTransactionError },
     { data: withdrawalRequests, error: withdrawalRequestError },
     { data: withdrawalApprovals, error: withdrawalApprovalError },
     { data: approvalRoster, error: approvalRosterError },
@@ -97,10 +98,14 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
       .eq("group_id", group.id)
       .eq("account_code", "group_funds"),
     supabase.from("akiba_financial_transactions")
-      .select("id,reference,description,currency_code,effective_at")
+      .select("id,reference,description,currency_code,effective_at,created_by,transaction_type")
       .eq("group_id", group.id)
       .eq("transaction_type", "withdrawal")
       .order("effective_at", { ascending: false }),
+    supabase.from("akiba_financial_transactions")
+      .select("id,reference,description,currency_code,effective_at,created_by,transaction_type")
+      .eq("group_id", group.id)
+      .order("effective_at", { ascending: true }),
     supabase.from("akiba_withdrawal_requests")
       .select("id,group_id,initiator_id,currency_code,recipient_amount_minor,total_debit_minor,recipient_name,reason,status,created_at,staging_started_at,staging_deadline_at")
       .eq("group_id", group.id)
@@ -165,41 +170,70 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
   const progressPercent = targetMinor > 0 ? Math.round((Math.max(0, availableBalanceMinor) / targetMinor) * 100) : 0;
   const progressWidth = Math.max(0, Math.min(100, progressPercent));
   const withdrawalReadError = Boolean(
-    balanceError || withdrawalTransactionError || withdrawalRequestError ||
+    balanceError || withdrawalTransactionError || allTransactionError || withdrawalRequestError ||
     withdrawalApprovalError || approvalRosterError || withdrawalFlagError ||
     reservationError || financeEventError
   );
-  const statementRows = [
-    ...history.map((item) => ({
-      id: "contribution:" + item.id,
+  const statementActorIds = Array.from(new Set([
+    ...(allTransactions ?? []).map((item) => item.created_by),
+    ...(financeEvents ?? []).map((event) => event.actor_id),
+  ].filter((id): id is string => typeof id === "string")));
+  let statementProfiles: Array<{ user_id: string; display_name: string | null }> = [];
+  if (statementActorIds.length > 0) {
+    const { data } = await supabase.from("akiba_profiles")
+      .select("user_id,display_name")
+      .in("user_id", statementActorIds);
+    statementProfiles = data ?? [];
+  }
+  const actorNameById = new Map(statementProfiles.map((profile) => [
+    profile.user_id,
+    profile.display_name?.trim() || "Group member",
+  ]));
+
+  const ledgerStatementRows = (allTransactions ?? []).map((item) => {
+    const deltaMinor = (balanceLines ?? [])
+      .filter((line) => line.transaction_id === item.id)
+      .reduce((sum, line) => sum + (line.direction === "credit"
+        ? Number(line.amount_minor)
+        : -Number(line.amount_minor)), 0);
+    const amountMinor = Math.abs(deltaMinor);
+    return {
+      id: "ledger:" + item.id,
+      transactionId: item.id,
       occurredAt: item.effective_at,
-      description: item.description || "Group contribution",
+      description: item.description || String(item.transaction_type).replace(/_/g, " "),
       reference: item.reference,
-      amountMinor: item.amount_minor,
+      amountMinor,
       kind: "Ledger posting",
       currency: item.currency_code,
-    })),
-    ...(withdrawalTransactions ?? []).map((item) => ({
-      id: "withdrawal:" + item.id,
-      occurredAt: item.effective_at,
-      description: item.description || "Completed group withdrawal",
-      reference: item.reference,
-      amountMinor: (balanceLines ?? [])
-        .filter((line) => line.transaction_id === item.id && line.direction === "debit")
-        .reduce((sum, line) => sum + Number(line.amount_minor), 0),
-      kind: "Ledger posting",
-      currency: item.currency_code,
-    })),
-    ...(financeEvents ?? []).map((event) => ({
+      actorName: item.created_by ? actorNameById.get(item.created_by) ?? "Group member" : "Akiba system",
+      balanceImpact: deltaMinor === 0
+        ? "No group-funds movement"
+        : "Group funds " + (deltaMinor > 0 ? "+" : "−") + money(amountMinor, item.currency_code),
+    };
+  });
+  const workflowStatementRows = (financeEvents ?? []).map((event) => {
+    const payload = event.event_payload && typeof event.event_payload === "object" && !Array.isArray(event.event_payload)
+      ? event.event_payload as Record<string, unknown>
+      : {};
+    const rawAmount = payload.amount_minor ?? payload.total_debit_minor ?? payload.recipient_amount_minor;
+    const parsedAmount = rawAmount === undefined || rawAmount === null ? null : Number(rawAmount);
+    return {
       id: "event:" + event.id,
+      transactionId: event.source_id,
       occurredAt: event.created_at,
       description: String(event.event_type).replace(/_/g, " "),
       reference: event.source_type.replace(/_/g, " "),
-      amountMinor: null as number | null,
-      kind: "Workflow event",
-      currency: group.currency_code,
-    })),
-  ].sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()).slice(0, 50);
+      amountMinor: parsedAmount !== null && Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null,
+      kind: "Workflow event · no ledger posting",
+      currency: payload.currency_code ? String(payload.currency_code) : group.currency_code,
+      actorName: event.actor_id ? actorNameById.get(event.actor_id) ?? "Group member" : "Akiba system",
+      balanceImpact: "No ledger movement",
+    };
+  });
+  const statementRows = [...ledgerStatementRows, ...workflowStatementRows]
+    .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+    .slice(0, 50);
   let payoutEnabled = false;
   try {
     const service = createServiceClient();
@@ -365,10 +399,8 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
                 {statementRows.map((item) => (
                   <article className="ak-finance-history-row" key={item.id}>
                     <span className="ak-finance-history-icon">{item.kind === "Ledger posting" ? "✓" : "•"}</span>
-                    <div><strong>{item.description}</strong><small>{formatDate(item.occurredAt)} · {item.kind} · {item.reference}</small></div>
-                    {item.amountMinor === null
-                      ? <span className="ak-finance-event-kind">Activity</span>
-                      : <strong>{money(item.amountMinor, item.currency)}</strong>}
+                    <div><strong>{item.description}</strong><small>{formatDate(item.occurredAt)} · {item.kind} · {item.reference} · ID {String(item.transactionId).slice(0, 8)} · {item.actorName}</small></div>
+                    <strong>{item.amountMinor === null ? item.balanceImpact : item.balanceImpact}</strong>
                   </article>
                 ))}
               </div>
