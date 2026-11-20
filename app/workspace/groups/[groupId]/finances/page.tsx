@@ -342,6 +342,7 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
             currentUserId={user.id}
             currentUserRole={membership.role}
             payoutEnabled={payoutEnabled}
+            readError={withdrawalReadError}
             requests={withdrawalRequests ?? []}
             approvals={withdrawalApprovals ?? []}
             roster={approvalRoster ?? []}
