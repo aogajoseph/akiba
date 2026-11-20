@@ -251,6 +251,18 @@ begin
     null;
   end;
 
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+  perform public.akiba_cancel_withdrawal_request('40000000-0000-0000-0000-000000000002');
+  select status into request_status
+  from public.akiba_withdrawal_requests
+  where id = '40000000-0000-0000-0000-000000000002';
+  select status into reservation_status
+  from public.akiba_financial_reservations
+  where withdrawal_request_id = '40000000-0000-0000-0000-000000000002';
+  if request_status <> 'cancelled' or reservation_status <> 'released' then
+    raise exception 'Creator cancellation before payout submission must release the reservation';
+  end if;
+
   if has_table_privilege('authenticated','public.akiba_withdrawal_flags','INSERT')
      or has_table_privilege('authenticated','public.akiba_withdrawal_flags','UPDATE')
      or has_table_privilege('authenticated','public.akiba_withdrawal_flags','DELETE') then
