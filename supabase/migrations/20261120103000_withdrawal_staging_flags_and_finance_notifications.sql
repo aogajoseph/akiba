@@ -613,6 +613,10 @@ begin
   if not found or provider_capabilities ->> 'payout' is distinct from 'true' then
     raise exception 'The selected provider does not currently support payout execution';
   end if;
+  if request_row.quote_expires_at is null
+     or request_row.quote_expires_at <= clock_timestamp() then
+    raise exception 'The approved provider fee quote has expired; obtain a new quote and a fresh approval cycle';
+  end if;
 
   select count(*) into roster_count
   from public.akiba_withdrawal_approval_roster
