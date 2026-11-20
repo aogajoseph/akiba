@@ -984,33 +984,6 @@ alter table public.akiba_finance_notification_outbox enable row level security;
 revoke all on public.akiba_finance_notification_outbox
   from public, anon, authenticated, service_role;
 
-create or replace function akiba_private.enqueue_finance_activity_notifications()
-returns trigger
-language plpgsql
-security definer
-set search_path = ''
-as $fn$
-begin
-  insert into public.akiba_finance_notification_outbox(event_id, recipient_user_id)
-  select new.id, m.user_id
-  from public.akiba_group_memberships m
-  where m.group_id = new.group_id
-    and m.status = 'active'
-  on conflict (event_id, recipient_user_id) do nothing;
-
-  perform akiba_private.deliver_finance_activity_event(new.id, clock_timestamp());
-  return new;
-end;
-$fn$;
-
-drop trigger if exists akiba_finance_activity_notify_members
-  on public.akiba_finance_activity_events;
-drop trigger if exists akiba_finance_activity_enqueue_notifications
-  on public.akiba_finance_activity_events;
-create trigger akiba_finance_activity_enqueue_notifications
-after insert on public.akiba_finance_activity_events
-for each row execute function akiba_private.enqueue_finance_activity_notifications();
-
 create or replace function akiba_private.deliver_finance_activity_event(
   p_event_id uuid,
   p_now timestamptz default clock_timestamp()
@@ -1107,6 +1080,33 @@ begin
   return true;
 end;
 $fn$;
+
+create or replace function akiba_private.enqueue_finance_activity_notifications()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+begin
+  insert into public.akiba_finance_notification_outbox(event_id, recipient_user_id)
+  select new.id, m.user_id
+  from public.akiba_group_memberships m
+  where m.group_id = new.group_id
+    and m.status = 'active'
+  on conflict (event_id, recipient_user_id) do nothing;
+
+  perform akiba_private.deliver_finance_activity_event(new.id, clock_timestamp());
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_finance_activity_notify_members
+  on public.akiba_finance_activity_events;
+drop trigger if exists akiba_finance_activity_enqueue_notifications
+  on public.akiba_finance_activity_events;
+create trigger akiba_finance_activity_enqueue_notifications
+after insert on public.akiba_finance_activity_events
+for each row execute function akiba_private.enqueue_finance_activity_notifications();
 
 create or replace function akiba_private.process_finance_notification_outbox(
   p_limit integer default 100,
