@@ -179,7 +179,7 @@ begin
      or coalesce(provider_capabilities->>'environment', '') <> 'sandbox'
      or new.provider_quote_ref is null
      or new.quote_expires_at is null
-     or new.quote_expires_at <= clock_timestamp() then
+     or new.quote_expires_at <= clock_timestamp() + interval '2 hours' then
     raise exception 'A verified sandbox payout capability and unexpired provider fee quote are required';
   end if;
 
@@ -478,6 +478,71 @@ $fn$;
 
 -- A Group Admin cannot be demoted, deactivated or removed while any withdrawal
 -- workflow could still require their approval or hold funds.
+create or replace function akiba_private.guard_payout_attempt_insert()
+returns trigger
+language plpgsql
+security invoker
+set search_path = ''
+as $fn$
+declare
+  request_row public.akiba_withdrawal_requests%rowtype;
+  required_count integer;
+  approved_count integer;
+  provider_capabilities jsonb;
+begin
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = new.withdrawal_request_id
+  for update;
+
+  if not found
+     or request_row.status <> 'payout_queued'
+     or request_row.staging_deadline_at is null
+     or request_row.staging_deadline_at > clock_timestamp() then
+    raise exception 'Payout submission requires a staging period that has elapsed without an active flag';
+  end if;
+
+  if exists (
+    select 1 from public.akiba_withdrawal_flags
+    where withdrawal_request_id = request_row.id
+      and status = 'active'
+  ) then
+    raise exception 'An active member flag blocks payout submission';
+  end if;
+
+  if new.provider_id <> request_row.provider_id then
+    raise exception 'Payout provider must match the approved withdrawal provider';
+  end if;
+
+  select count(*) into required_count
+  from public.akiba_withdrawal_approval_roster
+  where withdrawal_request_id = request_row.id
+    and approval_version = request_row.approval_version;
+
+  select count(distinct approver_id) into approved_count
+  from public.akiba_withdrawal_approvals
+  where withdrawal_request_id = request_row.id
+    and approval_version = request_row.approval_version
+    and decision = 'approved';
+
+  if required_count < 3 or approved_count <> required_count then
+    raise exception 'Every Group Admin in the request-time approval roster must approve before payout';
+  end if;
+
+  select capabilities into provider_capabilities
+  from public.akiba_payment_providers
+  where id = new.provider_id;
+
+  if coalesce(provider_capabilities->>'payout', 'false') <> 'true'
+     or coalesce(provider_capabilities->>'fee_quotes', 'false') <> 'true'
+     or coalesce(provider_capabilities->>'environment', '') <> 'sandbox' then
+    raise exception 'A verified sandbox payout provider is required';
+  end if;
+
+  return new;
+end;
+$fn$;
+
 create or replace function akiba_private.guard_admin_change_during_unresolved_withdrawal()
 returns trigger
 language plpgsql
