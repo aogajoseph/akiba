@@ -648,6 +648,10 @@ declare
   approved_count integer;
   provider_capabilities jsonb;
 begin
+  if new.status is distinct from 'queued' then
+    raise exception 'A payout attempt must be created in queued state before provider submission';
+  end if;
+
   select * into request_row
   from public.akiba_withdrawal_requests
   where id = new.withdrawal_request_id
