@@ -154,6 +154,16 @@ begin
     raise exception 'Withdrawals are unavailable for a deactivated group';
   end if;
 
+  if not exists (
+    select 1 from public.akiba_group_memberships m
+    where m.group_id = p_group_id
+      and m.user_id = actor_id
+      and m.role = 'group_creator'
+      and m.status = 'active'
+  ) then
+    raise exception 'Only the active Group Creator may request a withdrawal';
+  end if;
+
   select * into existing_request
   from public.akiba_withdrawal_requests
   where group_id = p_group_id
@@ -169,16 +179,6 @@ begin
       return existing_request.id;
     end if;
     raise exception 'Withdrawal idempotency key was already used with different request terms';
-  end if;
-
-  if not exists (
-    select 1 from public.akiba_group_memberships m
-    where m.group_id = p_group_id
-      and m.user_id = actor_id
-      and m.role = 'group_creator'
-      and m.status = 'active'
-  ) then
-    raise exception 'Only the active Group Creator may request a withdrawal';
   end if;
 
   perform akiba_private.assert_group_leadership_ready(p_group_id);
