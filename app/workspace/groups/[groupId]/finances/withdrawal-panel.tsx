@@ -236,17 +236,6 @@ export default function WithdrawalPanel({
                   </div>
                 )}
 
-                {request.status === "payout_queued" && (
-                  <p className="ak-finance-disabled">
-                    The two-hour review ended with no active flags. The withdrawal is queued, but the reservation remains in place until a supported sandbox payout provider accepts the instruction and confirms its outcome.
-                  </p>
-                )}
-                {request.status === "reconciliation_required" && (
-                  <p className="ak-finance-disabled">
-                    The provider outcome is uncertain. The reserved funds remain unavailable until reconciliation confirms whether the payout completed.
-                  </p>
-                )}
-
                 {request.status === "staging" && (
                   <div className="ak-withdrawal-staging">
                     <p><strong>Member review ends:</strong> {dateTime(request.staging_deadline_at)}</p>
