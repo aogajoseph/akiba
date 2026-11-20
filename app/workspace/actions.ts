@@ -878,7 +878,9 @@ export async function flagWithdrawal(formData: FormData) {
     p_reason: reason,
   });
   if (error) {
-    const message = error.message.includes("already have an active flag")
+    const message = error.message.includes("already have an active flag") ||
+      error.message.includes("akiba_one_active_withdrawal_flag_per_member") ||
+      error.message.includes("duplicate key")
       ? "You already have an active flag on this withdrawal."
       : error.message.includes("flagging period")
         ? "The two-hour flagging period has ended."
