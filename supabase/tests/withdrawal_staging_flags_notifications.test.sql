@@ -16,7 +16,7 @@ values
 on conflict (id) do update
 set is_enabled = excluded.is_enabled, capabilities = excluded.capabilities;
 
-perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
 
 insert into public.akiba_groups
   (id, name, purpose, group_type, currency_code, created_by)
