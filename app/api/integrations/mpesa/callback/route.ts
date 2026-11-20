@@ -1,9 +1,7 @@
 import { createHash, timingSafeEqual } from "node:crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { readDarajaCollectionConfig } from "@/lib/payments/providers/safaricom-daraja/config";
-import { queryStkPush } from "@/lib/payments/providers/safaricom-daraja/stk";
-import { PaymentError } from "@/lib/payments/errors";
+import { callbackRefreshNextRetryAt, hasPostableCallbackEvidence, isMissingCallbackPlaceholder, normalizeMpesaReceipt, reconciliationRetryDelayMinutes } from "@/lib/payments/providers/safaricom-daraja/reconciliation";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -82,7 +80,7 @@ export async function POST(request: NextRequest) {
   const amountMinor = Number.isSafeInteger(amountKes) && amountKes > 0 && Number.isSafeInteger(amountMinorCandidate)
     ? amountMinorCandidate
     : null;
-  const receipt = typeof metadata.MpesaReceiptNumber === "string" ? metadata.MpesaReceiptNumber : null;
+  const receipt = normalizeMpesaReceipt(metadata.MpesaReceiptNumber);
   const digest = createHash("sha256").update(rawBody).digest("hex");
 
   console.info("[payments][daraja][callback] Authenticated callback received", {
@@ -91,9 +89,6 @@ export async function POST(request: NextRequest) {
     merchantRequestReferencePresent: merchantId !== null,
     callbackMetadataItemCount: Object.keys(metadata).length,
   });
-
-  const configResult = readDarajaCollectionConfig();
-  if (!configResult.ok) return json({ ResultCode: 1, ResultDesc: "Provider configuration unavailable" }, 503);
 
   const service = createServiceClient();
   const { data: provider, error: providerError } = await service
@@ -118,7 +113,7 @@ export async function POST(request: NextRequest) {
     });
     return json({ ResultCode: 1, ResultDesc: "Unknown payment reference" }, 404);
   }
-  if (attempt.provider_merchant_ref && merchantId !== attempt.provider_merchant_ref) {
+  if (attempt.provider_merchant_ref && (!merchantId || merchantId !== attempt.provider_merchant_ref)) {
     return json({ ResultCode: 1, ResultDesc: "Merchant request reference mismatch" }, 409);
   }
 
@@ -148,7 +143,7 @@ export async function POST(request: NextRequest) {
   if (eventInsertError?.code === "23505") {
     const { data: existingEvent, error: existingEventError } = await service
       .from("akiba_provider_events")
-      .select("id,processing_status,retryable")
+      .select("id,processing_status,retryable,payload_digest,provider_result_code,provider_receipt_number,next_retry_at")
       .eq("provider_id", provider.id)
       .eq("provider_event_ref", checkoutId)
       .single();
@@ -159,18 +154,33 @@ export async function POST(request: NextRequest) {
     if (existingEvent.processing_status === "processed") {
       return json({ ResultCode: 0, ResultDesc: "Duplicate callback acknowledged" });
     }
-    if (existingEvent.processing_status === "processing") {
-      return json({ ResultCode: 0, ResultDesc: "Callback is already being reconciled" }, 202);
-    }
-    if (!existingEvent.retryable) {
-      return json({ ResultCode: 0, ResultDesc: "Callback is awaiting manual reconciliation" }, 202);
-    }
+
+    // A stale-attempt recovery placeholder is deliberately incomplete: it has
+    // no callback result or receipt. A late authenticated callback must enrich
+    // it even when the worker currently holds a processing lease or exhausted
+    // its retries. Never reopen unrelated manual-review events.
+    const isRecoveryPlaceholder = isMissingCallbackPlaceholder(existingEvent);
+    const canRetry = existingEvent.retryable || isRecoveryPlaceholder;
+    const nextProcessingStatus = existingEvent.processing_status === "processing"
+      ? "processing"
+      : canRetry
+        ? "received"
+        : existingEvent.processing_status;
 
     const { error: refreshError } = await service
       .from("akiba_provider_events")
-      .update(eventValues)
-      .eq("id", existingEvent.id)
-      .in("processing_status", ["received", "failed"]);
+      .update({
+        ...eventValues,
+        next_retry_at: callbackRefreshNextRetryAt(
+          nextProcessingStatus,
+          existingEvent.next_retry_at,
+          eventValues.next_retry_at,
+        ),
+        processing_status: nextProcessingStatus,
+        retryable: canRetry,
+        processing_note: canRetry ? null : "Authenticated callback received; existing manual-review state retained.",
+      })
+      .eq("id", existingEvent.id);
     if (refreshError) return json({ ResultCode: 1, ResultDesc: "Could not refresh callback record" }, 503);
     eventId = existingEvent.id;
   } else if (eventInsertError) {
@@ -179,7 +189,7 @@ export async function POST(request: NextRequest) {
 
   if (!eventId) return json({ ResultCode: 1, ResultDesc: "Could not record callback" }, 503);
 
-  console.info("[payments][daraja][callback] Callback accepted for reconciliation", {
+  console.info("[payments][daraja][callback] Callback durably recorded", {
     providerEventId: eventId,
     paymentAttemptId: attempt.id,
     checkoutRequestIdSuffix: checkoutId.slice(-6),
@@ -187,114 +197,74 @@ export async function POST(request: NextRequest) {
     callbackMetadataItemCount: Object.keys(metadata).length,
   });
 
-  try {
-    // Daraja callbacks are not cryptographically signed. A callback is stored
-    // as evidence to reconcile, never as proof that money was received.
-    const providerStatus = await queryStkPush(checkoutId, configResult.config);
-    if (
-      providerStatus.checkoutRequestId !== checkoutId ||
-      (providerStatus.merchantRequestId &&
-        attempt.provider_merchant_ref &&
-        providerStatus.merchantRequestId !== attempt.provider_merchant_ref)
-    ) {
+  // A complete authenticated success callback is sufficient to post. The
+  // posting RPC locks the attempt/intent and is idempotent, so a concurrent
+  // worker or duplicate callback cannot create a second contribution.
+  if (callbackResultCode === "0") {
+    const postable = hasPostableCallbackEvidence({
+      callbackResultCode,
+      providerResultCode: callbackResultCode,
+      receipt,
+      amountMinor: amountMinor ?? 0,
+      expectedAmountMinor: Number(attempt.amount_minor),
+      eventCurrency: amountMinor === null ? null : "KES",
+      attemptCurrency: attempt.currency_code,
+    });
+
+    if (!postable) {
       await service.from("akiba_provider_events").update({
         processing_status: "failed",
         retryable: false,
-        processing_note: "Provider response references did not match the stored attempt; manual review required.",
-      }).eq("id", eventId);
-      return json({ ResultCode: 1, ResultDesc: "Payment reference requires manual reconciliation" }, 202);
+        processing_note: "Success callback is missing a valid receipt or its amount/currency does not match the stored attempt; manual review required.",
+      }).eq("id", eventId).eq("payload_digest", digest);
+      // The callback is safely stored. Acknowledge it so Safaricom does not
+      // repeatedly deliver an event that Akiba has already retained.
+      return json({ ResultCode: 0, ResultDesc: "Callback stored for manual payment review" });
     }
 
-    if (callbackResultCode === "0" && providerStatus.resultCode === "0") {
-      const expectedMinor = Number(attempt.amount_minor);
-      if (
-        !receipt ||
-        amountMinor === null ||
-        !Number.isSafeInteger(amountMinor) ||
-        amountMinor !== expectedMinor ||
-        attempt.currency_code !== "KES"
-      ) {
-        await service.from("akiba_provider_events").update({
-          processing_status: "failed",
-          retryable: false,
-          processing_note: "Callback amount, currency, or receipt did not match the stored attempt; manual review required.",
-        }).eq("id", eventId);
-        return json({ ResultCode: 1, ResultDesc: "Payment details require manual reconciliation" }, 202);
-      }
+    const { error: postError } = await service.rpc("post_mpesa_contribution", {
+      p_checkout_request_id: checkoutId,
+      p_provider_receipt_number: receipt,
+      p_amount_minor: String(amountMinor),
+      p_currency_code: "KES",
+      p_provider_result_code: "0",
+    });
 
-      const { error: postError } = await service.rpc("post_mpesa_contribution", {
-        p_checkout_request_id: checkoutId,
-        p_provider_receipt_number: receipt,
-        p_amount_minor: String(amountMinor),
-        p_currency_code: "KES",
-        p_provider_result_code: callbackResultCode,
-      });
-      if (postError) throw postError;
-    } else if (
-      callbackResultCode !== "0" &&
-      providerStatus.resultCode !== null &&
-      providerStatus.resultCode !== "0"
-    ) {
-      const cancelled = callbackResultCode === "1032" || providerStatus.resultCode === "1032";
-      const nextStatus = cancelled ? "cancelled" : "failed";
-      await service.from("akiba_payment_attempts").update({
-        status: nextStatus,
-        response_code: providerStatus.resultCode,
-        response_summary: (providerStatus.resultDescription || callbackDescription || "M-Pesa payment failed.").slice(0, 500),
-        confirmed_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
-      }).eq("id", attempt.id);
-      await service.from("akiba_contribution_intents").update({
-        status: nextStatus,
-        updated_at: new Date().toISOString(),
-      }).eq("id", attempt.contribution_intent_id);
-    } else if (
-      providerStatus.resultCode !== null &&
-      callbackResultCode !== providerStatus.resultCode &&
-      (providerStatus.resultCode === "0" || callbackResultCode === "0")
-    ) {
-      await service.from("akiba_provider_events").update({
-        processing_status: "failed",
-        retryable: false,
-        processing_note: "Callback and provider final results disagree; manual review required.",
-      }).eq("id", eventId);
-      return json({ ResultCode: 1, ResultDesc: "Callback and provider status disagree; manual review required" }, 202);
-    } else {
+    if (postError) {
+      const retryAt = new Date(Date.now() + reconciliationRetryDelayMinutes(1) * 60_000).toISOString();
       await service.from("akiba_provider_events").update({
         processing_status: "failed",
         retryable: true,
         attempt_count: 1,
-        next_retry_at: new Date(Date.now() + 60_000).toISOString(),
-        processing_note: "Provider status is not final; automatic reconciliation is scheduled.",
-      }).eq("id", eventId);
-      return json({ ResultCode: 0, ResultDesc: "Callback received; awaiting final provider status" });
+        next_retry_at: retryAt,
+        processing_note: "Valid success callback stored; ledger posting failed temporarily and will be retried without requiring STK Query.",
+      }).eq("id", eventId).eq("payload_digest", digest);
+      console.error("[payments][daraja][callback] Atomic contribution posting deferred", {
+        providerEventId: eventId,
+        checkoutRequestIdSuffix: checkoutId.slice(-6),
+      });
+      return json({ ResultCode: 0, ResultDesc: "Callback stored; contribution posting will be retried" });
     }
 
-    await service.from("akiba_provider_events").update({
+    const { error: processedError } = await service.from("akiba_provider_events").update({
       processing_status: "processed",
       processed_at: new Date().toISOString(),
       retryable: false,
       processing_note: null,
-    }).eq("id", eventId);
+    }).eq("id", eventId).eq("payload_digest", digest);
 
-    return json({ ResultCode: 0, ResultDesc: "Callback processed" });
-  } catch (error) {
-    const retryable = error instanceof PaymentError ? error.retryable : true;
-    console.error("[payments][daraja][callback] Callback reconciliation failed", {
-      providerEventId: eventId,
-      paymentAttemptId: attempt.id,
-      checkoutRequestIdSuffix: checkoutId.slice(-6),
-      errorCode: error instanceof PaymentError ? error.code : undefined,
-      errorType: error instanceof PaymentError ? undefined : error instanceof Error ? error.name : typeof error,
-      retryable,
-    });
-    await service.from("akiba_provider_events").update({
-      processing_status: "failed",
-      retryable,
-      attempt_count: 1,
-      next_retry_at: new Date(Date.now() + 60_000).toISOString(),
-      processing_note: "Callback could not be reconciled immediately; automatic retry is scheduled.",
-    }).eq("id", eventId);
-    return json({ ResultCode: 1, ResultDesc: "Callback stored; automatic reconciliation is scheduled" }, 503);
+    if (processedError) {
+      // The financial RPC has already committed atomically. A later replay is
+      // safe because the RPC returns the existing transaction for this receipt.
+      console.error("[payments][daraja][callback] Contribution posted but callback event finalization failed", {
+        providerEventId: eventId,
+        checkoutRequestIdSuffix: checkoutId.slice(-6),
+      });
+    }
+    return json({ ResultCode: 0, ResultDesc: "Contribution successfully recorded" });
   }
+
+  // Non-success callbacks remain durably queued for the existing worker to
+  // reconcile into failed/cancelled states. No group funds are credited.
+  return json({ ResultCode: 0, ResultDesc: "Callback received and queued for reconciliation" });
 }
