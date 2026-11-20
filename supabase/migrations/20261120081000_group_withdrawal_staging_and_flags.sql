@@ -490,6 +490,10 @@ declare
   approved_count integer;
   provider_capabilities jsonb;
 begin
+  if new.status <> 'queued' then
+    raise exception 'A payout attempt must be queued before provider submission';
+  end if;
+
   select * into request_row
   from public.akiba_withdrawal_requests
   where id = new.withdrawal_request_id
@@ -498,7 +502,6 @@ begin
   if not found
      or request_row.status <> 'payout_queued'
      or request_row.staging_deadline_at is null
-     or request_row.staging_deadline_at > clock_timestamp()
      or request_row.provider_quote_ref is null
      or request_row.quote_expires_at is null
      or request_row.quote_expires_at <= clock_timestamp() then
@@ -763,9 +766,18 @@ begin
   if exists (
     select 1 from public.akiba_payout_attempts p
     where p.withdrawal_request_id = request_row.id
+      and p.status in ('submitted', 'processing', 'unknown', 'succeeded')
   ) then
-    raise exception 'A payout attempt exists; cancellation is blocked until its outcome is reconciled';
+    raise exception 'A payout may already have been submitted; cancellation is blocked until its outcome is reconciled';
   end if;
+
+  update public.akiba_payout_attempts
+  set status = 'cancelled',
+      reconciliation_status = 'resolved',
+      reconciliation_note = 'Cancelled by the initiating Group Creator before provider submission.',
+      updated_at = clock_timestamp()
+  where withdrawal_request_id = request_row.id
+    and status = 'queued';
 
   update public.akiba_withdrawal_requests
   set status = 'cancelled',
@@ -796,10 +808,47 @@ begin
 end;
 $fn$;
 
+create or replace function akiba_private.record_payout_attempt_queued()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+begin
+  if new.status = 'queued' then
+    insert into public.akiba_finance_activity_events (
+      group_id, actor_id, event_type, source_type, source_id, event_payload
+    )
+    select r.group_id, r.initiator_id, 'withdrawal_payout_attempt_queued',
+      'payout_attempt', new.id,
+      jsonb_build_object(
+        'withdrawal_request_id', r.id,
+        'provider_id', new.provider_id,
+        'request_reference', new.request_reference,
+        'provider_fee_minor', new.provider_fee_minor,
+        'currency_code', r.currency_code
+      )
+    from public.akiba_withdrawal_requests r
+    where r.id = new.withdrawal_request_id
+    on conflict (group_id, event_type, source_type, source_id) do nothing;
+  end if;
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_payout_attempt_activity_event
+  on public.akiba_payout_attempts;
+create trigger akiba_payout_attempt_activity_event
+after insert on public.akiba_payout_attempts
+for each row execute function akiba_private.record_payout_attempt_queued();
+
 -- Deadline worker: the original deadline is immutable. Any active flag at
 -- the deadline cancels the request, releases the reservation and closes all
 -- active flags. With no active flags, the request is queued for payout.
-create or replace function akiba_private.process_due_withdrawal_staging(p_limit integer default 100)
+create or replace function akiba_private.process_due_withdrawal_staging(
+  p_limit integer default 100,
+  p_now timestamptz default clock_timestamp()
+)
 returns integer
 language plpgsql
 security definer
@@ -809,7 +858,7 @@ declare
   request_row public.akiba_withdrawal_requests%rowtype;
   flag_row record;
   processed_count integer := 0;
-  worker_now timestamptz := clock_timestamp();
+  worker_now timestamptz := coalesce(p_now, clock_timestamp());
 begin
   for request_row in
     select *
@@ -903,6 +952,16 @@ $fn$;
 
 -- Snapshot every active member as a durable recipient in the same transaction
 -- as the finance event. A separate worker creates inbox notifications with retry.
+alter table public.akiba_finance_activity_events
+  add column if not exists notification_published_at timestamptz,
+  add column if not exists notification_last_error text,
+  add column if not exists notification_attempt_count integer not null default 0,
+  add column if not exists notification_next_attempt_at timestamptz not null default clock_timestamp();
+
+create index if not exists akiba_finance_activity_notifications_due_idx
+  on public.akiba_finance_activity_events(notification_next_attempt_at, created_at)
+  where notification_published_at is null;
+
 create table if not exists public.akiba_finance_notification_outbox (
   id uuid primary key default gen_random_uuid(),
   event_id uuid not null references public.akiba_finance_activity_events(id) on delete restrict,
@@ -939,6 +998,7 @@ begin
     and m.status = 'active'
   on conflict (event_id, recipient_user_id) do nothing;
 
+  perform akiba_private.deliver_finance_activity_event(new.id, clock_timestamp());
   return new;
 end;
 $fn$;
@@ -951,35 +1011,39 @@ create trigger akiba_finance_activity_enqueue_notifications
 after insert on public.akiba_finance_activity_events
 for each row execute function akiba_private.enqueue_finance_activity_notifications();
 
-create or replace function akiba_private.process_finance_notification_outbox(p_limit integer default 100)
-returns integer
+create or replace function akiba_private.deliver_finance_activity_event(
+  p_event_id uuid,
+  p_now timestamptz default clock_timestamp()
+)
+returns boolean
 language plpgsql
 security definer
 set search_path = ''
 as $fn$
 declare
-  outbox_row public.akiba_finance_notification_outbox%rowtype;
   event_row public.akiba_finance_activity_events%rowtype;
-  processed_count integer := 0;
+  outbox_row public.akiba_finance_notification_outbox%rowtype;
+  delivery_error text;
 begin
+  select * into event_row
+  from public.akiba_finance_activity_events
+  where id = p_event_id
+  for update;
+
+  if not found then
+    raise exception 'Finance activity event was not found';
+  end if;
+
   for outbox_row in
     select *
     from public.akiba_finance_notification_outbox
-    where status = 'pending'
-      and next_attempt_at <= clock_timestamp()
-    order by next_attempt_at, created_at
-    limit greatest(1, least(coalesce(p_limit, 100), 500))
+    where event_id = p_event_id
+      and status = 'pending'
+      and next_attempt_at <= p_now
+    order by recipient_user_id
     for update skip locked
   loop
     begin
-      select * into event_row
-      from public.akiba_finance_activity_events
-      where id = outbox_row.event_id;
-
-      if not found then
-        raise exception 'Finance activity event is missing';
-      end if;
-
       insert into public.akiba_group_notifications (
         user_id, group_id, actor_id, source_event_id,
         event_type, title, body, href
@@ -989,7 +1053,7 @@ begin
         event_row.group_id,
         event_row.actor_id,
         event_row.id,
-        'financial_action',
+        'financial_' || event_row.event_type,
         'Group financial activity',
         initcap(replace(event_row.event_type, '_', ' ')),
         '/workspace/groups/' || event_row.group_id::text || '/finances'
@@ -998,24 +1062,107 @@ begin
 
       update public.akiba_finance_notification_outbox
       set status = 'delivered',
-          delivered_at = clock_timestamp(),
+          delivered_at = p_now,
           last_error = null
       where id = outbox_row.id
         and status = 'pending';
     exception when others then
+      delivery_error := left(sqlerrm, 500);
       update public.akiba_finance_notification_outbox
       set attempt_count = attempt_count + 1,
-          next_attempt_at = clock_timestamp()
+          next_attempt_at = p_now
             + make_interval(mins => least(60, power(2, least(attempt_count, 6))::integer)),
-          last_error = left(sqlerrm, 500)
+          last_error = delivery_error
       where id = outbox_row.id
         and status = 'pending';
     end;
+  end loop;
 
+  if exists (
+    select 1
+    from public.akiba_finance_notification_outbox
+    where event_id = p_event_id and status = 'pending'
+  ) then
+    update public.akiba_finance_activity_events
+    set notification_last_error = coalesce(
+          delivery_error,
+          'One or more group member notifications remain pending.'
+        ),
+        notification_attempt_count = notification_attempt_count + 1,
+        notification_next_attempt_at = (
+          select min(o.next_attempt_at)
+          from public.akiba_finance_notification_outbox o
+          where o.event_id = p_event_id and o.status = 'pending'
+        )
+    where id = p_event_id;
+    return false;
+  end if;
+
+  update public.akiba_finance_activity_events
+  set notification_published_at = coalesce(notification_published_at, p_now),
+      notification_last_error = null,
+      notification_attempt_count = notification_attempt_count + 1
+  where id = p_event_id;
+
+  return true;
+end;
+$fn$;
+
+create or replace function akiba_private.process_finance_notification_outbox(
+  p_limit integer default 100,
+  p_now timestamptz default clock_timestamp()
+)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  event_row record;
+  processed_count integer := 0;
+begin
+  for event_row in
+    select e.id
+    from public.akiba_finance_activity_events e
+    where e.notification_published_at is null
+      and e.notification_next_attempt_at <= p_now
+    order by e.notification_next_attempt_at, e.created_at
+    limit greatest(1, least(coalesce(p_limit, 100), 500))
+    for update skip locked
+  loop
+    perform akiba_private.deliver_finance_activity_event(event_row.id, p_now);
     processed_count := processed_count + 1;
   end loop;
 
   return processed_count;
+end;
+$fn$;
+
+create or replace function public.akiba_process_due_finance_notifications(
+  p_limit integer default 100,
+  p_now timestamptz default clock_timestamp()
+)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+begin
+  return akiba_private.process_finance_notification_outbox(p_limit, p_now);
+end;
+$fn$;
+
+create or replace function public.akiba_process_due_withdrawal_staging(
+  p_limit integer default 100,
+  p_now timestamptz default clock_timestamp()
+)
+returns integer
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+begin
+  return akiba_private.process_due_withdrawal_staging(p_limit, p_now);
 end;
 $fn$;
 
@@ -1125,9 +1272,15 @@ revoke all on function public.akiba_remove_withdrawal_flag(uuid) from public, an
 grant execute on function public.akiba_remove_withdrawal_flag(uuid) to authenticated;
 revoke all on function public.akiba_cancel_withdrawal_request(uuid) from public, anon;
 grant execute on function public.akiba_cancel_withdrawal_request(uuid) to authenticated;
-revoke all on function akiba_private.process_due_withdrawal_staging(integer)
+revoke all on function akiba_private.process_due_withdrawal_staging(integer, timestamptz)
   from public, anon, authenticated, service_role;
-revoke all on function akiba_private.process_finance_notification_outbox(integer)
+revoke all on function public.akiba_process_due_withdrawal_staging(integer, timestamptz)
+  from public, anon, authenticated, service_role;
+revoke all on function akiba_private.deliver_finance_activity_event(uuid, timestamptz)
+  from public, anon, authenticated, service_role;
+revoke all on function akiba_private.process_finance_notification_outbox(integer, timestamptz)
+  from public, anon, authenticated, service_role;
+revoke all on function public.akiba_process_due_finance_notifications(integer, timestamptz)
   from public, anon, authenticated, service_role;
 
 do $schedule$
