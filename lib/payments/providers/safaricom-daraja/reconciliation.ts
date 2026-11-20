@@ -64,6 +64,11 @@ export function hasPostableContributionEvidence(evidence: ContributionEvidence):
     evidence.callbackCheckoutRequestId !== evidence.providerCheckoutRequestId
   ) return false;
   if (
+    evidence.callbackMerchantRequestId &&
+    evidence.providerMerchantRequestId &&
+    evidence.callbackMerchantRequestId !== evidence.providerMerchantRequestId
+  ) return false;
+  if (
     evidence.expectedMerchantRequestId &&
     evidence.callbackMerchantRequestId !== evidence.expectedMerchantRequestId
   ) return false;
