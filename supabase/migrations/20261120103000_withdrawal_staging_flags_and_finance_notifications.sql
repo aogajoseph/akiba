@@ -1044,6 +1044,12 @@ alter table public.akiba_finance_activity_events
   add column if not exists notification_next_attempt_at timestamptz not null default clock_timestamp(),
   add column if not exists notification_last_error text;
 
+-- Do not replay historical activity into every member's inbox during rollout.
+update public.akiba_finance_activity_events
+set notification_published_at = created_at,
+    notification_next_attempt_at = created_at
+where notification_published_at is null;
+
 create or replace function akiba_private.fanout_finance_activity_event(p_event_id uuid)
 returns void
 language plpgsql
