@@ -815,6 +815,58 @@ function validFinanceIds(groupId: string, requestId: string): boolean {
   return /^[0-9a-f-]{36}$/i.test(groupId) && /^[0-9a-f-]{36}$/i.test(requestId);
 }
 
+export async function createWithdrawalRequest(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const amountKes = Number(String(formData.get("amount_kes") ?? ""));
+  const recipientName = String(formData.get("recipient_name") ?? "").trim();
+  const destinationLabel = String(formData.get("destination_label") ?? "").trim().toUpperCase();
+  const reason = String(formData.get("reason") ?? "").trim();
+  const idempotencyKey = String(formData.get("idempotency_key") ?? "").trim();
+
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) redirect("/workspace/groups");
+  if (!Number.isSafeInteger(amountKes) || amountKes < 1 || amountKes > 250000 ||
+      recipientName.length < 1 || recipientName.length > 160 ||
+      !/^[A-Z0-9][A-Z0-9 _.-]{2,47}$/.test(destinationLabel) ||
+      reason.length < 1 || reason.length > 500 ||
+      !/^[A-Za-z0-9_-]{8,160}$/.test(idempotencyKey)) {
+    financeActionRedirect(groupId, "financeError", "Enter a valid whole-KES amount, recipient, sandbox destination label and purpose.");
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_create_sandbox_withdrawal_request", {
+    p_group_id: groupId,
+    p_recipient_amount_minor: String(amountKes * 100),
+    p_recipient_name: recipientName,
+    p_destination_label: destinationLabel,
+    p_reason: reason,
+    p_idempotency_key: idempotencyKey,
+  });
+
+  if (error) {
+    const message = error.message.includes("Only the active Group Creator")
+      ? "Only the active Group Creator can request a withdrawal."
+      : error.message.includes("leadership is incomplete") || error.message.includes("Exactly one active Group Creator")
+        ? "The group needs one active Creator and at least three active Group Admins."
+        : error.message.includes("Insufficient available group funds")
+          ? "The group does not have enough available funds after existing reservations."
+          : error.message.includes("akiba_one_unresolved_withdrawal_per_group") || error.code === "23505"
+            ? "This group already has an unresolved withdrawal. Resolve it before creating another."
+            : error.message.includes("idempotency key")
+              ? "This request reference was already used with different details. Refresh and submit again."
+              : error.message.includes("deactivated")
+                ? "Withdrawals are unavailable for a deactivated group."
+                : "The sandbox withdrawal request could not be created. Refresh and try again.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  revalidatePath("/workspace/groups/" + groupId);
+  financeActionRedirect(groupId, "financeUpdated", "Sandbox withdrawal request created. The full group deduction is reserved while Admin approvals are collected. No payment was sent.");
+}
+
 export async function decideWithdrawalRequest(formData: FormData) {
   const groupId = String(formData.get("group_id") ?? "");
   const requestId = String(formData.get("request_id") ?? "");
