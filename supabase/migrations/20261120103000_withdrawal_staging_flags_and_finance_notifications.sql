@@ -990,6 +990,48 @@ revoke all on function public.akiba_process_due_withdrawal_staging(integer,times
 grant execute on function public.akiba_process_due_withdrawal_staging(integer,timestamptz)
   to service_role;
 
+-- Emit durable activity events for contribution initiation and every
+-- non-success intent state transition. Successful posting already emits the
+-- single contribution_received event from the atomic ledger RPC.
+create or replace function akiba_private.emit_contribution_finance_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  v_event_type text;
+begin
+  if tg_op = 'INSERT' then
+    v_event_type := 'contribution_initiated';
+  elsif old.status is distinct from new.status and new.status <> 'succeeded' then
+    v_event_type := 'contribution_' || new.status;
+  else
+    return new;
+  end if;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (new.group_id, new.contributor_id, v_event_type,
+     'contribution_intent', new.id,
+     jsonb_build_object(
+       'amount_minor', new.amount_minor,
+       'currency_code', new.currency_code,
+       'provider_id', new.provider_id,
+       'status', new.status
+     ))
+  on conflict (group_id, event_type, source_type, source_id) do nothing;
+
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_contribution_finance_activity on public.akiba_contribution_intents;
+create trigger akiba_contribution_finance_activity
+after insert or update of status on public.akiba_contribution_intents
+for each row execute function akiba_private.emit_contribution_finance_activity();
+
 -- Create one durable inbox notification per active member for every finance
 -- activity event. The existing inbox trigger handles realtime broadcasts;
 -- financial_* events are never suppressed by group mute preferences.
@@ -1066,6 +1108,7 @@ revoke all on function akiba_private.guard_withdrawal_approval_insert() from pub
 revoke all on function akiba_private.apply_withdrawal_approval_decision() from public, anon, authenticated;
 revoke all on function akiba_private.guard_group_admin_unresolved_withdrawal() from public, anon, authenticated;
 revoke all on function akiba_private.guard_payout_attempt_insert() from public, anon, authenticated;
+revoke all on function akiba_private.emit_contribution_finance_activity() from public, anon, authenticated;
 revoke all on function akiba_private.notify_finance_activity_event() from public, anon, authenticated;
 
 -- Run the staging processor every minute inside Postgres. It never submits
