@@ -1152,7 +1152,7 @@ begin
     update public.akiba_finance_activity_events
     set notification_attempt_count = notification_attempt_count + 1,
         notification_next_attempt_at = clock_timestamp()
-          + make_interval(mins => least(60, power(2, notification_attempt_count)::integer)),
+          + make_interval(mins => least(60, power(2, least(6, notification_attempt_count))::integer)),
         notification_last_error = left(sqlerrm, 500)
     where id = new.id
       and notification_published_at is null;
@@ -1194,7 +1194,7 @@ begin
       update public.akiba_finance_activity_events
       set notification_attempt_count = notification_attempt_count + 1,
           notification_next_attempt_at = p_now
-            + make_interval(mins => least(60, power(2, notification_attempt_count)::integer)),
+            + make_interval(mins => least(60, power(2, least(6, notification_attempt_count))::integer)),
           notification_last_error = left(sqlerrm, 500)
       where id = event_row.id
         and notification_published_at is null;
