@@ -163,6 +163,17 @@ create trigger akiba_withdrawal_terms_fingerprint
 before insert on public.akiba_withdrawal_requests
 for each row execute function akiba_private.set_withdrawal_terms_fingerprint();
 
+-- Preserve a deterministic fingerprint for any legacy request already present.
+update public.akiba_withdrawal_requests r
+set terms_fingerprint = encode(extensions.digest(convert_to(concat_ws('|',
+  r.id::text, r.group_id::text, r.currency_code,
+  r.recipient_amount_minor::text, r.akiba_fee_minor::text,
+  r.provider_fee_minor::text, r.recipient_name,
+  coalesce(r.destination_fingerprint, ''), r.fee_schedule_version,
+  r.provider_id::text, coalesce(r.provider_quote_ref, '')
+), 'UTF8'), 'sha256'), 'hex')
+where r.terms_fingerprint is null;
+
 create or replace function akiba_private.guard_withdrawal_terms_immutable()
 returns trigger
 language plpgsql
@@ -282,6 +293,41 @@ drop trigger if exists akiba_withdrawal_snapshot_admin_roster on public.akiba_wi
 create trigger akiba_withdrawal_snapshot_admin_roster
 after insert on public.akiba_withdrawal_requests
 for each row execute function akiba_private.snapshot_withdrawal_approval_roster();
+
+-- Backfill the immutable roster for any request still awaiting decisions.
+insert into public.akiba_withdrawal_approval_roster
+  (withdrawal_request_id, group_id, admin_user_id, membership_id)
+select r.id, r.group_id, m.user_id, m.id
+from public.akiba_withdrawal_requests r
+join public.akiba_group_memberships m
+  on m.group_id = r.group_id
+ and m.role = 'group_admin'
+ and m.status = 'active'
+where r.status in ('pending_approval','approved')
+  and not exists (
+    select 1 from public.akiba_withdrawal_approval_roster roster
+    where roster.withdrawal_request_id = r.id
+  )
+on conflict do nothing;
+
+update public.akiba_withdrawal_requests r
+set approval_roster_frozen_at = coalesce(r.approval_roster_frozen_at, clock_timestamp())
+where r.status in ('pending_approval','approved')
+  and r.approval_roster_frozen_at is null
+  and exists (
+    select 1 from public.akiba_withdrawal_approval_roster roster
+    where roster.withdrawal_request_id = r.id
+  );
+
+-- Legacy approved requests receive a fresh two-hour staging window after this
+-- migration, rather than being released immediately on deployment.
+update public.akiba_withdrawal_requests
+set status = 'staging',
+    staging_started_at = clock_timestamp(),
+    staging_deadline_at = clock_timestamp() + interval '2 hours',
+    updated_at = clock_timestamp()
+where status = 'approved'
+  and staging_started_at is null;
 
 -- The approver must be both currently active and part of the immutable roster.
 create or replace function akiba_private.guard_withdrawal_approval_insert()
