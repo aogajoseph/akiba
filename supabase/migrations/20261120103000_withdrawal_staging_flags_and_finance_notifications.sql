@@ -65,7 +65,7 @@ create index akiba_withdrawal_approval_roster_group_idx
   on public.akiba_withdrawal_approval_roster(group_id, withdrawal_request_id);
 
 alter table public.akiba_withdrawal_approval_roster enable row level security;
-revoke all on public.akiba_withdrawal_approval_roster from public, anon;
+revoke all on public.akiba_withdrawal_approval_roster from public, anon, authenticated;
 grant select on public.akiba_withdrawal_approval_roster to authenticated;
 create policy akiba_withdrawal_approval_roster_active_members_read
   on public.akiba_withdrawal_approval_roster
@@ -99,7 +99,7 @@ create index akiba_withdrawal_flags_due_idx
   on public.akiba_withdrawal_flags(withdrawal_request_id, status);
 
 alter table public.akiba_withdrawal_flags enable row level security;
-revoke all on public.akiba_withdrawal_flags from public, anon;
+revoke all on public.akiba_withdrawal_flags from public, anon, authenticated;
 grant select on public.akiba_withdrawal_flags to authenticated;
 create policy akiba_withdrawal_flags_active_members_read
   on public.akiba_withdrawal_flags
@@ -653,11 +653,29 @@ set search_path to ''
 as $fn$
 declare
   actor_id uuid := auth.uid();
+  flag_request_id uuid;
   flag_row public.akiba_withdrawal_flags%rowtype;
   request_row public.akiba_withdrawal_requests%rowtype;
 begin
   if actor_id is null then raise exception 'Authentication is required'; end if;
   if p_flag_id is null then raise exception 'A withdrawal flag is required'; end if;
+
+  -- Lock order is always withdrawal request first, then its flags. The staging
+  -- worker uses the same order, preventing flag-removal/deadline deadlocks.
+  select withdrawal_request_id into flag_request_id
+  from public.akiba_withdrawal_flags
+  where id = p_flag_id;
+  if not found then raise exception 'Withdrawal flag not found'; end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = flag_request_id
+  for update;
+  if not found
+     or request_row.status <> 'staging'
+     or request_row.staging_deadline_at <= clock_timestamp() then
+    raise exception 'The withdrawal flagging period has ended';
+  end if;
 
   select * into flag_row
   from public.akiba_withdrawal_flags
@@ -669,16 +687,6 @@ begin
   end if;
   if flag_row.status <> 'active' then
     raise exception 'This withdrawal flag is no longer active';
-  end if;
-
-  select * into request_row
-  from public.akiba_withdrawal_requests
-  where id = flag_row.withdrawal_request_id
-  for update;
-  if not found
-     or request_row.status <> 'staging'
-     or request_row.staging_deadline_at <= clock_timestamp() then
-    raise exception 'The withdrawal flagging period has ended';
   end if;
   if not exists (
     select 1 from public.akiba_group_memberships m
