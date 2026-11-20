@@ -11,6 +11,49 @@ create unique index if not exists akiba_withdrawal_request_idempotency_idx
   on public.akiba_withdrawal_requests(group_id, initiator_id, idempotency_key)
   where idempotency_key is not null;
 
+create or replace function akiba_private.guard_withdrawal_terms_immutable()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+begin
+  if row(
+    new.approval_version, new.group_id, new.initiator_id, new.currency_code,
+    new.recipient_amount_minor, new.akiba_fee_minor, new.provider_fee_minor,
+    new.fee_rate_bps, new.fee_schedule_version, new.provider_id,
+    new.provider_quote_ref, new.quote_expires_at, new.recipient_name,
+    new.destination_token, new.destination_fingerprint,
+    new.destination_snapshot, new.reason, new.terms_fingerprint,
+    new.idempotency_key
+  ) is distinct from row(
+    old.approval_version, old.group_id, old.initiator_id, old.currency_code,
+    old.recipient_amount_minor, old.akiba_fee_minor, old.provider_fee_minor,
+    old.fee_rate_bps, old.fee_schedule_version, old.provider_id,
+    old.provider_quote_ref, old.quote_expires_at, old.recipient_name,
+    old.destination_token, old.destination_fingerprint,
+    old.destination_snapshot, old.reason, old.terms_fingerprint,
+    old.idempotency_key
+  ) then
+    raise exception 'Withdrawal terms are immutable; create a new request for changed terms';
+  end if;
+
+  if old.staging_started_at is not null
+     and (
+       new.staging_started_at is distinct from old.staging_started_at
+       or new.staging_deadline_at is distinct from old.staging_deadline_at
+     ) then
+    raise exception 'The two-hour withdrawal staging deadline cannot be changed or restarted';
+  end if;
+
+  if old.approval_roster_frozen_at is not null
+     and new.approval_roster_frozen_at is distinct from old.approval_roster_frozen_at then
+    raise exception 'The withdrawal approval roster cannot be changed';
+  end if;
+  return new;
+end;
+$fn$;
+
 insert into public.akiba_payment_providers (
   provider_code, display_name, is_enabled, capabilities
 )
