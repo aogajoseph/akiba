@@ -405,3 +405,18 @@ The Safaricom Daraja B2C helper remains sandbox-only and is intentionally not wi
 - CI must pass on the final branch head. Full sandbox Preview acceptance remains an operational test and must not be claimed until actually exercised.
 
 **Phase 3 exclusions:** live provider onboarding, partner custody/settlement contracts, live credentials, payout submission, production migration, production activation, merge and production deployment. These require separate approvals and the ADR-001 live-activation gates.
+
+
+## 12. Finance review revision — member voice, review timer and notification language
+
+The Finance review follow-up preserves the non-custodial architecture and the existing withdrawal state machine while tightening its user-facing and authorization behaviour.
+
+1. **Member-only flagging:** only active ordinary group members (not `group_creator` or `group_admin`) may create withdrawal flags. The database RPC enforces this rule. An active flag owner may still remove their own flag during the review window.
+2. **One unresolved withdrawal:** a group may have only one unresolved withdrawal at a time. The Creator request RPC checks this under the group row lock before insertion, the partial unique index remains the final concurrency barrier, and the Finance UI disables request creation while an unresolved request exists. Historical resolved withdrawals remain visible and do not permanently prevent a later request.
+3. **Synchronized countdown:** all active group participants see a live reverse countdown derived from the immutable server-side `staging_deadline_at`. Client clocks are offset against server-rendered time. The countdown never resets. At zero, an active participant's open Finance page asks the server to process the due transition immediately; the existing scheduled worker remains the fallback when nobody is online. The processor remains atomic and idempotent.
+4. **Deadline outcomes:** if any active member flag remains, cancel the withdrawal, release its reservation and close every active flag. If no active flag remains, move the request to `payout_queued` and retain the reservation until a contracted payout provider confirms the outcome.
+5. **Username identity:** finance activity records snapshot the actor's username when the event is created. Notification copy uses that event-time username (for example, `@simon`) rather than a display name.
+6. **Conversational notification copy:** withdrawal notifications include the actor, recipient amount, purpose and recipient where applicable. Rejection and flagged cancellation copy accurately states that reserved funds are released; passing review states that funds remain reserved pending provider confirmation. Inbox timestamps use relative time.
+7. **Duplicate rejection alerts:** one Admin rejection creates one canonical finance event and one notification per active recipient; it is not emitted twice through two event source records.
+
+These changes do not enable live payouts, alter the two-hour duration, weaken Admin approval requirements, or change the rule that payout completion requires authoritative provider evidence.
