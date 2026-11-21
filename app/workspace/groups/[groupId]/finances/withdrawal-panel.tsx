@@ -49,6 +49,7 @@ type Props = {
   leadershipReady: boolean;
   sandboxWorkflowEnabled: boolean;
   hasUnresolvedRequest: boolean;
+  serverNow: string;
   requestIdempotencyKey: string;
   readError: boolean;
   requests: WithdrawalRequest[];
@@ -107,6 +108,7 @@ export default function WithdrawalPanel({
   leadershipReady,
   sandboxWorkflowEnabled,
   hasUnresolvedRequest,
+  serverNow,
   requestIdempotencyKey,
   readError,
   requests,
@@ -282,6 +284,7 @@ export default function WithdrawalPanel({
                         groupId={groupId}
                         requestId={request.id}
                         deadline={request.staging_deadline_at}
+                        serverNow={serverNow}
                       />
                     )}
                     <p>{activeFlags.length > 0
