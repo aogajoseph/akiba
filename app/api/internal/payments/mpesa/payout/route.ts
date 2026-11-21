@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { readDarajaB2CPayoutConfig } from "@/lib/payments/providers/safaricom-daraja/b2c";
-import { submitB2CPayout } from "@/lib/payments/providers/safaricom-daraja/b2c";
+import { readDarajaB2CPayoutConfig, submitB2CPayout } from "@/lib/payments/providers/safaricom-daraja/b2c";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,18 +64,13 @@ export async function GET(request: NextRequest) {
       amountMinor < 100 ||
       amountMinor % 100 !== 0
     ) {
-      await service.from("akiba_payout_attempts").update({
-        status: "unknown",
-        reconciliation_status: "pending",
-        reconciliation_note: "Claimed payout had an invalid KES amount; manual review required.",
-        updated_at: new Date().toISOString(),
-      }).eq("id", claim.payout_attempt_id).eq("status", "submitted");
-      await service.from("akiba_withdrawal_requests").update({
-        status: "reconciliation_required",
-        resolution_note: "The claimed payout amount was invalid; reservation retained for manual review.",
-        updated_at: new Date().toISOString(),
-      }).eq("id", claim.withdrawal_request_id).eq("status", "payout_submitted");
-      unknown += 1;
+      const { error } = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
+        p_payout_attempt_id: claim.payout_attempt_id,
+        p_accepted: false,
+        p_response_summary: "Claimed payout had an invalid KES amount; manual review required.",
+      });
+      if (error) persistenceFailures += 1;
+      else unknown += 1;
       continue;
     }
 
@@ -88,81 +82,37 @@ export async function GET(request: NextRequest) {
         occasion: "Akiba sandbox payout",
       }, configResult.config);
 
-      const now = new Date().toISOString();
-      const { data: updatedAttempt, error: attemptUpdateError } = await service
-        .from("akiba_payout_attempts")
-        .update({
-          status: "processing",
-          provider_payout_ref: result.originatorConversationId,
-          provider_conversation_id: result.conversationId,
-          response_code: result.responseCode,
-          response_summary: result.responseDescription?.slice(0, 500) ?? "Safaricom accepted the B2C instruction.",
-          response_digest: result.responseDigest,
-          reconciliation_status: "pending",
-          reconciliation_note: "Daraja accepted the B2C instruction; awaiting callback and independent verification.",
-          updated_at: now,
-        })
-        .eq("id", claim.payout_attempt_id)
-        .eq("status", "submitted")
-        .select("id")
-        .maybeSingle();
-
-      if (attemptUpdateError || !updatedAttempt) {
-        console.error("[payments][daraja][payout] Accepted instruction could not be persisted", {
+      const { error } = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
+        p_payout_attempt_id: claim.payout_attempt_id,
+        p_accepted: true,
+        p_provider_payout_ref: result.originatorConversationId,
+        p_provider_conversation_id: result.conversationId,
+        p_response_code: result.responseCode,
+        p_response_summary: result.responseDescription ?? "Safaricom accepted the B2C instruction.",
+        p_response_digest: result.responseDigest,
+      });
+      if (error) {
+        console.error("[payments][daraja][payout] Accepted instruction could not be atomically persisted", {
           attemptId: claim.payout_attempt_id,
+          code: error.code,
         });
         persistenceFailures += 1;
-        continue;
+      } else {
+        accepted += 1;
       }
-
-      const { error: requestUpdateError } = await service
-        .from("akiba_withdrawal_requests")
-        .update({
-          status: "payout_processing",
-          updated_at: now,
-        })
-        .eq("id", claim.withdrawal_request_id)
-        .eq("status", "payout_submitted");
-
-      if (requestUpdateError) {
-        console.error("[payments][daraja][payout] Accepted payout request state could not be updated", {
-          attemptId: claim.payout_attempt_id,
-        });
-        persistenceFailures += 1;
-        continue;
-      }
-      accepted += 1;
     } catch (error) {
-      const now = new Date().toISOString();
       const summary = error instanceof Error
         ? error.message.slice(0, 500)
         : "Daraja submission outcome is unknown.";
-      const { error: attemptUpdateError } = await service
-        .from("akiba_payout_attempts")
-        .update({
-          status: "unknown",
-          reconciliation_status: "pending",
-          reconciliation_note: "B2C submission outcome is uncertain. Automatic resubmission is prohibited. " + summary,
-          updated_at: now,
-        })
-        .eq("id", claim.payout_attempt_id)
-        .eq("status", "submitted");
-
-      const { error: requestUpdateError } = await service
-        .from("akiba_withdrawal_requests")
-        .update({
-          status: "reconciliation_required",
-          resolution_note: "Daraja submission outcome is uncertain; the reservation remains active pending independent reconciliation.",
-          updated_at: now,
-        })
-        .eq("id", claim.withdrawal_request_id)
-        .eq("status", "payout_submitted");
-
-      if (attemptUpdateError || requestUpdateError) {
-        console.error("[payments][daraja][payout] Uncertain outcome could not be fully persisted", {
+      const { error: persistError } = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
+        p_payout_attempt_id: claim.payout_attempt_id,
+        p_accepted: false,
+        p_response_summary: summary,
+      });
+      if (persistError) {
+        console.error("[payments][daraja][payout] Uncertain outcome could not be persisted", {
           attemptId: claim.payout_attempt_id,
-          attemptUpdateFailed: Boolean(attemptUpdateError),
-          requestUpdateFailed: Boolean(requestUpdateError),
+          code: persistError.code,
         });
         persistenceFailures += 1;
       } else {
