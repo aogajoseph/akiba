@@ -37,14 +37,17 @@ function secureCallbackUrl(value: string | undefined, token: string): string | n
 }
 
 /** Explicit opt-in; this reader can never return a production configuration. */
-export function readDarajaB2CPayoutConfig(
-  env: NodeJS.ProcessEnv = process.env,
+function readDarajaB2CConfig(
+  env: NodeJS.ProcessEnv,
+  requirePayoutOptIn: boolean,
 ): B2CConfigResult {
   if (
     env.MPESA_ENVIRONMENT !== "sandbox" ||
-    env.MPESA_SANDBOX_PAYOUT_ENABLED !== "true"
+    (requirePayoutOptIn && env.MPESA_SANDBOX_PAYOUT_ENABLED !== "true")
   ) {
-    return { ok: false, error: "Safaricom B2C payouts are disabled; sandbox and explicit opt-in are required." };
+    return { ok: false, error: requirePayoutOptIn
+      ? "Safaricom B2C payouts are disabled; sandbox and explicit opt-in are required."
+      : "Safaricom B2C status inquiries are sandbox-only." };
   }
 
   const required = {
@@ -82,6 +85,20 @@ export function readDarajaB2CPayoutConfig(
       },
     },
   };
+}
+
+/** Payout submission requires the explicit sandbox execution gate. */
+export function readDarajaB2CPayoutConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): B2CConfigResult {
+  return readDarajaB2CConfig(env, true);
+}
+
+/** Read-only status inquiries remain available with the payout gate disabled. */
+export function readDarajaB2CStatusConfig(
+  env: NodeJS.ProcessEnv = process.env,
+): B2CConfigResult {
+  return readDarajaB2CConfig(env, false);
 }
 
 export interface B2CPayoutRequest {
