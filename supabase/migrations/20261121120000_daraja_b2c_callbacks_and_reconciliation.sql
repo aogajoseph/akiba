@@ -328,6 +328,17 @@ begin
         'provider_receipt_number',p_receipt,'provider_code','safaricom_daraja')
     ) on conflict (group_id,event_type,source_type,source_id) do nothing;
   elsif status_value = 'failed' then
+    select count(*) into reservation_count from public.akiba_financial_reservations
+    where withdrawal_request_id=request_row.id and group_id=request_row.group_id
+      and currency_code='KES' and amount_minor=request_row.total_debit_minor and status='active';
+    if reservation_count <> 1 then
+      raise exception 'Verified payout failure requires exactly one matching active reservation';
+    end if;
+    perform 1 from public.akiba_financial_reservations
+    where withdrawal_request_id=request_row.id and group_id=request_row.group_id
+      and currency_code='KES' and amount_minor=request_row.total_debit_minor and status='active'
+    for update;
+
     update public.akiba_payout_attempts
     set status='failed',confirmed_at=clock_timestamp(),
         reconciliation_status='resolved',provider_status='Failed',
