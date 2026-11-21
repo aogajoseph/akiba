@@ -100,6 +100,7 @@ export interface B2CPayoutAccepted {
   conversationId: string | null;
   responseCode: string;
   responseDescription: string | null;
+  responseDigest: string;
 }
 
 interface B2CSubmissionResponse {
@@ -187,6 +188,7 @@ export async function submitB2CPayout(
     conversationId: typeof result.ConversationID === "string" ? result.ConversationID : null,
     responseCode: String(result.ResponseCode),
     responseDescription: typeof result.ResponseDescription === "string" ? result.ResponseDescription : null,
+    responseDigest: createHash("sha256").update(JSON.stringify(result)).digest("hex"),
   };
 }
 
