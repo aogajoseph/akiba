@@ -35,7 +35,8 @@ begin
     raise exception 'Service role is required';
   end if;
   if p_originator_conversation_id is null or p_originator_conversation_id = ''
-     or p_response_digest is null or p_response_digest !~ '^[a-f0-9]{64} 'A valid status-query response is required';
+     or p_response_digest is null or p_response_digest !~ '^[a-f0-9]{64}$' then
+    raise exception 'A valid status-query response is required';
   end if;
 
   select * into attempt_row from public.akiba_payout_attempts
@@ -92,7 +93,7 @@ begin
   end if;
   if p_event_kind not in ('payout_result','payout_timeout','status_result','status_timeout')
      or nullif(btrim(p_originator_conversation_id), '') is null
-     or p_response_digest is null or p_response_digest !~ '^[a-f0-9]{64}
+     or p_response_digest is null or p_response_digest !~ '^[a-f0-9]{64}$' then
     raise exception 'Invalid Daraja B2C callback evidence';
   end if;
 
