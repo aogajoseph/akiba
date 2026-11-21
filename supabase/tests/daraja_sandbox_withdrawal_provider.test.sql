@@ -24,6 +24,32 @@ begin
     raise exception 'Daraja must be registered for sandbox payouts with synthetic quotes and execution disabled';
   end if;
 
+
+  if to_regprocedure('public.akiba_claim_daraja_sandbox_payouts(integer)') is null
+     or to_regprocedure('public.akiba_record_daraja_sandbox_payout_submission(uuid,boolean,text,text,text,text,text)') is null then
+    raise exception 'Durable Daraja sandbox payout worker RPCs are missing';
+  end if;
+
+  if has_function_privilege('authenticated',
+       'public.akiba_claim_daraja_sandbox_payouts(integer)', 'EXECUTE')
+     or not has_function_privilege('service_role',
+       'public.akiba_claim_daraja_sandbox_payouts(integer)', 'EXECUTE')
+     or has_function_privilege('authenticated',
+       'public.akiba_record_daraja_sandbox_payout_submission(uuid,boolean,text,text,text,text,text)', 'EXECUTE') then
+    raise exception 'Payout worker RPCs are not restricted to service_role';
+  end if;
+
+  if position('skip locked' in lower(pg_get_functiondef(
+       'public.akiba_claim_daraja_sandbox_payouts(integer)'::regprocedure))) = 0
+     or position('automatic resubmission is prohibited' in lower(pg_get_functiondef(
+       'public.akiba_record_daraja_sandbox_payout_submission(uuid,boolean,text,text,text,text,text)'::regprocedure))) = 0 then
+    raise exception 'Payout claim or uncertain-outcome safeguards are missing';
+  end if;
+
+  if provider_row.capabilities ->> 'payout_submission_enabled' <> 'false' then
+    raise exception 'Sandbox payout execution must remain disabled until explicit credential and environment verification';
+  end if;
+
   select pg_get_functiondef(
     'public.akiba_create_sandbox_withdrawal_request(uuid,bigint,text,text,text,text)'::regprocedure
   ) into request_fn;
