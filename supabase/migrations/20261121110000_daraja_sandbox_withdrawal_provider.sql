@@ -89,8 +89,8 @@ begin
     or new.akiba_fee_minor <> 0
     or new.provider_fee_minor <> 0
     or left(coalesce(new.provider_quote_ref, ''), 13) <> 'SYNTH-DARAJA-'
-    or new.destination_snapshot ->> 'quote_type' <> 'synthetic_sandbox_zero_fee'
-    or new.destination_snapshot ->> 'fee_source' <> 'akiba_sandbox_fixture_not_safaricom'
+    or new.destination_snapshot ->> 'quote_type' is distinct from 'synthetic_sandbox_zero_fee'
+    or new.destination_snapshot ->> 'fee_source' is distinct from 'akiba_sandbox_fixture_not_safaricom'
   ) then
     raise exception 'Daraja sandbox requests must use the explicitly synthetic KES zero-fee quote';
   end if;
@@ -173,7 +173,7 @@ begin
     or request_row.akiba_fee_minor <> 0
     or request_row.provider_fee_minor <> 0
     or left(coalesce(request_row.provider_quote_ref, ''), 13) <> 'SYNTH-DARAJA-'
-    or request_row.destination_snapshot ->> 'quote_type' <> 'synthetic_sandbox_zero_fee'
+    or request_row.destination_snapshot ->> 'quote_type' is distinct from 'synthetic_sandbox_zero_fee'
   ) then
     raise exception 'The Daraja sandbox payout request does not contain a valid synthetic quote';
   end if;
