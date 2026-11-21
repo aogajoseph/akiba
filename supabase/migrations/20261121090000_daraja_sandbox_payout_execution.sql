@@ -36,7 +36,7 @@ declare
   roster_count integer;
   approved_count integer;
 begin
-  if coalesce(auth.role(), '') not in ('service_role') then
+  if coalesce(auth.jwt() ->> 'role', '') not in ('service_role') then
     raise exception 'Service role is required to claim sandbox payouts';
   end if;
 
