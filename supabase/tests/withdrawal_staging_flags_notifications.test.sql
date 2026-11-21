@@ -438,6 +438,12 @@ declare
   quote_version text;
   payout_capability text;
   simulation_capability text;
+  provider_code_value text;
+  synthetic_quote_capability text;
+  fee_quote_capability text;
+  payout_submission_capability text;
+  quote_type text;
+  fee_source text;
   notification_count integer;
   message text;
   staging_deadline timestamptz;
@@ -474,8 +480,16 @@ begin
   from public.akiba_financial_reservations
   where withdrawal_request_id = request_id;
 
-  select p.capabilities ->> 'payout', p.capabilities ->> 'workflow_simulation'
-    into payout_capability, simulation_capability
+  select p.provider_code, p.capabilities ->> 'payout',
+         p.capabilities ->> 'workflow_simulation',
+         p.capabilities ->> 'synthetic_sandbox_quotes',
+         p.capabilities ->> 'fee_quotes',
+         p.capabilities ->> 'payout_submission_enabled',
+         r.destination_snapshot ->> 'quote_type',
+         r.destination_snapshot ->> 'fee_source'
+    into provider_code_value, payout_capability, simulation_capability,
+         synthetic_quote_capability, fee_quote_capability,
+         payout_submission_capability, quote_type, fee_source
   from public.akiba_withdrawal_requests r
   join public.akiba_payment_providers p on p.id = r.provider_id
   where r.id = request_id;
@@ -486,11 +500,18 @@ begin
   if reservation_status <> 'active' or reservation_amount <> 5000 then
     raise exception 'Sandbox request did not atomically reserve the exact requested amount';
   end if;
-  if quote_version <> 'sandbox-simulation-zero-fee-v1' then
-    raise exception 'Sandbox request did not use the explicit simulation quote version';
+  if quote_version <> 'sandbox-daraja-synthetic-zero-fee-v1' then
+    raise exception 'Daraja sandbox request did not use the explicit synthetic zero-fee quote version';
   end if;
-  if payout_capability <> 'false' or simulation_capability <> 'true' then
-    raise exception 'Workflow simulator must not advertise actual payout capability';
+  if provider_code_value <> 'safaricom_daraja'
+     or payout_capability <> 'true'
+     or coalesce(simulation_capability, 'false') <> 'false'
+     or synthetic_quote_capability <> 'true'
+     or fee_quote_capability <> 'false'
+     or payout_submission_capability <> 'false'
+     or quote_type <> 'synthetic_sandbox_zero_fee'
+     or fee_source <> 'akiba_sandbox_fixture_not_safaricom' then
+    raise exception 'Withdrawal must reference Daraja with a clearly synthetic quote and disabled payout submission';
   end if;
 
   select count(*) into notification_count
@@ -588,8 +609,8 @@ begin
   -- before exercising Creator-scoped idempotency and duplicate-request paths.
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
 
-  -- The simulator is intentionally not payout-capable, even after approvals
-  -- and staging. It must never create a payout attempt.
+  -- Daraja is registered as a sandbox payout provider, but submission remains
+  -- disabled until the separate execution worker and callback flow are ready.
   begin
     insert into public.akiba_payout_attempts
       (withdrawal_request_id, provider_id, request_reference, provider_fee_minor)
@@ -597,7 +618,7 @@ begin
     raise exception 'Sandbox workflow simulator unexpectedly accepted a payout attempt';
   exception when others then
     get stacked diagnostics message = message_text;
-    if message not like '%does not currently support sandbox payout execution%' then raise; end if;
+    if message not like '%not enabled for sandbox payout submission%' then raise; end if;
   end;
 
   begin
