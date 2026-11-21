@@ -153,8 +153,11 @@ export async function submitB2CPayout(
   if (!Number.isSafeInteger(input.amountKes) || input.amountKes < 1 || input.amountKes > 250_000) {
     throw new PaymentError("INVALID_AMOUNT", "B2C sandbox payout amount must be a whole KES amount between 1 and 250,000.");
   }
-  if (!/^254[17]\d{8}$/.test(input.recipientPhone)) {
-    throw new PaymentError("INVALID_AMOUNT", "Recipient phone number must use the 2547XXXXXXXX or 2541XXXXXXXX format.");
+  // Never accept a destination number from a member or caller. Sandbox B2C
+  // submissions are pinned to this dedicated server-side test recipient.
+  const recipientPhone = config.credentials.testRecipientPhone;
+  if (!/^254[17]\d{8}$/.test(recipientPhone)) {
+    throw new PaymentError("PROVIDER_CONFIGURATION_INVALID", "A valid dedicated Daraja sandbox test recipient is required.");
   }
   if (!/^[A-Za-z0-9_-]{8,32}$/.test(input.requestReference)) {
     throw new PaymentError("INVALID_AMOUNT", "Payout request reference must be 8–32 safe characters.");
