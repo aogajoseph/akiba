@@ -138,6 +138,101 @@ begin
 end;
 $fn$;
 
+create or replace function public.akiba_record_daraja_sandbox_payout_submission(
+  p_payout_attempt_id uuid,
+  p_accepted boolean,
+  p_provider_payout_ref text default null,
+  p_provider_conversation_id text default null,
+  p_response_code text default null,
+  p_response_summary text default null,
+  p_response_digest text default null
+)
+returns boolean
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  attempt_row public.akiba_payout_attempts%rowtype;
+  request_row public.akiba_withdrawal_requests%rowtype;
+  now_value timestamptz := clock_timestamp();
+begin
+  if coalesce(auth.jwt() ->> 'role', '') <> 'service_role' then
+    raise exception 'Service role is required to record Daraja payout submission results';
+  end if;
+  if p_payout_attempt_id is null then raise exception 'A payout attempt is required'; end if;
+
+  select * into attempt_row
+  from public.akiba_payout_attempts
+  where id = p_payout_attempt_id
+  for update;
+  if not found or attempt_row.status <> 'submitted' then
+    return false;
+  end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = attempt_row.withdrawal_request_id
+  for update;
+  if not found or request_row.status <> 'payout_submitted' then
+    return false;
+  end if;
+
+  if p_accepted then
+    if nullif(btrim(p_provider_payout_ref), '') is null
+       or nullif(btrim(p_response_digest), '') is null
+       or p_response_digest !~ '^[a-f0-9]{64}(integer) from public, anon, authenticated;
+grant execute on function public.akiba_claim_daraja_sandbox_payouts(integer) to service_role;
+comment on function public.akiba_claim_daraja_sandbox_payouts(integer) is
+  'Atomically claims approved, unflagged, staged Daraja sandbox withdrawals and marks the attempt submitted before external I/O to prevent duplicate B2C instructions after worker crashes.';
+
+commit; then
+      raise exception 'Accepted Daraja response requires provider reference and SHA-256 response digest';
+    end if;
+    update public.akiba_payout_attempts
+    set status = 'processing',
+        provider_payout_ref = btrim(p_provider_payout_ref),
+        provider_conversation_id = nullif(btrim(p_provider_conversation_id), ''),
+        response_code = nullif(btrim(p_response_code), ''),
+        response_summary = left(coalesce(p_response_summary, 'Safaricom accepted the B2C instruction.'), 500),
+        response_digest = p_response_digest,
+        reconciliation_status = 'pending',
+        reconciliation_note = 'Daraja accepted the B2C instruction; awaiting callback and independent verification.',
+        updated_at = now_value
+    where id = attempt_row.id and status = 'submitted';
+
+    update public.akiba_withdrawal_requests
+    set status = 'payout_processing', updated_at = now_value
+    where id = request_row.id and status = 'payout_submitted';
+  else
+    update public.akiba_payout_attempts
+    set status = 'unknown',
+        reconciliation_status = 'pending',
+        reconciliation_note = left(
+          'B2C submission outcome is uncertain. Automatic resubmission is prohibited. ' ||
+          coalesce(p_response_summary, 'Provider response unavailable.'),
+          1000
+        ),
+        response_code = nullif(btrim(p_response_code), ''),
+        response_summary = left(coalesce(p_response_summary, 'Daraja submission outcome is unknown.'), 500),
+        updated_at = now_value
+    where id = attempt_row.id and status = 'submitted';
+
+    update public.akiba_withdrawal_requests
+    set status = 'reconciliation_required',
+        resolution_note = 'Daraja submission outcome is uncertain; the reservation remains active pending independent reconciliation.',
+        updated_at = now_value
+    where id = request_row.id and status = 'payout_submitted';
+  end if;
+  return true;
+end;
+$fn$;
+
+revoke all on function public.akiba_record_daraja_sandbox_payout_submission(uuid,boolean,text,text,text,text,text) from public, anon, authenticated;
+grant execute on function public.akiba_record_daraja_sandbox_payout_submission(uuid,boolean,text,text,text,text,text) to service_role;
+comment on function public.akiba_record_daraja_sandbox_payout_submission(uuid,boolean,text,text,text,text,text) is
+  'Atomically records accepted or uncertain Daraja sandbox submission results; never releases reservations or marks withdrawals complete.';
+
 revoke all on function public.akiba_claim_daraja_sandbox_payouts(integer) from public, anon, authenticated;
 grant execute on function public.akiba_claim_daraja_sandbox_payouts(integer) to service_role;
 comment on function public.akiba_claim_daraja_sandbox_payouts(integer) is
