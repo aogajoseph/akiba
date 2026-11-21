@@ -14,6 +14,7 @@ const validEnv = {
   MPESA_B2C_INITIATOR_NAME: "test-initiator",
   MPESA_B2C_SECURITY_CREDENTIAL: "encrypted-sandbox-credential",
   MPESA_B2C_SHORTCODE: "600000",
+  MPESA_B2C_TEST_RECIPIENT_PHONE: "254700000001",
   MPESA_B2C_RESULT_URL: "https://example.test/api/integrations/mpesa/b2c/result?token=secret",
   MPESA_B2C_QUEUE_TIMEOUT_URL: "https://example.test/api/integrations/mpesa/b2c/timeout?token=secret",
   MPESA_B2C_CALLBACK_TOKEN: "secret",
@@ -29,6 +30,12 @@ describe("Daraja B2C sandbox configuration", () => {
     const result = readDarajaB2CPayoutConfig(validEnv);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.config.environment).toBe("sandbox");
+  });
+
+  it("requires a valid dedicated sandbox test recipient number", () => {
+    expect(readDarajaB2CPayoutConfig({ ...validEnv, MPESA_B2C_TEST_RECIPIENT_PHONE: undefined }).ok).toBe(false);
+    expect(readDarajaB2CPayoutConfig({ ...validEnv, MPESA_B2C_TEST_RECIPIENT_PHONE: "0712345678" }).ok).toBe(false);
+    expect(readDarajaB2CPayoutConfig(validEnv).ok).toBe(true);
   });
 
   it("rejects callback URLs without HTTPS or the configured token", () => {
