@@ -50,6 +50,37 @@ begin
     raise exception 'Sandbox payout execution must remain disabled until explicit credential and environment verification';
   end if;
 
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='akiba_payout_attempts'
+      and column_name='provider_transaction_id'
+  ) or not exists (
+    select 1 from information_schema.columns
+    where table_schema='public' and table_name='akiba_payout_attempts'
+      and column_name='status_query_originator_id'
+  ) then
+    raise exception 'Daraja payout callback and independent status evidence columns are missing';
+  end if;
+
+  if to_regprocedure('public.akiba_record_daraja_status_query_submission(uuid,text,text,text,text)') is null
+     or to_regprocedure('public.akiba_record_daraja_sandbox_b2c_callback(text,text,text,text,text,text,bigint,text,text,text)') is null then
+    raise exception 'Daraja B2C callback/reconciliation RPCs are missing';
+  end if;
+
+  if has_function_privilege('authenticated',
+       'public.akiba_record_daraja_sandbox_b2c_callback(text,text,text,text,text,text,bigint,text,text,text)', 'EXECUTE')
+     or not has_function_privilege('service_role',
+       'public.akiba_record_daraja_sandbox_b2c_callback(text,text,text,text,text,text,bigint,text,text,text)', 'EXECUTE') then
+    raise exception 'Daraja B2C callback RPC is not restricted to service_role';
+  end if;
+
+  if position('authenticated_b2c_result_plus_status_query' in lower(pg_get_functiondef(
+       'public.akiba_record_daraja_sandbox_b2c_callback(text,text,text,text,text,text,bigint,text,text,text)'::regprocedure))) = 0
+     or position('reservation remains active' in lower(pg_get_functiondef(
+       'public.akiba_record_daraja_sandbox_b2c_callback(text,text,text,text,text,text,bigint,text,text,text)'::regprocedure))) = 0 then
+    raise exception 'Independent verification or reservation-retention safeguards are missing';
+  end if;
+
   select pg_get_functiondef(
     'public.akiba_create_sandbox_withdrawal_request(uuid,bigint,text,text,text,text)'::regprocedure
   ) into request_fn;
