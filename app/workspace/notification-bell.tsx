@@ -15,6 +15,15 @@ export type NotificationBellItem = {
   read_at: string | null;
 };
 
+function relativeTime(value: string) {
+  const seconds = Math.round((Date.now() - new Date(value).getTime()) / 1000);
+  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  if (Math.abs(seconds) < 60) return formatter.format(-seconds, "second");
+  if (Math.abs(seconds) < 3600) return formatter.format(-Math.round(seconds / 60), "minute");
+  if (Math.abs(seconds) < 86400) return formatter.format(-Math.round(seconds / 3600), "hour");
+  return formatter.format(-Math.round(seconds / 86400), "day");
+}
+
 type Props = {
   unreadCount?: number;
   notifications?: NotificationBellItem[];
@@ -99,7 +108,7 @@ export default function NotificationBell({ unreadCount: initialUnreadCount, noti
                     onClick={(event) => { event.preventDefault(); void openNotification(item.id, item.href, isUnread); }}
                   >
                     <span className="ak-notification-tray-dot" />
-                    <span><strong>{item.title}</strong><small>{item.body}</small><time>{new Intl.DateTimeFormat("en", { day: "numeric", month: "short", hour: "numeric", minute: "2-digit" }).format(new Date(item.created_at))}</time></span>
+                    <span><strong>{item.title}</strong><small>{item.body}</small><time>{relativeTime(item.created_at)}</time></span>
                   </Link>
                 );
               })}
