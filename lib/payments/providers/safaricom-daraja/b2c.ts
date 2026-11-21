@@ -86,7 +86,10 @@ export function readDarajaB2CPayoutConfig(
 
 export interface B2CPayoutRequest {
   amountKes: number;
-  recipientPhone: string;
+  /**
+   * A stable Akiba request reference for audit remarks only. Daraja B2C does
+   * not provide a true idempotency key; ambiguous submissions must be reconciled.
+   */
   requestReference: string;
   remarks: string;
   occasion?: string;
@@ -163,7 +166,7 @@ export async function submitB2CPayout(
     CommandID: "BusinessPayment",
     Amount: input.amountKes,
     PartyA: config.credentials.businessShortCode,
-    PartyB: input.recipientPhone,
+    PartyB: recipientPhone,
     Remarks: input.remarks.slice(0, 100),
     QueueTimeOutURL: config.credentials.queueTimeoutUrl,
     ResultURL: config.credentials.resultUrl,
