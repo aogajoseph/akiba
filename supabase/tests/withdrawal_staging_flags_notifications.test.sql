@@ -433,6 +433,7 @@ declare
   message text;
   staging_deadline timestamptz;
   selected_provider_id uuid;
+  flag_id uuid;
 begin
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
   begin
@@ -522,12 +523,7 @@ begin
   perform public.akiba_decide_withdrawal_request(request_id, 'approved', null);
 
   -- Only ordinary active members may flag; Creator and Admins must be rejected.
-  do $flag_permissions$
-  declare
-    flag_id uuid;
-    message text;
-  begin
-    perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
     begin
       perform public.akiba_flag_withdrawal(request_id, 'Creator must not flag');
       raise exception 'The Group Creator unexpectedly flagged a withdrawal';
@@ -554,9 +550,6 @@ begin
     ) then
       raise exception 'An ordinary member could not remove their own flag';
     end if;
-  end;
-  $flag_permissions$;
-
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
 
   select staging_deadline_at into staging_deadline
