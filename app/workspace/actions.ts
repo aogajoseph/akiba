@@ -1009,6 +1009,14 @@ export async function processDueWithdrawalStaging(groupId: string, requestId: st
     return false;
   }
 
+  const { data: refreshedRequest, error: refreshError } = await supabase
+    .from("akiba_withdrawal_requests")
+    .select("status")
+    .eq("id", requestId)
+    .eq("group_id", groupId)
+    .maybeSingle();
+  if (refreshError || refreshedRequest?.status === "staging") return false;
+
   revalidatePath("/workspace/groups/" + groupId + "/finances");
   revalidatePath("/workspace/groups/" + groupId);
   return true;
