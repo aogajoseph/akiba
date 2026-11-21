@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { readDarajaB2CPayoutConfig, queryB2CTransactionStatus } from "@/lib/payments/providers/safaricom-daraja/b2c";
+import { readDarajaB2CStatusConfig, queryB2CTransactionStatus } from "@/lib/payments/providers/safaricom-daraja/b2c";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ function authorized(request: NextRequest): boolean {
  */
 export async function GET(request: NextRequest) {
   if (!authorized(request)) return json({ ok: false, error: "Not authorized" }, 401);
-  const configResult = readDarajaB2CPayoutConfig();
+  const configResult = readDarajaB2CStatusConfig();
   if (!configResult.ok) return json({ ok: false, error: "Daraja sandbox configuration is incomplete or disabled." }, 503);
 
   const service = createServiceClient();
