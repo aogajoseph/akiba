@@ -35,7 +35,7 @@ export async function GET(request: NextRequest) {
     .not("provider_transaction_id", "is", null)
     .not("provider_receipt_number", "is", null)
     .is("status_query_originator_id", null)
-    .in("status", ["processing", "unknown"])
+    .in("status", ["submitted", "processing", "unknown"])
     .order("submitted_at", { ascending: true })
     .limit(BATCH_SIZE);
   if (error) return json({ ok: false, error: "Could not load pending payout verifications" }, 503);
