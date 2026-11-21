@@ -267,11 +267,14 @@ begin
 
     select count(*) into reservation_count from public.akiba_financial_reservations
     where withdrawal_request_id=request_row.id and group_id=request_row.group_id
-      and currency_code='KES' and amount_minor=request_row.total_debit_minor and status='active'
-    for update;
+      and currency_code='KES' and amount_minor=request_row.total_debit_minor and status='active';
     if reservation_count <> 1 then
       raise exception 'Verified payout requires exactly one matching active reservation';
     end if;
+    perform 1 from public.akiba_financial_reservations
+    where withdrawal_request_id=request_row.id and group_id=request_row.group_id
+      and currency_code='KES' and amount_minor=request_row.total_debit_minor and status='active'
+    for update;
 
     insert into public.akiba_financial_transactions(
       group_id,currency_code,transaction_type,reference,description,effective_at,created_by,metadata
