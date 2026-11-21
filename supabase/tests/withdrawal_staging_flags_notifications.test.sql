@@ -521,6 +521,44 @@ begin
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000004', true);
   perform public.akiba_decide_withdrawal_request(request_id, 'approved', null);
 
+  -- Only ordinary active members may flag; Creator and Admins must be rejected.
+  do $flag_permissions$
+  declare
+    flag_id uuid;
+    message text;
+  begin
+    perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+    begin
+      perform public.akiba_flag_withdrawal(request_id, 'Creator must not flag');
+      raise exception 'The Group Creator unexpectedly flagged a withdrawal';
+    exception when others then
+      get stacked diagnostics message = message_text;
+      if message not like '%Only active ordinary group members%' then raise; end if;
+    end;
+
+    perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000002', true);
+    begin
+      perform public.akiba_flag_withdrawal(request_id, 'Admin must not flag');
+      raise exception 'A Group Admin unexpectedly flagged a withdrawal';
+    exception when others then
+      get stacked diagnostics message = message_text;
+      if message not like '%Only active ordinary group members%' then raise; end if;
+    end;
+
+    perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000005', true);
+    flag_id := public.akiba_flag_withdrawal(request_id, 'Member review test');
+    perform public.akiba_remove_withdrawal_flag(flag_id);
+    if not exists (
+      select 1 from public.akiba_withdrawal_flags
+      where id = flag_id and status = 'removed_by_member'
+    ) then
+      raise exception 'An ordinary member could not remove their own flag';
+    end if;
+  end;
+  $flag_permissions$;
+
+  perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
+
   select staging_deadline_at into staging_deadline
   from public.akiba_withdrawal_requests where id = request_id;
   perform * from public.akiba_process_due_withdrawal_staging(10, staging_deadline + interval '1 second');
@@ -566,8 +604,9 @@ begin
       'creator-request-idempotency-002'
     );
     raise exception 'A second unresolved withdrawal unexpectedly succeeded';
-  exception when unique_violation then
-    null;
+  exception when others then
+    get stacked diagnostics message = message_text;
+    if message not like '%already has an unresolved withdrawal%' then raise; end if;
   end;
 end;
 $sandbox_request$;
