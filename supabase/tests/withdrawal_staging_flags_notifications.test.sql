@@ -8,6 +8,15 @@ select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid,
 from generate_series(1, 8) as n
 on conflict (id) do nothing;
 
+insert into public.akiba_profiles (user_id, username, display_name)
+select ('00000000-0000-0000-0000-' || lpad(n::text, 12, '0'))::uuid,
+       'withdrawal_test_' || n::text,
+       'Withdrawal Test ' || n::text
+from generate_series(1, 8) as n
+on conflict (user_id) do update
+set username = excluded.username,
+    display_name = excluded.display_name;
+
 insert into public.akiba_payment_providers
   (id, provider_code, display_name, is_enabled, capabilities)
 values
@@ -494,6 +503,19 @@ begin
   );
   if notification_count <> 6 then
     raise exception 'Withdrawal request must notify every active member; got %', notification_count;
+  end if;
+
+  if not exists (
+    select 1
+    from public.akiba_finance_activity_events e
+    join public.akiba_group_notifications n on n.source_event_id = e.id
+    where e.source_type = 'withdrawal_request'
+      and e.source_id = request_id
+      and e.event_type = 'withdrawal_requested'
+      and e.actor_username_snapshot = 'withdrawal_test_1'
+      and n.body like '@withdrawal_test_1 requested a KES 50 withdrawal for Sandbox request creation regression test. Recipient: Sandbox recipient.%'
+  ) then
+    raise exception 'Withdrawal notification must use the event-time username and conversational request details';
   end if;
 
   if public.akiba_create_sandbox_withdrawal_request(
