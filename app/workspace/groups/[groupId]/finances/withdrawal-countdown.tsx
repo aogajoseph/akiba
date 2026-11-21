@@ -8,11 +8,12 @@ type Props = {
   groupId: string;
   requestId: string;
   deadline: string;
+  serverNow: string;
 };
 
-function remainingMilliseconds(deadline: string) {
+function remainingMilliseconds(deadline: string, serverOffset = 0) {
   const timestamp = Date.parse(deadline);
-  return Number.isFinite(timestamp) ? Math.max(0, timestamp - Date.now()) : 0;
+  return Number.isFinite(timestamp) ? Math.max(0, timestamp - (Date.now() + serverOffset)) : 0;
 }
 
 function formatCountdown(milliseconds: number) {
@@ -23,16 +24,17 @@ function formatCountdown(milliseconds: number) {
   return [hours, minutes, seconds].map((value) => String(value).padStart(2, "0")).join(":");
 }
 
-export default function WithdrawalCountdown({ groupId, requestId, deadline }: Props) {
+export default function WithdrawalCountdown({ groupId, requestId, deadline, serverNow }: Props) {
   const router = useRouter();
-  const [remaining, setRemaining] = useState(() => remainingMilliseconds(deadline));
+  const [remaining, setRemaining] = useState(() => Math.max(0, Date.parse(deadline) - Date.parse(serverNow)));
   const processing = useRef(false);
 
   useEffect(() => {
     let mounted = true;
+    const serverOffset = Date.parse(serverNow) - Date.now();
 
     const tick = () => {
-      const next = remainingMilliseconds(deadline);
+      const next = remainingMilliseconds(deadline, serverOffset);
       if (mounted) setRemaining(next);
 
       if (next === 0 && !processing.current) {
@@ -56,7 +58,7 @@ export default function WithdrawalCountdown({ groupId, requestId, deadline }: Pr
       mounted = false;
       window.clearInterval(interval);
     };
-  }, [deadline, groupId, requestId, router]);
+  }, [deadline, groupId, requestId, router, serverNow]);
 
   const closed = remaining === 0;
 
