@@ -21,7 +21,7 @@ insert into public.akiba_payment_providers
   (id, provider_code, display_name, is_enabled, capabilities)
 values
   ('20000000-0000-0000-0000-000000000001', 'withdrawal_test', 'Withdrawal Test', true,
-   '{"payout":true,"fee_quotes":true,"collection":true,"environment":"sandbox"}'::jsonb)
+   '{"payout":true,"payout_submission_enabled":true,"fee_quotes":true,"collection":true,"environment":"sandbox"}'::jsonb)
 on conflict (id) do update
 set is_enabled = excluded.is_enabled, capabilities = excluded.capabilities;
 
