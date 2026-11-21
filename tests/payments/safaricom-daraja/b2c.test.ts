@@ -3,6 +3,8 @@ import {
   b2cCallbackMatchesAttempt,
   parseB2CResultEvidence,
   readDarajaB2CPayoutConfig,
+  readDarajaB2CStatusConfig,
+  queryB2CTransactionStatus,
   submitB2CPayout,
 } from "../../../lib/payments/providers/safaricom-daraja/b2c";
 
@@ -31,6 +33,12 @@ describe("Daraja B2C sandbox configuration", () => {
     const result = readDarajaB2CPayoutConfig(validEnv);
     expect(result.ok).toBe(true);
     if (result.ok) expect(result.config.environment).toBe("sandbox");
+  });
+
+  it("allows read-only sandbox status inquiries while payout submission remains gated", () => {
+    expect(readDarajaB2CPayoutConfig({ ...validEnv, MPESA_SANDBOX_PAYOUT_ENABLED: "false" }).ok).toBe(false);
+    expect(readDarajaB2CStatusConfig({ ...validEnv, MPESA_SANDBOX_PAYOUT_ENABLED: "false" }).ok).toBe(true);
+    expect(readDarajaB2CStatusConfig({ ...validEnv, MPESA_ENVIRONMENT: "production" }).ok).toBe(false);
   });
 
   it("requires a valid dedicated sandbox test recipient number", () => {
@@ -140,5 +148,33 @@ describe("Daraja B2C result evidence", () => {
     expect(parseB2CResultEvidence({ Result: { ResultCode: 2001 } })?.receipt).toBeNull();
     expect(parseB2CResultEvidence(null)).toBeNull();
     expect(parseB2CResultEvidence({ Result: [] })).toBeNull();
+  });
+});
+
+
+describe("Daraja B2C independent status inquiry", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("returns the inquiry conversation references and digest without requiring payout opt-in", async () => {
+    const parsed = readDarajaB2CStatusConfig({ ...validEnv, MPESA_SANDBOX_PAYOUT_ENABLED: "false" });
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        access_token: "sandbox-access-token", expires_in: "3599",
+      }), { status: 200, headers: { "Content-Type": "application/json" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ResponseCode: "0",
+        OriginatorConversationID: "status-originator-123",
+        ConversationID: "status-conversation-123",
+      }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    const result = await queryB2CTransactionStatus("SG12345678", parsed.config);
+    expect(result).toMatchObject({
+      responseCode: "0",
+      originatorConversationId: "status-originator-123",
+      conversationId: "status-conversation-123",
+    });
+    expect(result.responseDigest).toMatch(/^[a-f0-9]{64}$/);
   });
 });
