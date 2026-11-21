@@ -17,6 +17,7 @@ export interface B2CPayoutConfig extends ProviderConnectionConfig {
     resultUrl: string;
     queueTimeoutUrl: string;
     callbackToken: string;
+    testRecipientPhone: string;
   }>;
 }
 
@@ -53,10 +54,15 @@ export function readDarajaB2CPayoutConfig(
     securityCredential: env.MPESA_B2C_SECURITY_CREDENTIAL,
     businessShortCode: env.MPESA_B2C_SHORTCODE,
     callbackToken: env.MPESA_B2C_CALLBACK_TOKEN,
+    testRecipientPhone: env.MPESA_B2C_TEST_RECIPIENT_PHONE,
   };
   const missing = Object.entries(required).filter(([, value]) => !value);
   if (missing.length) {
     return { ok: false, error: "Daraja B2C configuration is incomplete: " + missing.map(([key]) => key).join(", ") + "." };
+  }
+
+  if (required.testRecipientPhone && !/^254[17]\\d{8}$/.test(required.testRecipientPhone)) {
+    return { ok: false, error: "The dedicated B2C sandbox test recipient must use the 2547XXXXXXXX or 2541XXXXXXXX format." };
   }
 
   const resultUrl = secureCallbackUrl(env.MPESA_B2C_RESULT_URL, required.callbackToken as string);
@@ -71,7 +77,7 @@ export function readDarajaB2CPayoutConfig(
       environment: "sandbox",
       credentials: required as Record<string, string> & {
         consumerKey: string; consumerSecret: string; initiatorName: string;
-        securityCredential: string; businessShortCode: string; resultUrl: string;
+        securityCredential: string; businessShortCode: string; resultUrl: string; testRecipientPhone: string;
         queueTimeoutUrl: string; callbackToken: string;
       },
     },
