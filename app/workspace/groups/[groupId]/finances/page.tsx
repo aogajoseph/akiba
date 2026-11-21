@@ -78,6 +78,7 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
     { data: withdrawalTransactions, error: withdrawalTransactionError },
     { data: allTransactions, error: allTransactionError },
     { data: withdrawalRequests, error: withdrawalRequestError },
+    { data: unresolvedWithdrawalRows, error: unresolvedWithdrawalError },
     { data: withdrawalApprovals, error: withdrawalApprovalError },
     { data: approvalRoster, error: approvalRosterError },
     { data: withdrawalFlags, error: withdrawalFlagError },
@@ -113,6 +114,11 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
       .eq("group_id", group.id)
       .order("created_at", { ascending: false })
       .limit(30),
+    supabase.from("akiba_withdrawal_requests")
+      .select("id")
+      .eq("group_id", group.id)
+      .in("status", ["pending_approval", "approved", "staging", "payout_queued", "payout_submitted", "payout_processing", "reconciliation_required", "processing", "failed_pending_reconciliation"])
+      .limit(1),
     supabase.from("akiba_withdrawal_approvals")
       .select("withdrawal_request_id,approver_id,decision")
       .eq("group_id", group.id),
@@ -173,7 +179,7 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
   const progressWidth = Math.max(0, Math.min(100, progressPercent));
   const withdrawalReadError = Boolean(
     balanceError || withdrawalTransactionError || allTransactionError || withdrawalRequestError ||
-    withdrawalApprovalError || approvalRosterError || withdrawalFlagError ||
+    withdrawalApprovalError || unresolvedWithdrawalError || approvalRosterError || withdrawalFlagError ||
     reservationError || financeEventError
   );
   const statementActorIds = Array.from(new Set([
@@ -386,6 +392,7 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
             currentUserRole={membership.role}
             leadershipReady={leadershipReady}
             sandboxWorkflowEnabled={sandboxWorkflowEnabled}
+            hasUnresolvedRequest={Boolean(unresolvedWithdrawalRows?.length)}
             requestIdempotencyKey={requestIdempotencyKey}
             readError={withdrawalReadError}
             requests={withdrawalRequests ?? []}
