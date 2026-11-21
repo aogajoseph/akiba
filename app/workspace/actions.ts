@@ -852,7 +852,7 @@ export async function createWithdrawalRequest(formData: FormData) {
         ? "The group needs one active Creator and at least three active Group Admins."
         : error.message.includes("Insufficient available group funds")
           ? "The group does not have enough available funds after existing reservations."
-          : error.message.includes("akiba_one_unresolved_withdrawal_per_group") || error.code === "23505"
+          : error.message.includes("already has an unresolved withdrawal") || error.message.includes("akiba_one_unresolved_withdrawal_per_group") || error.code === "23505"
             ? "This group already has an unresolved withdrawal. Resolve it before creating another."
             : error.message.includes("idempotency key")
               ? "This request reference was already used with different details. Refresh and submit again."
