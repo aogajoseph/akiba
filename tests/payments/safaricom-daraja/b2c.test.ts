@@ -1,8 +1,9 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   b2cCallbackMatchesAttempt,
   parseB2CResultEvidence,
   readDarajaB2CPayoutConfig,
+  submitB2CPayout,
 } from "../../../lib/payments/providers/safaricom-daraja/b2c";
 
 const validEnv = {
@@ -47,6 +48,40 @@ describe("Daraja B2C sandbox configuration", () => {
       ...validEnv,
       MPESA_B2C_QUEUE_TIMEOUT_URL: "https://example.test/timeout?token=wrong",
     }).ok).toBe(false);
+  });
+});
+
+describe("Daraja B2C submission destination", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it("always sends to the dedicated server-side sandbox number, never a caller-supplied number", async () => {
+    const parsed = readDarajaB2CPayoutConfig(validEnv);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        access_token: "sandbox-access-token",
+        expires_in: "3599",
+      }), { status: 200, headers: { "Content-Type": "application/json" } }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({
+        ResponseCode: "0",
+        OriginatorConversationID: "originator-123",
+        ConversationID: "conversation-123",
+      }), { status: 200, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    await submitB2CPayout({
+      amountKes: 100,
+      requestReference: "AKIBA12345",
+      remarks: "sandbox test",
+      // Even an untyped/malicious caller cannot override the configured target.
+      recipientPhone: "254711111111",
+    } as never, parsed.config);
+
+    const submittedBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
+    expect(submittedBody.PartyB).toBe("254700000001");
+    expect(submittedBody.PartyB).not.toBe("254711111111");
   });
 });
 
