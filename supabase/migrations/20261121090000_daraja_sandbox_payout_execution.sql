@@ -181,12 +181,7 @@ begin
   if p_accepted then
     if nullif(btrim(p_provider_payout_ref), '') is null
        or nullif(btrim(p_response_digest), '') is null
-       or p_response_digest !~ '^[a-f0-9]{64}(integer) from public, anon, authenticated;
-grant execute on function public.akiba_claim_daraja_sandbox_payouts(integer) to service_role;
-comment on function public.akiba_claim_daraja_sandbox_payouts(integer) is
-  'Atomically claims approved, unflagged, staged Daraja sandbox withdrawals and marks the attempt submitted before external I/O to prevent duplicate B2C instructions after worker crashes.';
-
-commit; then
+       or p_response_digest !~ '^[a-f0-9]{64}$' then
       raise exception 'Accepted Daraja response requires provider reference and SHA-256 response digest';
     end if;
     update public.akiba_payout_attempts
