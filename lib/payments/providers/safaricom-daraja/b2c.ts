@@ -61,7 +61,7 @@ export function readDarajaB2CPayoutConfig(
     return { ok: false, error: "Daraja B2C configuration is incomplete: " + missing.map(([key]) => key).join(", ") + "." };
   }
 
-  if (required.testRecipientPhone && !/^254[17]\\d{8}$/.test(required.testRecipientPhone)) {
+  if (required.testRecipientPhone && !/^254[17]\d{8}$/.test(required.testRecipientPhone)) {
     return { ok: false, error: "The dedicated B2C sandbox test recipient must use the 2547XXXXXXXX or 2541XXXXXXXX format." };
   }
 
