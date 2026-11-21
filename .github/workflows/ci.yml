@@ -71,3 +71,5 @@ jobs:
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/mpesa_dual_evidence_posting.test.sql
       - name: Test withdrawal staging, flags and finance notifications
         run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/withdrawal_staging_flags_notifications.test.sql
+      - name: Test Daraja sandbox withdrawal provider registration and payout gate
+        run: psql "postgresql://postgres:postgres@127.0.0.1:54322/postgres" -v ON_ERROR_STOP=1 -f supabase/tests/daraja_sandbox_withdrawal_provider.test.sql
