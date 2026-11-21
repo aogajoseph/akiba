@@ -271,6 +271,7 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
     sandboxWorkflowEnabled = false;
   }
   const requestIdempotencyKey = randomUUID();
+  const financeServerNow = new Date().toISOString();
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const sandboxEnabled = process.env.MPESA_ENVIRONMENT === "sandbox" &&
     process.env.MPESA_SANDBOX_COLLECTION_ENABLED === "true" &&
@@ -393,6 +394,7 @@ export default async function GroupFinancesPage({ params, searchParams }: Props)
             leadershipReady={leadershipReady}
             sandboxWorkflowEnabled={sandboxWorkflowEnabled}
             hasUnresolvedRequest={Boolean(unresolvedWithdrawalRows?.length)}
+            serverNow={financeServerNow}
             requestIdempotencyKey={requestIdempotencyKey}
             readError={withdrawalReadError}
             requests={withdrawalRequests ?? []}
