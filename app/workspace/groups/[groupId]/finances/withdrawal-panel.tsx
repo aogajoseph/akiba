@@ -5,6 +5,7 @@ import {
   flagWithdrawal,
   removeWithdrawalFlag,
 } from "@/app/workspace/actions";
+import WithdrawalCountdown from "./withdrawal-countdown";
 
 type WithdrawalRequest = {
   id: string;
@@ -47,6 +48,7 @@ type Props = {
   currentUserRole: string;
   leadershipReady: boolean;
   sandboxWorkflowEnabled: boolean;
+  hasUnresolvedRequest: boolean;
   requestIdempotencyKey: string;
   readError: boolean;
   requests: WithdrawalRequest[];
@@ -104,6 +106,7 @@ export default function WithdrawalPanel({
   currentUserRole,
   leadershipReady,
   sandboxWorkflowEnabled,
+  hasUnresolvedRequest,
   requestIdempotencyKey,
   readError,
   requests,
@@ -113,7 +116,8 @@ export default function WithdrawalPanel({
 }: Props) {
   const isCreator = currentUserRole === "group_creator";
   const isAdmin = currentUserRole === "group_admin";
-  const canRequest = isCreator && leadershipReady && sandboxWorkflowEnabled;
+  const canRequest = isCreator && leadershipReady && sandboxWorkflowEnabled && !hasUnresolvedRequest && !readError;
+  const isOrdinaryMember = currentUserRole !== "group_creator" && currentUserRole !== "group_admin";
 
   return (
     <section className="ak-workspace-card ak-withdrawal-panel">
@@ -155,13 +159,20 @@ export default function WithdrawalPanel({
               ? "Only the Group Creator can request a withdrawal."
               : !leadershipReady
               ? "The group needs one active Creator and at least three active Group Admins."
-              : "Sandbox withdrawal workflow simulation is unavailable."
+              : hasUnresolvedRequest
+                ? "This group already has an unresolved withdrawal."
+                : readError
+                  ? "Withdrawal status could not be verified. Refresh before trying again."
+                  : "Sandbox withdrawal workflow simulation is unavailable."
           }>Withdraw</button>
         )}
       </div>
 
       {!isCreator && (
         <p className="ak-finance-disabled">Only the Group Creator can request a withdrawal. You can review requests and take actions permitted by your Group Admin or member role.</p>
+      )}
+      {isCreator && hasUnresolvedRequest && (
+        <p className="ak-finance-disabled">This group already has an unresolved withdrawal. It must be resolved before another withdrawal can be requested.</p>
       )}
       {isCreator && !leadershipReady && (
         <p className="ak-finance-disabled">Withdrawal requests are unavailable until the group has one active Group Creator and at least three active Group Admins.</p>
@@ -196,7 +207,7 @@ export default function WithdrawalPanel({
             // The server RPC enforces the exact deadline. The UI follows the
             // persisted staging state; the minute worker closes expired periods.
             const canDecide = request.status === "pending_approval" && isAdmin && myRosterEntry && !myApproval;
-            const canFlag = request.status === "staging" && Boolean(request.staging_deadline_at) && !myActiveFlag;
+            const canFlag = request.status === "staging" && Boolean(request.staging_deadline_at) && isOrdinaryMember && !myActiveFlag;
             const canRemoveFlag = request.status === "staging" && Boolean(request.staging_deadline_at) && Boolean(myActiveFlag);
             const canCancel = isCreator && isInitiator &&
               ["pending_approval", "staging", "payout_queued"].includes(request.status);
@@ -266,7 +277,13 @@ export default function WithdrawalPanel({
 
                 {request.status === "staging" && (
                   <div className="ak-withdrawal-staging">
-                    <p><strong>Member review ends:</strong> {dateTime(request.staging_deadline_at)}</p>
+                    {request.staging_deadline_at && (
+                      <WithdrawalCountdown
+                        groupId={groupId}
+                        requestId={request.id}
+                        deadline={request.staging_deadline_at}
+                      />
+                    )}
                     <p>{activeFlags.length > 0
                       ? "An active member flag is blocking payout. If it remains at the original deadline, the reservation will be released and the withdrawal cancelled."
                       : "Members can flag this withdrawal until the deadline. Removing a flag does not extend the review period."}</p>
