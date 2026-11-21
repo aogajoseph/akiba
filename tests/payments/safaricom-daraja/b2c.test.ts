@@ -71,7 +71,7 @@ describe("Daraja B2C submission destination", () => {
       }), { status: 200, headers: { "Content-Type": "application/json" } }));
     vi.stubGlobal("fetch", fetchMock);
 
-    await submitB2CPayout({
+    const accepted = await submitB2CPayout({
       amountKes: 100,
       requestReference: "AKIBA12345",
       remarks: "sandbox test",
@@ -79,6 +79,8 @@ describe("Daraja B2C submission destination", () => {
       recipientPhone: "254711111111",
     } as never, parsed.config);
 
+    expect(accepted.responseDigest).toMatch(/^[a-f0-9]{64}$/);
+    expect(accepted.originatorConversationId).toBe("originator-123");
     const submittedBody = JSON.parse(String(fetchMock.mock.calls[1]?.[1]?.body));
     expect(submittedBody.PartyB).toBe("254700000001");
     expect(submittedBody.PartyB).not.toBe("254711111111");
