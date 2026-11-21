@@ -971,6 +971,49 @@ export async function removeWithdrawalFlag(formData: FormData) {
   financeActionRedirect(groupId, "financeUpdated", "Your flag was removed. The original staging deadline has not changed.");
 }
 
+export async function processDueWithdrawalStaging(groupId: string, requestId: string): Promise<boolean> {
+  if (!validFinanceIds(groupId, requestId)) return false;
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return false;
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("akiba_group_memberships")
+    .select("status")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (membershipError || membership?.status !== "active") return false;
+
+  const { data: request, error: requestError } = await supabase
+    .from("akiba_withdrawal_requests")
+    .select("id,status,staging_deadline_at")
+    .eq("id", requestId)
+    .eq("group_id", groupId)
+    .maybeSingle();
+  if (requestError) return false;
+  if (!request || request.status !== "staging") return true;
+  if (!request.staging_deadline_at || Date.parse(request.staging_deadline_at) > Date.now()) return false;
+
+  const service = createServiceClient();
+  const { error: processError } = await service.rpc("akiba_process_due_withdrawal_staging", {
+    p_batch_size: 25,
+  });
+  if (processError) {
+    console.error("Akiba due withdrawal staging processing failed", {
+      groupId,
+      requestId,
+      message: processError.message,
+    });
+    return false;
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  revalidatePath("/workspace/groups/" + groupId);
+  return true;
+}
+
 export async function cancelWithdrawalRequest(formData: FormData) {
   const groupId = String(formData.get("group_id") ?? "");
   const requestId = String(formData.get("request_id") ?? "");
