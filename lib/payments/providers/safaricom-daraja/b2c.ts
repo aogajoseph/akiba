@@ -240,7 +240,13 @@ export function b2cCallbackMatchesAttempt(
 export async function queryB2CTransactionStatus(
   transactionId: string,
   config: B2CPayoutConfig,
-): Promise<{ responseDigest: string; response: Record<string, unknown> }> {
+): Promise<{
+  responseDigest: string;
+  responseCode: string | null;
+  originatorConversationId: string | null;
+  conversationId: string | null;
+  response: Record<string, unknown>;
+}> {
   if (!/^[A-Z0-9]{8,20}$/.test(transactionId)) {
     throw new PaymentError("INVALID_AMOUNT", "A valid Safaricom transaction ID is required for status verification.");
   }
@@ -258,6 +264,9 @@ export async function queryB2CTransactionStatus(
   }, config);
   return {
     responseDigest: createHash("sha256").update(JSON.stringify(response)).digest("hex"),
+    responseCode: response.ResponseCode === undefined || response.ResponseCode === null ? null : String(response.ResponseCode),
+    originatorConversationId: typeof response.OriginatorConversationID === "string" ? response.OriginatorConversationID : null,
+    conversationId: typeof response.ConversationID === "string" ? response.ConversationID : null,
     response,
   };
 }
