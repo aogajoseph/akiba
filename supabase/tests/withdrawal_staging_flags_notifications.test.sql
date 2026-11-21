@@ -427,8 +427,8 @@ $test$;
 
 
 -- Creator-facing request creation uses only the synthetic sandbox workflow
--- provider. It reserves funds and starts approvals, but cannot create a payout
--- attempt or represent a real provider quote or money movement.
+-- Daraja provider. It reserves funds and starts approvals using a synthetic
+-- zero-fee sandbox quote; payout submission remains explicitly disabled.
 do $sandbox_request$
 declare
   request_id uuid;
