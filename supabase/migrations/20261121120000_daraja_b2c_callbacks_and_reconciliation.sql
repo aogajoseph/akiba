@@ -246,7 +246,7 @@ begin
   end if;
 
   if status_value = 'completed' then
-    if p_amount_minor <> request_row.recipient_amount_minor
+    if p_amount_minor is distinct from request_row.recipient_amount_minor
        or p_receipt is distinct from attempt_row.provider_receipt_number
        or p_receipt !~ '^[A-Z0-9]{10}$' then
       update public.akiba_payout_attempts
