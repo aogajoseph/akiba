@@ -1527,3 +1527,8 @@
 .ak-withdrawal-create-form input,.ak-withdrawal-create-form textarea{width:100%;min-height:39px;padding:9px 10px;border:1px solid #e4e3eb;border-radius:8px;background:#fff;color:#343750;font:inherit;font-size:11px}
 .ak-withdrawal-create-form textarea{resize:vertical}
 .ak-withdrawal-create-form .ak-finance-helper{margin:0;color:#858ba0;font-size:10px;line-height:1.55}
+
+.ak-withdrawal-countdown{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 14px;border:1px solid #eadde6;border-radius:10px;background:#fffafd;color:#6f5265}
+.ak-withdrawal-countdown>span{font-size:11px;font-weight:650}
+.ak-withdrawal-countdown>strong{color:#a32669;font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.ak-withdrawal-countdown>small{flex-basis:100%;color:#8a8190;font-size:10px}
