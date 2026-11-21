@@ -44,8 +44,9 @@ export async function POST(request: NextRequest) {
   const receiptRaw = params.get("ReceiptNo") ?? params.get("TransactionReceipt");
   const amountRaw = params.get("Amount") ?? params.get("TransactionAmount");
   const amountKes = amountRaw === undefined ? evidence.amountKes : Number(amountRaw);
-  const amountMinor = Number.isSafeInteger(amountKes) && Number(amountKes) > 0
-    ? Number(amountKes) * 100 : null;
+  const amountMinorCandidate = Number(amountKes) * 100;
+  const amountMinor = Number.isSafeInteger(amountKes) && Number(amountKes) > 0 &&
+    Number.isSafeInteger(amountMinorCandidate) ? amountMinorCandidate : null;
   const receipt = typeof receiptRaw === "string" && /^[A-Z0-9]{10}$/i.test(receiptRaw)
     ? receiptRaw.toUpperCase() : evidence.receipt;
   const digest = createHash("sha256").update(raw).digest("hex");
