@@ -1,6 +1,8 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { PaymentError } from "../../../lib/payments/errors";
 import {
   b2cCallbackMatchesAttempt,
+  classifyB2CSubmissionFailure,
   parseB2CResultEvidence,
   readDarajaB2CPayoutConfig,
   readDarajaB2CStatusConfig,
@@ -176,5 +178,21 @@ describe("Daraja B2C independent status inquiry", () => {
       conversationId: "status-conversation-123",
     });
     expect(result.responseDigest).toMatch(/^[a-f0-9]{64}$/);
+  });
+});
+
+
+describe("Daraja B2C submission outcome classification", () => {
+  it("marks OAuth failures as known not submitted", () => {
+    expect(classifyB2CSubmissionFailure(new PaymentError("PROVIDER_AUTHENTICATION_FAILED", "OAuth failed", { submissionOutcome: "not_submitted" }))).toBe("not_submitted");
+  });
+
+  it("marks an explicit numeric provider rejection separately", () => {
+    expect(classifyB2CSubmissionFailure(new PaymentError("PROVIDER_REQUEST_REJECTED", "Rejected", { submissionOutcome: "rejected" }))).toBe("rejected");
+  });
+
+  it("keeps transport and unclassified errors unknown", () => {
+    expect(classifyB2CSubmissionFailure(new PaymentError("PROVIDER_UNAVAILABLE", "Timed out", { submissionOutcome: "unknown" }))).toBe("unknown");
+    expect(classifyB2CSubmissionFailure(new Error("connection reset"))).toBe("unknown");
   });
 });
