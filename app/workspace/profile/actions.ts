@@ -42,15 +42,16 @@ export async function saveUserProfile(formData: FormData) {
     }
   }
 
+  const avatar = formData.get("avatar");
+  const hasNewAvatar = avatar instanceof File && avatar.size > 0;
   const removeAvatar = formData.get("remove_avatar") === "yes";
-  if (removeAvatar && !formData.get("avatar")) {
+  if (removeAvatar && !hasNewAvatar) {
     const { data: previous } = await supabase.from("akiba_profiles").select("avatar_path").eq("user_id", user.id).maybeSingle();
     const { error } = await supabase.from("akiba_profiles").update({ avatar_path: null, updated_at: new Date().toISOString() }).eq("user_id", user.id);
     if (error) back("We couldn't remove your profile photo.");
     if (previous?.avatar_path) await supabase.storage.from("avatars").remove([previous.avatar_path]);
   }
-  const avatar = formData.get("avatar");
-  if (avatar instanceof File && avatar.size > 0) {
+  if (hasNewAvatar && avatar instanceof File) {
     if (!["image/jpeg", "image/png", "image/webp"].includes(avatar.type) || avatar.size > 3 * 1024 * 1024) back("Choose a JPG, PNG or WebP image up to 3 MB.");
     const extension = avatar.type === "image/png" ? "png" : avatar.type === "image/webp" ? "webp" : "jpg";
     const path = user.id + "/" + crypto.randomUUID() + "." + extension;
