@@ -26,6 +26,7 @@ export async function getDarajaAccessToken(
     throw new PaymentError(
       "PROVIDER_CONFIGURATION_INVALID",
       "Daraja sandbox credentials are not configured correctly.",
+      { submissionOutcome: "not_submitted" },
     );
   }
 
