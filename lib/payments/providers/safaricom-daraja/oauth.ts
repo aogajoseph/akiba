@@ -54,7 +54,7 @@ export async function getDarajaAccessToken(
       timedOut
         ? "Safaricom OAuth request timed out."
         : "Could not reach Safaricom OAuth.",
-      { retryable: true, cause: error },
+      { retryable: true, cause: error, submissionOutcome: "not_submitted" },
     );
   }
 
@@ -71,7 +71,7 @@ export async function getDarajaAccessToken(
     throw new PaymentError(
       "PROVIDER_AUTHENTICATION_FAILED",
       providerMessage,
-      { retryable: response.status >= 500 },
+      { retryable: response.status >= 500, submissionOutcome: "not_submitted" },
     );
   }
 
@@ -82,6 +82,7 @@ export async function getDarajaAccessToken(
     throw new PaymentError(
       "PROVIDER_AUTHENTICATION_FAILED",
       "Safaricom returned an unexpected OAuth response.",
+      { submissionOutcome: "not_submitted" },
     );
   }
 
