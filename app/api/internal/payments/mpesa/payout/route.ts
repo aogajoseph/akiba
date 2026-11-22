@@ -78,7 +78,7 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    let result;
+    let result: Awaited<ReturnType<typeof submitB2CPayout>>;
     try {
       result = await submitB2CPayout({
         amountKes: amountMinor / 100,
