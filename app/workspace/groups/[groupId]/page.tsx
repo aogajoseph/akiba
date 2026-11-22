@@ -339,7 +339,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
               </section>
 
               <section className="ak-workspace-card">
-                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">WHAT'S HAPPENING</span><h2>Recent group activity</h2><p>Recent financial records and workflow updates.</p></div><Link className="ak-count-pill" href={`/workspace/groups/${group.id}/finances`}>View finances</Link></div>
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">WHAT&apos;S HAPPENING</span><h2>Recent group activity</h2><p>Recent financial records and workflow updates.</p></div><Link className="ak-count-pill" href={`/workspace/groups/${group.id}/finances`}>View finances</Link></div>
                 {financeReadError ? <div className="ak-workspace-empty"><strong>Activity is temporarily unavailable</strong><p>Refresh the page or open Group Finances to review the ledger.</p></div>
                   : recentFinanceActivity.length === 0 ? <div className="ak-workspace-empty"><strong>No financial activity yet</strong><p>Confirmed contributions and group finance workflow events will appear here.</p></div>
                   : <div className="ak-workspace-details">
