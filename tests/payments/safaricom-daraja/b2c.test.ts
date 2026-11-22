@@ -195,4 +195,51 @@ describe("Daraja B2C submission outcome classification", () => {
     expect(classifyB2CSubmissionFailure(new PaymentError("PROVIDER_UNAVAILABLE", "Timed out", { submissionOutcome: "unknown" }))).toBe("unknown");
     expect(classifyB2CSubmissionFailure(new Error("connection reset"))).toBe("unknown");
   });
+
+  it("classifies a real OAuth failure as not submitted before the B2C request", async () => {
+    const parsed = readDarajaB2CPayoutConfig(validEnv);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const fetchMock = vi.fn().mockResolvedValueOnce(new Response(JSON.stringify({
+      error_description: "Invalid client",
+    }), { status: 401, headers: { "Content-Type": "application/json" } }));
+    vi.stubGlobal("fetch", fetchMock);
+    let thrown: unknown;
+    try {
+      await submitB2CPayout({ amountKes: 10, requestReference: "AKIBA12345", remarks: "test" }, parsed.config);
+    } catch (error) { thrown = error; }
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(classifyB2CSubmissionFailure(thrown)).toBe("not_submitted");
+  });
+
+  it("classifies an explicit numeric B2C rejection as rejected", async () => {
+    const parsed = readDarajaB2CPayoutConfig(validEnv);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "token", expires_in: "3599" }), { status: 200 }))
+      .mockResolvedValueOnce(new Response(JSON.stringify({ ResponseCode: "1", ResponseDescription: "Rejected" }), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    let thrown: unknown;
+    try {
+      await submitB2CPayout({ amountKes: 10, requestReference: "AKIBA12345", remarks: "test" }, parsed.config);
+    } catch (error) { thrown = error; }
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(classifyB2CSubmissionFailure(thrown)).toBe("rejected");
+  });
+
+  it("keeps a transport failure after the B2C POST unknown", async () => {
+    const parsed = readDarajaB2CPayoutConfig(validEnv);
+    expect(parsed.ok).toBe(true);
+    if (!parsed.ok) return;
+    const fetchMock = vi.fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ access_token: "token", expires_in: "3599" }), { status: 200 }))
+      .mockRejectedValueOnce(new Error("socket hang up"));
+    vi.stubGlobal("fetch", fetchMock);
+    let thrown: unknown;
+    try {
+      await submitB2CPayout({ amountKes: 10, requestReference: "AKIBA12345", remarks: "test" }, parsed.config);
+    } catch (error) { thrown = error; }
+    expect(classifyB2CSubmissionFailure(thrown)).toBe("unknown");
+  });
 });
