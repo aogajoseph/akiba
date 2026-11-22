@@ -5,7 +5,7 @@ import { readDarajaB2CStatusConfig, queryB2CTransactionStatus } from "@/lib/paym
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
-const BATCH_SIZE = 3;
+const BATCH_SIZE = 1;
 
 function json(body: Record<string, unknown>, status = 200) {
   return NextResponse.json(body, { status, headers: { "Cache-Control": "no-store, max-age=0" } });
