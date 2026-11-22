@@ -93,6 +93,89 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
     members = memberRows.map((member) => ({ ...member, profile: byId.get(member.user_id) ?? undefined }));
   }
 
+  const [
+    { data: financeTransactions, error: financeTransactionsError },
+    { data: financeLedgerLines, error: financeLedgerError },
+    { data: activeReservations, error: reservationsError },
+    { data: financeEvents, error: financeEventsError },
+    { data: recentMessages, error: recentMessagesError },
+  ] = await Promise.all([
+    supabase.from("akiba_financial_transactions")
+      .select("id,description,currency_code,effective_at,created_by,transaction_type")
+      .eq("group_id", group.id)
+      .order("effective_at", { ascending: false })
+      .limit(20),
+    supabase.from("akiba_financial_ledger_entries")
+      .select("transaction_id,amount_minor,direction,account_code")
+      .eq("group_id", group.id)
+      .eq("account_code", "group_funds"),
+    supabase.from("akiba_financial_reservations")
+      .select("amount_minor")
+      .eq("group_id", group.id)
+      .eq("status", "active"),
+    supabase.from("akiba_finance_activity_events")
+      .select("id,event_type,actor_id,event_payload,created_at")
+      .eq("group_id", group.id)
+      .order("created_at", { ascending: false })
+      .limit(8),
+    supabase.from("akiba_group_messages")
+      .select("id,author_id,body,created_at")
+      .eq("group_id", group.id)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false })
+      .limit(3),
+  ]);
+
+  const financeReadError = Boolean(
+    financeTransactionsError || financeLedgerError || reservationsError || financeEventsError
+  );
+  const contributionTransactionIds = new Set(
+    (financeTransactions ?? [])
+      .filter((transaction) => transaction.transaction_type === "contribution")
+      .map((transaction) => transaction.id)
+  );
+  const contributionTotalMinor = (financeLedgerLines ?? [])
+    .filter((line) => contributionTransactionIds.has(line.transaction_id) && line.direction === "credit")
+    .reduce((sum, line) => sum + Number(line.amount_minor), 0);
+  const groupLedgerBalanceMinor = (financeLedgerLines ?? [])
+    .reduce((sum, line) => sum + (line.direction === "credit" ? Number(line.amount_minor) : -Number(line.amount_minor)), 0);
+  const reservedMinor = (activeReservations ?? [])
+    .reduce((sum, reservation) => sum + Number(reservation.amount_minor), 0);
+  const availableBalanceMinor = groupLedgerBalanceMinor - reservedMinor;
+  const progressPercent = target === null || target <= 0
+    ? null
+    : Math.round((Math.max(0, availableBalanceMinor) / (target * 100)) * 100);
+  const progressWidth = progressPercent === null ? 0 : Math.max(0, Math.min(100, progressPercent));
+
+  const activityActorIds = Array.from(new Set([
+    ...(financeTransactions ?? []).map((item) => item.created_by),
+    ...(financeEvents ?? []).map((item) => item.actor_id),
+    ...(recentMessages ?? []).map((item) => item.author_id),
+  ].filter((id): id is string => typeof id === "string")));
+  const { data: activityProfiles } = activityActorIds.length
+    ? await supabase.from("akiba_profiles").select("user_id,display_name,username").in("user_id", activityActorIds)
+    : { data: [] };
+  const activityNameById = new Map((activityProfiles ?? []).map((item) => [
+    item.user_id,
+    item.display_name?.trim() || item.username || "Group member",
+  ]));
+  const recentFinanceActivity = [
+    ...(financeTransactions ?? []).map((item) => ({
+      id: "transaction:" + item.id,
+      occurredAt: item.effective_at,
+      title: item.transaction_type === "contribution" ? "Contribution recorded" : item.transaction_type === "withdrawal" ? "Withdrawal recorded" : String(item.transaction_type).replace(/_/g, " "),
+      detail: item.description?.trim() || "A financial transaction was posted to the group ledger.",
+      actor: item.created_by ? activityNameById.get(item.created_by) ?? "Group member" : "Akiba system",
+    })),
+    ...(financeEvents ?? []).map((item) => ({
+      id: "event:" + item.id,
+      occurredAt: item.created_at,
+      title: String(item.event_type).replace(/_/g, " "),
+      detail: item.actor_id ? "Action recorded by " + (activityNameById.get(item.actor_id) ?? "a group member") + "." : "System workflow update.",
+      actor: item.actor_id ? activityNameById.get(item.actor_id) ?? "Group member" : "Akiba system",
+    })),
+  ].sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime()).slice(0, 5);
+
   const activeGroupAdminCount = members.filter((member) => member.role === "group_admin").length;
   const requiredGroupAdmins = plan?.required_group_admins ?? 3;
   const leadershipReady = activeGroupAdminCount >= requiredGroupAdmins;
@@ -220,7 +303,45 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <div className="ak-workspace-primary-column">
               <section className="ak-workspace-card ak-workspace-progress">
                 <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">THE SHARED GOAL</span><h2>Contribution progress</h2><p>Keep everyone connected to what the group is working towards.</p></div><Link className="ak-count-pill" href={`/workspace/groups/${group.id}/finances`}>View finances</Link></div>
-                <div className="ak-progress-empty"><span>↗</span><div><strong>{target === null ? "Set a shared target when you are ready" : "Your group target is " + money(target, group.currency_code)}</strong><p>View confirmed contributions and make a contribution from the group finances area. Akiba does not hold group funds; payments are processed by the provider.</p><Link href={`/workspace/groups/${group.id}/finances`} className="ak-finance-inline-link">Open group finances →</Link></div></div>
+                {financeReadError ? (
+                  <div className="ak-workspace-empty" role="status"><strong>Financial summary is temporarily unavailable</strong><p>Open Group Finances for the full ledger and try again later. No figures are estimated.</p></div>
+                ) : (
+                  <div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 12, marginTop: 18 }}>
+                      <div><small style={{ display: "block", color: "#858ba2", fontSize: 10 }}>Confirmed contributions</small><strong style={{ display: "block", color: "#333653", fontSize: 20, marginTop: 5 }}>{money(contributionTotalMinor / 100, group.currency_code)}</strong></div>
+                      <div><small style={{ display: "block", color: "#858ba2", fontSize: 10 }}>Available balance</small><strong style={{ display: "block", color: "#176b50", fontSize: 20, marginTop: 5 }}>{money(availableBalanceMinor / 100, group.currency_code)}</strong></div>
+                      <div><small style={{ display: "block", color: "#858ba2", fontSize: 10 }}>Reserved for withdrawals</small><strong style={{ display: "block", color: "#333653", fontSize: 20, marginTop: 5 }}>{money(reservedMinor / 100, group.currency_code)}</strong></div>
+                    </div>
+                    {target !== null && target > 0 ? (
+                      <div style={{ marginTop: 22 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "baseline", marginBottom: 8 }}>
+                          <strong style={{ color: "#333653", fontSize: 12 }}>Available towards target</strong>
+                          <strong style={{ color: "#176b50", fontSize: 13 }}>{progressPercent}%</strong>
+                        </div>
+                        <div role="progressbar" aria-label="Available balance towards group target" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.min(100, progressPercent ?? 0)} style={{ height: 9, background: "#edf1ee", borderRadius: 99, overflow: "hidden" }}>
+                          <div style={{ width: progressWidth + "%", height: "100%", background: "#176b50", borderRadius: 99, transition: "width 250ms ease" }} />
+                        </div>
+                        <p style={{ margin: "8px 0 0", color: "#858ba2", fontSize: 10 }}>{money(availableBalanceMinor / 100, group.currency_code)} available of {money(target, group.currency_code)} target. Reserved funds are excluded.</p>
+                      </div>
+                    ) : (
+                      <p className="ak-workspace-footnote">Set a target in Group Settings to track progress. Confirmed contributions and balances remain visible here.</p>
+                    )}
+                    <p className="ak-workspace-footnote">Akiba records group financial activity but does not hold group funds. Payment partners process transfers.</p>
+                    <Link href={`/workspace/groups/${group.id}/finances`} className="ak-finance-inline-link">Open group finances →</Link>
+                  </div>
+                )}
+              </section>
+
+              <section className="ak-workspace-card">
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">WHAT'S HAPPENING</span><h2>Recent group activity</h2><p>Recent financial records and workflow updates.</p></div><Link className="ak-count-pill" href={`/workspace/groups/${group.id}/finances`}>View finances</Link></div>
+                {financeReadError ? <div className="ak-workspace-empty"><strong>Activity is temporarily unavailable</strong><p>Refresh the page or open Group Finances to review the ledger.</p></div>
+                  : recentFinanceActivity.length === 0 ? <div className="ak-workspace-empty"><strong>No financial activity yet</strong><p>Confirmed contributions and group finance workflow events will appear here.</p></div>
+                  : <div className="ak-workspace-details">
+                    {recentFinanceActivity.map((item) => <div key={item.id} style={{ display: "flex", justifyContent: "space-between", gap: 16, padding: "12px 0", borderBottom: "1px solid #edf0ed" }}>
+                      <div><strong style={{ display: "block", color: "#333653", fontSize: 11, textTransform: "capitalize" }}>{item.title}</strong><span style={{ display: "block", color: "#858ba2", fontSize: 10, marginTop: 4 }}>{item.detail}</span><small style={{ display: "block", color: "#9a9fb0", fontSize: 9, marginTop: 4 }}>{item.actor}</small></div>
+                      <time dateTime={item.occurredAt} style={{ color: "#858ba2", fontSize: 9, whiteSpace: "nowrap" }}>{formatDate(item.occurredAt)}</time>
+                    </div>)}
+                  </div>}
               </section>
 
               <section className="ak-workspace-card" id="members">
