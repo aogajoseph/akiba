@@ -15,7 +15,7 @@ export async function saveUserProfile(formData: FormData) {
   const displayName = String(formData.get("display_name") ?? "").trim();
   const username = String(formData.get("username") ?? "").trim().toLowerCase();
   const bio = String(formData.get("bio") ?? "").trim();
-  const phone = String(formData.get("phone_number") ?? "").trim().replace(/[\\s()-]/g, "");
+  const phone = String(formData.get("phone_number") ?? "").trim().replace(/[\s()-]/g, "");
   const location = String(formData.get("location") ?? "").trim();
   const emailVisibility = String(formData.get("email_visibility") ?? "only_me");
   const phoneVisibility = String(formData.get("phone_visibility") ?? "only_me");
@@ -27,7 +27,7 @@ export async function saveUserProfile(formData: FormData) {
   if (hasIdentity && (!displayName || displayName.length > 60)) back("Display name must be between 1 and 60 characters.");
   if (hasIdentity && !/^[a-z][a-z0-9_]{2,19}$/.test(username)) back("Choose a valid username.");
   if (hasIdentity && bio.length > 160) back("Bio must be 160 characters or fewer.");
-  if (hasContactFields && phone && !/^\\+[1-9][0-9]{7,14}$/.test(phone)) back("Enter a valid phone number with country code.");
+  if (hasContactFields && phone && !/^\+[1-9][0-9]{7,14}$/.test(phone)) back("Enter a valid phone number with country code.");
   if (hasContactFields && location.length > 120) back("Location must be 120 characters or fewer.");
   const audiences = ["only_me", "group_members", "all_akiba_users"];
   if (hasPrivacyFields && ![emailVisibility, phoneVisibility, locationVisibility].every((value) => audiences.includes(value))) back("Choose valid privacy settings.");
@@ -82,7 +82,7 @@ export async function saveUserProfile(formData: FormData) {
 
 export async function updateAuthEmail(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  if (!email || email.length > 320 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) back("Enter a valid email address.");
+  if (!email || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) back("Enter a valid email address.");
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
