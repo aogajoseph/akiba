@@ -195,7 +195,7 @@ export async function submitB2CPayout(
   }, config) as B2CSubmissionResponse;
 
   const responseCode = typeof result.ResponseCode === "string" ? result.ResponseCode : String(result.ResponseCode ?? "");
-  if (/^\\d+$/.test(responseCode) && responseCode !== "0") {
+  if (/^\d+$/.test(responseCode) && responseCode !== "0") {
     throw new PaymentError(
       "PROVIDER_REQUEST_REJECTED",
       typeof result.ResponseDescription === "string" ? result.ResponseDescription : "Safaricom rejected the B2C request.",
