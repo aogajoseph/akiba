@@ -6,7 +6,7 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const BATCH_SIZE = 3;
+const BATCH_SIZE = 1;
 
 function json(body: Record<string, unknown>, status = 200) {
   return NextResponse.json(body, {
@@ -92,8 +92,10 @@ export async function GET(request: NextRequest) {
         p_response_digest: result.responseDigest,
       });
       if (error) {
-        console.error("[payments][daraja][payout] Accepted instruction could not be atomically persisted", {
+        console.error("[payments][daraja][payout] ACCEPTED_PERSISTENCE_FAILED: provider accepted the instruction but the database did not confirm persistence. Never resubmit; reconcile the existing attempt.", {
           attemptId: claim.payout_attempt_id,
+          withdrawalRequestId: claim.withdrawal_request_id,
+          providerOriginatorConversationId: result.originatorConversationId,
           code: error.code,
         });
         persistenceFailures += 1;
@@ -107,7 +109,13 @@ export async function GET(request: NextRequest) {
       const { error: persistError } = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
         p_payout_attempt_id: claim.payout_attempt_id,
         p_accepted: false,
-        p_response_summary: summary,
+        p_response_code: error instanceof Error && "code" in error ? String(error.code).slice(0, 100) : null,
+        p_response_summary: (() => {
+          const disposition = error instanceof Error && "submissionOutcome" in error
+            ? String(error.submissionOutcome)
+            : "unknown";
+          return `Submission disposition: ${disposition}. ${summary}`.slice(0, 500);
+        })(),
       });
       if (persistError) {
         console.error("[payments][daraja][payout] Uncertain outcome could not be persisted", {
