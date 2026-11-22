@@ -95,6 +95,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
 
   const [
     { data: financeTransactions, error: financeTransactionsError },
+    { data: contributionTransactions, error: contributionTransactionsError },
     { data: financeLedgerLines, error: financeLedgerError },
     { data: activeReservations, error: reservationsError },
     { data: financeEvents, error: financeEventsError },
@@ -104,7 +105,11 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
       .select("id,description,currency_code,effective_at,created_by,transaction_type")
       .eq("group_id", group.id)
       .order("effective_at", { ascending: false })
-      .limit(20),
+      .limit(8),
+    supabase.from("akiba_financial_transactions")
+      .select("id")
+      .eq("group_id", group.id)
+      .eq("transaction_type", "contribution"),
     supabase.from("akiba_financial_ledger_entries")
       .select("transaction_id,amount_minor,direction,account_code")
       .eq("group_id", group.id)
@@ -128,12 +133,10 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
 
   const target = group.target_amount === null ? null : Number(group.target_amount);
   const financeReadError = Boolean(
-    financeTransactionsError || financeLedgerError || reservationsError || financeEventsError
+    financeTransactionsError || contributionTransactionsError || financeLedgerError || reservationsError || financeEventsError
   );
   const contributionTransactionIds = new Set(
-    (financeTransactions ?? [])
-      .filter((transaction) => transaction.transaction_type === "contribution")
-      .map((transaction) => transaction.id)
+    (contributionTransactions ?? []).map((transaction) => transaction.id)
   );
   const contributionTotalMinor = (financeLedgerLines ?? [])
     .filter((line) => contributionTransactionIds.has(line.transaction_id) && line.direction === "credit")
@@ -161,7 +164,9 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
     item.display_name?.trim() || item.username || "Group member",
   ]));
   const recentFinanceActivity = [
-    ...(financeTransactions ?? []).map((item) => ({
+    ...(financeTransactions ?? []).filter((item) =>
+      (financeLedgerLines ?? []).some((line) => line.transaction_id === item.id)
+    ).map((item) => ({
       id: "transaction:" + item.id,
       occurredAt: item.effective_at,
       title: item.transaction_type === "contribution" ? "Contribution recorded" : item.transaction_type === "withdrawal" ? "Withdrawal recorded" : String(item.transaction_type).replace(/_/g, " "),
