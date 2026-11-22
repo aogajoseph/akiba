@@ -78,47 +78,34 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
+    let result;
     try {
-      const result = await submitB2CPayout({
+      result = await submitB2CPayout({
         amountKes: amountMinor / 100,
         requestReference: claim.request_reference,
         remarks: "Akiba sandbox withdrawal " + claim.request_reference.slice(0, 12),
         occasion: "Akiba sandbox payout",
       }, configResult.config);
-
-      const { error } = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
-        p_payout_attempt_id: claim.payout_attempt_id,
-        p_accepted: true,
-        p_provider_payout_ref: result.originatorConversationId,
-        p_provider_conversation_id: result.conversationId,
-        p_response_code: result.responseCode,
-        p_response_summary: result.responseDescription ?? "Safaricom accepted the B2C instruction.",
-        p_response_digest: result.responseDigest,
-      });
-      if (error) {
-        console.error("[payments][daraja][payout] ACCEPTED_PERSISTENCE_FAILED: provider accepted the instruction but the database did not confirm persistence. Never resubmit; reconcile the existing attempt.", {
-          attemptId: claim.payout_attempt_id,
-          withdrawalRequestId: claim.withdrawal_request_id,
-          providerOriginatorConversationId: result.originatorConversationId,
-          code: error.code,
-        });
-        persistenceFailures += 1;
-      } else {
-        accepted += 1;
-      }
     } catch (error) {
       const summary = error instanceof Error
         ? error.message.slice(0, 500)
         : "Daraja submission outcome is unknown.";
-      const { error: persistError } = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
-        p_payout_attempt_id: claim.payout_attempt_id,
-        p_accepted: false,
-        p_response_code: error instanceof PaymentError ? error.code : null,
-        p_response_summary: `Submission disposition: ${classifyB2CSubmissionFailure(error)}. ${summary}`.slice(0, 500),
-      });
+      let persistError: { code?: string } | null = null;
+      try {
+        const response = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
+          p_payout_attempt_id: claim.payout_attempt_id,
+          p_accepted: false,
+          p_response_code: error instanceof PaymentError ? error.code : null,
+          p_response_summary: `Submission disposition: ${classifyB2CSubmissionFailure(error)}. ${summary}`.slice(0, 500),
+        });
+        persistError = response.error;
+      } catch (cause) {
+        persistError = { code: cause instanceof Error ? cause.name : "UNKNOWN" };
+      }
       if (persistError) {
-        console.error("[payments][daraja][payout] Uncertain outcome could not be persisted", {
+        console.error("[payments][daraja][payout] Submission failure classification could not be persisted", {
           attemptId: claim.payout_attempt_id,
+          disposition: classifyB2CSubmissionFailure(error),
           code: persistError.code,
         });
         persistenceFailures += 1;
@@ -128,6 +115,40 @@ export async function GET(request: NextRequest) {
         else if (disposition === "rejected") rejected += 1;
         else unknown += 1;
       }
+      continue;
+    }
+
+    // Keep provider I/O and database persistence in separate try/catch blocks.
+    // A database timeout after a successful Daraja response is NOT a provider
+    // submission failure and must never be followed by a second B2C instruction.
+    let recorded: boolean | null = null;
+    let persistError: { code?: string } | null = null;
+    try {
+      const response = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
+        p_payout_attempt_id: claim.payout_attempt_id,
+        p_accepted: true,
+        p_provider_payout_ref: result.originatorConversationId,
+        p_provider_conversation_id: result.conversationId,
+        p_response_code: result.responseCode,
+        p_response_summary: result.responseDescription ?? "Safaricom accepted the B2C instruction.",
+        p_response_digest: result.responseDigest,
+      });
+      recorded = response.data;
+      persistError = response.error;
+    } catch (cause) {
+      persistError = { code: cause instanceof Error ? cause.name : "UNKNOWN" };
+    }
+
+    if (persistError || recorded !== true) {
+      console.error("[payments][daraja][payout] ACCEPTED_PERSISTENCE_FAILED: provider accepted the instruction but the database did not confirm persistence. Never resubmit; reconcile the existing attempt.", {
+        attemptId: claim.payout_attempt_id,
+        withdrawalRequestId: claim.withdrawal_request_id,
+        providerOriginatorConversationId: result.originatorConversationId,
+        code: persistError?.code ?? "RPC_RETURNED_FALSE",
+      });
+      persistenceFailures += 1;
+    } else {
+      accepted += 1;
     }
   }
 
