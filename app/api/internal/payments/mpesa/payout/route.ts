@@ -70,10 +70,11 @@ export async function GET(request: NextRequest) {
       const { error } = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
         p_payout_attempt_id: claim.payout_attempt_id,
         p_accepted: false,
-        p_response_summary: "Claimed payout had an invalid KES amount; manual review required.",
+        p_response_code: "INVALID_CLAIM",
+        p_response_summary: "Submission disposition: not_submitted. Claimed payout had an invalid KES amount; manual review required.",
       });
       if (error) persistenceFailures += 1;
-      else unknown += 1;
+      else notSubmitted += 1;
       continue;
     }
 
