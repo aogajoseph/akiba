@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
-import { readDarajaB2CPayoutConfig, submitB2CPayout } from "@/lib/payments/providers/safaricom-daraja/b2c";
+import { classifyB2CSubmissionFailure, readDarajaB2CPayoutConfig, submitB2CPayout } from "@/lib/payments/providers/safaricom-daraja/b2c";
+import { PaymentError } from "@/lib/payments/errors";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +48,8 @@ export async function GET(request: NextRequest) {
   }
 
   let accepted = 0;
+  let notSubmitted = 0;
+  let rejected = 0;
   let unknown = 0;
   let persistenceFailures = 0;
 
@@ -109,13 +112,8 @@ export async function GET(request: NextRequest) {
       const { error: persistError } = await service.rpc("akiba_record_daraja_sandbox_payout_submission", {
         p_payout_attempt_id: claim.payout_attempt_id,
         p_accepted: false,
-        p_response_code: error instanceof Error && "code" in error ? String(error.code).slice(0, 100) : null,
-        p_response_summary: (() => {
-          const disposition = error instanceof Error && "submissionOutcome" in error
-            ? String(error.submissionOutcome)
-            : "unknown";
-          return `Submission disposition: ${disposition}. ${summary}`.slice(0, 500);
-        })(),
+        p_response_code: error instanceof PaymentError ? error.code : null,
+        p_response_summary: `Submission disposition: ${classifyB2CSubmissionFailure(error)}. ${summary}`.slice(0, 500),
       });
       if (persistError) {
         console.error("[payments][daraja][payout] Uncertain outcome could not be persisted", {
@@ -124,7 +122,10 @@ export async function GET(request: NextRequest) {
         });
         persistenceFailures += 1;
       } else {
-        unknown += 1;
+        const disposition = classifyB2CSubmissionFailure(error);
+        if (disposition === "not_submitted") notSubmitted += 1;
+        else if (disposition === "rejected") rejected += 1;
+        else unknown += 1;
       }
     }
   }
@@ -133,6 +134,8 @@ export async function GET(request: NextRequest) {
     ok: persistenceFailures === 0,
     claimed: (claims ?? []).length,
     accepted,
+    notSubmitted,
+    rejected,
     unknown,
     persistenceFailures,
   }, persistenceFailures ? 500 : 200);
