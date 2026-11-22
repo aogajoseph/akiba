@@ -10,6 +10,7 @@ type ProfileValues = {
   avatarPath: string | null;
   bio: string;
   phoneNumber: string;
+  location: string;
 };
 
 type Availability = { username: string; available: boolean; message: string };
@@ -29,6 +30,7 @@ export default function ProfileForm({ initial, next }: { initial: ProfileValues;
       : stored.replace(/\D/g, "").replace(/^0/, "");
   });
   const [avatarPath, setAvatarPath] = useState(initial.avatarPath ?? "");
+  const [location, setLocation] = useState(initial.location ?? "");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [availability, setAvailability] = useState<Availability | null>(null);
@@ -123,6 +125,7 @@ export default function ProfileForm({ initial, next }: { initial: ProfileValues;
     formData.set("display_name", displayName.trim());
     formData.set("bio", bio.trim());
     formData.set("phone_number", normalizedPhone);
+    formData.set("location", location.trim());
     formData.set("avatar_path", removeAvatar ? "" : avatarPath);
     formData.set("remove_avatar", removeAvatar ? "yes" : "no");
 
@@ -199,6 +202,11 @@ export default function ProfileForm({ initial, next }: { initial: ProfileValues;
       </div>
 
       <div className="profile-field">
+        <label htmlFor="profile-bio">Bio <span className="profile-optional">(Optional)</span></label>
+        <textarea id="profile-bio" name="bio" value={bio} onChange={(event) => setBio(event.target.value.slice(0, 160))} maxLength={160} rows={3} placeholder="A little about you" />
+      </div>
+
+      <div className="profile-field">
         <label htmlFor="profile-phone">Phone <span className="profile-optional">(Optional)</span></label>
         <div className="profile-phone-input">
           <button type="button" className="profile-country-code" aria-label="Country code: Kenya, plus 254" title="Kenya">
@@ -215,6 +223,11 @@ export default function ProfileForm({ initial, next }: { initial: ProfileValues;
           </button>
           <input id="profile-phone" name="phone_number" type="tel" inputMode="numeric" autoComplete="tel-national" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value.replace(/\D/g, "").slice(0, 9))} placeholder="7XX XXX XXX" />
         </div>
+      </div>
+
+      <div className="profile-field">
+        <label htmlFor="profile-location">Location <span className="profile-optional">(Optional · City or region)</span></label>
+        <input id="profile-location" name="location" value={location} onChange={(event) => setLocation(event.target.value.slice(0, 120))} maxLength={120} placeholder="e.g. Nairobi, Kenya" />
       </div>
 
       {error && <p className="profile-form-error" role="alert">{error}</p>}

@@ -1,4 +1,4 @@
--- User profile MVP: location storage and independent privacy preferences.
+-- User profile MVP: general location and independent privacy preferences.
 -- Sensitive values remain owner-readable only. Cross-user disclosure must go
 -- through a future server-side projection that enforces these preferences.
 
@@ -20,29 +20,21 @@ create table if not exists public.akiba_user_privacy_settings (
   phone_visibility text not null default 'only_me',
   location_visibility text not null default 'only_me',
   updated_at timestamptz not null default now(),
-  constraint akiba_email_visibility_valid
-    check (email_visibility in ('only_me', 'group_members', 'all_akiba_users')),
-  constraint akiba_phone_visibility_valid
-    check (phone_visibility in ('only_me', 'group_members', 'all_akiba_users')),
-  constraint akiba_location_visibility_valid
-    check (location_visibility in ('only_me', 'group_members', 'all_akiba_users'))
+  constraint akiba_email_visibility_valid check (email_visibility in ('only_me', 'group_members', 'all_akiba_users')),
+  constraint akiba_phone_visibility_valid check (phone_visibility in ('only_me', 'group_members', 'all_akiba_users')),
+  constraint akiba_location_visibility_valid check (location_visibility in ('only_me', 'group_members', 'all_akiba_users'))
 );
 
 alter table public.akiba_user_privacy_settings enable row level security;
 
 create policy "users read own profile privacy settings"
-  on public.akiba_user_privacy_settings
-  for select to authenticated
+  on public.akiba_user_privacy_settings for select to authenticated
   using (user_id = (select auth.uid()));
-
 create policy "users create own profile privacy settings"
-  on public.akiba_user_privacy_settings
-  for insert to authenticated
+  on public.akiba_user_privacy_settings for insert to authenticated
   with check (user_id = (select auth.uid()));
-
 create policy "users update own profile privacy settings"
-  on public.akiba_user_privacy_settings
-  for update to authenticated
+  on public.akiba_user_privacy_settings for update to authenticated
   using (user_id = (select auth.uid()))
   with check (user_id = (select auth.uid()));
 
