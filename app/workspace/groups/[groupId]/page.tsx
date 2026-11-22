@@ -126,6 +126,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
       .limit(3),
   ]);
 
+  const target = group.target_amount === null ? null : Number(group.target_amount);
   const financeReadError = Boolean(
     financeTransactionsError || financeLedgerError || reservationsError || financeEventsError
   );
@@ -144,7 +145,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const availableBalanceMinor = groupLedgerBalanceMinor - reservedMinor;
   const progressPercent = target === null || target <= 0
     ? null
-    : Math.round((Math.max(0, availableBalanceMinor) / (target * 100)) * 100);
+    : Math.min(100, Math.round((Math.max(0, availableBalanceMinor) / (target * 100)) * 100));
   const progressWidth = progressPercent === null ? 0 : Math.max(0, Math.min(100, progressPercent));
 
   const activityActorIds = Array.from(new Set([
@@ -205,7 +206,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
   const categoryLabel = groupTypeLabels[group.group_type] ?? "Other";
   const groupImageUrl = group.group_image_path ? supabase.storage.from("group-images").getPublicUrl(group.group_image_path).data.publicUrl : null;
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
-  const target = group.target_amount === null ? null : Number(group.target_amount);
+
   const firstName = profile.display_name.trim().split(/\\s+/)[0];
   const primaryDateMeta = group.purpose === "event" && group.event_date
     ? { label: "Date", value: formatDate(group.event_date) }
@@ -341,6 +342,24 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                       <div><strong style={{ display: "block", color: "#333653", fontSize: 11, textTransform: "capitalize" }}>{item.title}</strong><span style={{ display: "block", color: "#858ba2", fontSize: 10, marginTop: 4 }}>{item.detail}</span><small style={{ display: "block", color: "#9a9fb0", fontSize: 9, marginTop: 4 }}>{item.actor}</small></div>
                       <time dateTime={item.occurredAt} style={{ color: "#858ba2", fontSize: 9, whiteSpace: "nowrap" }}>{formatDate(item.occurredAt)}</time>
                     </div>)}
+                  </div>}
+              </section>
+
+              <section className="ak-workspace-card">
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">GROUP CONVERSATION</span><h2>Recent messages</h2><p>A quick look at the latest conversation in this group.</p></div><Link className="ak-count-pill" href={`/workspace/groups/${group.id}/chat`}>Open chat</Link></div>
+                {recentMessagesError ? <div className="ak-workspace-empty"><strong>Recent messages are unavailable</strong><p>Open Group Chat to continue the conversation.</p></div>
+                  : !recentMessages?.length ? <div className="ak-workspace-empty"><strong>No messages yet</strong><p>Start the conversation with your group.</p></div>
+                  : <div className="ak-workspace-details">
+                    {recentMessages.map((message) => {
+                      const body = message.body === "[attachment]" ? "Shared an attachment" : message.body;
+                      return <div key={message.id} style={{ padding: "12px 0", borderBottom: "1px solid #edf0ed" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
+                          <strong style={{ color: "#333653", fontSize: 11 }}>{activityNameById.get(message.author_id) ?? "Group member"}</strong>
+                          <time dateTime={message.created_at} style={{ color: "#858ba2", fontSize: 9, whiteSpace: "nowrap" }}>{formatDate(message.created_at)}</time>
+                        </div>
+                        <p style={{ margin: "5px 0 0", color: "#68766f", fontSize: 11, lineHeight: 1.5, overflowWrap: "anywhere" }}>{body.length > 180 ? body.slice(0, 177) + "…" : body}</p>
+                      </div>;
+                    })}
                   </div>}
               </section>
 
