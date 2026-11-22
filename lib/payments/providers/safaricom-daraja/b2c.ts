@@ -150,7 +150,7 @@ async function postDaraja(
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
       "Safaricom B2C could not be reached; the payout outcome may be unknown. Do not submit it again automatically.",
-      { retryable: true, cause: error },
+      { retryable: true, cause: error, submissionOutcome: "unknown" },
     );
   }
   const result = await response.json().catch(() => null) as Record<string, unknown> | null;
@@ -158,7 +158,7 @@ async function postDaraja(
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
       "Safaricom B2C returned an unsuccessful response.",
-      { retryable: response.status === 408 || response.status === 425 || response.status === 429 || response.status >= 500 },
+      { retryable: response.status === 408 || response.status === 425 || response.status === 429 || response.status >= 500, submissionOutcome: "unknown" },
     );
   }
   return result;
@@ -194,10 +194,19 @@ export async function submitB2CPayout(
     Occasion: (input.occasion ?? "Akiba group payout").slice(0, 100),
   }, config) as B2CSubmissionResponse;
 
-  if (String(result.ResponseCode) !== "0" || typeof result.OriginatorConversationID !== "string") {
+  const responseCode = typeof result.ResponseCode === "string" ? result.ResponseCode : String(result.ResponseCode ?? "");
+  if (/^\\d+$/.test(responseCode) && responseCode !== "0") {
     throw new PaymentError(
       "PROVIDER_REQUEST_REJECTED",
-      typeof result.ResponseDescription === "string" ? result.ResponseDescription : "Safaricom did not accept the B2C request.",
+      typeof result.ResponseDescription === "string" ? result.ResponseDescription : "Safaricom rejected the B2C request.",
+      { submissionOutcome: "rejected" },
+    );
+  }
+  if (responseCode !== "0" || typeof result.OriginatorConversationID !== "string") {
+    throw new PaymentError(
+      "PROVIDER_UNAVAILABLE",
+      "Safaricom returned an incomplete B2C acceptance response; the outcome is unknown and must be reconciled.",
+      { retryable: false, submissionOutcome: "unknown" },
     );
   }
   return {
@@ -286,4 +295,11 @@ export async function queryB2CTransactionStatus(
     conversationId: typeof response.ConversationID === "string" ? response.ConversationID : null,
     response,
   };
+}
+
+
+/** Classifies the provider boundary without treating transport failures as rejection. */
+export function classifyB2CSubmissionFailure(error: unknown): "not_submitted" | "rejected" | "unknown" {
+  if (error instanceof PaymentError && error.submissionOutcome) return error.submissionOutcome;
+  return "unknown";
 }
