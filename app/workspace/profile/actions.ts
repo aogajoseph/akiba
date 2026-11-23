@@ -109,7 +109,7 @@ export async function saveUserProfile(formData: FormData) {
     const location = hasLocation
       ? String(formData.get("location") ?? "").trim()
       : existing?.location ?? "";
-    if (phone && !/^\\+[1-9][0-9]{7,14}$/.test(phone)) back("Enter a valid phone number with country code.");
+    if (phone && !/^\+[1-9][0-9]{7,14}$/.test(phone)) back("Enter a valid phone number with country code.");
     if (location.length > 120) back("Location must be 120 characters or fewer.");
 
     if (phone || location) {
