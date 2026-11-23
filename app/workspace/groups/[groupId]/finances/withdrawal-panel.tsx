@@ -86,7 +86,7 @@ function statusLabel(status: string) {
   const labels: Record<string, string> = {
     pending_approval: "Awaiting Admin approvals",
     approved: "Approved · staging transition pending",
-    staging: "Two-hour member review",
+    staging: "Member review period",
     payout_queued: "Waiting for provider payout submission",
     payout_submitted: "Payout submitted",
     payout_processing: "Payout processing",
@@ -127,7 +127,7 @@ export default function WithdrawalPanel({
         <div>
           <span className="ak-section-eyebrow">GROUP WITHDRAWALS</span>
           <h2>Withdrawals and approvals</h2>
-          <p>Only the Group Creator can request a withdrawal. Every Group Admin must approve it before the two-hour member review begins.</p>
+          <p>Only the Group Creator can request a withdrawal. Every Group Admin must approve it before the configured member review period begins.</p>
         </div>
         {canRequest ? (
           <details className="ak-withdrawal-create">
@@ -335,7 +335,7 @@ export default function WithdrawalPanel({
                 {request.status === "payout_queued" && (
                   <div className="ak-withdrawal-staging">
                     <p>No active flags remained at the deadline. The withdrawal is queued for payout.</p>
-                    <p>Funds remain reserved until the payment provider confirms payout completion. The current sandbox provider does not yet support payout execution.</p>
+                    <p>Funds remain reserved until the payment provider confirms payout completion. In this Preview sandbox, payout submission requires an authorized operator to trigger the one-request worker. No automatic payout submission runs. Funds remain reserved until Daraja confirms the result.</p>
                     {canCancel && (
                       <form action={cancelWithdrawalRequest}>
                         <input type="hidden" name="group_id" value={groupId} />

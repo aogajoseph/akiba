@@ -9,6 +9,14 @@ export const maxDuration = 60;
 
 const BATCH_SIZE = 1;
 
+type PayoutClaim = {
+  payout_attempt_id: string;
+  withdrawal_request_id: string;
+  request_reference: string;
+  recipient_amount_minor: number | string;
+  currency_code: string;
+};
+
 function json(body: Record<string, unknown>, status = 200) {
   return NextResponse.json(body, {
     status,
@@ -21,45 +29,20 @@ function authorized(request: NextRequest): boolean {
   return Boolean(secret && request.headers.get("authorization") === `Bearer ${secret}`);
 }
 
-/**
- * Claims each eligible withdrawal exactly once before calling Daraja.
- * Claimed attempts are never automatically resubmitted: a timeout or process
- * crash is treated as an unknown outcome and held for independent reconciliation.
- */
-export async function GET(request: NextRequest) {
-  if (!authorized(request)) return json({ ok: false, error: "Not authorized" }, 401);
+function sandboxPreviewOnly(): boolean {
+  return process.env.VERCEL_ENV === "preview" &&
+    process.env.MPESA_ENVIRONMENT === "sandbox";
+}
 
-  const configResult = readDarajaB2CPayoutConfig();
-  if (!configResult.ok) {
-    return json({ ok: false, error: "Daraja sandbox payout configuration is incomplete or disabled." }, 503);
-  }
-
+async function submitClaims(claims: PayoutClaim[], config: NonNullable<ReturnType<typeof readDarajaB2CPayoutConfig> extends { ok: true; config: infer C } ? C : never>) {
   const service = createServiceClient();
-  const { data: claims, error: claimError } = await service.rpc(
-    "akiba_claim_daraja_sandbox_payouts",
-    { p_batch_size: BATCH_SIZE },
-  );
-
-  if (claimError) {
-    console.error("[payments][daraja][payout] Could not claim sandbox payout work", {
-      code: claimError.code,
-    });
-    return json({ ok: false, error: "Could not claim payout work." }, 503);
-  }
-
   let accepted = 0;
   let notSubmitted = 0;
   let rejected = 0;
   let unknown = 0;
   let persistenceFailures = 0;
 
-  for (const claim of (claims ?? []) as Array<{
-    payout_attempt_id: string;
-    withdrawal_request_id: string;
-    request_reference: string;
-    recipient_amount_minor: number | string;
-    currency_code: string;
-  }>) {
+  for (const claim of claims) {
     const amountMinor = Number(claim.recipient_amount_minor);
     if (
       claim.currency_code !== "KES" ||
@@ -85,7 +68,7 @@ export async function GET(request: NextRequest) {
         requestReference: claim.request_reference,
         remarks: "Akiba sandbox withdrawal " + claim.request_reference.slice(0, 12),
         occasion: "Akiba sandbox payout",
-      }, configResult.config);
+      }, config);
     } catch (error) {
       const summary = error instanceof Error
         ? error.message.slice(0, 500)
@@ -118,9 +101,8 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    // Keep provider I/O and database persistence in separate try/catch blocks.
-    // A database timeout after a successful Daraja response is NOT a provider
-    // submission failure and must never be followed by a second B2C instruction.
+    // A successful provider response followed by a DB persistence failure is
+    // ambiguous. Never submit a second B2C instruction for this attempt.
     let recorded: boolean | null = null;
     let persistError: { code?: string } | null = null;
     try {
@@ -152,13 +134,91 @@ export async function GET(request: NextRequest) {
     }
   }
 
-  return json({
+  return {
     ok: persistenceFailures === 0,
-    claimed: (claims ?? []).length,
+    claimed: claims.length,
     accepted,
     notSubmitted,
     rejected,
     unknown,
     persistenceFailures,
-  }, persistenceFailures ? 500 : 200);
+  };
+}
+
+/**
+ * Existing authenticated batch worker. It remains unscheduled; invoking it
+ * manually claims at most one eligible Preview sandbox request.
+ */
+export async function GET(request: NextRequest) {
+  if (!authorized(request)) return json({ ok: false, error: "Not authorized" }, 401);
+  if (!sandboxPreviewOnly()) return json({ ok: false, error: "Payout execution is restricted to Preview sandbox." }, 403);
+
+  const configResult = readDarajaB2CPayoutConfig();
+  if (!configResult.ok) {
+    return json({ ok: false, error: "Daraja sandbox payout configuration is incomplete or disabled." }, 503);
+  }
+
+  const service = createServiceClient();
+  const { data: claims, error: claimError } = await service.rpc(
+    "akiba_claim_daraja_sandbox_payouts",
+    { p_batch_size: BATCH_SIZE },
+  );
+  if (claimError) {
+    console.error("[payments][daraja][payout] Could not claim sandbox payout work", { code: claimError.code });
+    return json({ ok: false, error: "Could not claim payout work." }, 503);
+  }
+
+  const result = await submitClaims((claims ?? []) as PayoutClaim[], configResult.config);
+  return json(result, result.persistenceFailures ? 500 : 200);
+}
+
+/**
+ * Operator-triggered single-request path. It is deliberately Preview-only,
+ * requires CRON_SECRET, accepts one UUID, and uses a request-scoped DB claim
+ * so it cannot pick up another group's queued withdrawal.
+ */
+export async function POST(request: NextRequest) {
+  if (!authorized(request)) return json({ ok: false, error: "Not authorized" }, 401);
+  if (!sandboxPreviewOnly()) return json({ ok: false, error: "Manual payout trigger is restricted to Preview sandbox." }, 403);
+
+  let body: unknown;
+  try {
+    body = await request.json();
+  } catch {
+    return json({ ok: false, error: "A JSON request body is required." }, 400);
+  }
+  const requestId = body && typeof body === "object" && "requestId" in body
+    ? (body as { requestId?: unknown }).requestId
+    : null;
+  if (typeof requestId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) {
+    return json({ ok: false, error: "A valid withdrawal requestId is required." }, 400);
+  }
+
+  const configResult = readDarajaB2CPayoutConfig();
+  if (!configResult.ok) {
+    return json({ ok: false, error: "Daraja sandbox payout configuration is incomplete or disabled." }, 503);
+  }
+
+  const service = createServiceClient();
+  const { data: claims, error: claimError } = await service.rpc(
+    "akiba_claim_daraja_sandbox_payout_for_request",
+    { p_withdrawal_request_id: requestId },
+  );
+  if (claimError) {
+    console.error("[payments][daraja][payout] Could not claim requested sandbox payout", {
+      requestId,
+      code: claimError.code,
+    });
+    return json({ ok: false, error: "Could not claim the requested payout." }, 503);
+  }
+  if (!claims?.length) {
+    return json({
+      ok: false,
+      claimed: 0,
+      error: "This request is not eligible for submission. Check that it is queued, unexpired, fully approved, unflagged, and has no prior payout attempt.",
+    }, 409);
+  }
+
+  const result = await submitClaims(claims as PayoutClaim[], configResult.config);
+  return json({ requestId, ...result }, result.persistenceFailures ? 500 : 200);
 }
