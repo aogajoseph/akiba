@@ -23,3 +23,5 @@ jobs:
           echo "GitHub-hosted runner started successfully."
           echo "Runner: $RUNNER_NAME"
           echo "OS: $RUNNER_OS"
+
+# Temporary runner startup diagnostic for this feature branch.
