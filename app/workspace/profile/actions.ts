@@ -169,10 +169,21 @@ export async function updateAuthEmail(
     return { status: "error", message: "That is already the email address on your Akiba account.", email };
   }
 
-  const { error } = await supabase.auth.updateUser({ email });
-  if (error) {
-    const code = (error as { code?: string }).code?.toLowerCase() ?? "";
-    const message = error.message.toLowerCase();
+  let authUpdateError: { code?: string; message: string } | null = null;
+  try {
+    const result = await supabase.auth.updateUser({ email });
+    authUpdateError = result.error;
+  } catch {
+    return {
+      status: "error",
+      message: "We couldn't reach the email service. Your sign-in email has not been changed; check your connection and try again.",
+      email,
+    };
+  }
+
+  if (authUpdateError) {
+    const code = authUpdateError.code?.toLowerCase() ?? "";
+    const message = authUpdateError.message.toLowerCase();
     console.error("Auth email update request failed", { code: code || "unknown" });
 
     if (
