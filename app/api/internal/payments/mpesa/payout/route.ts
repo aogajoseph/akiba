@@ -153,9 +153,9 @@ export async function GET() {
 }
 
 /**
- * Operator-triggered single-request path. It is deliberately Preview-only,
- * requires CRON_SECRET, accepts one UUID, and uses a request-scoped DB claim
- * so it cannot pick up another group's queued withdrawal.
+ * Operator-triggered single-request path. It is Preview-only, accepts either
+ * the internal CRON_SECRET or the same-origin active HQ Creator session, and
+ * uses a request-scoped DB claim so it cannot pick up another group's request.
  */
 export async function POST(request: NextRequest) {
   const cronAuthorized = authorized(request);
