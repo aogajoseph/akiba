@@ -73,7 +73,7 @@ export default async function UserProfilePage({ searchParams }: Props) {
                 <label className="ak-settings-field"><span>General location <small>Optional · City or region only</small></span><input name="location" defaultValue={contact?.location ?? ""} maxLength={120} placeholder="e.g. Nairobi, Kenya" /></label>
               </div>
               <div className="ak-settings-fields">{select("Phone", defaults.phone)}{select("Location", defaults.location)}{select("Email", defaults.email)}</div>
-              <div className="ak-settings-save-row"><p>Only your own account can read or change these details.</p><ProfileSubmitButton idle="Save contact & privacy" pending="Saving contact details..." /></div>
+              <div className="ak-settings-save-row"><p>Only you can edit these details. Other users see each field only when its visibility setting allows it.</p><ProfileSubmitButton idle="Save contact & privacy" pending="Saving contact details..." /></div>
             </form>}
           </section>
           <section className="ak-panel ak-settings-section" id="account">
