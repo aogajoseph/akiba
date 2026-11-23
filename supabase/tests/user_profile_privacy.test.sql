@@ -42,6 +42,12 @@ values
 on conflict (id) do nothing;
 
 update public.akiba_user_privacy_settings
+set email_visibility = 'group_members',
+    phone_visibility = 'group_members',
+    location_visibility = 'group_members'
+where user_id = '00000000-0000-0000-0000-000000000801';
+
+update public.akiba_user_privacy_settings
 set email_visibility = 'all_akiba_users',
     phone_visibility = 'group_members',
     location_visibility = 'only_me'
@@ -58,7 +64,7 @@ set local role authenticated;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000801', true);
 
 do $test$
-declare own_contacts integer; other_contacts integer; own_privacy integer; other_privacy integer; affected integer; public_profile record; group_profile record; unrelated_profile record; preview_profile record;
+declare own_contacts integer; other_contacts integer; own_privacy integer; other_privacy integer; affected integer; public_profile record; unrelated_profile record; preview_profile record;
 begin
   select count(*) into own_contacts from public.akiba_user_contacts
   where user_id = '00000000-0000-0000-0000-000000000801';
@@ -97,8 +103,8 @@ begin
   end if;
 
   select * into preview_profile
-  from public.akiba_get_profile_by_username('profile_other_802', true);
-  if not preview_profile.phone_visible or preview_profile.phone_number <> '+254700000802' then
+  from public.akiba_get_profile_by_username('profile_owner_801', true);
+  if not preview_profile.phone_visible or preview_profile.phone_number <> '+254700000801' then
     raise exception 'Owner preview did not model group-member visibility';
   end if;
 
