@@ -1439,3 +1439,14 @@
 .ak-settings-secondary-button{min-height:40px;padding:10px 15px;border:1px solid #dfe4e8;border-radius:8px;background:#fff;color:#485a50;font-size:10px;font-weight:750;cursor:pointer}
 .ak-settings-secondary-button:hover{border-color:#b9cfc0;background:#f7faf8}
 .ak-settings-secondary-button:focus-visible{outline:3px solid #b9d7c2;outline-offset:2px}
+
+
+/* Clear feedback for profile and account actions. */
+.ak-settings-field-error{color:#b33c68!important;font-size:9px;line-height:1.45}
+.ak-email-change-address{display:block;margin-top:4px;color:inherit;font-size:9px;overflow-wrap:anywhere}
+.ak-settings-remove-avatar{display:flex;align-items:center;gap:7px;margin-left:78px;color:#7c8298;font-size:9px}
+.ak-settings-remove-avatar input{accent-color:#176b50}
+.ak-group-settings-form button:disabled{opacity:.68;cursor:wait}
+.ak-group-settings-form button[aria-busy="true"]{position:relative}
+.ak-group-settings-form button:focus-visible{outline:3px solid #b9d7c2;outline-offset:2px}
+@media(max-width:640px){.ak-settings-remove-avatar{margin-left:0}}
