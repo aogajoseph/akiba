@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 
 type Props = { currentImage: string | null; fallback: string };
 
@@ -13,7 +13,7 @@ export function ProfileImagePicker({ currentImage, fallback }: Props) {
     return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
   }, [previewUrl]);
 
-  function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
+  function onFileChange(event: ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0] ?? null;
     setError(null);
     if (!file) { setSelectedFile(null); setPreviewUrl(null); return; }
