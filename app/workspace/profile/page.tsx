@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { changePassword, saveUserProfile, signOutOtherSessions, updateAuthEmail } from "./actions";
+import { changePassword, saveUserProfile, signOutOtherSessions } from "./actions";
+import { ProfileSubmitButton } from "./profile-submit-button";
+import { ProfileImagePicker } from "./profile-image-picker";
+import { EmailChangeForm } from "./email-change-form";
 
 type Props = { searchParams: Promise<{ error?: string; success?: string }> };
 
@@ -39,13 +42,13 @@ export default async function UserProfilePage({ searchParams }: Props) {
           <section className="ak-panel ak-settings-section">
             <div className="ak-panel-heading"><div><h2>Identity information</h2><p>Your identity appears consistently across Akiba.</p></div></div>
             <form action={saveUserProfile} className="ak-group-settings-form" encType="multipart/form-data">
-              <div className="ak-settings-image-preview">{avatarUrl ? <img src={avatarUrl} alt="Current profile photo" /> : <span className="ak-settings-page-image">{profile.display_name.slice(0,1).toUpperCase()}</span>}<div className="ak-settings-field"><span>Profile photo <small>Optional · JPG, PNG or WebP · 3 MB max</small></span><input name="avatar" type="file" accept="image/jpeg,image/png,image/webp" />{avatarUrl && <label><input type="checkbox" name="remove_avatar" value="yes" /> Remove current photo</label>}</div></div>
+              <ProfileImagePicker currentImage={avatarUrl} fallback={profile.display_name.slice(0,1).toUpperCase()} />{avatarUrl && <label className="ak-settings-remove-avatar"><input type="checkbox" name="remove_avatar" value="yes" /> Remove current photo</label>}
               <div className="ak-settings-fields">
                 <label className="ak-settings-field"><span>Display name <em>Required</em></span><input name="display_name" defaultValue={profile.display_name ?? ""} maxLength={60} required /></label>
                 <label className="ak-settings-field"><span>@Username <em>Required</em></span><input name="username" defaultValue={profile.username ?? ""} minLength={3} maxLength={20} pattern="[a-z][a-z0-9_]{2,19}" required /><small>3–20 characters; start with a letter.</small></label>
                 <label className="ak-settings-field ak-settings-custom-value"><span>Bio <small>Optional · 160 characters</small></span><textarea name="bio" defaultValue={profile.bio ?? ""} maxLength={160} rows={3} /></label>
               </div>
-              <div className="ak-settings-save-row"><p>Display name and username are required. Photo and bio are optional.</p><button className="workspace-primary" type="submit">Save profile</button></div>
+              <div className="ak-settings-save-row"><p>Display name and username are required. Photo and bio are optional.</p><ProfileSubmitButton idle="Save profile" pending="Saving profile..." /></div>
             </form>
           </section>
           <section className="ak-panel ak-settings-section">
@@ -58,15 +61,12 @@ export default async function UserProfilePage({ searchParams }: Props) {
               </div>
               <div className="ak-settings-fields">{select("Phone", defaults.phone)}{select("Location", defaults.location)}{select("Email", defaults.email)}</div>
               <p className="ak-settings-help-note">These are saved sharing preferences for future profile features. Contact records remain owner-only today; changing a preference does not make your phone or email visible to other members.</p>
-              <div className="ak-settings-save-row"><p>Only your own account can read or change these details.</p><button className="workspace-primary" type="submit">Save contact &amp; privacy</button></div>
+              <div className="ak-settings-save-row"><p>Only your own account can read or change these details.</p><ProfileSubmitButton idle="Save contact & privacy" pending="Saving contact details..." /></div>
             </form>}
           </section>
           <section className="ak-panel ak-settings-section" id="account">
             <div className="ak-panel-heading"><div><h2>Account</h2><p>Your sign-in email is managed by Supabase Authentication.</p></div></div>
-            <form action={updateAuthEmail} className="ak-group-settings-form">
-              <div className="ak-settings-fields"><label className="ak-settings-field"><span>New sign-in email</span><input name="email" type="email" autoComplete="email" placeholder="new@email.com" required /></label></div>
-              <div className="ak-settings-save-row"><p>We send a verification link. Your sign-in address changes only after confirmation.</p><button className="workspace-primary" type="submit">Request email change</button></div>
-            </form>
+            <EmailChangeForm />
             <div className="ak-settings-divider" />
             <div className="ak-panel-heading"><div><h2>Password</h2><p>Choose a strong password you do not use elsewhere.</p></div></div>
             <form action={changePassword} className="ak-group-settings-form">
@@ -74,12 +74,12 @@ export default async function UserProfilePage({ searchParams }: Props) {
                 <label className="ak-settings-field"><span>New password</span><input name="new_password" type="password" autoComplete="new-password" minLength={10} maxLength={72} required /><small>Use at least 10 characters.</small></label>
                 <label className="ak-settings-field"><span>Confirm new password</span><input name="confirm_password" type="password" autoComplete="new-password" minLength={10} maxLength={72} required /></label>
               </div>
-              <div className="ak-settings-save-row"><p>Your password is updated through Akiba Authentication.</p><button className="workspace-primary" type="submit">Update password</button></div>
+              <div className="ak-settings-save-row"><p>Your password is updated through Akiba Authentication.</p><ProfileSubmitButton idle="Update password" pending="Updating password..." /></div>
             </form>
             <div className="ak-settings-divider" />
             <div className="ak-panel-heading"><div><h2>Active sessions</h2><p>Sign out of other devices while keeping this session open.</p></div></div>
             <form action={signOutOtherSessions} className="ak-group-settings-form">
-              <div className="ak-settings-save-row"><p>Other sessions may remain active until their current access tokens expire or they attempt to refresh.</p><button className="ak-settings-secondary-button" type="submit">Sign out other sessions</button></div>
+              <div className="ak-settings-save-row"><p>Other sessions may remain active until their current access tokens expire or they attempt to refresh.</p><ProfileSubmitButton className="ak-settings-secondary-button" idle="Sign out other sessions" pending="Signing out other sessions..." /></div>
             </form>
             <p className="ak-settings-help-note">Account deletion is not available in this release. Contact support if you need help with your account.</p>
           </section>
