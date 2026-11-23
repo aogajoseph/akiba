@@ -152,7 +152,7 @@ export default function WithdrawalPanel({
                 <textarea name="reason" maxLength={500} rows={3} required />
               </label>
               <button type="submit" className="ak-finance-primary-button">Create sandbox request</button>
-              <p className="ak-finance-helper">Sandbox workflow only. The destination is a non-routable test label, fees are simulated as KES 0, and no payment is sent. This creates the request and reservation for Admin approval.</p>
+              <p className="ak-finance-helper">Sandbox testing only. Fees are synthetic KES 0. After approval and the review period, an authorized operator may manually submit one sandbox instruction to the dedicated server-side test recipient. No Production payment or member phone number is used.</p>
             </form>
           </details>
         ) : (
@@ -183,7 +183,7 @@ export default function WithdrawalPanel({
         <p className="ak-finance-disabled">Sandbox withdrawal workflow simulation is unavailable. No live or real-money payout option is enabled.</p>
       )}
       {isCreator && leadershipReady && sandboxWorkflowEnabled && (
-        <p className="ak-finance-disabled">This is a workflow demonstration only: the sandbox simulator creates no payment instruction, does not move funds, and cannot mark a withdrawal as paid. The zero-fee quote is synthetic, not a partner quote.</p>
+        <p className="ak-finance-disabled">Sandbox testing only. The fee quote is synthetic, not a Safaricom quote. Any B2C instruction is restricted to the configured Daraja sandbox recipient and requires a manual Preview-only operator trigger. Completion still requires authoritative provider confirmation.</p>
       )}
 
       {readError ? (
