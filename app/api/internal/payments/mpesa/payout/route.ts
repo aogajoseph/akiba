@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServiceClient } from "@/lib/supabase/service";
+import { createClient } from "@/lib/supabase/server";
 import { classifyB2CSubmissionFailure, readDarajaB2CPayoutConfig, submitB2CPayout } from "@/lib/payments/providers/safaricom-daraja/b2c";
 import { PaymentError } from "@/lib/payments/errors";
 
@@ -157,7 +158,10 @@ export async function GET() {
  * so it cannot pick up another group's queued withdrawal.
  */
 export async function POST(request: NextRequest) {
-  if (!authorized(request)) return json({ ok: false, error: "Not authorized" }, 401);
+  const cronAuthorized = authorized(request);
+  if (!cronAuthorized && request.headers.get("origin") !== request.nextUrl.origin) {
+    return json({ ok: false, error: "Not authorized" }, 401);
+  }
   if (!sandboxPreviewOnly()) return json({ ok: false, error: "Manual payout trigger is restricted to Preview sandbox." }, 403);
 
   let body: unknown;
@@ -171,6 +175,33 @@ export async function POST(request: NextRequest) {
     : null;
   if (typeof requestId !== "string" || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) {
     return json({ ok: false, error: "A valid withdrawal requestId is required." }, 400);
+  }
+
+  if (!cronAuthorized) {
+    const supabase = await createClient();
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    if (authError || !user) return json({ ok: false, error: "Sign in as the Group Creator to trigger this test." }, 401);
+
+    const testGroupId = "ff4d3bbf-7d7d-4513-a083-be85d876b908";
+    const { data: membership, error: membershipError } = await supabase
+      .from("akiba_group_memberships")
+      .select("role,status")
+      .eq("group_id", testGroupId)
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (membershipError || membership?.role !== "group_creator" || membership.status !== "active") {
+      return json({ ok: false, error: "Only the active Group Creator of Globe Technologies HQ can trigger this sandbox test." }, 403);
+    }
+
+    const { data: withdrawal, error: withdrawalError } = await supabase
+      .from("akiba_withdrawal_requests")
+      .select("id,status,group_id")
+      .eq("id", requestId)
+      .eq("group_id", testGroupId)
+      .maybeSingle();
+    if (withdrawalError || withdrawal?.status !== "payout_queued") {
+      return json({ ok: false, error: "Only a queued Globe Technologies HQ withdrawal can be submitted." }, 409);
+    }
   }
 
   const configResult = readDarajaB2CPayoutConfig();
