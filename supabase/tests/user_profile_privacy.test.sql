@@ -12,7 +12,7 @@ insert into public.akiba_profiles (user_id, username, display_name)
 values
   ('00000000-0000-0000-0000-000000000801', 'profile_owner_801', 'Profile Owner'),
   ('00000000-0000-0000-0000-000000000802', 'profile_other_802', 'Other Person'),
-  ('00000000-0000-0000-0000-000000000803', 'profile_unrelated_803', 'Unrelated Person')
+  ('00000000-0000-0000-0000-000000000803', 'profile_else_803', 'Unrelated Person')
 on conflict (user_id) do nothing;
 
 insert into public.akiba_user_contacts (user_id, phone_number, location)
@@ -95,7 +95,7 @@ begin
   end if;
 
   select * into unrelated_profile
-  from public.akiba_get_profile_by_username('profile_unrelated_803');
+  from public.akiba_get_profile_by_username('profile_else_803');
   if unrelated_profile.email_visible or unrelated_profile.email_address is not null
      or unrelated_profile.phone_visible or unrelated_profile.phone_number is not null
      or unrelated_profile.location_visible or unrelated_profile.location is not null then
