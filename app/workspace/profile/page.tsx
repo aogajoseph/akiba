@@ -15,7 +15,7 @@ export default async function UserProfilePage({ searchParams }: Props) {
     supabase.from("akiba_user_privacy_settings").select("email_visibility,phone_visibility,location_visibility").eq("user_id", user.id).maybeSingle(),
   ]);
   if (profileError || !profile) redirect("/onboarding");
-  if (contactError || privacyError) redirect("/workspace/profile?error=" + encodeURIComponent("We couldn’t load your private settings. Refresh the page to try again."));
+  const privateSettingsUnavailable = Boolean(contactError || privacyError);
   const params = await searchParams;
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const defaults = { email: privacy?.email_visibility ?? "only_me", phone: privacy?.phone_visibility ?? "only_me", location: privacy?.location_visibility ?? "only_me" };
@@ -50,7 +50,7 @@ export default async function UserProfilePage({ searchParams }: Props) {
           </section>
           <section className="ak-panel ak-settings-section">
             <div className="ak-panel-heading"><div><h2>Contact &amp; privacy</h2><p>Keep your contact details up to date and choose your future profile-sharing preferences.</p></div></div>
-            <form action={saveUserProfile} className="ak-group-settings-form">
+            {privateSettingsUnavailable ? <p className="ak-settings-inline-note" role="alert">Your private contact settings could not be loaded. Refresh the page to try again. No changes have been made.</p> : <form action={saveUserProfile} className="ak-group-settings-form">
               <div className="ak-settings-fields">
                 <label className="ak-settings-field"><span>Email address <em>Required · Sign-in</em></span><input value={user.email ?? ""} readOnly /><small>Change your sign-in email in Account settings below.</small></label>
                 <label className="ak-settings-field"><span>Phone number <small>Optional</small></span><input name="phone_number" type="tel" defaultValue={contact?.phone_number ?? ""} placeholder="+2547XXXXXXXX" /></label>
@@ -59,7 +59,7 @@ export default async function UserProfilePage({ searchParams }: Props) {
               <div className="ak-settings-fields">{select("Phone", defaults.phone)}{select("Location", defaults.location)}{select("Email", defaults.email)}</div>
               <p className="ak-settings-help-note">These are saved sharing preferences for future profile features. Contact records remain owner-only today; changing a preference does not make your phone or email visible to other members.</p>
               <div className="ak-settings-save-row"><p>Only your own account can read or change these details.</p><button className="workspace-primary" type="submit">Save contact &amp; privacy</button></div>
-            </form>
+            </form>}
           </section>
           <section className="ak-panel ak-settings-section" id="account">
             <div className="ak-panel-heading"><div><h2>Account</h2><p>Your sign-in email is managed by Supabase Authentication.</p></div></div>
