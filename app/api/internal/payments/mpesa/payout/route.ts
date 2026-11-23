@@ -7,8 +7,6 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const BATCH_SIZE = 1;
-
 type PayoutClaim = {
   payout_attempt_id: string;
   withdrawal_request_id: string;
@@ -146,30 +144,11 @@ async function submitClaims(claims: PayoutClaim[], config: Extract<ReturnType<ty
 }
 
 /**
- * Existing authenticated batch worker. It remains unscheduled; invoking it
- * manually claims at most one eligible Preview sandbox request.
+ * Automatic/batch payout invocation is intentionally disabled. Only the
+ * request-scoped POST endpoint below can submit a sandbox instruction.
  */
-export async function GET(request: NextRequest) {
-  if (!authorized(request)) return json({ ok: false, error: "Not authorized" }, 401);
-  if (!sandboxPreviewOnly()) return json({ ok: false, error: "Payout execution is restricted to Preview sandbox." }, 403);
-
-  const configResult = readDarajaB2CPayoutConfig();
-  if (!configResult.ok) {
-    return json({ ok: false, error: "Daraja sandbox payout configuration is incomplete or disabled." }, 503);
-  }
-
-  const service = createServiceClient();
-  const { data: claims, error: claimError } = await service.rpc(
-    "akiba_claim_daraja_sandbox_payouts",
-    { p_batch_size: BATCH_SIZE },
-  );
-  if (claimError) {
-    console.error("[payments][daraja][payout] Could not claim sandbox payout work", { code: claimError.code });
-    return json({ ok: false, error: "Could not claim payout work." }, 503);
-  }
-
-  const result = await submitClaims((claims ?? []) as PayoutClaim[], configResult.config);
-  return json(result, result.persistenceFailures ? 500 : 200);
+export async function GET() {
+  return json({ ok: false, error: "Batch payout execution is disabled. Use the authenticated one-request Preview sandbox trigger." }, 405);
 }
 
 /**
