@@ -10,29 +10,29 @@ export function ProfileImagePicker({ currentImage, fallback }: Props) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!selectedFile) { setPreviewUrl(null); return; }
-    const url = URL.createObjectURL(selectedFile);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [selectedFile]);
+    return () => { if (previewUrl) URL.revokeObjectURL(previewUrl); };
+  }, [previewUrl]);
 
   function onFileChange(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.currentTarget.files?.[0] ?? null;
     setError(null);
-    if (!file) { setSelectedFile(null); return; }
+    if (!file) { setSelectedFile(null); setPreviewUrl(null); return; }
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.type)) {
       event.currentTarget.value = "";
       setSelectedFile(null);
+      setPreviewUrl(null);
       setError("That file type is not supported. Choose a JPG, PNG or WebP image.");
       return;
     }
     if (file.size > 3 * 1024 * 1024) {
       event.currentTarget.value = "";
       setSelectedFile(null);
+      setPreviewUrl(null);
       setError("That image is larger than 3 MB. Choose a smaller image.");
       return;
     }
     setSelectedFile(file);
+    setPreviewUrl(URL.createObjectURL(file));
   }
 
   return (
