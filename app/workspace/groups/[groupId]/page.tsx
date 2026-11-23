@@ -231,8 +231,10 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                     const name = member.profile?.display_name?.trim() || (member.user_id === user.id ? "You" : "Akiba member");
                     const photo = member.profile?.avatar_path ? supabase.storage.from("avatars").getPublicUrl(member.profile.avatar_path).data.publicUrl : null;
                     return <div className="ak-workspace-member" key={member.user_id}>
-                      {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
-                      <div><strong>{name}{member.user_id === user.id ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></div>
+                      <Link className="ak-profile-member-link" href={member.profile?.username ? "/workspace/people/" + encodeURIComponent(member.profile.username) : "/workspace"}>
+                        {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
+                        <span><strong>{name}{member.user_id === user.id ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></span>
+                      </Link>
                       <div className="ak-workspace-member-role"><span className={member.role !== "member" ? "admin" : ""}>{member.role === "group_creator" ? "Group Creator" : member.role === "group_admin" ? "Group Admin" : "Member"}</span>
                       {isGroupCreator && member.role !== "group_creator" && <form action={setGroupAdmin}>
                         <input type="hidden" name="group_id" value={group.id} />
