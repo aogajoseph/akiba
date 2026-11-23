@@ -9,12 +9,13 @@ export default async function UserProfilePage({ searchParams }: Props) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
-  const [{ data: profile, error: profileError }, { data: contact }, { data: privacy }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: contact, error: contactError }, { data: privacy, error: privacyError }] = await Promise.all([
     supabase.from("akiba_profiles").select("username,display_name,avatar_path,bio").eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_user_contacts").select("phone_number,location").eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_user_privacy_settings").select("email_visibility,phone_visibility,location_visibility").eq("user_id", user.id).maybeSingle(),
   ]);
   if (profileError || !profile) redirect("/onboarding");
+  if (contactError || privacyError) redirect("/workspace/profile?error=" + encodeURIComponent("We couldn’t load your private settings. Refresh the page to try again."));
   const params = await searchParams;
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const defaults = { email: privacy?.email_visibility ?? "only_me", phone: privacy?.phone_visibility ?? "only_me", location: privacy?.location_visibility ?? "only_me" };
@@ -48,7 +49,7 @@ export default async function UserProfilePage({ searchParams }: Props) {
             </form>
           </section>
           <section className="ak-panel ak-settings-section">
-            <div className="ak-panel-heading"><div><h2>Personal information</h2><p>Private by default. You control each field independently.</p></div></div>
+            <div className="ak-panel-heading"><div><h2>Contact &amp; privacy</h2><p>Keep your contact details up to date and choose your future profile-sharing preferences.</p></div></div>
             <form action={saveUserProfile} className="ak-group-settings-form">
               <div className="ak-settings-fields">
                 <label className="ak-settings-field"><span>Email address <em>Required · Sign-in</em></span><input value={user.email ?? ""} readOnly /><small>Change your sign-in email in Account settings below.</small></label>
@@ -56,7 +57,8 @@ export default async function UserProfilePage({ searchParams }: Props) {
                 <label className="ak-settings-field"><span>General location <small>Optional · City or region only</small></span><input name="location" defaultValue={contact?.location ?? ""} maxLength={120} placeholder="e.g. Nairobi, Kenya" /></label>
               </div>
               <div className="ak-settings-fields">{select("Phone", defaults.phone)}{select("Location", defaults.location)}{select("Email", defaults.email)}</div>
-              <div className="ak-settings-save-row"><p>Visibility applies to authenticated Akiba users only, never the public internet.</p><button className="workspace-primary" type="submit">Save personal information</button></div>
+              <p className="ak-settings-inline-note">These are saved sharing preferences for future profile features. Contact records remain owner-only today; changing a preference does not make your phone or email visible to other members.</p>
+              <div className="ak-settings-save-row"><p>Only your own account can read or change these details.</p><button className="workspace-primary" type="submit">Save contact &amp; privacy</button></div>
             </form>
           </section>
           <section className="ak-panel ak-settings-section" id="account">
