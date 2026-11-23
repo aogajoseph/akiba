@@ -57,7 +57,7 @@ export default async function UserProfilePage({ searchParams }: Props) {
                 <label className="ak-settings-field"><span>General location <small>Optional · City or region only</small></span><input name="location" defaultValue={contact?.location ?? ""} maxLength={120} placeholder="e.g. Nairobi, Kenya" /></label>
               </div>
               <div className="ak-settings-fields">{select("Phone", defaults.phone)}{select("Location", defaults.location)}{select("Email", defaults.email)}</div>
-              <p className="ak-settings-inline-note">These are saved sharing preferences for future profile features. Contact records remain owner-only today; changing a preference does not make your phone or email visible to other members.</p>
+              <p className="ak-settings-help-note">These are saved sharing preferences for future profile features. Contact records remain owner-only today; changing a preference does not make your phone or email visible to other members.</p>
               <div className="ak-settings-save-row"><p>Only your own account can read or change these details.</p><button className="workspace-primary" type="submit">Save contact &amp; privacy</button></div>
             </form>
           </section>
@@ -79,9 +79,9 @@ export default async function UserProfilePage({ searchParams }: Props) {
             <div className="ak-settings-divider" />
             <div className="ak-panel-heading"><div><h2>Active sessions</h2><p>Sign out of other devices while keeping this session open.</p></div></div>
             <form action={signOutOtherSessions} className="ak-group-settings-form">
-              <div className="ak-settings-save-row"><p>Other sessions may remain active until their current access tokens expire or they attempt to refresh.</p><button className="workspace-secondary" type="submit">Sign out other sessions</button></div>
+              <div className="ak-settings-save-row"><p>Other sessions may remain active until their current access tokens expire or they attempt to refresh.</p><button className="ak-settings-secondary-button" type="submit">Sign out other sessions</button></div>
             </form>
-            <p className="ak-settings-inline-note">Account deletion is not available in this release. Contact support if you need help with your account.</p>
+            <p className="ak-settings-help-note">Account deletion is not available in this release. Contact support if you need help with your account.</p>
           </section>
         </div>
       </section>
