@@ -102,6 +102,13 @@ begin
     raise exception 'Group-only contact details were disclosed to a non-member';
   end if;
 
+  begin
+    perform * from public.akiba_get_profile_by_username('profile_other_802', true);
+    raise exception 'A viewer previewed another member profile';
+  exception when insufficient_privilege then
+    null;
+  end;
+
   select * into preview_profile
   from public.akiba_get_profile_by_username('profile_owner_801', true);
   if not preview_profile.phone_visible or preview_profile.phone_number <> '+254700000801' then
