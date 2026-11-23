@@ -5,6 +5,7 @@ import { changePassword, saveUserProfile, signOutOtherSessions } from "./actions
 import { ProfileSubmitButton } from "./profile-submit-button";
 import { ProfileImagePicker } from "./profile-image-picker";
 import { EmailChangeForm } from "./email-change-form";
+import { ProfilePreviewButton } from "./profile-preview-button";
 
 type Props = { searchParams: Promise<{ error?: string; success?: string }> };
 
@@ -36,7 +37,7 @@ export default async function UserProfilePage({ searchParams }: Props) {
       <section className="ak-main">
         <header className="ak-topbar"><Link href="/workspace" className="ak-settings-back-link">← Back to workspace</Link><div className="ak-topbar-right">{avatarUrl ? <img className="ak-topbar-avatar" src={avatarUrl} alt="" /> : <span className="ak-topbar-avatar">{profile.display_name.slice(0,1).toUpperCase()}</span>}</div></header>
         <div className="ak-dashboard-content">
-          <div className="ak-welcome"><div><div className="ak-eyebrow">ACCOUNT</div><h1>My Profile</h1><p>Manage your identity and the personal information you share on Akiba.</p></div></div>
+          <div className="ak-welcome"><div><div className="ak-eyebrow">ACCOUNT</div><h1>My Profile</h1><p>Manage your identity and the personal information you share on Akiba.</p></div><ProfilePreviewButton displayName={profile.display_name} username={profile.username} bio={profile.bio} avatarUrl={avatarUrl} /></div>
           {params.error && <p className="ak-settings-inline-note" role="alert">{params.error}</p>}
           {params.success && <p className="ak-settings-success" role="status">{params.success}</p>}
           <section className="ak-panel ak-settings-section">
