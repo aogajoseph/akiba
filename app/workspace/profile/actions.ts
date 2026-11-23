@@ -7,65 +7,111 @@ function back(message: string, kind: "error" | "success" = "error"): never {
   redirect("/workspace/profile?" + kind + "=" + encodeURIComponent(message));
 }
 
+const VISIBILITY_VALUES = ["only_me", "group_members", "all_akiba_users"] as const;
+
 export async function saveUserProfile(formData: FormData) {
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
 
-  const displayName = String(formData.get("display_name") ?? "").trim();
-  const username = String(formData.get("username") ?? "").trim().toLowerCase();
-  const bio = String(formData.get("bio") ?? "").trim();
-  const phone = String(formData.get("phone_number") ?? "").trim().replace(/[\s()-]/g, "");
-  const location = String(formData.get("location") ?? "").trim();
-  const emailVisibility = String(formData.get("email_visibility") ?? "only_me");
-  const phoneVisibility = String(formData.get("phone_visibility") ?? "only_me");
-  const locationVisibility = String(formData.get("location_visibility") ?? "only_me");
-  const hasIdentity = formData.has("display_name");
-  const hasContactFields = formData.has("phone_number") || formData.has("location");
-  const hasPrivacyFields = formData.has("email_visibility") || formData.has("phone_visibility") || formData.has("location_visibility");
-
-  if (hasIdentity && (!displayName || displayName.length > 60)) back("Display name must be between 1 and 60 characters.");
-  if (hasIdentity && !/^[a-z][a-z0-9_]{2,19}$/.test(username)) back("Choose a valid username.");
-  if (hasIdentity && bio.length > 160) back("Bio must be 160 characters or fewer.");
-  if (hasContactFields && phone && !/^\+[1-9][0-9]{7,14}$/.test(phone)) back("Enter a valid phone number with country code.");
-  if (hasContactFields && location.length > 120) back("Location must be 120 characters or fewer.");
-  const audiences = ["only_me", "group_members", "all_akiba_users"];
-  if (hasPrivacyFields && ![emailVisibility, phoneVisibility, locationVisibility].every((value) => audiences.includes(value))) back("Choose valid privacy settings.");
+  const hasIdentity = ["display_name", "username", "bio"].some((field) => formData.has(field));
+  const hasPhone = formData.has("phone_number");
+  const hasLocation = formData.has("location");
+  const hasContactFields = hasPhone || hasLocation;
+  const hasEmailVisibility = formData.has("email_visibility");
+  const hasPhoneVisibility = formData.has("phone_visibility");
+  const hasLocationVisibility = formData.has("location_visibility");
+  const hasPrivacyFields = hasEmailVisibility || hasPhoneVisibility || hasLocationVisibility;
 
   if (hasIdentity) {
-    const { error } = await supabase.from("akiba_profiles").update({
-      display_name: displayName, username, bio: bio || null, updated_at: new Date().toISOString(),
+    const { data: existing, error } = await supabase
+      .from("akiba_profiles")
+      .select("user_id,display_name,username,bio")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (error || !existing) back("We couldn't load your profile. Please try again.");
+
+    const displayName = formData.has("display_name")
+      ? String(formData.get("display_name") ?? "").trim()
+      : existing.display_name ?? "";
+    const username = formData.has("username")
+      ? String(formData.get("username") ?? "").trim().toLowerCase()
+      : existing.username;
+    const bio = formData.has("bio")
+      ? String(formData.get("bio") ?? "").trim()
+      : existing.bio ?? "";
+
+    if (!displayName || displayName.length > 60) back("Display name must be between 1 and 60 characters.");
+    if (!/^[a-z][a-z0-9_]{2,19}$/.test(username)) back("Choose a valid username.");
+    if (bio.length > 160) back("Bio must be 160 characters or fewer.");
+
+    const { error: updateError } = await supabase.from("akiba_profiles").update({
+      display_name: displayName,
+      username,
+      bio: bio || null,
+      updated_at: new Date().toISOString(),
     }).eq("user_id", user.id);
-    if (error) {
-      console.error("Profile settings update failed", { code: error.code });
-      back(error.code === "23505" ? "That username is already taken." : "We couldn't save your profile.");
+    if (updateError) {
+      console.error("Profile settings update failed", { code: updateError.code });
+      back(updateError.code === "23505" ? "That username is already taken." : "We couldn't save your profile.");
     }
   }
 
   const avatar = formData.get("avatar");
   const hasNewAvatar = avatar instanceof File && avatar.size > 0;
   const removeAvatar = formData.get("remove_avatar") === "yes";
-  if (removeAvatar && !hasNewAvatar) {
-    const { data: previous } = await supabase.from("akiba_profiles").select("avatar_path").eq("user_id", user.id).maybeSingle();
-    const { error } = await supabase.from("akiba_profiles").update({ avatar_path: null, updated_at: new Date().toISOString() }).eq("user_id", user.id);
-    if (error) back("We couldn't remove your profile photo.");
-    if (previous?.avatar_path) await supabase.storage.from("avatars").remove([previous.avatar_path]);
-  }
   if (hasNewAvatar && avatar instanceof File) {
-    if (!["image/jpeg", "image/png", "image/webp"].includes(avatar.type) || avatar.size > 3 * 1024 * 1024) back("Choose a JPG, PNG or WebP image up to 3 MB.");
+    if (!["image/jpeg", "image/png", "image/webp"].includes(avatar.type) || avatar.size > 3 * 1024 * 1024) {
+      back("Choose a JPG, PNG or WebP image up to 3 MB.");
+    }
+    const { data: existing, error: lookupError } = await supabase
+      .from("akiba_profiles").select("avatar_path").eq("user_id", user.id).maybeSingle();
+    if (lookupError || !existing) back("We couldn't load your current profile photo.");
+
     const extension = avatar.type === "image/png" ? "png" : avatar.type === "image/webp" ? "webp" : "jpg";
     const path = user.id + "/" + crypto.randomUUID() + "." + extension;
-    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, avatar, { contentType: avatar.type, cacheControl: "3600", upsert: false });
+    const { error: uploadError } = await supabase.storage.from("avatars").upload(path, avatar, {
+      contentType: avatar.type, cacheControl: "3600", upsert: false,
+    });
     if (uploadError) back("We couldn't upload your profile photo.");
-    const { data: previous } = await supabase.from("akiba_profiles").select("avatar_path").eq("user_id", user.id).maybeSingle();
-    const { error: updateError } = await supabase.from("akiba_profiles").update({ avatar_path: path, updated_at: new Date().toISOString() }).eq("user_id", user.id);
-    if (updateError) { await supabase.storage.from("avatars").remove([path]); back("Your photo uploaded but could not be attached to your profile."); }
-    if (previous?.avatar_path) await supabase.storage.from("avatars").remove([previous.avatar_path]);
+
+    const { error: updateError } = await supabase.from("akiba_profiles")
+      .update({ avatar_path: path, updated_at: new Date().toISOString() }).eq("user_id", user.id);
+    if (updateError) {
+      await supabase.storage.from("avatars").remove([path]);
+      back("Your photo uploaded but could not be attached to your profile.");
+    }
+    if (existing.avatar_path) {
+      const { error: cleanupError } = await supabase.storage.from("avatars").remove([existing.avatar_path]);
+      if (cleanupError) console.error("Old avatar cleanup failed", { code: cleanupError.name });
+    }
+  } else if (removeAvatar) {
+    const { data: existing, error: lookupError } = await supabase
+      .from("akiba_profiles").select("avatar_path").eq("user_id", user.id).maybeSingle();
+    if (lookupError || !existing) back("We couldn't load your current profile photo.");
+    const { error: updateError } = await supabase.from("akiba_profiles")
+      .update({ avatar_path: null, updated_at: new Date().toISOString() }).eq("user_id", user.id);
+    if (updateError) back("We couldn't remove your profile photo.");
+    if (existing.avatar_path) {
+      const { error: cleanupError } = await supabase.storage.from("avatars").remove([existing.avatar_path]);
+      if (cleanupError) console.error("Avatar removal cleanup failed", { code: cleanupError.name });
+    }
   }
 
   if (hasContactFields) {
-    const { data: existing, error: lookupError } = await supabase.from("akiba_user_contacts").select("user_id").eq("user_id", user.id).maybeSingle();
+    const { data: existing, error: lookupError } = await supabase.from("akiba_user_contacts")
+      .select("user_id,phone_number,location").eq("user_id", user.id).maybeSingle();
     if (lookupError) back("We couldn't load your contact details.");
+
+    const phone = hasPhone
+      ? String(formData.get("phone_number") ?? "").trim().replace(/[\\s()-]/g, "")
+      : existing?.phone_number ?? "";
+    const location = hasLocation
+      ? String(formData.get("location") ?? "").trim()
+      : existing?.location ?? "";
+    if (phone && !/^\\+[1-9][0-9]{7,14}$/.test(phone)) back("Enter a valid phone number with country code.");
+    if (location.length > 120) back("Location must be 120 characters or fewer.");
+
     if (phone || location) {
       const values = { phone_number: phone || null, location: location || null, updated_at: new Date().toISOString() };
       const result = existing
@@ -79,18 +125,37 @@ export async function saveUserProfile(formData: FormData) {
   }
 
   if (hasPrivacyFields) {
+    const { data: existing, error: lookupError } = await supabase.from("akiba_user_privacy_settings")
+      .select("email_visibility,phone_visibility,location_visibility").eq("user_id", user.id).maybeSingle();
+    if (lookupError) back("We couldn't load your privacy preferences.");
+
+    const emailVisibility = hasEmailVisibility
+      ? String(formData.get("email_visibility"))
+      : existing?.email_visibility ?? "only_me";
+    const phoneVisibility = hasPhoneVisibility
+      ? String(formData.get("phone_visibility"))
+      : existing?.phone_visibility ?? "only_me";
+    const locationVisibility = hasLocationVisibility
+      ? String(formData.get("location_visibility"))
+      : existing?.location_visibility ?? "only_me";
+    if (![emailVisibility, phoneVisibility, locationVisibility].every((value) =>
+      VISIBILITY_VALUES.includes(value as typeof VISIBILITY_VALUES[number]))) {
+      back("Choose valid privacy settings.");
+    }
+
     const { error } = await supabase.from("akiba_user_privacy_settings").upsert({
       user_id: user.id, email_visibility: emailVisibility, phone_visibility: phoneVisibility,
       location_visibility: locationVisibility, updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" });
-    if (error) back("We couldn't save your privacy settings.");
+    if (error) back("We couldn't save your privacy preferences.");
   }
-  back("Your profile and settings have been saved.", "success");
+
+  back("Your changes have been saved.", "success");
 }
 
 export async function updateAuthEmail(formData: FormData) {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  if (!email || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) back("Enter a valid email address.");
+  if (!email || email.length > 320 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) back("Enter a valid email address.");
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
