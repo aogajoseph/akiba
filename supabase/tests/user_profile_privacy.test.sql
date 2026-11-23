@@ -31,13 +31,14 @@ values
 on conflict (user_id) do nothing;
 
 -- A shared active group is required for group_members visibility.
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000801', true);
+
 insert into public.akiba_groups (id, name, purpose, group_type, currency_code, created_by)
 values ('00000000-0000-0000-0000-000000000880', 'Profile privacy test group', 'goal', 'shared_savings', 'KES', '00000000-0000-0000-0000-000000000801')
 on conflict (id) do nothing;
 
 insert into public.akiba_group_memberships (id, group_id, user_id, role, status, joined_at, ended_at)
 values
-  ('00000000-0000-0000-0000-000000000881', '00000000-0000-0000-0000-000000000880', '00000000-0000-0000-0000-000000000801', 'group_creator', 'active', now(), null),
   ('00000000-0000-0000-0000-000000000882', '00000000-0000-0000-0000-000000000880', '00000000-0000-0000-0000-000000000802', 'member', 'active', now(), null)
 on conflict (id) do nothing;
 
