@@ -167,3 +167,34 @@ export async function updateAuthEmail(formData: FormData) {
   }
   back("A confirmation link has been sent. Your sign-in email changes only after verification.", "success");
 }
+
+export async function changePassword(formData: FormData) {
+  const password = String(formData.get("new_password") ?? "");
+  const confirmation = String(formData.get("confirm_password") ?? "");
+  if (password.length < 10 || password.length > 72) back("Use a password between 10 and 72 characters.");
+  if (password !== confirmation) back("The passwords do not match.");
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.auth.updateUser({ password });
+  if (error) {
+    console.error("Password update failed", { code: error.code });
+    back("We couldn't update your password. Please try again.");
+  }
+  back("Your password has been updated.", "success");
+}
+
+export async function signOutOtherSessions() {
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.auth.signOut({ scope: "others" });
+  if (error) {
+    console.error("Other-session sign-out failed", { name: error.name });
+    back("We couldn't sign out your other sessions. Please try again.");
+  }
+  back("Your other sessions have been signed out. This session remains active.", "success");
+}
