@@ -153,19 +153,69 @@ export async function saveUserProfile(formData: FormData) {
   back("Your changes have been saved.", "success");
 }
 
-export async function updateAuthEmail(formData: FormData) {
+export async function updateAuthEmail(
+  _previousState: { status: "idle" | "error" | "success"; message: string; email: string },
+  formData: FormData,
+): Promise<{ status: "error" | "success"; message: string; email: string }> {
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
-  if (!email || email.length > 320 || !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) back("Enter a valid email address.");
+  if (!email || email.length > 320 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return { status: "error", message: "Enter a valid email address, such as name@example.com.", email };
+  }
+
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) redirect("/login");
-  if (email === user.email?.toLowerCase()) back("That is already your current email address.");
+  if (email === user.email?.toLowerCase()) {
+    return { status: "error", message: "That is already the email address on your Akiba account.", email };
+  }
+
   const { error } = await supabase.auth.updateUser({ email });
   if (error) {
-    console.error("Auth email update request failed", { code: error.code });
-    back("We couldn't start the email change. Check the address and try again.");
+    const code = (error as { code?: string }).code?.toLowerCase() ?? "";
+    const message = error.message.toLowerCase();
+    console.error("Auth email update request failed", { code: code || "unknown" });
+
+    if (
+      ["email_exists", "user_already_exists", "email_address_exists"].includes(code) ||
+      /already (?:been )?(?:registered|in use|exists)|email_exists|user already exists/.test(message)
+    ) {
+      return {
+        status: "error",
+        message: "The email address is already linked to an Akiba account. Use a different email address.",
+        email,
+      };
+    }
+    if (["over_email_send_rate_limit", "email_rate_limit_exceeded"].includes(code) ||
+      /rate.?limit|too many requests/.test(message)) {
+      return {
+        status: "error",
+        message: "Too many email-change requests have been made. Wait a few minutes before trying again.",
+        email,
+      };
+    }
+    if (["email_address_invalid", "validation_failed"].includes(code) ||
+      /invalid email|email address.*invalid/.test(message)) {
+      return { status: "error", message: "Akiba Authentication could not accept that email address. Check it for typos.", email };
+    }
+    if (/fetch failed|network|timeout|connection/.test(message)) {
+      return {
+        status: "error",
+        message: "We couldn't reach the email service. Your sign-in email has not been changed; check your connection and try again.",
+        email,
+      };
+    }
+    return {
+      status: "error",
+      message: "We couldn't send a confirmation request to the address you entered. Your current sign-in email remains unchanged. Please try again or contact support.",
+      email,
+    };
   }
-  back("A confirmation link has been sent. Your sign-in email changes only after verification.", "success");
+
+  return {
+    status: "success",
+    message: "A confirmation link has been requested for the address you entered. Your current sign-in email remains active until you verify the new address.",
+    email,
+  };
 }
 
 export async function changePassword(formData: FormData) {
