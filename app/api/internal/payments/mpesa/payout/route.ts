@@ -34,7 +34,7 @@ function sandboxPreviewOnly(): boolean {
     process.env.MPESA_ENVIRONMENT === "sandbox";
 }
 
-async function submitClaims(claims: PayoutClaim[], config: NonNullable<ReturnType<typeof readDarajaB2CPayoutConfig> extends { ok: true; config: infer C } ? C : never>) {
+async function submitClaims(claims: PayoutClaim[], config: Extract<ReturnType<typeof readDarajaB2CPayoutConfig>, { ok: true }>["config"]) {
   const service = createServiceClient();
   let accepted = 0;
   let notSubmitted = 0;
