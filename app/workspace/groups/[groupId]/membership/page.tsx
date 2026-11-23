@@ -266,8 +266,10 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                     const photo = member.profile?.avatar_path ? supabase.storage.from("avatars").getPublicUrl(member.profile.avatar_path).data.publicUrl : null;
                     const isSelf = member.user_id === user.id;
                     return <div className="ak-workspace-member ak-membership-person" key={member.user_id}>
-                      {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
-                      <div className="ak-membership-person-copy"><strong>{name}{isSelf ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></div>
+                      <Link className="ak-profile-member-link" href={member.profile?.username ? "/workspace/people/" + encodeURIComponent(member.profile.username) : "/workspace"}>
+                        {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
+                        <span className="ak-membership-person-copy"><strong>{name}{isSelf ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></span>
+                      </Link>
                       <div className="ak-workspace-member-role ak-membership-person-role"><span className={member.role !== "member" ? "admin" : ""}>{roleLabel(member.role)}</span>
                         {isCreator && !isSelf && group.status === "active" && <details className="ak-member-actions ak-membership-action-menu">
                           <summary>Manage</summary>
