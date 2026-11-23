@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 type Props = {
   displayName: string;
@@ -12,6 +12,15 @@ type Props = {
 export function ProfilePreviewButton({ displayName, username, bio, avatarUrl }: Props) {
   const [open, setOpen] = useState(false);
   const initial = displayName.trim().slice(0, 1).toUpperCase() || "?";
+
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [open]);
 
   return (
     <>
