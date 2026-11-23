@@ -99,11 +99,11 @@ begin
     p.username,
     p.avatar_path,
     p.bio,
-    case when v_email_allowed then u.email else null end,
+    case when v_email_allowed then u.email::text else null::text end,
     (v_email_allowed and u.email is not null),
-    case when v_phone_allowed then c.phone_number else null end,
+    case when v_phone_allowed then c.phone_number::text else null::text end,
     (v_phone_allowed and c.phone_number is not null),
-    case when v_location_allowed then c.location else null end,
+    case when v_location_allowed then c.location::text else null::text end,
     (v_location_allowed and c.location is not null)
   from public.akiba_profiles p
   join auth.users u on u.id = p.user_id
