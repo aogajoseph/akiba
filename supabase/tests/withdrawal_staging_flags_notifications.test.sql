@@ -426,6 +426,12 @@ end;
 $test$;
 
 
+-- Exercise the group-scoped five-minute setting separately from the default
+-- two-hour assertions above. This remains transaction-scoped test data.
+update public.akiba_groups
+set withdrawal_staging_seconds = 300
+where id = '10000000-0000-0000-0000-000000000001';
+
 -- Creator-facing request creation uses only the synthetic sandbox workflow
 -- Daraja provider. It reserves funds and starts approvals using a synthetic
 -- zero-fee sandbox quote; payout submission remains explicitly disabled.
@@ -447,6 +453,7 @@ declare
   notification_count integer;
   message text;
   staging_deadline timestamptz;
+  staging_started timestamptz;
   selected_provider_id uuid;
   flag_id uuid;
 begin
@@ -564,6 +571,13 @@ begin
   perform public.akiba_decide_withdrawal_request(request_id, 'approved', null);
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000004', true);
   perform public.akiba_decide_withdrawal_request(request_id, 'approved', null);
+
+  select status, staging_started_at, staging_deadline_at
+    into request_status, staging_started, staging_deadline
+  from public.akiba_withdrawal_requests where id = request_id;
+  if request_status <> 'staging' or staging_deadline - staging_started <> interval '5 minutes' then
+    raise exception 'Final approval must start the configured five-minute HQ staging period';
+  end if;
 
   -- Only ordinary active members may flag; Creator and Admins must be rejected.
   perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000001', true);
