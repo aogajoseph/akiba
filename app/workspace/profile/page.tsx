@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { saveUserProfile, updateAuthEmail } from "./actions";
+import { changePassword, saveUserProfile, signOutOtherSessions, updateAuthEmail } from "./actions";
 
 type Props = { searchParams: Promise<{ error?: string; success?: string }> };
 
@@ -67,7 +67,21 @@ export default async function UserProfilePage({ searchParams }: Props) {
               <div className="ak-settings-fields"><label className="ak-settings-field"><span>New sign-in email</span><input name="email" type="email" autoComplete="email" placeholder="new@email.com" required /></label></div>
               <div className="ak-settings-save-row"><p>We send a verification link. Your sign-in address changes only after confirmation.</p><button className="workspace-primary" type="submit">Request email change</button></div>
             </form>
-            <p className="ak-settings-inline-note">Password, active sessions and account deletion are outside this profile MVP and will be handled in the dedicated Account Settings scope.</p>
+            <div className="ak-settings-divider" />
+            <div className="ak-panel-heading"><div><h2>Password</h2><p>Choose a strong password you do not use elsewhere.</p></div></div>
+            <form action={changePassword} className="ak-group-settings-form">
+              <div className="ak-settings-fields">
+                <label className="ak-settings-field"><span>New password</span><input name="new_password" type="password" autoComplete="new-password" minLength={10} maxLength={72} required /><small>Use at least 10 characters.</small></label>
+                <label className="ak-settings-field"><span>Confirm new password</span><input name="confirm_password" type="password" autoComplete="new-password" minLength={10} maxLength={72} required /></label>
+              </div>
+              <div className="ak-settings-save-row"><p>Your password is updated through Akiba Authentication.</p><button className="workspace-primary" type="submit">Update password</button></div>
+            </form>
+            <div className="ak-settings-divider" />
+            <div className="ak-panel-heading"><div><h2>Active sessions</h2><p>Sign out of other devices while keeping this session open.</p></div></div>
+            <form action={signOutOtherSessions} className="ak-group-settings-form">
+              <div className="ak-settings-save-row"><p>Other sessions may remain active until their current access tokens expire or they attempt to refresh.</p><button className="workspace-secondary" type="submit">Sign out other sessions</button></div>
+            </form>
+            <p className="ak-settings-inline-note">Account deletion is not available in this release. Contact support if you need help with your account.</p>
           </section>
         </div>
       </section>
