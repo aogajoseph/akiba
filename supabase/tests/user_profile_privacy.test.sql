@@ -137,6 +137,12 @@ $test$;
 -- Users cannot forge phone verification state through the Data API.
 do $test$
 begin
+  if has_function_privilege('anon', 'public.akiba_get_profile_by_username(text,boolean)', 'EXECUTE') then
+    raise exception 'Anonymous users can execute the profile projection';
+  end if;
+  if not has_function_privilege('authenticated', 'public.akiba_get_profile_by_username(text,boolean)', 'EXECUTE') then
+    raise exception 'Authenticated users cannot execute the profile projection';
+  end if;
   if has_column_privilege('authenticated', 'public.akiba_user_contacts', 'phone_verified_at', 'UPDATE') then
     raise exception 'Authenticated users can modify phone_verified_at';
   end if;
