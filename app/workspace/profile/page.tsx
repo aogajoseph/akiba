@@ -20,6 +20,15 @@ export default async function UserProfilePage({ searchParams }: Props) {
   ]);
   if (profileError || !profile) redirect("/onboarding");
   const privateSettingsUnavailable = Boolean(contactError || privacyError);
+  const { data: previewRows, error: previewError } = await supabase.rpc("akiba_get_profile_by_username", {
+    p_username: profile.username,
+    p_preview: true,
+  });
+  const preview = !previewError && Array.isArray(previewRows) ? previewRows[0] as {
+    email_address: string | null; email_visible: boolean;
+    phone_number: string | null; phone_visible: boolean;
+    location: string | null; location_visible: boolean;
+  } | undefined : undefined;
   const params = await searchParams;
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const defaults = { email: privacy?.email_visibility ?? "only_me", phone: privacy?.phone_visibility ?? "only_me", location: privacy?.location_visibility ?? "only_me" };
@@ -37,7 +46,10 @@ export default async function UserProfilePage({ searchParams }: Props) {
       <section className="ak-main">
         <header className="ak-topbar"><Link href="/workspace" className="ak-settings-back-link">← Back to workspace</Link><div className="ak-topbar-right">{avatarUrl ? <img className="ak-topbar-avatar" src={avatarUrl} alt="" /> : <span className="ak-topbar-avatar">{profile.display_name.slice(0,1).toUpperCase()}</span>}</div></header>
         <div className="ak-dashboard-content">
-          <div className="ak-welcome"><div><div className="ak-eyebrow">ACCOUNT</div><h1>My Profile</h1><p>Manage your identity and the personal information you share on Akiba.</p></div><ProfilePreviewButton displayName={profile.display_name} username={profile.username} bio={profile.bio} avatarUrl={avatarUrl} /></div>
+          <div className="ak-welcome"><div><div className="ak-eyebrow">ACCOUNT</div><h1>My Profile</h1><p>Manage your identity and the personal information you share on Akiba.</p></div><ProfilePreviewButton displayName={profile.display_name} username={profile.username} bio={profile.bio} avatarUrl={avatarUrl}
+            emailAddress={preview?.email_address ?? null} emailVisible={Boolean(preview?.email_visible)}
+            phoneNumber={preview?.phone_number ?? null} phoneVisible={Boolean(preview?.phone_visible)}
+            location={preview?.location ?? null} locationVisible={Boolean(preview?.location_visible)} /></div>
           {params.error && <p className="ak-settings-inline-note" role="alert">{params.error}</p>}
           {params.success && <p className="ak-settings-success" role="status">{params.success}</p>}
           <section className="ak-panel ak-settings-section">
@@ -53,7 +65,7 @@ export default async function UserProfilePage({ searchParams }: Props) {
             </form>
           </section>
           <section className="ak-panel ak-settings-section">
-            <div className="ak-panel-heading"><div><h2>Contact &amp; privacy</h2><p>Keep your contact details up to date and choose your future profile-sharing preferences.</p></div></div>
+            <div className="ak-panel-heading"><div><h2>Contact &amp; privacy</h2><p>Keep your contact details up to date and choose who can see each detail on your Akiba profile.</p></div></div>
             {privateSettingsUnavailable ? <p className="ak-settings-inline-note" role="alert">Your private contact settings could not be loaded. Refresh the page to try again. No changes have been made.</p> : <form action={saveUserProfile} className="ak-group-settings-form">
               <div className="ak-settings-fields">
                 <label className="ak-settings-field"><span>Email address <em>Required · Sign-in</em></span><input value={user.email ?? ""} readOnly /><small>Change your sign-in email in Account settings below.</small></label>
@@ -61,7 +73,6 @@ export default async function UserProfilePage({ searchParams }: Props) {
                 <label className="ak-settings-field"><span>General location <small>Optional · City or region only</small></span><input name="location" defaultValue={contact?.location ?? ""} maxLength={120} placeholder="e.g. Nairobi, Kenya" /></label>
               </div>
               <div className="ak-settings-fields">{select("Phone", defaults.phone)}{select("Location", defaults.location)}{select("Email", defaults.email)}</div>
-              <p className="ak-settings-help-note">These are saved sharing preferences for future profile features. Contact records remain owner-only today; changing a preference does not make your phone or email visible to other members.</p>
               <div className="ak-settings-save-row"><p>Only your own account can read or change these details.</p><ProfileSubmitButton idle="Save contact & privacy" pending="Saving contact details..." /></div>
             </form>}
           </section>
