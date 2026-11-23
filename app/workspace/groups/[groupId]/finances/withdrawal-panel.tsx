@@ -6,6 +6,7 @@ import {
   removeWithdrawalFlag,
 } from "@/app/workspace/actions";
 import WithdrawalCountdown from "./withdrawal-countdown";
+import ManualSandboxPayoutTrigger from "./manual-sandbox-payout-trigger";
 
 type WithdrawalRequest = {
   id: string;
@@ -335,7 +336,10 @@ export default function WithdrawalPanel({
                 {request.status === "payout_queued" && (
                   <div className="ak-withdrawal-staging">
                     <p>No active flags remained at the deadline. The withdrawal is queued for payout.</p>
-                    <p>Funds remain reserved until the payment provider confirms payout completion. In this Preview sandbox, payout submission requires an authorized operator to trigger the one-request worker. No automatic payout submission runs. Funds remain reserved until Daraja confirms the result.</p>
+                    <p>In this Preview sandbox, an authorized manual trigger submits only this Globe Technologies HQ request to the dedicated Daraja sandbox recipient. Funds remain reserved until Daraja confirms the result.</p>
+                    {isCreator && groupId === "ff4d3bbf-7d7d-4513-a083-be85d876b908" && (
+                      <ManualSandboxPayoutTrigger requestId={request.id} />
+                    )}
                     {canCancel && (
                       <form action={cancelWithdrawalRequest}>
                         <input type="hidden" name="group_id" value={groupId} />
