@@ -1,15 +1,22 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { ProfileContactList } from "./profile-contact-list";
 
 type Props = {
   displayName: string;
   username: string;
   bio: string | null;
   avatarUrl: string | null;
+  emailAddress: string | null;
+  emailVisible: boolean;
+  phoneNumber: string | null;
+  phoneVisible: boolean;
+  location: string | null;
+  locationVisible: boolean;
 };
 
-export function ProfilePreviewButton({ displayName, username, bio, avatarUrl }: Props) {
+export function ProfilePreviewButton({ displayName, username, bio, avatarUrl, emailAddress, emailVisible, phoneNumber, phoneVisible, location, locationVisible }: Props) {
   const [open, setOpen] = useState(false);
   const initial = displayName.trim().slice(0, 1).toUpperCase() || "?";
 
@@ -47,13 +54,8 @@ export function ProfilePreviewButton({ displayName, username, bio, avatarUrl }: 
               {bio ? <p className="ak-profile-preview-bio">{bio}</p> :
                 <p className="ak-profile-preview-empty-bio">No bio added</p>}
               <div className="ak-profile-preview-divider" />
-              <div className="ak-profile-preview-private">
-                <span aria-hidden="true">▣</span>
-                <div><strong>Contact details are private</strong><small>Email, phone number and location are not shown to other users in the current release.</small></div>
-                <span className="ak-profile-preview-lock" aria-label="Private">Private</span>
-              </div>
+              <ProfileContactList emailAddress={emailAddress} emailVisible={emailVisible} phoneNumber={phoneNumber} phoneVisible={phoneVisible} location={location} locationVisible={locationVisible} />
             </article>
-            <p className="ak-profile-preview-note">This preview shows your saved profile identity. Contact-sharing preferences are saved for a future release; they do not currently make contact details visible to other members.</p>
             <button type="button" className="ak-profile-preview-done" onClick={() => setOpen(false)}>Done</button>
           </section>
         </div>
