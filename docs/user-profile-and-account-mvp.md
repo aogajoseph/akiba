@@ -32,7 +32,7 @@ Email, phone and location each have an independent saved preference:
 
 The preference table and contact table use owner-only RLS. These values are **saved preferences for future profile-sharing surfaces; they do not currently grant anyone else access to contact values**. Do not expose contact values or Auth email through group-member queries, profile queries, client-side joins or public APIs. A future profile-sharing feature must use a viewer-aware server-side projection that checks the viewer's relationship to the subject and enforces each field's preference before returning data.
 
-Public identity fields already used across Akiba (display name, username and avatar) remain distinct from private contact details.
+Public identity fields already used across Akiba (display name, username and avatar) remain distinct from private contact details. The account page includes a saved-profile preview for display name, username, avatar and bio. It explicitly shows contact details as private because cross-user contact projection is not implemented yet; saved visibility preferences must not be presented as effective access grants.
 
 ## Account controls
 
@@ -57,4 +57,5 @@ Editing a profile must not rewrite historical finance, group activity, notificat
 
 - This branch is separate from the Group finance branch and based on `main`.
 - The migration is committed but has not been applied to the linked Supabase project.
-- Preview only. No Production deployment, live migration or merge is authorized.
+- The profile/location/privacy migration was applied to the linked Supabase project on 2026-11-23 and schema/RLS presence was verified. This does not authorize a Production deployment or merge.
+- Preview only. No Production deployment or merge is authorized.
