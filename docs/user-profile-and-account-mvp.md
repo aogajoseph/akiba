@@ -30,9 +30,9 @@ Email, phone and location each have an independent saved preference:
 - `group_members`
 - `all_akiba_users` (authenticated Akiba users only; never the public internet)
 
-The preference table and contact table use owner-only RLS. These values are **saved preferences for future profile-sharing surfaces; they do not currently grant anyone else access to contact values**. Do not expose contact values or Auth email through group-member queries, profile queries, client-side joins or public APIs. A future profile-sharing feature must use a viewer-aware server-side projection that checks the viewer's relationship to the subject and enforces each field's preference before returning data.
+The preference table and contact table retain owner-only RLS. Cross-user profile access is provided only through `akiba_get_profile_by_username`, a narrowly scoped authenticated `SECURITY DEFINER` projection. It validates the viewer, never accepts an arbitrary subject user ID, and returns email, phone and location values only when each field's visibility preference permits that viewer. `group_members` requires a shared active group; the owner-only preview models a fellow active group member when the owner belongs to an active group. The RPC does not return raw privacy settings or expose contact-table rows. Do not query or join contact tables directly from client-facing profile or group-member code.
 
-Public identity fields already used across Akiba (display name, username and avatar) remain distinct from private contact details. The account page includes a saved-profile preview for display name, username, avatar and bio. It explicitly shows contact details as private because cross-user contact projection is not implemented yet; saved visibility preferences must not be presented as effective access grants.
+Public identity fields already used across Akiba (display name, username and avatar) remain distinct from private contact details. The account page includes a preview driven by the same viewer-aware projection used by other members. Email, phone and location appear as individual rows, showing their values when visible and `Private` otherwise. Other signed-in members can open profiles from group overview and membership directories at `/workspace/people/[username]`.
 
 ## Account controls
 
@@ -56,6 +56,6 @@ Editing a profile must not rewrite historical finance, group activity, notificat
 ## Safety and deployment
 
 - This branch is separate from the Group finance branch and based on `main`.
-- The migration is committed but has not been applied to the linked Supabase project.
+- The profile/location/privacy migration was applied to the linked Supabase project on 2026-11-23 and its schema/RLS presence was verified. The viewer-aware profile projection migration is committed on this branch and still requires CI/Preview validation before any linked-project application.
 - The profile/location/privacy migration was applied to the linked Supabase project on 2026-11-23 and schema/RLS presence was verified. This does not authorize a Production deployment or merge.
 - Preview only. No Production deployment or merge is authorized.
