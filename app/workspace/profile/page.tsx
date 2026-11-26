@@ -20,15 +20,16 @@ export default async function UserProfilePage({ searchParams }: Props) {
   ]);
   if (profileError || !profile) redirect("/onboarding");
   const privateSettingsUnavailable = Boolean(contactError || privacyError);
-  const { data: previewRows, error: previewError } = await supabase.rpc("akiba_get_profile_by_username", {
-    p_username: profile.username,
-    p_preview: true,
-  });
-  const preview = !previewError && Array.isArray(previewRows) ? previewRows[0] as {
-    email_address: string | null; email_visible: boolean;
-    phone_number: string | null; phone_visible: boolean;
-    location: string | null; location_visible: boolean;
-  } | undefined : undefined;
+  // Build the preview from the same fresh profile/contact/privacy rows used by this page.
+  // Avoid the preview RPC here so newly saved private contact settings are reflected immediately.
+  const preview = {
+    email_address: user.email ?? null,
+    email_visible: privacy?.email_visibility === "group_members" || privacy?.email_visibility === "all_akiba_users",
+    phone_number: contact?.phone_number ?? null,
+    phone_visible: privacy?.phone_visibility === "group_members" || privacy?.phone_visibility === "all_akiba_users",
+    location: contact?.location ?? null,
+    location_visible: privacy?.location_visibility === "group_members" || privacy?.location_visibility === "all_akiba_users",
+  };
   const params = await searchParams;
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const defaults = { email: privacy?.email_visibility ?? "only_me", phone: privacy?.phone_visibility ?? "only_me", location: privacy?.location_visibility ?? "only_me" };
