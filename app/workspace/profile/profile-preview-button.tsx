@@ -54,18 +54,22 @@ export function ProfilePreviewButton({ displayName, username, bio, avatarUrl, em
               <button type="button" className="ak-profile-preview-close" onClick={() => { setAvatarExpanded(false); setOpen(false); }} aria-label="Close preview">×</button>
             </header>
             <article className="ak-profile-preview-card">
-              {avatarUrl ? (
-                <button type="button" className="ak-profile-preview-avatar-zoom" onClick={() => setAvatarExpanded(true)} aria-label="Expand profile photo">
-                  <img className="ak-profile-preview-avatar" src={avatarUrl} alt={`${displayName}'s profile photo`} />
-                  <span className="ak-profile-preview-zoom-icon" aria-hidden="true">⌕</span>
-                </button>
-              ) : (
-                <span className="ak-profile-preview-avatar ak-profile-preview-fallback">{initial}</span>
-              )}
-              <h3>{displayName}</h3>
-              <p className="ak-profile-preview-username">@{username}</p>
-              {bio ? <p className="ak-profile-preview-bio">{bio}</p> :
-                <p className="ak-profile-preview-empty-bio">No bio added</p>}
+              <div className="ak-profile-preview-identity">
+                {avatarUrl ? (
+                  <button type="button" className="ak-profile-preview-avatar-zoom" onClick={() => setAvatarExpanded(true)} aria-label="Expand profile photo">
+                    <img className="ak-profile-preview-avatar" src={avatarUrl} alt={`${displayName}'s profile photo`} />
+                    <span className="ak-profile-preview-zoom-icon" aria-hidden="true">⌕</span>
+                  </button>
+                ) : (
+                  <span className="ak-profile-preview-avatar ak-profile-preview-fallback">{initial}</span>
+                )}
+                <div className="ak-profile-preview-identity-copy">
+                  <h3>{displayName}</h3>
+                  <p className="ak-profile-preview-username">@{username}</p>
+                  {bio ? <p className="ak-profile-preview-bio">{bio}</p> :
+                    <p className="ak-profile-preview-empty-bio">No bio added</p>}
+                </div>
+              </div>
               <ProfileContactList emailAddress={emailAddress} emailVisible={emailVisible} phoneNumber={phoneNumber} phoneVisible={phoneVisible} location={location} locationVisible={locationVisible} />
             </article>
             <button type="button" className="ak-profile-preview-done" onClick={() => setOpen(false)}>Done</button>
