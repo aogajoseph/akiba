@@ -1503,7 +1503,7 @@
 .ak-public-profile-contact-row dd{margin:0;color:#34483d;font-size:11px;overflow-wrap:anywhere}
 .ak-public-profile-private{display:inline-flex;align-items:center;gap:6px;color:#8b9290;font-size:10px}
 .ak-public-profile-private:before{content:"▣";font-size:10px}
-.ak-profile-preview-card .ak-public-profile-contacts{margin-top:0;text-align:left}
+.ak-profile-preview-card .ak-public-profile-contacts{margin-top:0;border-top:0;text-align:left}
 .ak-profile-preview-card .ak-public-profile-contact-row{grid-template-columns:110px minmax(0,1fr);padding:11px 2px}
 @media(max-width:640px){
   .ak-public-profile-card{padding:18px 15px}
