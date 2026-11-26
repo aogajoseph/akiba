@@ -8,7 +8,7 @@ type Props = {
   className?: string;
 };
 
-export function ProfileSubmitButton({ idle, pending, className = "ak-profile-brand-cta" }: Props) {
+export function ProfileSubmitButton({ idle, pending, className = "workspace-primary" }: Props) {
   const { pending: isPending } = useFormStatus();
   return (
     <button className={className} type="submit" disabled={isPending} aria-busy={isPending}>
