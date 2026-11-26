@@ -1513,9 +1513,9 @@
 }
 
 
-/* Akiba magenta primary actions on the profile and account page. */
-.ak-profile-brand-cta{background:#c52a78!important;border-color:#c52a78!important;color:#fff!important}
-.ak-profile-brand-cta:hover{background:#a91e64!important;border-color:#a91e64!important}
-.ak-profile-brand-cta:focus-visible{outline:3px solid #f9d5e5!important;outline-offset:3px}
+/* Keep the existing button shape and typography; only recolor profile/account actions. */
+.ak-settings-save-row .workspace-primary{background:#c52a78;border-color:#c52a78;color:#fff}
+.ak-settings-save-row .workspace-primary:hover{background:#a91e64;border-color:#a91e64}
+.ak-settings-save-row .workspace-primary:focus-visible{outline:3px solid #f9d5e5;outline-offset:3px}
 .ak-profile-preview-done{margin-top:16px;background:#c52a78}
 .ak-profile-preview-done:hover{background:#a91e64}
