@@ -32,14 +32,14 @@ export default async function UserProfilePage({ searchParams }: Props) {
   const params = await searchParams;
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const defaults = { email: privacy?.email_visibility ?? "only_me", phone: privacy?.phone_visibility ?? "only_me", location: privacy?.location_visibility ?? "only_me" };
-  const select = (name: string, value: string) => <label className="ak-settings-field"><span>{name} visibility</span><select name={name.toLowerCase() + "_visibility"} defaultValue={value}><option value="only_me">Only me</option><option value="group_members">My Group members</option><option value="all_akiba_users">All Akiba users</option></select></label>;
+  const select = (name: string, value: string) => <label className="ak-settings-field"><span>{name} visibility</span><select name={name.toLowerCase() + "_visibility"} defaultValue={value}><option value="only_me">Only me</option><option value="group_members">Group participants</option><option value="all_akiba_users">All Akiba users</option></select></label>;
   return (
     <main className="ak-dashboard">
       <aside className="ak-sidebar">
         <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
         <nav className="ak-nav" aria-label="Main navigation">
           <span className="ak-nav-label">WORKSPACE</span><Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link><Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups</Link>
-          <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span><Link href="/workspace/profile" className="ak-nav-link active"><span>♙</span>My Profile</Link><Link href="/workspace/profile#account" className="ak-nav-link"><span>⚙</span>Settings</Link>
+          <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span><Link href="/workspace/profile" className="ak-nav-link active"><span>♙</span>Edit Profile</Link><Link href="/workspace/profile#account" className="ak-nav-link"><span>⚙</span>Settings</Link>
         </nav>
         <div className="ak-sidebar-bottom"><div className="ak-sidebar-user">{avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ak-avatar-fallback">{profile.display_name.slice(0,1).toUpperCase()}</span>}<span className="ak-sidebar-user-copy"><strong>{profile.display_name}</strong><small>@{profile.username}</small></span></div></div>
       </aside>
