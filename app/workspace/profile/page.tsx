@@ -19,6 +19,8 @@ export default async function UserProfilePage({ searchParams }: Props) {
     supabase.from("akiba_user_privacy_settings").select("email_visibility,phone_visibility,location_visibility").eq("user_id", user.id).maybeSingle(),
   ]);
   if (profileError || !profile) redirect("/onboarding");
+  const displayName = profile.display_name?.trim() || profile.username || "Akiba member";
+  const username = profile.username ?? "";
   const privateSettingsUnavailable = Boolean(contactError || privacyError);
   // Build the preview from the same fresh profile/contact/privacy rows used by this page.
   // Avoid the preview RPC here so newly saved private contact settings are reflected immediately.
@@ -42,12 +44,12 @@ export default async function UserProfilePage({ searchParams }: Props) {
           <span className="ak-nav-label">WORKSPACE</span><Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link><Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups</Link>
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span><Link href="/workspace/profile" className="ak-nav-link active"><span>♙</span>Edit Profile</Link><Link href="/workspace/profile#account" className="ak-nav-link"><span>⚙</span>Settings</Link>
         </nav>
-        <div className="ak-sidebar-bottom"><div className="ak-sidebar-user">{avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ak-avatar-fallback">{profile.display_name.slice(0,1).toUpperCase()}</span>}<span className="ak-sidebar-user-copy"><strong>{profile.display_name}</strong><small>@{profile.username}</small></span></div></div>
+        <div className="ak-sidebar-bottom"><div className="ak-sidebar-user">{avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ak-avatar-fallback">{displayName.slice(0,1).toUpperCase()}</span>}<span className="ak-sidebar-user-copy"><strong>{displayName}</strong><small>@{profile.username}</small></span></div></div>
       </aside>
       <section className="ak-main">
         <header className="ak-topbar"><Link href="/workspace" className="ak-settings-back-link">← Back to workspace</Link><div className="ak-topbar-right">{avatarUrl ? <img className="ak-topbar-avatar" src={avatarUrl} alt="" /> : <span className="ak-topbar-avatar">{profile.display_name.slice(0,1).toUpperCase()}</span>}</div></header>
         <div className="ak-dashboard-content">
-          <div className="ak-welcome"><div><div className="ak-eyebrow">ACCOUNT</div><h1>My Profile</h1><p>Manage your identity and the personal information you share on Akiba.</p></div><ProfilePreviewButton displayName={profile.display_name} username={profile.username} bio={profile.bio} avatarUrl={avatarUrl}
+          <div className="ak-welcome"><div><div className="ak-eyebrow">ACCOUNT</div><h1>My Profile</h1><p>Manage your identity and the personal information you share on Akiba.</p></div><ProfilePreviewButton displayName={displayName} username={username} bio={profile.bio} avatarUrl={avatarUrl}
             emailAddress={preview?.email_address ?? null} emailVisible={Boolean(preview?.email_visible)}
             phoneNumber={preview?.phone_number ?? null} phoneVisible={Boolean(preview?.phone_visible)}
             location={preview?.location ?? null} locationVisible={Boolean(preview?.location_visible)} /></div>
