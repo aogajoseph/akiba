@@ -36,7 +36,7 @@ export function ProfilePreviewButton({ displayName, username, bio, avatarUrl, em
   return (
     <>
       <button type="button" className="ak-profile-preview-trigger" onClick={() => setOpen(true)}>
-        <span aria-hidden="true">◉</span> Preview profile
+        <svg className="ak-profile-preview-eye-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M2.5 12s3.3-6 9.5-6 9.5 6 9.5 6-3.3 6-9.5 6-9.5-6-9.5-6Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/><circle cx="12" cy="12" r="3.1" stroke="currentColor" strokeWidth="1.8"/></svg> Preview profile
       </button>
       {open && (
         <div className="ak-profile-preview-backdrop" onMouseDown={(event) => {
