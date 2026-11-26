@@ -1470,7 +1470,6 @@
 .ak-profile-preview-username{margin:5px 0 0;color:#89958d;font-size:11px}
 .ak-profile-preview-bio{max-width:330px;margin:15px auto 0;color:#58675d;font-size:11px;line-height:1.7;overflow-wrap:anywhere}
 .ak-profile-preview-empty-bio{margin:15px 0 0;color:#9aa49d;font-size:10px;font-style:italic}
-.ak-profile-preview-divider{height:1px;margin:20px 0 15px;background:#edf0ed}
 .ak-profile-preview-private{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #edf0ed;border-radius:9px;background:#f8faf8;text-align:left}
 .ak-profile-preview-private>span:first-child{color:#718078;font-size:17px}
 .ak-profile-preview-private>div{display:grid;flex:1;gap:4px;min-width:0}
@@ -1519,3 +1518,14 @@
 .ak-settings-save-row .workspace-primary:focus-visible{outline:3px solid #f9d5e5;outline-offset:3px}
 .ak-profile-preview-done{margin-top:16px;background:#c52a78}
 .ak-profile-preview-done:hover{background:#a91e64}
+
+
+/* Expandable profile preview avatar. */
+.ak-profile-preview-avatar-zoom{position:relative;display:block;width:76px;height:76px;margin:0 auto 13px;padding:0;border:0;border-radius:50%;background:transparent;cursor:zoom-in}
+.ak-profile-preview-avatar-zoom .ak-profile-preview-avatar{display:block;width:76px;height:76px;margin:0}
+.ak-profile-preview-zoom-icon{position:absolute;inset:0;display:grid;place-items:center;border-radius:50%;background:#17152b88;color:#fff;font-size:34px;font-weight:400;line-height:1;opacity:0;transition:opacity .15s ease}
+.ak-profile-preview-avatar-zoom:hover .ak-profile-preview-zoom-icon,.ak-profile-preview-avatar-zoom:focus-visible .ak-profile-preview-zoom-icon{opacity:1}
+.ak-profile-preview-avatar-zoom:focus-visible{outline:3px solid #c52a78;outline-offset:3px}
+.ak-profile-avatar-lightbox{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:24px;background:#11101de8;cursor:zoom-out}
+.ak-profile-avatar-lightbox img{display:block;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);width:auto;height:auto;object-fit:contain;border-radius:4px;box-shadow:0 20px 70px #0006}
+@media(prefers-reduced-motion:reduce){.ak-profile-preview-zoom-icon{transition:none}}
