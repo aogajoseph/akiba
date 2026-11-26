@@ -1511,3 +1511,11 @@
   .ak-public-profile-contact-row{grid-template-columns:105px minmax(0,1fr);gap:10px}
   .ak-profile-member-link{gap:8px}
 }
+
+
+/* Akiba magenta primary actions on the profile and account page. */
+.ak-profile-brand-cta{background:#c52a78!important;border-color:#c52a78!important;color:#fff!important}
+.ak-profile-brand-cta:hover{background:#a91e64!important;border-color:#a91e64!important}
+.ak-profile-brand-cta:focus-visible{outline:3px solid #f9d5e5!important;outline-offset:3px}
+.ak-profile-preview-done{margin-top:16px;background:#c52a78}
+.ak-profile-preview-done:hover{background:#a91e64}
