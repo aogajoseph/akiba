@@ -104,7 +104,7 @@ export async function saveUserProfile(formData: FormData) {
     if (lookupError) back("We couldn't load your contact details.");
 
     const phone = hasPhone
-      ? String(formData.get("phone_number") ?? "").trim().replace(/[\\s()-]/g, "")
+      ? String(formData.get("phone_number") ?? "").trim().replace(/[\s()-]/g, "")
       : existing?.phone_number ?? "";
     const location = hasLocation
       ? String(formData.get("location") ?? "").trim()
