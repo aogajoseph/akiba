@@ -94,7 +94,6 @@ export default async function UserProfilePage({ searchParams }: Props) {
             <form action={signOutOtherSessions} className="ak-group-settings-form">
               <div className="ak-settings-save-row"><p>Other sessions may remain active until their current access tokens expire or they attempt to refresh.</p><ProfileSubmitButton className="ak-settings-secondary-button ak-settings-signout-button" idle="Sign out other sessions" pending="Signing out other sessions..." /></div>
             </form>
-            <p className="ak-settings-help-note">Account deletion is not available in this release. Contact support if you need help with your account.</p>
           </section>
         </div>
       </section>
