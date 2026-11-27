@@ -196,7 +196,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <Link href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
             <Link href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat{chatUnreadCount > 0 && <span className="ak-group-tab-unread-badge">{chatUnreadCount > 99 ? "99+" : chatUnreadCount}</span>}</Link>
-            <Link href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link>
+            {isGroupCreator ?             <Link href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link> :             <span aria-disabled="true" title="Only the Group Creator can access group settings"><SettingsOutlinedIcon />Settings</span>}
           </nav>
           {group.status !== "active" && <div className="ak-workspace-card ak-group-deactivated-banner">
             <strong>This group has been deactivated.</strong>
