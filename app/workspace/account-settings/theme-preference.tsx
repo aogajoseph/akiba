@@ -14,8 +14,8 @@ export default function ThemePreference({ initialTheme }: { initialTheme: AkibaT
     setMessage("");
     document.documentElement.dataset.akibaTheme = nextTheme;
     document.documentElement.style.colorScheme = nextTheme === "system" ? "" : nextTheme;
-    startTransition(async () => {
-      const result = await saveThemePreference(nextTheme);
+    startTransition(() => {
+      void saveThemePreference(nextTheme).then((result) => {
       if (!result.success) {
         setTheme(previous);
         document.documentElement.dataset.akibaTheme = previous;
@@ -24,6 +24,7 @@ export default function ThemePreference({ initialTheme }: { initialTheme: AkibaT
       } else {
         setMessage("Appearance preference saved.");
       }
+      });
     });
   }
 
