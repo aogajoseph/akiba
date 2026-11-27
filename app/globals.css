@@ -2285,3 +2285,8 @@ html[data-akiba-theme="dark"] .ak-workspace-app .ak-membership-requests {
 .ak-membership-manage-chevron {
   display:none !important;
 }
+
+/* The membership heading's light gradient washes out its content in dark mode; preserve the existing dark surface. */
+html[data-akiba-theme="dark"] .ak-membership-page-heading {
+  background:none !important;
+}
