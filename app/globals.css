@@ -1873,7 +1873,7 @@ html[data-akiba-theme="dark"] .ak-group-image { background:#293247;border:1px so
 
 /* Additional white surfaces used by the group detail and group creation flows. */
 html[data-akiba-theme="dark"] :is(.ak-group-stat,.ak-group-panel,.ak-group-tabs,
-  .ak-workspace-progress,.ak-workspace-member,.ak-workspace-summary-card,
+  .ak-workspace-summary-card,
   .ak-workspace-action-message,.ak-workspace-more-menu,.ak-workspace-share,
   .ak-workspace-more,.ak-group-state,.ak-category-option,
   .ak-create-back,.ak-membership-action-menu-content,.ak-membership-share-link,
@@ -1935,7 +1935,7 @@ html[data-akiba-theme="dark"] .ak-workspace-group-image,
 html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-group-image {
   background:#293247;border-color:#3a4055;
 }
-html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-progress { background:#202536; }
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-progress { background:#1a1e2d; }
 html[data-akiba-theme="dark"] .ak-workspace-app .ak-group-tabs>span.active,
 html[data-akiba-theme="dark"] .ak-workspace-app .ak-group-tabs>a.active {
   background:#3a263b;color:#f0b5d8;
