@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
@@ -22,9 +22,27 @@ type Props = {
 
 export default function NotificationBell({ unreadCount: initialUnreadCount, notifications: initialNotifications }: Props) {
   const [open, setOpen] = useState(false);
+  const trayRootRef = useRef<HTMLDivElement>(null);
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount ?? 0);
   const [notifications, setNotifications] = useState(initialNotifications ?? []);
   const router = useRouter();
+
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!trayRootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   useEffect(() => {
     let active = true;
@@ -72,7 +90,7 @@ export default function NotificationBell({ unreadCount: initialUnreadCount, noti
   }
 
   return (
-    <div className="ak-notification-bell">
+    <div className="ak-notification-bell" ref={trayRootRef}>
       <button
         type="button"
         className="ak-notification-bell-trigger"
