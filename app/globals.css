@@ -436,7 +436,7 @@
  .ak-category-options{grid-template-columns:repeat(3,minmax(0,1fr))}
  .ak-category-option{display:flex;min-height:105px;align-items:flex-start}
  .ak-category-option small{font-size:8px}
- .ak-create-navigation{position:sticky;bottom:0;padding:10px 0 2px;background:#fff}
+ .ak-create-navigation{position:sticky;bottom:0;padding:10px 0 2px;background:transparent}
 }
 @media(max-width:430px){
  .ak-create-step-labels span{font-size:8px}
@@ -1929,7 +1929,7 @@ html[data-akiba-theme="dark"] .ak-category-option.selected .ak-category-symbol {
 }
 html[data-akiba-theme="dark"] .ak-category-option.selected,
 html[data-akiba-theme="dark"] .ak-category-option:hover { background:#2a2436;border-color:#9b4f7a; }
-html[data-akiba-theme="dark"] .ak-create-navigation { background:#111421;border-color:#34384b; }
+html[data-akiba-theme="dark"] .ak-create-navigation { background:transparent;border-color:#34384b; }
 html[data-akiba-theme="dark"] .ak-create-back { background:#202536;color:#d6deef; }
 html[data-akiba-theme="dark"] .ak-workspace-group-image,
 html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-group-image {
