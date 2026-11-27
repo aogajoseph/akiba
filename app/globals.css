@@ -2178,15 +2178,14 @@ html[data-akiba-theme="dark"] .ak-membership-directory-heading>div>p {
   color:#c2cbe0 !important;
 }
 html[data-akiba-theme="dark"] .ak-membership-stat {
-  background:#fbfafc;
-  border-color:#eeebf2;
+  background:#202536;
+  border-color:#3a4055;
 }
-/* Membership count tiles keep their bright surface, so use dark ink on it. */
 html[data-akiba-theme="dark"] .ak-membership-stat strong {
-  color:#2e2d4a !important;
+  color:#f1f3fa !important;
 }
 html[data-akiba-theme="dark"] .ak-membership-stat small {
-  color:#626176 !important;
+  color:#c2cbe0 !important;
 }
 html[data-akiba-theme="dark"] .ak-membership-results-meta,
 html[data-akiba-theme="dark"] .ak-membership-results-meta span:last-child {
