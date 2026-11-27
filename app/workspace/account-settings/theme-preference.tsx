@@ -5,7 +5,7 @@ import { saveThemePreference, type AkibaTheme } from "./actions";
 
 function applyTheme(theme: AkibaTheme) {
   // Akiba's "system" setting intentionally resolves to the light palette.
-  const resolved = theme === "dark" ? "dark" : "light";
+  const resolved = theme === "light" ? "light" : "dark";
   document.documentElement.dataset.akibaTheme = resolved;
   document.documentElement.style.colorScheme = resolved;
 }
@@ -49,9 +49,9 @@ export default function ThemePreference({ initialTheme }: { initialTheme: AkibaT
         <select value={theme} disabled={isPending} onChange={(event) => void chooseTheme(event.currentTarget.value as AkibaTheme)}>
           <option value="light">Light theme</option>
           <option value="dark">Dark theme</option>
-          <option value="system">System default (Light)</option>
+          <option value="system">System default (Dark)</option>
         </select>
-        <small>System default uses Akiba’s light appearance. Your preference is saved to your account and used across devices.</small>
+        <small>System default uses Akiba’s dark appearance. Your preference is saved to your account and used across devices.</small>
       </label>
       {message && <p className={message.includes("saved") ? "ak-settings-success" : "ak-settings-inline-note"} role="status">{message}</p>}
     </div>
