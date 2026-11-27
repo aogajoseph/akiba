@@ -120,7 +120,7 @@ export default async function GroupSettingsPage({ params, searchParams }: Props)
             <Link href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
             <Link href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat{chatUnreadCount > 0 && <span className="ak-group-tab-unread-badge">{chatUnreadCount > 99 ? "99+" : chatUnreadCount}</span>}</Link>
-            <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link>
+            {isCreator ? <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link> : <span aria-disabled="true" title="Only the Group Creator can access group settings"><SettingsOutlinedIcon />Settings</span>}
           </nav>
 
           {query.error && <p className="ak-finance-error" role="alert">{query.error}</p>}
