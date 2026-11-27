@@ -1949,3 +1949,39 @@ html[data-akiba-theme="dark"] .ak-profile-preview-trigger,
 html[data-akiba-theme="dark"] .ak-invite-modal-secondary {
   background:#202536;color:#e9a8d0;border-color:#4a3548;
 }
+
+
+/* Dashboard polish: dark-only contrast and hover parity. Light theme is unchanged. */
+html[data-akiba-theme="dark"] .ak-brand,
+html[data-akiba-theme="dark"] .ak-mobile-brand {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-dashboard .ak-panel-heading .ak-panel-count {
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-activity-row {
+  border-color:#34384b;
+  transition:background .15s ease;
+}
+html[data-akiba-theme="dark"] .ak-activity-row:hover {
+  background:#22283a;
+  border-radius:8px;
+}
+html[data-akiba-theme="dark"] .ak-feature-note {
+  border-color:#4a4058;
+  background:#292333;
+  color:#d6deef;
+}
+html[data-akiba-theme="dark"] .ak-note-card {
+  border-color:#4a4058;
+  background:linear-gradient(145deg,#292333,#222638);
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-note-card strong,
+html[data-akiba-theme="dark"] .ak-note-card p {
+  color:#e6eaf2;
+}
