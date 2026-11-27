@@ -9,6 +9,7 @@ values
 on conflict (id) do nothing;
 
 select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
 set local role service_role;
 
 -- Creator ownership is an authoritative deletion gate.
