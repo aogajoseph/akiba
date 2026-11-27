@@ -76,7 +76,7 @@ export default async function AccountSettingsPage({ searchParams }: Props) {
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const displayName = profile.display_name;
   const theme = !settingsError && ["light", "dark", "system"].includes(settings?.theme ?? "")
-    ? settings!.theme as "light" | "dark" | "system" : "system";
+    ? settings!.theme as "light" | "dark" | "system" : "light";
   const params = await searchParams;
 
   return (
