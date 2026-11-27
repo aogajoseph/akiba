@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 import { changePassword, signOutOtherSessions } from "../profile/actions";
 import { EmailChangeForm } from "../profile/email-change-form";
 import { ProfileSubmitButton } from "../profile/profile-submit-button";
-import ThemePreference, { } from "./theme-preference";
+import ThemePreference from "./theme-preference";
 import AccountDeletionForm from "./account-deletion-form";
 
 type Group = {
