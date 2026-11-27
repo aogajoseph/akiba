@@ -2043,3 +2043,45 @@ html[data-akiba-theme="dark"] input[type="file"]::file-selector-button {
   border:1px solid #505971;
   border-radius:6px;
 }
+
+
+/* Group creation wizard: dark-mode-only contrast improvements. */
+html[data-akiba-theme="dark"] .ak-create-step-labels span {
+  color:#b7c0d5;
+}
+html[data-akiba-theme="dark"] .ak-create-step-labels span.active {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-create-section-heading>span {
+  background:#38283d;
+  color:#ff8bc5;
+}
+html[data-akiba-theme="dark"] .ak-create-form label .ak-field-meta {
+  border-color:#4a4056;
+  background:#302a3a;
+  color:#e0d9e8;
+}
+html[data-akiba-theme="dark"] .ak-create-form label .ak-field-meta.required {
+  border-color:#784264;
+  background:#43283b;
+  color:#ff9acb;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-coming-soon-label {
+  border:1px solid #4b4560;
+  background:#343047;
+  color:#e2dafa;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-private-note {
+  border-color:#42495e;
+  background:#252b3b;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-private-note>span {
+  background:#303d4c;
+  color:#a9e2bf;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-private-note strong {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-private-note small {
+  color:#c2cbe0;
+}
