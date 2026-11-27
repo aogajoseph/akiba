@@ -87,7 +87,7 @@ export default async function WorkspacePage() {
           <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
           <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>My Profile</Link>
-          <Link href="/workspace/profile#account" className="ak-nav-link"><span>⚙</span>Settings</Link>
+          <Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
         </nav>
         <div className="ak-sidebar-bottom">
           <div className="ak-sidebar-promo"><span className="ak-promo-mark">✳</span><strong>Do more, together</strong><p>Bring people together around the things that matter.</p><Link href="/workspace/new">Create a group <span>→</span></Link></div>
