@@ -1706,8 +1706,138 @@ html[data-akiba-theme="dark"] .status { background:#18372c; color:#91d4ad; }
 .ak-account-deleted-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:#f6f7fb;color:#303451}.ak-account-deleted-card{width:min(100%,520px);padding:36px;border:1px solid #e7e9f0;border-radius:18px;background:#fff;text-align:center;box-shadow:0 16px 48px rgba(26,31,50,.08)}.ak-account-deleted-mark{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 18px;border-radius:50%;background:#e8f7ed;color:#39895c;font-size:26px;font-weight:800}.ak-account-deleted-card h1{margin:8px 0 12px;font-size:25px}.ak-account-deleted-card>p:not(.ak-eyebrow){color:#8189a0;font-size:13px;line-height:1.7}.ak-account-deleted-card>a{display:inline-block;margin-top:18px;padding:12px 18px;border-radius:8px;background:#bd2b78;color:#fff;font-size:12px;font-weight:800;text-decoration:none}html[data-akiba-theme="dark"] .ak-account-deleted-page{background:#111421;color:#e6eaf2}html[data-akiba-theme="dark"] .ak-account-deleted-card{background:#1a1e2d;border-color:#34384b}html[data-akiba-theme="dark"] .ak-account-deleted-card h1{color:#e6eaf2}@media(prefers-color-scheme:dark){html[data-akiba-theme="system"] .ak-account-deleted-page{background:#111421;color:#e6eaf2}html[data-akiba-theme="system"] .ak-account-deleted-card{background:#1a1e2d;border-color:#34384b}html[data-akiba-theme="system"] .ak-account-deleted-card h1{color:#e6eaf2}}
 
 
-/* Theme text contrast guard: prevent fixed dark text from leaking into dark workspaces. */
-html[data-akiba-theme="dark"] body,
-html[data-akiba-theme="dark"] body * {
-  color: #e6eaf2 !important;
+
+
+/* Dark mode: theme actual surfaces and text without flattening every icon,
+   badge, link, and action to one forced color. Light mode is untouched. */
+html[data-akiba-theme="dark"] :is(
+  .ak-panel,.ak-metric,.ak-workspace-card,.ak-workspace-summary-card,
+  .ak-workspace-invite,.ak-workspace-card-body,.ak-group-report-panel,
+  .ak-finance-heading,.ak-finance-summary-card,.ak-finance-contribute,
+  .ak-finance-history,.ak-finance-payment-state,.ak-finance-disabled,
+  .ak-finance-safety-note,.ak-membership-page-heading,.ak-membership-panel,
+  .ak-profile-setup-card,.ak-profile-preview-dialog,.ak-profile-preview-card,
+  .ak-invite-modal,.workspace-modal,.workspace-panel,.modal,.panel,.card,
+  .metric,.auth-card,.real-group,.real-detail-card,
+  [class*="-card"],[class*="-panel"],[class*="-modal"],[class*="-dialog"],
+  [class*="-tray"],[class*="-popover"],[class*="-menu-content"]
+) {
+  background-color:#1a1e2d;
+  border-color:#34384b;
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] :is(
+  .ak-dashboard,.ak-main,.ak-dashboard-content,.ak-workspace-content,
+  .ak-workspace-page,.ak-workspace-shell,.ak-workspace-app,
+  .workspace-shell,.real-workspace,.profile-setup-shell,.auth-shell
+) { background-color:#111421; color:#e6eaf2; }
+
+/* Card descendants inherit a readable foreground; semantic accents below
+   restore their intended color and contrast on dark surfaces. */
+html[data-akiba-theme="dark"] :is(
+  .ak-panel,.ak-metric,.ak-workspace-card,.ak-workspace-summary-card,
+  .ak-workspace-invite,.ak-workspace-card-body,.ak-group-report-panel,
+  .ak-finance-heading,.ak-finance-summary-card,.ak-finance-contribute,
+  .ak-finance-history,.ak-finance-payment-state,.ak-finance-disabled,
+  .ak-finance-safety-note,.ak-membership-page-heading,.ak-membership-panel,
+  .ak-profile-setup-card,.ak-profile-preview-dialog,.ak-profile-preview-card,
+  .ak-invite-modal,.workspace-modal,.workspace-panel,.modal,.panel,.card,
+  .metric,.auth-card,.real-group,.real-detail-card,
+  [class*="-card"],[class*="-panel"],[class*="-modal"],[class*="-dialog"],
+  [class*="-tray"],[class*="-popover"],[class*="-menu-content"]
+) :is(h1,h2,h3,h4,p,span,strong,b,small,label,dt,dd,li,time,summary) {
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-dashboard h1,
+html[data-akiba-theme="dark"] .ak-dashboard h2,
+html[data-akiba-theme="dark"] .ak-dashboard h3,
+html[data-akiba-theme="dark"] .ak-workspace-content h1,
+html[data-akiba-theme="dark"] .ak-workspace-content h2,
+html[data-akiba-theme="dark"] .ak-workspace-content h3 { color:#f1f3fa; }
+html[data-akiba-theme="dark"] :is(
+  .ak-dashboard,.ak-workspace-content,.workspace-shell,.real-workspace
+) :is(p,small,time,.ak-muted,.ak-workspace-muted,.ak-section-eyebrow,.ak-eyebrow) {
+  color:#aab4ca;
+}
+
+/* Darken pastel icon chips and counters so their glyphs/numbers remain legible. */
+html[data-akiba-theme="dark"] :is(
+  .ak-metric-icon,.ak-quick-icon,.ak-activity-icon,.ak-notification-mark,
+  .ak-message-inbox-icon,.ak-finance-history-icon,.ak-finance-status-icon,
+  .ak-empty-icon,.ak-group-icon,.ak-workspace-member-fallback,
+  .ak-group-symbol,.group-symbol,.metric-icon,.core
+) {
+  background-color:#293247;
+  color:#c7d5f4;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] :is(.ak-count-pill,.ak-coming-pill,.ak-group-unread-badge,
+  .ak-notification-unread-label,.ak-message-unread-badge,.ak-nav-link small,
+  .ak-notification-bell-count,.ak-message-bell-count,.ak-panel-count) {
+  background-color:#3a263b;
+  color:#f0b5d8;
+  border-color:#1a1e2d;
+}
+html[data-akiba-theme="dark"] .ak-notification-bell-trigger,
+html[data-akiba-theme="dark"] .ak-message-bell-trigger,
+html[data-akiba-theme="dark"] .ak-workspace-close,
+html[data-akiba-theme="dark"] .workspace-close,
+html[data-akiba-theme="dark"] .ak-profile-preview-close {
+  background-color:#202536;
+  border-color:#3a4055;
+  color:#d6deef;
+}
+html[data-akiba-theme="dark"] :is(.ak-primary,.workspace-primary,.workspace-secondary,
+  .ak-finance-primary-button,.ak-finance-secondary-button,.ak-member-danger,
+  .ak-invite-modal-secondary,.ak-membership-copy button,.ak-profile-submit-button,
+  .ak-profile-preview-done,.ak-account-delete-form button) {
+  color:#fff;
+}
+html[data-akiba-theme="dark"] :is(.ak-panel-footer,.ak-finance-inline-link,
+  .ak-workspace-back,.ak-nav-link.active,.ak-quick-action>b,
+  .ak-notification-pagination a,.ak-notification-tray-footer,
+  .ak-membership-share-link a,.ak-membership-open-link) {
+  color:#e9a8d0;
+}
+html[data-akiba-theme="dark"] :is(.ak-group-row,.ak-quick-action,.ak-activity-row,
+  .ak-notification-row,.ak-notification-tray-item,.ak-message-inbox-row,
+  .ak-workspace-member,.ak-workspace-card-heading,.ak-workspace-card-heading p) {
+  border-color:#34384b;
+}
+html[data-akiba-theme="dark"] :is(.ak-notification-row.is-unread,.ak-notification-tray-item.is-unread,
+  .ak-activity-row.is-unread,.ak-group-row:hover,.ak-quick-action:hover,
+  .ak-message-inbox-row:hover,.ak-notification-tray-item:hover) {
+  background:#22283a;
+}
+html[data-akiba-theme="dark"] :is(.ak-topbar,.ak-sidebar,.ak-workspace-topbar,.real-topbar) {
+  background:#1a1e2ded;
+  border-color:#34384b;
+}
+html[data-akiba-theme="dark"] .ak-sidebar-promo {
+  background:linear-gradient(145deg,#282334,#222638);
+  border-color:#3a3548;
+}
+html[data-akiba-theme="dark"] .ak-purpose-banner {
+  background:linear-gradient(110deg,#292333,#222638);
+  border-color:#3a3548;
+}
+html[data-akiba-theme="dark"] .ak-purpose-banner h2,
+html[data-akiba-theme="dark"] .ak-purpose-banner p,
+html[data-akiba-theme="dark"] .ak-sidebar-promo p { color:#e6eaf2; }
+html[data-akiba-theme="dark"] .ak-nav-link { color:#c0c8dc; }
+html[data-akiba-theme="dark"] .ak-nav-link.active { background:#332338;color:#f0b5d8; }
+html[data-akiba-theme="dark"] .ak-notification-bell-count,
+html[data-akiba-theme="dark"] .ak-message-bell-count { border-color:#1a1e2d; }
+html[data-akiba-theme="dark"] .ak-status-pill,
+html[data-akiba-theme="dark"] .ak-membership-status.is-active,
+html[data-akiba-theme="dark"] .ak-account-group-status.is-active,
+html[data-akiba-theme="dark"] .ak-notification-read {
+  background:#18372c;color:#91d4ad;border-color:#2e5b45;
+}
+html[data-akiba-theme="dark"] :is(.ak-status-pill,.ak-membership-status.is-inactive,
+  .ak-account-group-status.is-inactive,.ak-workspace-preview,.workspace-preview) {
+  background:#3a3324;color:#e6c37b;border-color:#55482e;
+}
+html[data-akiba-theme="dark"] :is(.ak-finance-error,.ak-form-error,.ak-alert[role="alert"]) {
+  color:#ffb7bf;
 }
