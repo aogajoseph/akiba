@@ -34,6 +34,8 @@ alter table public.akiba_groups alter column created_by drop not null;
 -- the account owner requests deletion. The original financial records remain
 -- immutable; identity fields are nullable only for anonymisation.
 alter table public.akiba_group_messages alter column author_id drop not null;
+alter table public.akiba_group_membership_events alter column actor_id drop not null;
+alter table public.akiba_group_membership_events alter column subject_user_id drop not null;
 alter table public.akiba_group_chat_attachments alter column uploaded_by drop not null;
 alter table public.akiba_contribution_intents alter column contributor_id drop not null;
 alter table public.akiba_withdrawal_requests alter column initiator_id drop not null;
@@ -118,6 +120,8 @@ begin
 
   update public.akiba_group_invite_links set created_by = null where created_by = p_user_id;
   update public.akiba_group_messages set author_id = null where author_id = p_user_id;
+  update public.akiba_group_membership_events set actor_id = null where actor_id = p_user_id;
+  update public.akiba_group_membership_events set subject_user_id = null where subject_user_id = p_user_id;
   update public.akiba_group_chat_attachments set uploaded_by = null where uploaded_by = p_user_id;
   update public.akiba_contribution_intents set contributor_id = null where contributor_id = p_user_id;
   update public.akiba_withdrawal_requests set initiator_id = null where initiator_id = p_user_id;
