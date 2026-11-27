@@ -1,0 +1,65 @@
+# Akiba production polish: trust, usability, and delivery
+
+## Goal
+
+Make Akiba feel like a coherent, dependable product for early users—not a sandbox—by improving clarity, confidence, and speed across the main user journeys.
+
+This is a product-quality initiative, not a visual redesign for its own sake. Each change should help a user understand where they are, what they can do, what happened after an action, and what to do next.
+
+## Product principles
+
+1. **Clarity over decoration** — strong hierarchy, concise labels, understandable actions, and less competing UI.
+2. **Confidence at every step** — explain important actions and show reliable success, pending, and failure states.
+3. **Fast paths for frequent tasks** — surface the next useful action and remove unnecessary steps.
+4. **Consistency across sections** — navigation, spacing, typography, controls, status patterns, and terminology should behave consistently.
+5. **Respect real-world stakes** — finance and account actions must communicate status and consequences precisely; never imply money moved when it did not.
+6. **Accessible and responsive by default** — keyboard, focus, contrast, reduced-motion, and mobile layouts are part of product quality.
+
+## Areas to audit and improve
+
+- **First impression and onboarding:** explain Akiba's value, make the first successful action obvious, and avoid dead ends.
+- **Group overview and navigation:** establish a clear group home, predictable section navigation, useful context, and visible permissions.
+- **Contributions and finances:** make balances, activity, statuses, and next steps easy to scan; distinguish recorded, pending, failed, and sandbox actions.
+- **Membership and invitations:** make member roles and invite status understandable; make invitation and joining flows feel safe and straightforward.
+- **Group chat:** improve readability, message/action affordances, loading and empty states, and continuity with group tasks.
+- **Settings and account:** make settings discoverable, explain sensitive controls, and provide clear save/error feedback.
+- **Shared UI states:** standardize loading, empty, error, success, disabled, confirmation, and retry patterns.
+
+## Suggested delivery sequence
+
+### Phase 1 — Product audit and journey map
+Review the app from the perspective of a new user and a returning group member. Capture friction, confusing copy, visual inconsistency, dead ends, and missing feedback. Rank issues by user impact and implementation risk.
+
+### Phase 2 — Establish a cohesive product shell
+Define and apply shared patterns for page headers, navigation, content width, cards/surfaces, buttons, forms, status indicators, alerts, and responsive behavior. Preserve intentional light/dark theme behavior.
+
+### Phase 3 — Polish the highest-value journeys
+Prioritize:
+1. Sign up / sign in → first group or invitation
+2. Group overview → contribution / finance status
+3. Invite → join → understand role
+4. Group activity/chat → find relevant information
+5. Settings → safely update and confirm changes
+
+### Phase 4 — Verify
+Run automated checks and review the deployed Preview at desktop and mobile sizes. Validate keyboard/focus, contrast, empty/loading/error states, and critical flows. Keep payment/provider behavior and financial rules unchanged unless a separately reviewed task explicitly requires it.
+
+## Acceptance criteria
+
+- Main screens share a clear, consistent hierarchy and visual language.
+- A first-time user can identify the primary action on each key screen without guessing.
+- Important actions provide immediate, accurate feedback and recoverable errors.
+- No key flow ends in an unexplained blank, disabled, or "coming soon" state.
+- Financial and account statuses are accurate and do not overstate completion.
+- Layouts work at mobile and desktop sizes; interactive controls are keyboard accessible.
+- Changes are validated in CI and in the Preview deployment before merge.
+
+## Out of scope
+
+- Rewriting financial logic, ledger behavior, payment integrations, or payout controls.
+- Adding new product capabilities unrelated to reducing user friction or increasing trust.
+- A wholesale brand rework before the current user journeys and shared UI patterns have been audited.
+
+## Working approach
+
+Start with a focused screen-by-screen audit and evidence-based prioritization. Implement improvements in small, reviewable slices, preserving existing functionality and keeping the light theme intact when making dark-theme-specific refinements.
