@@ -8,15 +8,16 @@ values
   ('00000000-0000-0000-0000-000000000912', 'authenticated', 'authenticated', 'account-delete-admin@akiba.test', '', now(), now(), now())
 on conflict (id) do nothing;
 
--- Create a group through the authenticated Creator path so its immutable
--- Creator membership is installed by the normal database trigger.
+-- Seed the group as the database test owner while setting auth.uid to the
+-- Creator. This isolates trigger/account-deletion invariants from the group
+-- INSERT RLS policy; RPC permission paths are exercised under authenticated below.
 insert into public.akiba_profiles (user_id, username, display_name)
 values ('00000000-0000-0000-0000-000000000910', 'delete_owner_910', 'Deletion Owner')
 on conflict (user_id) do nothing;
 select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000910', true);
 select set_config('request.jwt.claim.role', 'authenticated', true);
 select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-0000-0000-000000000910"}', true);
-set local role authenticated;
+reset role;
 insert into public.akiba_groups (id, name, purpose, group_type, currency_code, created_by)
 values ('00000000-0000-0000-0000-000000000920', 'Account deletion gate group', 'goal', 'shared_savings', 'KES', '00000000-0000-0000-0000-000000000910')
 on conflict (id) do nothing;
