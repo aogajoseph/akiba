@@ -69,5 +69,5 @@ export async function deleteAkibaAccount(formData: FormData): Promise<never> {
     if (avatarCleanupError) console.error("Deleted account avatar cleanup failed", { message: avatarCleanupError.message });
   }
   await supabase.auth.signOut();
-  redirect("/login?message=account_deleted");
+  redirect("/account-deleted");
 }
