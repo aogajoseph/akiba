@@ -159,7 +159,7 @@ export default async function AccountSettingsPage({ searchParams }: Props) {
               {creatorGroups.map((group) => <div className="ak-account-owned-group" key={group.id}><strong>{group.name}</strong><small>{group.status === "deactivated" ? "Scheduled for automatic deletion " + (group.scheduled_delete_at ? formatDate(group.scheduled_delete_at) : "after six months") : "Active group · ownership must be resolved"}</small><span><Link href={"/workspace/groups/" + group.id + "/delete"}>Check deletion eligibility</Link><Link href={"/workspace/groups/" + group.id + "/membership"}>Manage / deactivate group</Link></span></div>)}
             </div>}
             {!deletionDataAvailable && <p className="ak-settings-inline-note" role="alert">We could not verify your group responsibilities. Account deletion is disabled until the group list can be checked.</p>}{unresolvedCreatorMembership && creatorGroups.length === 0 && <p className="ak-settings-inline-note" role="alert">A Group Creator membership is still being cleared by the retention process. Account deletion will be available after that cleanup finishes.</p>}
-            <AccountDeletionForm enabled={canDelete} lastSignInAt={user.last_sign_in_at ?? null} />
+            <AccountDeletionForm enabled={canDelete} />
           </section>
         </div>
       </section>
