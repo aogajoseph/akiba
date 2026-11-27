@@ -2255,3 +2255,7 @@ html[data-akiba-theme="dark"] .ak-deactivate-group-form .ak-member-danger:hover 
   background:#ce438f;
   color:#ffffff !important;
 }
+
+
+/* Keep the custom chevron dark-theme-only; light mode retains its original marker. */
+.ak-membership-manage-chevron { display:none; }
