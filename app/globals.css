@@ -1636,3 +1636,66 @@ html[data-akiba-theme="dark"] .ak-account-subscription-placeholder { border-colo
   html[data-akiba-theme="system"] .ak-account-danger-intro strong { color:#f2c6d2; }
   html[data-akiba-theme="system"] .ak-account-delete-form { background:#201a24; border-color:#6d3444; }
 }
+
+
+/* Also apply the account theme to the general site and shared UI primitives. */
+html[data-akiba-theme="light"] { color-scheme: light; }
+html[data-akiba-theme="dark"] body { background:#111421; color:#e6eaf2; }
+html[data-akiba-theme="dark"] .shell,
+html[data-akiba-theme="dark"] .main,
+html[data-akiba-theme="dark"] .page { background:#111421; color:#e6eaf2; }
+html[data-akiba-theme="dark"] .sidebar,
+html[data-akiba-theme="dark"] .topbar,
+html[data-akiba-theme="dark"] .panel,
+html[data-akiba-theme="dark"] .card,
+html[data-akiba-theme="dark"] .metric,
+html[data-akiba-theme="dark"] .tip,
+html[data-akiba-theme="dark"] .profile,
+html[data-akiba-theme="dark"] .activity { background:#1a1e2d; border-color:#34384b; color:#e6eaf2; }
+html[data-akiba-theme="dark"] .nav a,
+html[data-akiba-theme="dark"] .crumb,
+html[data-akiba-theme="dark"] .metric-head,
+html[data-akiba-theme="dark"] .metric-foot,
+html[data-akiba-theme="dark"] .section-head p,
+html[data-akiba-theme="dark"] .title-row p,
+html[data-akiba-theme="dark"] .meta,
+html[data-akiba-theme="dark"] .progress-label,
+html[data-akiba-theme="dark"] .empty { color:#a2adc2; }
+html[data-akiba-theme="dark"] h1,
+html[data-akiba-theme="dark"] h2,
+html[data-akiba-theme="dark"] h3,
+html[data-akiba-theme="dark"] .metric-number,
+html[data-akiba-theme="dark"] .title-row h3,
+html[data-akiba-theme="dark"] .amount b { color:#e6eaf2; }
+html[data-akiba-theme="dark"] .search,
+html[data-akiba-theme="dark"] input:not([type=checkbox]):not([type=radio]):not([type=file]),
+html[data-akiba-theme="dark"] select,
+html[data-akiba-theme="dark"] textarea { background:#202536; border-color:#3a4055; color:#e6eaf2; }
+html[data-akiba-theme="dark"] .nav a.active { background:#332338; }
+html[data-akiba-theme="dark"] .nav-rule,
+html[data-akiba-theme="dark"] .track { background:#34384b; }
+html[data-akiba-theme="dark"] .status { background:#18372c; color:#91d4ad; }
+@media (prefers-color-scheme: dark) {
+  html[data-akiba-theme="system"] body { background:#111421; color:#e6eaf2; }
+  html[data-akiba-theme="system"] .shell,
+  html[data-akiba-theme="system"] .main,
+  html[data-akiba-theme="system"] .page { background:#111421; color:#e6eaf2; }
+  html[data-akiba-theme="system"] .sidebar,
+  html[data-akiba-theme="system"] .topbar,
+  html[data-akiba-theme="system"] .panel,
+  html[data-akiba-theme="system"] .card,
+  html[data-akiba-theme="system"] .metric,
+  html[data-akiba-theme="system"] .tip,
+  html[data-akiba-theme="system"] .profile,
+  html[data-akiba-theme="system"] .activity { background:#1a1e2d; border-color:#34384b; color:#e6eaf2; }
+  html[data-akiba-theme="system"] h1,
+  html[data-akiba-theme="system"] h2,
+  html[data-akiba-theme="system"] h3,
+  html[data-akiba-theme="system"] .metric-number,
+  html[data-akiba-theme="system"] .title-row h3,
+  html[data-akiba-theme="system"] .amount b { color:#e6eaf2; }
+  html[data-akiba-theme="system"] input:not([type=checkbox]):not([type=radio]):not([type=file]),
+  html[data-akiba-theme="system"] select,
+  html[data-akiba-theme="system"] textarea { background:#202536; border-color:#3a4055; color:#e6eaf2; }
+  html[data-akiba-theme="system"] .nav a.active { background:#332338; }
+}
