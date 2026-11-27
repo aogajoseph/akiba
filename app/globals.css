@@ -2029,3 +2029,17 @@ html[data-akiba-theme="dark"] .ak-group-report-form .ak-member-danger:hover {
   background:#ce438f;
   color:#fff;
 }
+
+/* File inputs use browser/OS-native rendering for the selected filename and empty-state text. */
+html[data-akiba-theme="dark"] input[type="file"] {
+  color-scheme:dark;
+  color:#f1f3fa !important;
+  background-color:#202536;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] input[type="file"]::file-selector-button {
+  color:#f1f3fa !important;
+  background:#30384c !important;
+  border:1px solid #505971;
+  border-radius:6px;
+}
