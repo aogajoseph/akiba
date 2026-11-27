@@ -42,6 +42,15 @@ alter table public.akiba_group_reports alter column reporter_user_id drop not nu
 alter table public.akiba_group_report_evidence alter column uploaded_by drop not null;
 alter table public.akiba_group_invite_links alter column created_by drop not null;
 
+-- A reviewed join request remains historical, but its reviewer identity is
+-- anonymised. Preserve the review timestamp and outcome.
+alter table public.akiba_group_join_requests
+  drop constraint if exists akiba_group_join_requests_review_state_check,
+  add constraint akiba_group_join_requests_review_state_check check (
+    (status = 'pending' and reviewed_at is null and reviewed_by is null)
+    or (status in ('approved', 'rejected') and reviewed_at is not null)
+  );
+
 -- This privileged preparation is called only by the server using the service
 -- role immediately before Supabase Auth deletes the user. It rechecks the
 -- ownership/role gates in the database, then anonymises or removes only
@@ -120,7 +129,6 @@ begin
   update public.akiba_group_notifications set actor_id = null where actor_id = p_user_id;
   update public.akiba_finance_activity_events set actor_id = null where actor_id = p_user_id;
   update public.akiba_group_report_audit set actor_user_id = null where actor_user_id = p_user_id;
-  update public.akiba_group_lifecycle_audit set actor_user_id = null where actor_user_id = p_user_id;
 
   delete from public.akiba_group_memberships where user_id = p_user_id;
 end;
