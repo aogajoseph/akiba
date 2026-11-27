@@ -12,14 +12,14 @@ export default function ThemePreference({ initialTheme }: { initialTheme: AkibaT
     const previous = theme;
     setTheme(nextTheme);
     setMessage("");
-    document.documentElement.dataset.akibaTheme = nextTheme;
-    document.documentElement.style.colorScheme = nextTheme === "system" ? "" : nextTheme;
+    document.documentElement.dataset.akibaTheme = nextTheme === "dark" ? "dark" : "light";
+    document.documentElement.style.colorScheme = nextTheme === "dark" ? "dark" : "light";
     setIsPending(true);
     void saveThemePreference(nextTheme).then((result) => {
       if (!result.success) {
         setTheme(previous);
-        document.documentElement.dataset.akibaTheme = previous;
-        document.documentElement.style.colorScheme = previous === "system" ? "" : previous;
+        document.documentElement.dataset.akibaTheme = previous === "dark" ? "dark" : "light";
+        document.documentElement.style.colorScheme = previous === "dark" ? "dark" : "light";
         setMessage(result.message);
       } else {
         setMessage("Appearance preference saved.");
