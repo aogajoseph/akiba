@@ -2155,3 +2155,91 @@ html[data-akiba-theme="dark"] .ak-finance-currency {
   background:#3a263b;
   color:#ff9acb;
 }
+
+
+/* Membership screen: dark-only text, directory separation, and action alignment. */
+html[data-akiba-theme="dark"] .ak-membership-heading-copy .ak-section-eyebrow {
+  color:#e9a8d0 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-heading-copy h1 {
+  color:#f1f3fa !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-heading-copy>p {
+  color:#e1e6f3 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-page-heading .ak-workspace-back {
+  color:#f0b5d8 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-directory-heading .ak-section-eyebrow,
+html[data-akiba-theme="dark"] .ak-membership-directory-heading h2 {
+  color:#f1f3fa !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-directory-heading>div>p {
+  color:#c2cbe0 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-stat {
+  background:#202536;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] .ak-membership-stat strong {
+  color:#f1f3fa !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-stat small {
+  color:#c2cbe0 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-results-meta,
+html[data-akiba-theme="dark"] .ak-membership-results-meta span:last-child {
+  color:#b8c2d8 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-person-copy>strong,
+html[data-akiba-theme="dark"] .ak-membership-person-copy>small,
+html[data-akiba-theme="dark"] .ak-membership-person-role>span {
+  color:#e1e6f3;
+}
+html[data-akiba-theme="dark"] .ak-membership-person-role>span.admin {
+  color:#ff9acb;
+  background:#3a263b;
+  border-color:#6c3c5c;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-member-list {
+  gap:8px;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-membership-person {
+  border:1px solid #34384b;
+  border-radius:11px;
+  background:#171b29;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-membership-person:hover {
+  background:#22283a;
+  border-color:#4a4058;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu>summary {
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:7px;
+}
+html[data-akiba-theme="dark"] .ak-membership-manage-chevron {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+  transform:translateY(-1px);
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu>summary:after {
+  content:none;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu-content {
+  background:#202536;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu-content button {
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu-content .ak-member-danger {
+  color:#ffb7bf;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-danger-card .ak-member-danger,
+html[data-akiba-theme="dark"] .ak-workspace-app button.ak-member-danger {
+  color:#fff;
+}
