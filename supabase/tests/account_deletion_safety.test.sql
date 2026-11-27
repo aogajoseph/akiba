@@ -38,6 +38,12 @@ insert into public.akiba_group_messages (id, group_id, author_id, body)
 values ('00000000-0000-0000-0000-000000000921', '00000000-0000-0000-0000-000000000920', '00000000-0000-0000-0000-000000000911', 'Account deletion anonymisation test')
 on conflict (id) do nothing;
 
+insert into public.akiba_group_membership_events
+  (id, group_id, actor_id, subject_user_id, event_type, previous_role, new_role)
+values
+  ('00000000-0000-0000-0000-000000000922', '00000000-0000-0000-0000-000000000920', '00000000-0000-0000-0000-000000000911', '00000000-0000-0000-0000-000000000912', 'group_admin_demoted', 'group_admin', 'member')
+on conflict (id) do nothing;
+
 select public.akiba_prepare_account_deletion('00000000-0000-0000-0000-000000000911');
 
 do $test$
@@ -50,6 +56,11 @@ begin
     select 1 from public.akiba_group_memberships
     where user_id = '00000000-0000-0000-0000-000000000911'
   ) then raise exception 'Deleted account memberships were not removed'; end if;
+  if exists (
+    select 1 from public.akiba_group_membership_events
+    where id = '00000000-0000-0000-0000-000000000922'
+      and (actor_id is not null or subject_user_id is not null)
+  ) then raise exception 'Historical leadership-event identities were not anonymised'; end if;
   if not exists (
     select 1 from public.akiba_group_messages
     where id = '00000000-0000-0000-0000-000000000921'
