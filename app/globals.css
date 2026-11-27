@@ -1985,3 +1985,6 @@ html[data-akiba-theme="dark"] .ak-note-card strong,
 html[data-akiba-theme="dark"] .ak-note-card p {
   color:#e6eaf2;
 }
+
+html[data-akiba-theme="dark"] .ak-workspace-top-crumb, html[data-akiba-theme="dark"] .ak-workspace-top-crumb a { color:#b9c4dc; }
+html[data-akiba-theme="dark"] .ak-workspace-top-crumb strong { color:#f1f3fa; }
