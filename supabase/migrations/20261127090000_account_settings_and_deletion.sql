@@ -53,6 +53,83 @@ alter table public.akiba_group_join_requests
     or (status in ('approved', 'rejected') and reviewed_at is not null)
   );
 
+-- Permit a Group Admin to step down during a group's six-month retention
+-- period. Other membership changes remain frozen after deactivation.
+create or replace function akiba_private.guard_active_group_membership()
+returns trigger
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  target_group_id uuid;
+  group_status text;
+begin
+  if current_setting('akiba.system_group_purge', true) = 'on' then
+    if tg_op = 'DELETE' then return old; else return new; end if;
+  end if;
+  target_group_id := case when tg_op = 'DELETE' then old.group_id else new.group_id end;
+  select status into group_status
+  from public.akiba_groups
+  where id = target_group_id
+  for update;
+  if not found then raise exception 'Group not found'; end if;
+  if group_status <> 'active' then
+    if tg_op = 'UPDATE'
+       and group_status = 'deactivated'
+       and old.role = 'group_admin' and new.role = 'member'
+       and old.status = 'active' and new.status = 'active'
+       and auth.uid() = old.user_id then
+      return new;
+    end if;
+    raise exception 'This group is deactivated and no longer accepts membership changes';
+  end if;
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$fn$;
+
+create or replace function public.akiba_step_down_group_admin(p_group_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  group_status text;
+  member_row public.akiba_group_memberships%rowtype;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  select status into group_status
+  from public.akiba_groups
+  where id = p_group_id and status in ('active', 'deactivated')
+  for update;
+  if not found then raise exception 'Group not found or deleted'; end if;
+
+  select * into member_row from public.akiba_group_memberships
+  where group_id = p_group_id and user_id = actor_id and status = 'active'
+  for update;
+  if not found then raise exception 'You are not an active group member'; end if;
+  if member_row.role = 'group_creator' then raise exception 'The Group Creator role cannot be changed'; end if;
+  if member_row.role = 'member' then return; end if;
+  if member_row.role <> 'group_admin' then raise exception 'Only a Group Admin can step down'; end if;
+
+  update public.akiba_group_memberships set role = 'member' where id = member_row.id;
+  insert into public.akiba_group_membership_events
+    (group_id, actor_id, subject_user_id, event_type, previous_role, new_role)
+  values (p_group_id, actor_id, actor_id, 'group_admin_demoted', 'group_admin', 'member');
+  insert into public.akiba_group_activity(group_id, actor_id, event_type, summary)
+  values (p_group_id, actor_id, 'group_admin_stepped_down',
+    case when group_status = 'deactivated'
+      then 'A Group Admin stepped down during the six-month retention period.'
+      else 'A Group Admin voluntarily stepped down to ordinary Member.'
+    end);
+end;
+$fn$;
+revoke all on function public.akiba_step_down_group_admin(uuid) from public, anon;
+grant execute on function public.akiba_step_down_group_admin(uuid) to authenticated;
+
 -- This privileged preparation is called only by the server using the service
 -- role immediately before Supabase Auth deletes the user. It rechecks the
 -- ownership/role gates in the database, then anonymises or removes only
@@ -137,7 +214,12 @@ begin
   set actor_user_id = '00000000-0000-0000-0000-000000000000'::uuid
   where actor_user_id = p_user_id;
 
+  -- Account deletion is allowed to remove ordinary memberships from a
+  -- deactivated group as well; the trusted purge marker bypasses the normal
+  -- frozen-membership trigger after the Creator/Admin gates above have passed.
+  perform set_config('akiba.system_group_purge', 'on', true);
   delete from public.akiba_group_memberships where user_id = p_user_id;
+  perform set_config('akiba.system_group_purge', 'off', true);
 end;
 $fn$;
 
