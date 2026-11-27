@@ -20,6 +20,7 @@ import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
 import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
 import InviteGroupModal from "./invite-group-modal";
 import DeactivateGroupForm from "./deactivate-group-form";
+import MembershipManageMenu from "./membership-manage-menu";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
@@ -271,24 +272,23 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                         <span className="ak-membership-person-copy"><strong>{name}{isSelf ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></span>
                       </Link>
                       <div className="ak-workspace-member-role ak-membership-person-role"><span className={member.role !== "member" ? "admin" : ""}>{roleLabel(member.role)}</span>
-                        {isCreator && !isSelf && group.status === "active" && <details className="ak-member-actions ak-membership-action-menu">
-                          <summary>Manage</summary>
+                        {isCreator && !isSelf && group.status === "active" && <MembershipManageMenu className="ak-member-actions ak-membership-action-menu">
                           <div className="ak-membership-action-menu-content">
                           <form action={setGroupAdmin}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} />
                             <input type="hidden" name="action" value={member.role === "group_admin" ? "demote" : "appoint"} />
-                            <button type="submit" aria-label={member.role === "group_admin" ? `Demote ${name} to Member` : `Appoint ${name} as Group Admin`} disabled={!plan || (member.role === "member" && activeAdminCount >= (plan.max_group_admins ?? 0))}>{member.role === "group_admin" ? "Demote" : "Appoint Admin"}</button>
+                            <button type="submit" aria-label={member.role === "group_admin" ? `Demote ${name} to Member` : `Appoint ${name} as Group Admin`} disabled={!plan || (member.role === "member" && activeAdminCount >= (plan.max_group_admins ?? 0))}>{member.role === "group_admin" ? "Demote participant" : "Appoint Admin"}</button>
                           </form>
                           <form action={removeGroupMember}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} />
-                            <button type="submit" className="ak-member-danger" aria-label={`Remove ${name} from this group`}>Remove</button>
+                            <button type="submit" className="ak-member-danger" aria-label={`Remove ${name} from this group`}>Remove participant</button>
                           </form>
                           <form action={removeGroupMember}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} /><input type="hidden" name="block" value="true" />
-                            <button type="submit" className="ak-member-danger" aria-label={`Block ${name} from this group`}>Block</button>
+                            <button type="submit" className="ak-member-danger" aria-label={`Block ${name} from this group`}>Block participant</button>
                           </form>
                           </div>
-                        </details>}
+                        </MembershipManageMenu>}
                       </div>
                     </div>;
                   })}</div>}
