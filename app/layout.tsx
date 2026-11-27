@@ -42,15 +42,15 @@ export const metadata: Metadata = {
 export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
-  let akibaTheme: "light" | "dark" | "system" = "light";
+  let akibaTheme: "light" | "dark" | "system" = "dark";
   if (user) {
     const { data: settings } = await supabase.from("akiba_user_settings").select("theme").eq("user_id", user.id).maybeSingle();
     if (settings?.theme === "light" || settings?.theme === "dark" || settings?.theme === "system") akibaTheme = settings.theme;
   }
   return (
-    <html lang="en" data-akiba-theme={akibaTheme === "dark" ? "dark" : "light"} suppressHydrationWarning>
+    <html lang="en" data-akiba-theme={akibaTheme === "light" ? "light" : "dark"} suppressHydrationWarning>
       <body>
-        <InitColorSchemeScript attribute="data-mui-color-scheme" defaultMode="light" />
+        <InitColorSchemeScript attribute="data-mui-color-scheme" defaultMode="dark" />
         {children}
       </body>
     </html>
