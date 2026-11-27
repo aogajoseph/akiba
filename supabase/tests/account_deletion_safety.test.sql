@@ -91,6 +91,9 @@ set local role service_role;
 select public.akiba_prepare_account_deletion('00000000-0000-0000-0000-000000000911');
 select public.akiba_prepare_account_deletion('00000000-0000-0000-0000-000000000912');
 
+-- Run assertions as the migration test owner: service_role is intentionally
+-- denied direct table reads and should only execute the deletion RPC.
+reset role;
 do $test$
 begin
   if exists (
