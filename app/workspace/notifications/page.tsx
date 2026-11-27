@@ -79,8 +79,8 @@ export default async function NotificationsPage({ searchParams }: Props) {
           <NotificationSidebarLink active />
           <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
+          <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>Edit Profile</Link>
+          <Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
         </nav>
         <div className="ak-sidebar-bottom">
           <div className="ak-sidebar-promo"><span className="ak-promo-mark">✳</span><strong>Do more, together</strong><p>Bring people together around the things that matter.</p><Link href="/workspace/new">Create a group <span>→</span></Link></div>
