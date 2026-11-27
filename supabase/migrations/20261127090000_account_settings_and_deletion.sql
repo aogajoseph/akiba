@@ -129,6 +129,9 @@ begin
   update public.akiba_group_notifications set actor_id = null where actor_id = p_user_id;
   update public.akiba_finance_activity_events set actor_id = null where actor_id = p_user_id;
   update public.akiba_group_report_audit set actor_user_id = null where actor_user_id = p_user_id;
+  update public.akiba_group_lifecycle_audit
+  set actor_user_id = '00000000-0000-0000-0000-000000000000'::uuid
+  where actor_user_id = p_user_id;
 
   delete from public.akiba_group_memberships where user_id = p_user_id;
 end;
