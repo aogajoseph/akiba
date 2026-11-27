@@ -154,3 +154,24 @@
   border-color:rgba(197,42,120,.34);
   box-shadow:0 0 0 3px rgba(197,42,120,.045);
 }
+
+
+/* Dark theme: remove the light chat surfaces without changing the light theme. */
+:global(html[data-akiba-theme="dark"]) .chatCard > div,
+:global(html[data-akiba-theme="dark"]) .composer {
+  background: transparent !important;
+}
+:global(html[data-akiba-theme="dark"]) .presenceBar {
+  color: #b8c5bc;
+  background: transparent !important;
+  border-color: #343d37;
+}
+:global(html[data-akiba-theme="dark"]) .presenceCount {
+  color: #a9d8b5;
+}
+:global(html[data-akiba-theme="dark"]) .presenceCount i {
+  background: #62c785;
+}
+:global(html[data-akiba-theme="dark"]) .lastSeenText {
+  color: #8d9b91;
+}
