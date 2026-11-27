@@ -7,6 +7,10 @@ function back(message: string, kind: "error" | "success" = "error"): never {
   redirect("/workspace/profile?" + kind + "=" + encodeURIComponent(message));
 }
 
+function accountBack(message: string, kind: "error" | "success" = "error"): never {
+  redirect("/workspace/account-settings?" + kind + "=" + encodeURIComponent(message));
+}
+
 const VISIBILITY_VALUES = ["only_me", "group_members", "all_akiba_users"] as const;
 
 export async function saveUserProfile(formData: FormData) {
@@ -232,8 +236,8 @@ export async function updateAuthEmail(
 export async function changePassword(formData: FormData) {
   const password = String(formData.get("new_password") ?? "");
   const confirmation = String(formData.get("confirm_password") ?? "");
-  if (password.length < 10 || password.length > 72) back("Use a password between 10 and 72 characters.");
-  if (password !== confirmation) back("The passwords do not match.");
+  if (password.length < 10 || password.length > 72) accountBack("Use a password between 10 and 72 characters.");
+  if (password !== confirmation) accountBack("The passwords do not match.");
 
   const supabase = await createClient();
   const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -242,9 +246,9 @@ export async function changePassword(formData: FormData) {
   const { error } = await supabase.auth.updateUser({ password });
   if (error) {
     console.error("Password update failed", { code: error.code });
-    back("We couldn't update your password. Please try again.");
+    accountBack("We couldn't update your password. Please try again.");
   }
-  back("Your password has been updated.", "success");
+  accountBack("Your password has been updated.", "success");
 }
 
 export async function signOutOtherSessions() {
@@ -255,7 +259,7 @@ export async function signOutOtherSessions() {
   const { error } = await supabase.auth.signOut({ scope: "others" });
   if (error) {
     console.error("Other-session sign-out failed", { name: error.name });
-    back("We couldn't sign out your other sessions. Please try again.");
+    accountBack("We couldn't sign out your other sessions. Please try again.");
   }
-  back("Your other sessions have been signed out. This session remains active.", "success");
+  accountBack("Your other sessions have been signed out. This session remains active.", "success");
 }
