@@ -34,9 +34,9 @@ export default function ThemePreference({ initialTheme }: { initialTheme: AkibaT
         <select value={theme} disabled={isPending} onChange={(event) => chooseTheme(event.currentTarget.value as AkibaTheme)}>
           <option value="light">Light theme</option>
           <option value="dark">Dark theme</option>
-          <option value="system">System default</option>
+          <option value="system">System default (Light)</option>
         </select>
-        <small>Your preference is saved to your Akiba account and follows you across devices.</small>
+        <small>System default uses Akiba’s light appearance. Your preference is saved to your account across devices.</small>
       </label>
       {message && <p className={message.includes("saved") ? "ak-settings-success" : "ak-settings-inline-note"} role="status">{message}</p>}
     </div>
