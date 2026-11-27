@@ -1841,3 +1841,32 @@ html[data-akiba-theme="dark"] :is(.ak-status-pill,.ak-membership-status.is-inact
 html[data-akiba-theme="dark"] :is(.ak-finance-error,.ak-form-error,.ak-alert[role="alert"]) {
   color:#ffb7bf;
 }
+
+/* Group pages and directory image thumbnails. */
+html[data-akiba-theme="dark"] .ak-group-hero {
+  background:linear-gradient(112deg,#292333 0%,#242538 62%,#202638 100%);
+  border-color:#3a3548;
+}
+html[data-akiba-theme="dark"] .ak-group-hero h1 { color:#f1f3fa; }
+html[data-akiba-theme="dark"] .ak-group-hero p { color:#b7c0d6; }
+html[data-akiba-theme="dark"] .ak-group-hero-mark { background:#343044;border-color:#4a4058;color:#f0b5d8; }
+html[data-akiba-theme="dark"] .ak-group-tabs {
+  background:#1a1e2d;border-color:#34384b;
+}
+html[data-akiba-theme="dark"] .ak-group-tabs>span,
+html[data-akiba-theme="dark"] .ak-group-tabs>a { color:#b8c2d8; }
+html[data-akiba-theme="dark"] .ak-group-tabs>span.active,
+html[data-akiba-theme="dark"] .ak-group-tabs>a.active {
+  background:#3a263b;color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-group-tabs small { background:#30364a;color:#b8c2d8; }
+html[data-akiba-theme="dark"] .ak-group-details>div,
+html[data-akiba-theme="dark"] .ak-group-member { border-color:#34384b; }
+html[data-akiba-theme="dark"] .ak-group-details dt,
+html[data-akiba-theme="dark"] .ak-group-member-copy small { color:#aab4ca; }
+html[data-akiba-theme="dark"] .ak-group-details dd,
+html[data-akiba-theme="dark"] .ak-group-member-copy strong { color:#e6eaf2; }
+html[data-akiba-theme="dark"] .ak-group-member-copy strong em { background:#30364a;color:#c1cbe0; }
+html[data-akiba-theme="dark"] .ak-group-member-count { background:#3a263b;color:#f0b5d8; }
+.ak-group-image { display:block;object-fit:cover; }
+html[data-akiba-theme="dark"] .ak-group-image { background:#293247;border:1px solid #3a4055; }
