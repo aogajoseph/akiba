@@ -2088,8 +2088,8 @@ html[data-akiba-theme="dark"] .ak-create-form .ak-private-note small {
 
 
 /* Group overview: dark-only readability and surface refinements. */
-html[data-akiba-theme="dark"] .ak-workspace-banner-copy>p {
-  color:#f0f3fa;
+html[data-akiba-theme="dark"] .ak-dashboard .ak-workspace-banner-copy>p {
+  color:#ffffff !important;
 }
 html[data-akiba-theme="dark"] .ak-summary-icon.members {
   background:#3a263b;
@@ -2145,9 +2145,6 @@ html[data-akiba-theme="dark"] .ak-workspace-member:hover {
 }
 
 /* Finance contribution card: dark-mode-only description and provider badge contrast. */
-html[data-akiba-theme="dark"] .ak-finance-contribute .ak-workspace-card-heading p {
-  color:#ffffff;
-}
 html[data-akiba-theme="dark"] .ak-finance-contribute .ak-finance-provider-mark {
   background:#3a263b;
   color:#ff9acb;
