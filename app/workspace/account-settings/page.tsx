@@ -70,7 +70,7 @@ export default async function AccountSettingsPage({ searchParams }: Props) {
   const visibleMemberships = memberships.filter((item) => item.status === "active" && groups.get(item.group_id)?.status !== "deleted");
   const adminGroups = memberships.filter((item) => item.role === "group_admin" && groups.get(item.group_id)?.status !== "deleted");
   const creatorGroups = Array.from(groups.values()).filter((group) => group.created_by === user.id && group.status !== "deleted");
-  const unresolvedCreatorMembership = memberships.some((item) => item.role === "group_creator" && groups.get(item.group_id)?.status !== "deleted");
+  const unresolvedCreatorMembership = memberships.some((item) => item.role === "group_creator");
   const deletionDataAvailable = !membershipError && !groupError;
   const canDelete = deletionDataAvailable && adminGroups.length === 0 && creatorGroups.length === 0 && !unresolvedCreatorMembership;
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
@@ -158,7 +158,7 @@ export default async function AccountSettingsPage({ searchParams }: Props) {
             {creatorGroups.length > 0 && <div className="ak-account-blockers"><h3>Resolve groups you created</h3><p>Delete a group only when it has no financial history, pending activity or balance. Otherwise resolve outstanding activity and deactivate it; it can be deleted by the six-month retention process.</p>
               {creatorGroups.map((group) => <div className="ak-account-owned-group" key={group.id}><strong>{group.name}</strong><small>{group.status === "deactivated" ? "Scheduled for automatic deletion " + (group.scheduled_delete_at ? formatDate(group.scheduled_delete_at) : "after six months") : "Active group · ownership must be resolved"}</small><span><Link href={"/workspace/groups/" + group.id + "/delete"}>Check deletion eligibility</Link><Link href={"/workspace/groups/" + group.id + "/membership"}>Manage / deactivate group</Link></span></div>)}
             </div>}
-            {!deletionDataAvailable && <p className="ak-settings-inline-note" role="alert">We could not verify your group responsibilities. Account deletion is disabled until the group list can be checked.</p>}
+            {!deletionDataAvailable && <p className="ak-settings-inline-note" role="alert">We could not verify your group responsibilities. Account deletion is disabled until the group list can be checked.</p>}{unresolvedCreatorMembership && creatorGroups.length === 0 && <p className="ak-settings-inline-note" role="alert">A Group Creator membership is still being cleared by the retention process. Account deletion will be available after that cleanup finishes.</p>}
             <AccountDeletionForm enabled={canDelete} lastSignInAt={user.last_sign_in_at ?? null} />
           </section>
         </div>
