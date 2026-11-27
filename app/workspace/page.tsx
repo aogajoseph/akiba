@@ -18,6 +18,7 @@ type Group = {
   description: string | null;
   currency_code: string;
   created_at: string;
+  group_image_path: string | null;
 };
 
 type Invitation = {
@@ -47,7 +48,7 @@ export default async function WorkspacePage() {
   if (authError || !user) redirect("/login");
   const [{ data: profile, error: profileError }, { data: groups, error: groupsError }, { data: invitations, error: invitationsError }, { data: notifications, error: notificationsError }, { data: unreadNotificationCountData }] = await Promise.all([
     supabase.from("akiba_profiles").select("username, display_name, avatar_path").eq("user_id", user.id).maybeSingle(),
-    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at").order("created_at", { ascending: false }),
+    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at,group_image_path").order("created_at", { ascending: false }),
     supabase.rpc("akiba_list_my_group_invitations"),
     supabase.rpc("akiba_list_my_group_notifications", { p_limit: 5 }),
     supabase.rpc("akiba_count_my_unread_group_notifications"),
@@ -60,6 +61,7 @@ export default async function WorkspacePage() {
   const groupRows = (groups ?? []) as Group[];
   const invitationRows = (invitations ?? []) as Invitation[];
   const groupIds = groupRows.map((group) => group.id);
+  const groupImageUrls = new Map(groupRows.filter((group) => group.group_image_path).map((group) => [group.id, supabase.storage.from("group-images").getPublicUrl(group.group_image_path!).data.publicUrl]));
   let messageCount: number | null = 0;
   let messageError = false;
   if (groupIds.length > 0) {
@@ -86,8 +88,8 @@ export default async function WorkspacePage() {
           <NotificationSidebarLink />
           <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
+          <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>My Profile</Link>
+          <Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
         </nav>
         <div className="ak-sidebar-bottom">
           <div className="ak-sidebar-promo"><span className="ak-promo-mark">✳</span><strong>Do more, together</strong><p>Bring people together around the things that matter.</p><Link href="/workspace/new">Create a group <span>→</span></Link></div>
@@ -157,7 +159,7 @@ export default async function WorkspacePage() {
                 {groupsError ? <div className="ak-inline-error">Your groups couldn&apos;t be loaded. <a href="/workspace">Try again</a>.</div> : groupRows.length === 0 ? (
                   <div className="ak-empty"><span className="ak-empty-icon">♧</span><h3>Your first group starts here</h3><p>Create a group for a celebration, a family goal, a trip or anything you want to organise together.</p><Link href="/workspace/new" className="ak-primary">＋ Create your first Group</Link></div>
                 ) : (
-                  <div className="ak-group-list">{groupRows.slice(0, 5).map((group) => <Link href={"/workspace/groups/" + group.id} className="ak-group-row" key={group.id}><span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span><span className="ak-group-copy"><strong>{group.name}</strong><small>{group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal"} · {group.group_type.replaceAll("_", " ")} · {group.currency_code}{group.description ? " · " + group.description : ""}</small></span><span className="ak-group-date">{shortDate(group.created_at)}</span><span className="ak-chevron">›</span></Link>)}</div>
+                  <div className="ak-group-list">{groupRows.slice(0, 5).map((group) => <Link href={"/workspace/groups/" + group.id} className="ak-group-row" key={group.id}>{groupImageUrls.get(group.id) ? <img className="ak-group-icon ak-group-image" src={groupImageUrls.get(group.id)} alt="" /> : <span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span>}<span className="ak-group-copy"><strong>{group.name}</strong><small>{group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal"} · {group.group_type.replaceAll("_", " ")} · {group.currency_code}{group.description ? " · " + group.description : ""}</small></span><span className="ak-group-date">{shortDate(group.created_at)}</span><span className="ak-chevron">›</span></Link>)}</div>
                 )}
                 {groupRows.length > 5 && <Link className="ak-panel-footer" href="/workspace/groups">See all your groups</Link>}
               </section>

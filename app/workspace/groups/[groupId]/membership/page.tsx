@@ -20,6 +20,7 @@ import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
 import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
 import InviteGroupModal from "./invite-group-modal";
 import DeactivateGroupForm from "./deactivate-group-form";
+import MembershipManageMenu from "./membership-manage-menu";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
@@ -148,8 +149,8 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
           <NotificationSidebarLink />
           <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
+          <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>Edit Profile</Link>
+          <Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
         </nav>
         <div className="ak-sidebar-bottom">
           <div className="ak-sidebar-promo"><span className="ak-promo-mark">✳</span><strong>Do more, together</strong><p>Bring people together around the things that matter.</p><Link href="/workspace/new">Create a group <span>→</span></Link></div>
@@ -187,7 +188,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
             <Link href={"/workspace/groups/" + group.id + "/finances"}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link className="active" aria-current="page" href={"/workspace/groups/" + group.id + "/membership"}><GroupsOutlinedIcon />Membership</Link>
             <Link className="" href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat</Link>
-            <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
+            {isCreator ?             <Link href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link> :             <span aria-disabled="true" title="Only the Group Creator can access group settings"><SettingsOutlinedIcon />Settings</span>}
           </nav>
 
           {query.membershipError && <p className="ak-finance-error" role="alert">{query.membershipError}</p>}
@@ -195,7 +196,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
 
           {group.status !== "active" && (
             <section className="ak-workspace-card">
-              <strong>This group has been deactivated.</strong><p>Invitations and membership changes are no longer available.</p>
+              <strong>This group has been deactivated.</strong><p>Invitations and ordinary membership changes are no longer available. Group Admins can still step down during retention to resolve account ownership.</p>
               {group.status === "deactivated" && group.scheduled_delete_at && <p>Scheduled for deletion: {formatDate(group.scheduled_delete_at)}</p>}
               {isCreator && group.status === "deactivated" && (
                 <form action={reactivateGroup}>
@@ -266,27 +267,28 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                     const photo = member.profile?.avatar_path ? supabase.storage.from("avatars").getPublicUrl(member.profile.avatar_path).data.publicUrl : null;
                     const isSelf = member.user_id === user.id;
                     return <div className="ak-workspace-member ak-membership-person" key={member.user_id}>
-                      {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
-                      <div className="ak-membership-person-copy"><strong>{name}{isSelf ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></div>
+                      <Link className="ak-profile-member-link" href={member.profile?.username ? "/workspace/people/" + encodeURIComponent(member.profile.username) : "/workspace"}>
+                        {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
+                        <span className="ak-membership-person-copy"><strong>{name}{isSelf ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></span>
+                      </Link>
                       <div className="ak-workspace-member-role ak-membership-person-role"><span className={member.role !== "member" ? "admin" : ""}>{roleLabel(member.role)}</span>
-                        {isCreator && !isSelf && group.status === "active" && <details className="ak-member-actions ak-membership-action-menu">
-                          <summary>Manage</summary>
+                        {isCreator && !isSelf && group.status === "active" && <MembershipManageMenu className="ak-member-actions ak-membership-action-menu">
                           <div className="ak-membership-action-menu-content">
                           <form action={setGroupAdmin}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} />
                             <input type="hidden" name="action" value={member.role === "group_admin" ? "demote" : "appoint"} />
-                            <button type="submit" aria-label={member.role === "group_admin" ? `Demote ${name} to Member` : `Appoint ${name} as Group Admin`} disabled={!plan || (member.role === "member" && activeAdminCount >= (plan.max_group_admins ?? 0))}>{member.role === "group_admin" ? "Demote" : "Appoint Admin"}</button>
+                            <button type="submit" aria-label={member.role === "group_admin" ? `Demote ${name} to Member` : `Appoint ${name} as Group Admin`} disabled={!plan || (member.role === "member" && activeAdminCount >= (plan.max_group_admins ?? 0))}>{member.role === "group_admin" ? "Demote participant" : "Appoint Admin"}</button>
                           </form>
                           <form action={removeGroupMember}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} />
-                            <button type="submit" className="ak-member-danger" aria-label={`Remove ${name} from this group`}>Remove</button>
+                            <button type="submit" className="ak-member-danger" aria-label={`Remove ${name} from this group`}>Remove participant</button>
                           </form>
                           <form action={removeGroupMember}>
                             <input type="hidden" name="group_id" value={group.id} /><input type="hidden" name="user_id" value={member.user_id} /><input type="hidden" name="block" value="true" />
-                            <button type="submit" className="ak-member-danger" aria-label={`Block ${name} from this group`}>Block</button>
+                            <button type="submit" className="ak-member-danger" aria-label={`Block ${name} from this group`}>Block participant</button>
                           </form>
                           </div>
-                        </details>}
+                        </MembershipManageMenu>}
                       </div>
                     </div>;
                   })}</div>}
@@ -355,7 +357,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                 </section>
               )}
 
-              {!isCreator && group.status === "active" && (
+              {!isCreator && (group.status === "active" || (isAdmin && group.status === "deactivated")) && (
                 <section className="ak-workspace-card">
                   <span className="ak-section-eyebrow">YOUR MEMBERSHIP</span>
                   <h2>{isAdmin ? "Group Admin" : "Member"}</h2>

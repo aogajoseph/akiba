@@ -154,3 +154,159 @@
   border-color:rgba(197,42,120,.34);
   box-shadow:0 0 0 3px rgba(197,42,120,.045);
 }
+
+
+/* Dark theme: remove the light chat surfaces without changing the light theme. */
+:global(html[data-akiba-theme="dark"]) .chatCard > div,
+:global(html[data-akiba-theme="dark"]) .composer {
+  background: transparent !important;
+}
+:global(html[data-akiba-theme="dark"]) .presenceBar {
+  color: #b8c5bc;
+  background: transparent !important;
+  border-color: #343d37;
+}
+:global(html[data-akiba-theme="dark"]) .presenceCount {
+  color: #a9d8b5;
+}
+:global(html[data-akiba-theme="dark"]) .presenceCount i {
+  background: #62c785;
+}
+:global(html[data-akiba-theme="dark"]) .lastSeenText {
+  color: #8d9b91;
+}
+
+
+/* Dark-mode message styling: distinct incoming and outgoing bubbles with readable content. */
+:global(html[data-akiba-theme="dark"]) .messages {
+  background: transparent;
+  border-color: #343d37;
+}
+:global(html[data-akiba-theme="dark"]) .messageBody {
+  background: #202536;
+  border-color: #394154;
+}
+:global(html[data-akiba-theme="dark"]) .messageMine .messageBody {
+  background: #20352d;
+  border-color: #365746;
+}
+:global(html[data-akiba-theme="dark"]) .messageMeta b {
+  color: #e8edf6;
+}
+:global(html[data-akiba-theme="dark"]) .messageMeta time {
+  color: #a0acba;
+}
+:global(html[data-akiba-theme="dark"]) .messageBody p {
+  color: #dce3ee;
+}
+:global(html[data-akiba-theme="dark"]) .messageMine .messageBody p {
+  color: #d8eee0;
+}
+:global(html[data-akiba-theme="dark"]) .replyPreview {
+  background: #263b32;
+  color: #c2e3ce;
+  border-left-color: #79b891;
+}
+:global(html[data-akiba-theme="dark"]) .messageActions button {
+  color: #a9c8b3;
+}
+:global(html[data-akiba-theme="dark"]) .messageActions button:hover {
+  color: #d3f0dc;
+}
+:global(html[data-akiba-theme="dark"]) .editedLabel {
+  color: #9aa8b8 !important;
+}
+:global(html[data-akiba-theme="dark"]) .composer textarea {
+  background: #171b29;
+  border-color: #394154;
+  color: #e5eaf4;
+}
+:global(html[data-akiba-theme="dark"]) .composer textarea::placeholder {
+  color: #8e9aab;
+}
+:global(html[data-akiba-theme="dark"]) .composer textarea:focus {
+  outline-color: #365746;
+  border-color: #6c9f7e;
+}
+:global(html[data-akiba-theme="dark"]) .composerFooter > span,
+:global(html[data-akiba-theme="dark"]) .footerNote {
+  color: #9aa6b5;
+}
+:global(html[data-akiba-theme="dark"]) .composerContext {
+  background: #202536;
+  border-color: #394154;
+  color: #b9dfc6;
+}
+:global(html[data-akiba-theme="dark"]) .composerContext p,
+:global(html[data-akiba-theme="dark"]) .composerContext button {
+  color: #aeb9c9;
+}
+:global(html[data-akiba-theme="dark"]) .attachmentItem,
+:global(html[data-akiba-theme="dark"]) .pendingAttachment {
+  background: #202536;
+  border-color: #394154;
+  color: #d6deea;
+}
+:global(html[data-akiba-theme="dark"]) .attachmentDetails b {
+  color: #e2e8f2;
+}
+:global(html[data-akiba-theme="dark"]) .attachmentDetails small,
+:global(html[data-akiba-theme="dark"]) .pendingAttachment small,
+:global(html[data-akiba-theme="dark"]) .attachmentHint {
+  color: #9ba8b8;
+}
+:global(html[data-akiba-theme="dark"]) .attachmentFileIcon {
+  background: #293448;
+  color: #b8d8c2;
+}
+:global(html[data-akiba-theme="dark"]) .attachmentDownload,
+:global(html[data-akiba-theme="dark"]) .attachButton {
+  background: #293448;
+  border-color: #435067;
+  color: #c7e6d0;
+}
+:global(html[data-akiba-theme="dark"]) .attachmentPdfPreview {
+  background: #171b29;
+  border-color: #394154;
+}
+:global(html[data-akiba-theme="dark"]) .reactionChip,
+:global(html[data-akiba-theme="dark"]) .addReactionButton {
+  background: #202536;
+  border-color: #394154;
+  color: #c6d4e4;
+}
+:global(html[data-akiba-theme="dark"]) .reactionChipSelected {
+  background: #294536;
+  border-color: #4f805f;
+  color: #d3f0dc;
+}
+:global(html[data-akiba-theme="dark"]) .reactionChip small {
+  color: #aab7c7;
+}
+:global(html[data-akiba-theme="dark"]) .reactionPicker {
+  background: #202536;
+  border-color: #394154;
+}
+:global(html[data-akiba-theme="dark"]) .reactionPicker button {
+  background: #293448;
+}
+:global(html[data-akiba-theme="dark"]) .typingIndicator {
+  color: #a9c8b3;
+}
+:global(html[data-akiba-theme="dark"]) .olderButton {
+  background: #202536;
+  border-color: #394154;
+  color: #b9dfc6;
+}
+:global(html[data-akiba-theme="dark"]) .messageReferenced .messageBody {
+  background-color: #382638;
+  border-color: #8b4e78;
+}
+:global(html[data-akiba-theme="dark"]) .messageAvatar {
+  background: #293448;
+  color: #c6d4e4;
+}
+:global(html[data-akiba-theme="dark"]) .messageMine .messageAvatar {
+  background: #294536;
+  color: #d3f0dc;
+}

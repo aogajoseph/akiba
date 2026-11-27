@@ -436,7 +436,7 @@
  .ak-category-options{grid-template-columns:repeat(3,minmax(0,1fr))}
  .ak-category-option{display:flex;min-height:105px;align-items:flex-start}
  .ak-category-option small{font-size:8px}
- .ak-create-navigation{position:sticky;bottom:0;padding:10px 0 2px;background:#fff}
+ .ak-create-navigation{position:sticky;bottom:0;padding:10px 0 2px;background:transparent}
 }
 @media(max-width:430px){
  .ak-create-step-labels span{font-size:8px}
@@ -1359,6 +1359,9 @@
 .ak-settings-back-link:hover{color:#c52a78}
 .ak-group-settings-form{display:grid;gap:14px}
 .ak-settings-section{display:grid;gap:16px}
+/* Give profile and account settings panels clear, consistent separation. */
+.ak-dashboard-content > .ak-settings-section{margin-bottom:18px}
+.ak-dashboard-content > .ak-settings-section:last-child{margin-bottom:0}
 .ak-settings-section .ak-workspace-card-heading{margin-bottom:0}
 .ak-settings-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .ak-settings-field{display:grid;align-content:start;gap:7px;min-width:0}
@@ -1431,3 +1434,859 @@
 .ak-group-report-form input[type="text"]{width:100%;padding:12px;border:1px solid #e3e6ef;border-radius:9px;background:#fff;color:#343750;font:inherit;font-size:12px}
 .ak-group-report-form input[type="text"]:focus{outline:2px solid #b52c76;outline-offset:1px}
 .ak-group-report-form .ak-member-danger{justify-self:start;margin-top:8px}
+
+
+/* Profile and account settings refinements. */
+.ak-settings-divider{height:1px;margin:8px 0;border:0;background:#eceef2}
+.ak-settings-help-note{margin:0;padding:10px 12px;border:1px solid #e7ebef;border-radius:8px;background:#f8fafb;color:#687681;font-size:9px;line-height:1.6}
+.ak-settings-secondary-button{min-height:40px;padding:10px 15px;border:1px solid #dfe4e8;border-radius:8px;background:#fff;color:#485a50;font-size:10px;font-weight:750;cursor:pointer}
+.ak-settings-secondary-button:hover{border-color:#b9cfc0;background:#f7faf8}.ak-settings-signout-button{border-color:#c52a78;color:#c52a78}.ak-settings-signout-button:hover{border-color:#a91e64;background:#fff5fa;color:#a91e64}
+.ak-settings-secondary-button:focus-visible{outline:3px solid #b9d7c2;outline-offset:2px}
+
+
+/* Clear feedback for profile and account actions. */
+.ak-settings-field-error{color:#b33c68!important;font-size:9px;line-height:1.45}
+.ak-email-change-address{display:block;margin-top:4px;color:inherit;font-size:9px;overflow-wrap:anywhere}
+.ak-settings-remove-avatar{display:flex;align-items:center;gap:7px;margin-left:78px;color:#7c8298;font-size:9px}
+.ak-settings-remove-avatar input{accent-color:#176b50}
+.ak-group-settings-form button:disabled{opacity:.68;cursor:wait}
+.ak-group-settings-form button[aria-busy="true"]{position:relative}
+.ak-group-settings-form button:focus-visible{outline:3px solid #b9d7c2;outline-offset:2px}
+@media(max-width:640px){.ak-settings-remove-avatar{margin-left:0}}
+
+
+/* Saved profile preview shown from account settings. */
+.ak-welcome{align-items:center}
+.ak-profile-preview-trigger{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:40px;padding:10px 14px;border:1px solid #c52a78;border-radius:8px;background:#fff;color:#c52a78;font-size:10px;font-weight:800;white-space:nowrap;cursor:pointer}
+.ak-profile-preview-eye-icon{width:16px;height:16px;flex:0 0 16px}
+.ak-profile-preview-trigger:hover{background:#fff5fa;border-color:#a91e64}
+.ak-profile-preview-trigger:focus-visible,.ak-profile-preview-close:focus-visible,.ak-profile-preview-done:focus-visible{outline:3px solid #b9d7c2;outline-offset:3px}
+.ak-profile-preview-backdrop{position:fixed;inset:0;z-index:1100;display:grid;place-items:center;padding:18px;background:#17152b88;backdrop-filter:blur(3px)}
+.ak-profile-preview-dialog{width:min(100%,460px);max-height:min(88vh,720px);overflow:auto;padding:24px;border:1px solid #e8eaf0;border-radius:15px;background:#fff;box-shadow:0 24px 70px #15112640}
+.ak-profile-preview-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:19px}
+.ak-profile-preview-eyebrow{color:#859289;font-size:9px;font-weight:800;letter-spacing:1.4px}
+.ak-profile-preview-header h2{margin:6px 0 0;color:#292744;font-size:22px;letter-spacing:-.5px}
+.ak-profile-preview-close{display:grid;place-items:center;width:32px;height:32px;border:1px solid #e8eaf0;border-radius:8px;background:#fff;color:#68756c;font-size:22px;cursor:pointer}
+.ak-profile-preview-card{padding:24px 20px;border:1px solid #e7ece8;border-radius:12px;background:#fff;text-align:left}
+.ak-profile-preview-avatar{display:grid;place-items:center;width:104px;height:104px;margin:0;border:1px solid #e5ece6;border-radius:50%;object-fit:cover}
+.ak-profile-preview-fallback{background:#eaf4ed;color:#176b50;font-size:32px;font-weight:800}
+.ak-profile-preview-card h3{margin:0;color:#303451;font-size:18px}
+.ak-profile-preview-username{margin:5px 0 0;color:#89958d;font-size:11px}
+.ak-profile-preview-bio{max-width:330px;margin:10px 0 0;color:#58675d;font-size:11px;line-height:1.7;overflow-wrap:anywhere}
+.ak-profile-preview-empty-bio{margin:10px 0 0;color:#9aa49d;font-size:10px;font-style:italic}
+.ak-profile-preview-private{display:flex;align-items:center;gap:10px;padding:12px;border:1px solid #edf0ed;border-radius:9px;background:#f8faf8;text-align:left}
+.ak-profile-preview-private>span:first-child{color:#718078;font-size:17px}
+.ak-profile-preview-private>div{display:grid;flex:1;gap:4px;min-width:0}
+.ak-profile-preview-private strong{color:#46564b;font-size:10px}
+.ak-profile-preview-private small{color:#859188;font-size:9px;line-height:1.5}
+.ak-profile-preview-lock{padding:5px 7px;border-radius:6px;background:#eef1ef;color:#68756c;font-size:8px;font-weight:800}
+.ak-profile-preview-note{margin:14px 0;color:#8b7952;font-size:9px;line-height:1.6}
+.ak-profile-preview-done{width:100%;min-height:40px;border:0;border-radius:8px;background:#176b50;color:#fff;font-size:10px;font-weight:800;cursor:pointer}
+.ak-profile-preview-done:hover{background:#10543e}
+@media(max-width:640px){.ak-welcome{align-items:flex-start}.ak-profile-preview-trigger{width:100%}.ak-profile-preview-dialog{padding:20px 16px}.ak-profile-preview-identity{gap:12px}.ak-profile-preview-avatar-zoom,.ak-profile-preview-avatar-zoom .ak-profile-preview-avatar,.ak-profile-preview-avatar{width:84px;height:84px}.ak-profile-preview-avatar-zoom{flex-basis:84px}.ak-profile-preview-card{padding:18px 14px}.ak-profile-preview-card .ak-public-profile-contact-row{grid-template-columns:95px minmax(0,1fr);gap:10px}}
+
+
+/* Public member profiles and per-field contact visibility. */
+.ak-profile-member-link{display:flex;align-items:center;gap:11px;flex:1;min-width:0;color:inherit;text-decoration:none}
+.ak-profile-member-link:hover strong{color:#176b50}
+.ak-profile-member-link>span{display:grid;gap:4px;min-width:0}
+.ak-profile-member-link strong{color:#303451;font-size:11px}
+.ak-profile-member-link small{color:#8993a7;font-size:9px}
+.ak-profile-member-link>img,.ak-profile-member-link>.ak-workspace-member-fallback{width:38px;height:38px;flex:0 0 38px;border-radius:50%;object-fit:cover}
+.ak-public-profile-page{max-width:900px}
+.ak-public-profile-card{max-width:720px;padding:25px}
+.ak-public-profile-identity{display:flex;align-items:center;gap:16px}
+.ak-public-profile-avatar{display:grid;place-items:center;width:76px;height:76px;flex:0 0 76px;border:1px solid #e5ece6;border-radius:50%;object-fit:cover}
+.ak-public-profile-fallback{background:#eaf4ed;color:#176b50;font-size:25px;font-weight:800}
+.ak-public-profile-identity h2{margin:0;color:#303451;font-size:21px}
+.ak-public-profile-identity p{margin:5px 0 0;color:#89958d;font-size:11px}
+.ak-public-profile-bio{margin:18px 0;color:#58675d;font-size:12px;line-height:1.7;overflow-wrap:anywhere}
+.ak-public-profile-contacts{display:grid;margin:0;border-top:1px solid #edf0ed}
+.ak-public-profile-contact-row{display:grid;grid-template-columns:minmax(120px,.35fr) minmax(0,1fr);gap:15px;align-items:center;padding:14px 2px;border-bottom:1px solid #edf0ed}
+.ak-public-profile-contact-row dt{color:#758279;font-size:10px;font-weight:750}
+.ak-public-profile-contact-row dd{margin:0;color:#34483d;font-size:11px;overflow-wrap:anywhere}
+.ak-public-profile-private{display:inline-flex;align-items:center;gap:6px;color:#8b9290;font-size:10px}
+.ak-public-profile-private:before{content:"▣";font-size:10px}
+.ak-profile-preview-card .ak-public-profile-contacts{margin-top:22px;padding-top:0;border-top:0;text-align:left}
+.ak-profile-preview-card .ak-public-profile-contact-row{grid-template-columns:110px minmax(0,1fr);padding:11px 2px}.ak-profile-preview-card .ak-public-profile-contact-row:first-child{border-top:1px solid #edf0ed}
+@media(max-width:640px){
+  .ak-public-profile-card{padding:18px 15px}
+  .ak-public-profile-contact-row{grid-template-columns:105px minmax(0,1fr);gap:10px}
+  .ak-profile-member-link{gap:8px}
+}
+
+
+/* Keep the existing button shape and typography; only recolor profile/account actions. */
+.ak-settings-save-row .workspace-primary{background:#c52a78;border-color:#c52a78;color:#fff}
+.ak-settings-save-row .workspace-primary:hover{background:#a91e64;border-color:#a91e64}
+.ak-settings-save-row .workspace-primary:focus-visible{outline:3px solid #f9d5e5;outline-offset:3px}
+.ak-profile-preview-done{margin-top:16px;background:#c52a78}
+.ak-profile-preview-done:hover{background:#a91e64}
+
+
+/* Expandable profile preview avatar. */
+.ak-profile-preview-identity{display:flex;align-items:center;gap:18px;text-align:left}.ak-profile-preview-identity-copy{flex:1;min-width:0}.ak-profile-preview-avatar-zoom{position:relative;display:block;width:104px;height:104px;flex:0 0 104px;margin:0;padding:0;border:0;border-radius:50%;background:transparent;cursor:zoom-in}
+.ak-profile-preview-avatar-zoom .ak-profile-preview-avatar{display:block;width:104px;height:104px;margin:0}
+.ak-profile-preview-zoom-icon{position:absolute;inset:0;display:grid;place-items:center;border-radius:50%;background:#17152b88;color:#fff;font-size:34px;font-weight:400;line-height:1;opacity:0;transition:opacity .15s ease}
+.ak-profile-preview-avatar-zoom:hover .ak-profile-preview-zoom-icon,.ak-profile-preview-avatar-zoom:focus-visible .ak-profile-preview-zoom-icon{opacity:1}
+.ak-profile-preview-avatar-zoom:focus-visible{outline:3px solid #c52a78;outline-offset:3px}
+.ak-profile-avatar-lightbox{position:fixed;inset:0;z-index:1200;display:flex;align-items:center;justify-content:center;padding:24px;background:#11101de8;cursor:zoom-out}
+.ak-profile-avatar-lightbox img{display:block;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);width:auto;height:auto;object-fit:contain;border-radius:4px;box-shadow:0 20px 70px #0006}
+@media(prefers-reduced-motion:reduce){.ak-profile-preview-zoom-icon{transition:none}}
+
+
+/* Account Settings: theme preference and account-level UI. */
+html[data-akiba-theme="dark"] { color-scheme: dark; --ak-ink: #e6eaf2; --ak-muted: #a2adc2; --ak-border: #34384b; }
+@media (prefers-color-scheme: dark) {
+  html[data-akiba-theme="system"] { color-scheme: dark; --ak-ink: #e6eaf2; --ak-muted: #a2adc2; --ak-border: #34384b; }
+}
+html[data-akiba-theme="dark"] .ak-dashboard { background: #111421; color: #e6eaf2; }
+html[data-akiba-theme="dark"] .ak-sidebar,
+html[data-akiba-theme="dark"] .ak-topbar,
+html[data-akiba-theme="dark"] .ak-panel,
+html[data-akiba-theme="dark"] .ak-workspace-card,
+html[data-akiba-theme="dark"] .ak-workspace-invite,
+html[data-akiba-theme="dark"] .ak-group-report-panel,
+html[data-akiba-theme="dark"] .ak-workspace-card-body,
+html[data-akiba-theme="dark"] .ak-profile-preview-card,
+html[data-akiba-theme="dark"] .ak-account-subscription-placeholder { background: #1a1e2d; border-color: #34384b; color: #e6eaf2; }
+html[data-akiba-theme="dark"] .ak-sidebar { border-right-color: #34384b; }
+html[data-akiba-theme="dark"] .ak-topbar { background: #1a1e2deF; border-bottom-color: #34384b; }
+html[data-akiba-theme="dark"] .ak-panel-heading h2,
+html[data-akiba-theme="dark"] .ak-workspace-card-heading h2,
+html[data-akiba-theme="dark"] .ak-group-report-panel h1,
+html[data-akiba-theme="dark"] .ak-settings-page-heading h1,
+html[data-akiba-theme="dark"] .ak-settings-field>span,
+html[data-akiba-theme="dark"] .ak-account-access-block h3,
+html[data-akiba-theme="dark"] .ak-account-group-copy strong,
+html[data-akiba-theme="dark"] .ak-account-owned-group strong { color: #e6eaf2; }
+html[data-akiba-theme="dark"] .ak-nav-link { color: #c0c8dc; }
+html[data-akiba-theme="dark"] .ak-nav-link.active { background: #332338; }
+html[data-akiba-theme="dark"] .ak-sidebar-promo,
+html[data-akiba-theme="dark"] .ak-settings-field>input:not([type=file]),
+html[data-akiba-theme="dark"] .ak-settings-field>select,
+html[data-akiba-theme="dark"] .ak-settings-field>textarea,
+html[data-akiba-theme="dark"] .ak-settings-readonly,
+html[data-akiba-theme="dark"] .ak-account-group-row,
+html[data-akiba-theme="dark"] .ak-account-delete-form,
+html[data-akiba-theme="dark"] .ak-account-blockers { background: #202536; border-color: #3a4055; color: #e6eaf2; }
+html[data-akiba-theme="dark"] .ak-settings-field input,
+html[data-akiba-theme="dark"] .ak-settings-field select,
+html[data-akiba-theme="dark"] .ak-settings-field textarea { color: #e6eaf2; }
+html[data-akiba-theme="dark"] .ak-settings-divider { background: #34384b; }
+html[data-akiba-theme="dark"] .ak-settings-secondary-button { background: #202536; border-color: #3a4055; color: #e6eaf2; }
+html[data-akiba-theme="dark"] .ak-account-group-row:hover { background: #292e40; }
+html[data-akiba-theme="dark"] .ak-account-group-status.is-active { background: #18372c; color: #91d4ad; }
+html[data-akiba-theme="dark"] .ak-account-group-status.is-inactive { background: #3a3324; color: #e6c37b; }
+html[data-akiba-theme="dark"] .ak-account-coming-soon { background: #332338; color: #f0a8d1; }
+html[data-akiba-theme="dark"] .ak-account-danger-zone { border-color: #6d3444; }
+html[data-akiba-theme="dark"] .ak-account-danger-intro { background: #321f2a; border-color: #6d3444; color: #f2c6d2; }
+html[data-akiba-theme="dark"] .ak-account-danger-intro strong { color: #f2c6d2; }
+html[data-akiba-theme="dark"] .ak-account-subscription-placeholder { border-color: #34384b; }
+@media (prefers-color-scheme: dark) {
+  html[data-akiba-theme="system"] .ak-sidebar,
+  html[data-akiba-theme="system"] .ak-topbar,
+  html[data-akiba-theme="system"] .ak-panel,
+  html[data-akiba-theme="system"] .ak-workspace-card,
+  html[data-akiba-theme="system"] .ak-workspace-invite,
+  html[data-akiba-theme="system"] .ak-group-report-panel,
+  html[data-akiba-theme="system"] .ak-profile-preview-card,
+  html[data-akiba-theme="system"] .ak-account-subscription-placeholder { background: #1a1e2d; border-color: #34384b; color: #e6eaf2; }
+  html[data-akiba-theme="system"] .ak-panel-heading h2,
+  html[data-akiba-theme="system"] .ak-workspace-card-heading h2,
+  html[data-akiba-theme="system"] .ak-settings-field>span,
+  html[data-akiba-theme="system"] .ak-account-access-block h3,
+  html[data-akiba-theme="system"] .ak-account-group-copy strong { color: #e6eaf2; }
+  html[data-akiba-theme="system"] .ak-settings-field>input:not([type=file]),
+  html[data-akiba-theme="system"] .ak-settings-field>select,
+  html[data-akiba-theme="system"] .ak-settings-field>textarea,
+  html[data-akiba-theme="system"] .ak-account-group-row,
+  html[data-akiba-theme="system"] .ak-account-blockers { background: #202536; border-color: #3a4055; color: #e6eaf2; }
+}
+.ak-account-theme-control{display:grid;gap:8px;max-width:520px}
+.ak-account-groups-list{display:grid;gap:9px}
+.ak-account-group-row{display:flex;align-items:center;gap:12px;min-width:0;padding:12px;border:1px solid #edf0f5;border-radius:10px;background:#fff;color:inherit;text-decoration:none;transition:background .15s,border-color .15s}
+.ak-account-group-row:hover{background:#faf8fc;border-color:#e7d9e5}
+.ak-account-group-avatar{display:grid;place-items:center;width:44px;height:44px;flex:0 0 44px;border-radius:12px;object-fit:cover}
+.ak-account-group-fallback{background:#f1e9f3;color:#9a4d82;font-size:12px;font-weight:800}
+.ak-account-group-copy{display:grid;gap:5px;flex:1;min-width:0}.ak-account-group-copy strong{overflow:hidden;color:#303451;font-size:11px;text-overflow:ellipsis;white-space:nowrap}.ak-account-group-copy small{color:#858ba2;font-size:9px}
+.ak-account-group-status{padding:6px 8px;border-radius:6px;font-size:8px;font-weight:800;white-space:nowrap}.ak-account-group-status.is-active{background:#edf7ef;color:#4c8a60}.ak-account-group-status.is-inactive{background:#fff4e3;color:#9a6d27}.ak-account-group-arrow{color:#9aa0b3;font-size:15px}
+.ak-account-access-block{display:grid;gap:10px}.ak-account-access-block h3{margin:0;color:#303451;font-size:13px}.ak-account-access-block>p{margin:0;color:#8991a9;font-size:10px;line-height:1.6}.ak-account-current-email{font-weight:700;color:#47536c!important;overflow-wrap:anywhere}
+.ak-account-coming-soon{display:inline-flex;align-items:center;padding:7px 10px;border-radius:7px;background:#fff0f7;color:#bd2b78;font-size:9px;font-weight:800;white-space:nowrap}
+.ak-account-subscription-placeholder{display:flex;align-items:flex-start;gap:14px;padding:16px;border:1px dashed #e4e8f0;border-radius:10px;background:#fbfbfd}.ak-account-subscription-placeholder>span{font-size:23px;color:#bd2b78}.ak-account-subscription-placeholder strong{color:inherit;font-size:11px}.ak-account-subscription-placeholder p{margin:6px 0 0;color:#8991a9;font-size:10px;line-height:1.6}
+.ak-account-danger-zone{border-color:#f0d6df!important}.ak-account-danger-intro{padding:14px;border:1px solid #f2d9e2;border-radius:9px;background:#fff7fa;color:#865064}.ak-account-danger-intro strong{color:#9c315f;font-size:11px}.ak-account-danger-intro p{margin:6px 0 0;font-size:10px;line-height:1.65}
+.ak-account-blockers{display:grid;gap:9px;padding:14px;border:1px solid #ececf3;border-radius:9px;background:#fafafd}.ak-account-blockers h3{margin:0;color:#303451;font-size:12px}.ak-account-blockers p{margin:0;color:#8991a9;font-size:10px;line-height:1.6}.ak-account-blockers>a{color:#bd2b78;font-size:10px;font-weight:700;text-decoration:none}.ak-account-owned-group{display:grid;gap:5px;padding:10px 0;border-top:1px solid #e8e8ef}.ak-account-owned-group small{color:#8991a9;font-size:9px}.ak-account-owned-group>span{display:flex;flex-wrap:wrap;gap:12px}.ak-account-owned-group a{color:#bd2b78;font-size:9px;font-weight:700;text-decoration:none}
+.ak-account-delete-form{display:grid;gap:14px;padding:16px;border:1px solid #f1dce3;border-radius:10px;background:#fffafb}.ak-account-delete-acknowledgement{display:flex;align-items:flex-start;gap:8px;color:#7c5361;font-size:10px;line-height:1.6}.ak-account-delete-acknowledgement input{margin-top:2px;accent-color:#c52a78}.ak-account-delete-form .ak-member-danger{justify-self:start;max-width:100%;padding:12px 16px;border:1px solid #b4234d;border-radius:8px;background:#b4234d;color:#fff;font-size:10px;font-weight:800;cursor:pointer}.ak-account-delete-form .ak-member-danger:disabled{opacity:.5;cursor:not-allowed}
+@media(max-width:640px){.ak-account-group-row{gap:8px;padding:10px}.ak-account-group-avatar{width:38px;height:38px;flex-basis:38px}.ak-account-group-status{max-width:100px;white-space:normal}.ak-account-delete-form .ak-member-danger{width:100%}.ak-account-coming-soon{margin-top:8px}}
+
+@media (prefers-color-scheme: dark) {
+  html[data-akiba-theme="system"] .ak-dashboard { background:#111421; color:#e6eaf2; }
+  html[data-akiba-theme="system"] .ak-dashboard-content,
+  html[data-akiba-theme="system"] .ak-main,
+  html[data-akiba-theme="system"] .ak-workspace-content { background:transparent; color:#e6eaf2; }
+  html[data-akiba-theme="system"] .ak-sidebar-promo,
+  html[data-akiba-theme="system"] .ak-settings-field>input:not([type=file]),
+  html[data-akiba-theme="system"] .ak-settings-field>select,
+  html[data-akiba-theme="system"] .ak-settings-field>textarea,
+  html[data-akiba-theme="system"] .ak-settings-readonly { background:#202536; border-color:#3a4055; color:#e6eaf2; }
+  html[data-akiba-theme="system"] .ak-settings-divider { background:#34384b; }
+  html[data-akiba-theme="system"] .ak-account-group-row:hover { background:#292e40; }
+  html[data-akiba-theme="system"] .ak-account-group-status.is-active { background:#18372c; color:#91d4ad; }
+  html[data-akiba-theme="system"] .ak-account-group-status.is-inactive { background:#3a3324; color:#e6c37b; }
+  html[data-akiba-theme="system"] .ak-account-coming-soon { background:#332338; color:#f0a8d1; }
+  html[data-akiba-theme="system"] .ak-account-danger-zone { border-color:#6d3444; }
+  html[data-akiba-theme="system"] .ak-account-danger-intro { background:#321f2a; border-color:#6d3444; color:#f2c6d2; }
+  html[data-akiba-theme="system"] .ak-account-danger-intro strong { color:#f2c6d2; }
+  html[data-akiba-theme="system"] .ak-account-delete-form { background:#201a24; border-color:#6d3444; }
+}
+
+
+/* Also apply the account theme to the general site and shared UI primitives. */
+html[data-akiba-theme="light"] { color-scheme: light; }
+html[data-akiba-theme="dark"] body { background:#111421; color:#e6eaf2; }
+html[data-akiba-theme="dark"] .shell,
+html[data-akiba-theme="dark"] .main,
+html[data-akiba-theme="dark"] .page { background:#111421; color:#e6eaf2; }
+html[data-akiba-theme="dark"] .sidebar,
+html[data-akiba-theme="dark"] .topbar,
+html[data-akiba-theme="dark"] .panel,
+html[data-akiba-theme="dark"] .card,
+html[data-akiba-theme="dark"] .metric,
+html[data-akiba-theme="dark"] .tip,
+html[data-akiba-theme="dark"] .profile,
+html[data-akiba-theme="dark"] .activity { background:#1a1e2d; border-color:#34384b; color:#e6eaf2; }
+html[data-akiba-theme="dark"] .nav a,
+html[data-akiba-theme="dark"] .crumb,
+html[data-akiba-theme="dark"] .metric-head,
+html[data-akiba-theme="dark"] .metric-foot,
+html[data-akiba-theme="dark"] .section-head p,
+html[data-akiba-theme="dark"] .title-row p,
+html[data-akiba-theme="dark"] .meta,
+html[data-akiba-theme="dark"] .progress-label,
+html[data-akiba-theme="dark"] .empty { color:#a2adc2; }
+html[data-akiba-theme="dark"] h1,
+html[data-akiba-theme="dark"] h2,
+html[data-akiba-theme="dark"] h3,
+html[data-akiba-theme="dark"] .metric-number,
+html[data-akiba-theme="dark"] .title-row h3,
+html[data-akiba-theme="dark"] .amount b { color:#e6eaf2; }
+html[data-akiba-theme="dark"] .search,
+html[data-akiba-theme="dark"] input:not([type=checkbox]):not([type=radio]):not([type=file]),
+html[data-akiba-theme="dark"] select,
+html[data-akiba-theme="dark"] textarea { background:#202536; border-color:#3a4055; color:#e6eaf2; }
+html[data-akiba-theme="dark"] .nav a.active { background:#332338; }
+html[data-akiba-theme="dark"] .nav-rule,
+html[data-akiba-theme="dark"] .track { background:#34384b; }
+html[data-akiba-theme="dark"] .status { background:#18372c; color:#91d4ad; }
+@media (prefers-color-scheme: dark) {
+  html[data-akiba-theme="system"] body { background:#111421; color:#e6eaf2; }
+  html[data-akiba-theme="system"] .shell,
+  html[data-akiba-theme="system"] .main,
+  html[data-akiba-theme="system"] .page { background:#111421; color:#e6eaf2; }
+  html[data-akiba-theme="system"] .sidebar,
+  html[data-akiba-theme="system"] .topbar,
+  html[data-akiba-theme="system"] .panel,
+  html[data-akiba-theme="system"] .card,
+  html[data-akiba-theme="system"] .metric,
+  html[data-akiba-theme="system"] .tip,
+  html[data-akiba-theme="system"] .profile,
+  html[data-akiba-theme="system"] .activity { background:#1a1e2d; border-color:#34384b; color:#e6eaf2; }
+  html[data-akiba-theme="system"] h1,
+  html[data-akiba-theme="system"] h2,
+  html[data-akiba-theme="system"] h3,
+  html[data-akiba-theme="system"] .metric-number,
+  html[data-akiba-theme="system"] .title-row h3,
+  html[data-akiba-theme="system"] .amount b { color:#e6eaf2; }
+  html[data-akiba-theme="system"] input:not([type=checkbox]):not([type=radio]):not([type=file]),
+  html[data-akiba-theme="system"] select,
+  html[data-akiba-theme="system"] textarea { background:#202536; border-color:#3a4055; color:#e6eaf2; }
+  html[data-akiba-theme="system"] .nav a.active { background:#332338; }
+}
+
+.ak-account-deleted-page{min-height:100vh;display:grid;place-items:center;padding:24px;background:#f6f7fb;color:#303451}.ak-account-deleted-card{width:min(100%,520px);padding:36px;border:1px solid #e7e9f0;border-radius:18px;background:#fff;text-align:center;box-shadow:0 16px 48px rgba(26,31,50,.08)}.ak-account-deleted-mark{display:grid;place-items:center;width:54px;height:54px;margin:0 auto 18px;border-radius:50%;background:#e8f7ed;color:#39895c;font-size:26px;font-weight:800}.ak-account-deleted-card h1{margin:8px 0 12px;font-size:25px}.ak-account-deleted-card>p:not(.ak-eyebrow){color:#8189a0;font-size:13px;line-height:1.7}.ak-account-deleted-card>a{display:inline-block;margin-top:18px;padding:12px 18px;border-radius:8px;background:#bd2b78;color:#fff;font-size:12px;font-weight:800;text-decoration:none}html[data-akiba-theme="dark"] .ak-account-deleted-page{background:#111421;color:#e6eaf2}html[data-akiba-theme="dark"] .ak-account-deleted-card{background:#1a1e2d;border-color:#34384b}html[data-akiba-theme="dark"] .ak-account-deleted-card h1{color:#e6eaf2}@media(prefers-color-scheme:dark){html[data-akiba-theme="system"] .ak-account-deleted-page{background:#111421;color:#e6eaf2}html[data-akiba-theme="system"] .ak-account-deleted-card{background:#1a1e2d;border-color:#34384b}html[data-akiba-theme="system"] .ak-account-deleted-card h1{color:#e6eaf2}}
+
+
+
+
+/* Dark mode: theme actual surfaces and text without flattening every icon,
+   badge, link, and action to one forced color. Light mode is untouched. */
+html[data-akiba-theme="dark"] :is(
+  .ak-panel,.ak-metric,.ak-workspace-card,.ak-workspace-summary-card,
+  .ak-workspace-invite,.ak-workspace-card-body,.ak-group-report-panel,
+  .ak-finance-heading,.ak-finance-summary-card,.ak-finance-contribute,
+  .ak-finance-history,.ak-finance-payment-state,.ak-finance-disabled,
+  .ak-finance-safety-note,.ak-membership-page-heading,.ak-membership-panel,
+  .ak-profile-setup-card,.ak-profile-preview-dialog,.ak-profile-preview-card,
+  .ak-invite-modal,.workspace-modal,.workspace-panel,.modal,.panel,.card,
+  .metric,.auth-card,.real-group,.real-detail-card,
+  [class*="-card"],[class*="-panel"],[class*="-modal"],[class*="-dialog"],
+  [class*="-tray"],[class*="-popover"],[class*="-menu-content"]
+) {
+  background-color:#1a1e2d;
+  border-color:#34384b;
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] :is(
+  .ak-dashboard,.ak-main,.ak-dashboard-content,.ak-workspace-content,
+  .ak-workspace-page,.ak-workspace-shell,.ak-workspace-app,
+  .workspace-shell,.real-workspace,.profile-setup-shell,.auth-shell
+) { background-color:#111421; color:#e6eaf2; }
+
+/* Card descendants inherit a readable foreground; semantic accents below
+   restore their intended color and contrast on dark surfaces. */
+html[data-akiba-theme="dark"] :is(
+  .ak-panel,.ak-metric,.ak-workspace-card,.ak-workspace-summary-card,
+  .ak-workspace-invite,.ak-workspace-card-body,.ak-group-report-panel,
+  .ak-finance-heading,.ak-finance-summary-card,.ak-finance-contribute,
+  .ak-finance-history,.ak-finance-payment-state,.ak-finance-disabled,
+  .ak-finance-safety-note,.ak-membership-page-heading,.ak-membership-panel,
+  .ak-profile-setup-card,.ak-profile-preview-dialog,.ak-profile-preview-card,
+  .ak-invite-modal,.workspace-modal,.workspace-panel,.modal,.panel,.card,
+  .metric,.auth-card,.real-group,.real-detail-card,
+  [class*="-card"],[class*="-panel"],[class*="-modal"],[class*="-dialog"],
+  [class*="-tray"],[class*="-popover"],[class*="-menu-content"]
+) :is(h1,h2,h3,h4,p,span,strong,b,small,label,dt,dd,li,time,summary) {
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-dashboard h1,
+html[data-akiba-theme="dark"] .ak-dashboard h2,
+html[data-akiba-theme="dark"] .ak-dashboard h3,
+html[data-akiba-theme="dark"] .ak-workspace-content h1,
+html[data-akiba-theme="dark"] .ak-workspace-content h2,
+html[data-akiba-theme="dark"] .ak-workspace-content h3 { color:#f1f3fa; }
+html[data-akiba-theme="dark"] :is(
+  .ak-dashboard,.ak-workspace-content,.workspace-shell,.real-workspace
+) :is(p,small,time,.ak-muted,.ak-workspace-muted,.ak-section-eyebrow,.ak-eyebrow) {
+  color:#aab4ca;
+}
+
+/* Darken pastel icon chips and counters so their glyphs/numbers remain legible. */
+html[data-akiba-theme="dark"] :is(
+  .ak-metric-icon,.ak-quick-icon,.ak-activity-icon,.ak-notification-mark,
+  .ak-message-inbox-icon,.ak-finance-history-icon,.ak-finance-status-icon,
+  .ak-empty-icon,.ak-group-icon,.ak-workspace-member-fallback,
+  .ak-group-symbol,.group-symbol,.metric-icon,.core
+) {
+  background-color:#293247;
+  color:#c7d5f4;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] :is(.ak-count-pill,.ak-coming-pill,.ak-group-unread-badge,
+  .ak-notification-unread-label,.ak-message-unread-badge,.ak-nav-link small,
+  .ak-notification-bell-count,.ak-message-bell-count,.ak-panel-count) {
+  background-color:#3a263b;
+  color:#f0b5d8;
+  border-color:#1a1e2d;
+}
+html[data-akiba-theme="dark"] .ak-notification-bell-trigger,
+html[data-akiba-theme="dark"] .ak-message-bell-trigger,
+html[data-akiba-theme="dark"] .ak-workspace-close,
+html[data-akiba-theme="dark"] .workspace-close,
+html[data-akiba-theme="dark"] .ak-profile-preview-close {
+  background-color:#202536;
+  border-color:#3a4055;
+  color:#d6deef;
+}
+html[data-akiba-theme="dark"] :is(.ak-primary,.workspace-primary,.workspace-secondary,
+  .ak-finance-primary-button,.ak-finance-secondary-button,.ak-member-danger,
+  .ak-invite-modal-secondary,.ak-membership-copy button,.ak-profile-submit-button,
+  .ak-profile-preview-done,.ak-account-delete-form button) {
+  color:#fff;
+}
+html[data-akiba-theme="dark"] :is(.ak-panel-footer,.ak-finance-inline-link,
+  .ak-workspace-back,.ak-nav-link.active,.ak-quick-action>b,
+  .ak-notification-pagination a,.ak-notification-tray-footer,
+  .ak-membership-share-link a,.ak-membership-open-link) {
+  color:#e9a8d0;
+}
+html[data-akiba-theme="dark"] :is(.ak-group-row,.ak-quick-action,.ak-activity-row,
+  .ak-notification-row,.ak-notification-tray-item,.ak-message-inbox-row,
+  .ak-workspace-member,.ak-workspace-card-heading,.ak-workspace-card-heading p) {
+  border-color:#34384b;
+}
+html[data-akiba-theme="dark"] :is(.ak-notification-row.is-unread,.ak-notification-tray-item.is-unread,
+  .ak-activity-row.is-unread,.ak-group-row:hover,.ak-quick-action:hover,
+  .ak-message-inbox-row:hover,.ak-notification-tray-item:hover) {
+  background:#22283a;
+}
+html[data-akiba-theme="dark"] :is(.ak-topbar,.ak-sidebar,.ak-workspace-topbar,.real-topbar) {
+  background:#1a1e2ded;
+  border-color:#34384b;
+}
+html[data-akiba-theme="dark"] .ak-sidebar-promo {
+  background:linear-gradient(145deg,#282334,#222638);
+  border-color:#3a3548;
+}
+html[data-akiba-theme="dark"] .ak-purpose-banner {
+  background:linear-gradient(110deg,#292333,#222638);
+  border-color:#3a3548;
+}
+html[data-akiba-theme="dark"] .ak-purpose-banner h2,
+html[data-akiba-theme="dark"] .ak-purpose-banner p,
+html[data-akiba-theme="dark"] .ak-sidebar-promo p { color:#e6eaf2; }
+html[data-akiba-theme="dark"] .ak-nav-link { color:#c0c8dc; }
+html[data-akiba-theme="dark"] .ak-nav-link.active { background:#332338;color:#f0b5d8; }
+html[data-akiba-theme="dark"] .ak-notification-bell-count,
+html[data-akiba-theme="dark"] .ak-message-bell-count { border-color:#1a1e2d; }
+html[data-akiba-theme="dark"] .ak-status-pill,
+html[data-akiba-theme="dark"] .ak-membership-status.is-active,
+html[data-akiba-theme="dark"] .ak-account-group-status.is-active,
+html[data-akiba-theme="dark"] .ak-notification-read {
+  background:#18372c;color:#91d4ad;border-color:#2e5b45;
+}
+html[data-akiba-theme="dark"] :is(.ak-status-pill,.ak-membership-status.is-inactive,
+  .ak-account-group-status.is-inactive,.ak-workspace-preview,.workspace-preview) {
+  background:#3a3324;color:#e6c37b;border-color:#55482e;
+}
+html[data-akiba-theme="dark"] :is(.ak-finance-error,.ak-form-error,.ak-alert[role="alert"]) {
+  color:#ffb7bf;
+}
+
+/* Group pages and directory image thumbnails. */
+html[data-akiba-theme="dark"] .ak-group-hero {
+  background:linear-gradient(112deg,#292333 0%,#242538 62%,#202638 100%);
+  border-color:#3a3548;
+}
+html[data-akiba-theme="dark"] .ak-group-hero h1 { color:#f1f3fa; }
+html[data-akiba-theme="dark"] .ak-group-hero p { color:#b7c0d6; }
+html[data-akiba-theme="dark"] .ak-group-hero-mark { background:#343044;border-color:#4a4058;color:#f0b5d8; }
+html[data-akiba-theme="dark"] .ak-group-tabs {
+  background:#1a1e2d;border-color:#34384b;
+}
+html[data-akiba-theme="dark"] .ak-group-tabs>span,
+html[data-akiba-theme="dark"] .ak-group-tabs>a { color:#b8c2d8; }
+html[data-akiba-theme="dark"] .ak-group-tabs>span.active,
+html[data-akiba-theme="dark"] .ak-group-tabs>a.active {
+  background:#3a263b;color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-group-tabs small { background:#30364a;color:#b8c2d8; }
+html[data-akiba-theme="dark"] .ak-group-details>div,
+html[data-akiba-theme="dark"] .ak-group-member { border-color:#34384b; }
+html[data-akiba-theme="dark"] .ak-group-details dt,
+html[data-akiba-theme="dark"] .ak-group-member-copy small { color:#aab4ca; }
+html[data-akiba-theme="dark"] .ak-group-details dd,
+html[data-akiba-theme="dark"] .ak-group-member-copy strong { color:#e6eaf2; }
+html[data-akiba-theme="dark"] .ak-group-member-copy strong em { background:#30364a;color:#c1cbe0; }
+html[data-akiba-theme="dark"] .ak-group-member-count { background:#3a263b;color:#f0b5d8; }
+.ak-group-image { display:block;object-fit:cover; }
+html[data-akiba-theme="dark"] .ak-group-image { background:#293247;border:1px solid #3a4055; }
+
+/* Additional white surfaces used by the group detail and group creation flows. */
+html[data-akiba-theme="dark"] :is(.ak-group-stat,.ak-group-panel,.ak-group-tabs,
+  .ak-workspace-summary-card,
+  .ak-workspace-action-message,.ak-workspace-more-menu,.ak-workspace-share,
+  .ak-workspace-more,.ak-group-state,.ak-category-option,
+  .ak-create-back,.ak-membership-action-menu-content,.ak-membership-share-link,
+  .ak-membership-open-link,.ak-membership-status,.ak-membership-your-role,
+  .ak-workspace-member-role button,.ak-member-actions button,
+  .ak-workspace-member>form button,.ak-membership-invite-form input,
+  .ak-membership-search-form input,.ak-membership-copy input,
+  .ak-finance-form input,.ak-finance-input-wrap,.ak-finance-secondary-button,
+  .ak-settings-field>input:not([type=file]),.ak-settings-field>select,
+  .ak-settings-field>textarea,.ak-notification-row form button,
+  .ak-notification-bell-trigger,.ak-message-bell-trigger,
+  .ak-notification-tray,.ak-message-tray,.ak-profile-preview-trigger,
+  .ak-profile-preview-close,.ak-invite-modal-close,.ak-invite-modal-secondary,
+  .profile-secondary-button,.profile-field input,.profile-field textarea,
+  .ak-account-group-row,.ak-account-delete-form,.ak-account-blockers) {
+  background-color:#202536;
+  border-color:#3a4055;
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-group-stat small,
+html[data-akiba-theme="dark"] .ak-group-panel-heading p,
+html[data-akiba-theme="dark"] .ak-group-state>p,
+html[data-akiba-theme="dark"] .ak-workspace-member>div small,
+html[data-akiba-theme="dark"] .ak-workspace-member>span:last-child,
+html[data-akiba-theme="dark"] .ak-workspace-summary-card small,
+html[data-akiba-theme="dark"] .ak-workspace-summary-card>div>span {
+  color:#aab4ca;
+}
+html[data-akiba-theme="dark"] .ak-group-stat strong,
+html[data-akiba-theme="dark"] .ak-group-panel-heading h2,
+html[data-akiba-theme="dark"] .ak-workspace-member>div strong,
+html[data-akiba-theme="dark"] .ak-workspace-summary-card strong {
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-group-stat-icon.pink,
+html[data-akiba-theme="dark"] .ak-group-stat-icon.violet,
+html[data-akiba-theme="dark"] .ak-group-stat-icon.green,
+html[data-akiba-theme="dark"] .ak-group-state>span,
+html[data-akiba-theme="dark"] .ak-group-member-fallback {
+  background:#293247;color:#c7d5f4;
+}
+html[data-akiba-theme="dark"] .ak-category-option,
+html[data-akiba-theme="dark"] .ak-category-option:visited {
+  background:#202536;border-color:#3a4055;color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-category-option strong,
+html[data-akiba-theme="dark"] .ak-category-option.selected strong { color:#f1f3fa; }
+html[data-akiba-theme="dark"] .ak-category-option small,
+html[data-akiba-theme="dark"] .ak-category-option.selected small { color:#aab4ca; }
+html[data-akiba-theme="dark"] .ak-category-option .ak-category-symbol,
+html[data-akiba-theme="dark"] .ak-category-option.selected .ak-category-symbol {
+  background:#3a263b;color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-category-option.selected,
+html[data-akiba-theme="dark"] .ak-category-option:hover { background:#2a2436;border-color:#9b4f7a; }
+html[data-akiba-theme="dark"] .ak-create-navigation { background:transparent !important;background-color:transparent !important;border-color:#34384b; }
+html[data-akiba-theme="dark"] .ak-create-back { background:#202536;color:#d6deef; }
+html[data-akiba-theme="dark"] .ak-workspace-group-image,
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-group-image {
+  background:#293247;border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-progress { background:#1a1e2d; }
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-group-tabs>span.active,
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-group-tabs>a.active {
+  background:#3a263b;color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu>summary[open],
+html[data-akiba-theme="dark"] .ak-membership-action-menu>summary { background:#202536;border-color:#3a4055;color:#d6deef; }
+html[data-akiba-theme="dark"] .ak-notification-row form button,
+html[data-akiba-theme="dark"] .ak-membership-copy .ak-membership-share-button,
+html[data-akiba-theme="dark"] .ak-membership-open-link,
+html[data-akiba-theme="dark"] .ak-profile-preview-trigger,
+html[data-akiba-theme="dark"] .ak-invite-modal-secondary {
+  background:#202536;color:#e9a8d0;border-color:#4a3548;
+}
+
+
+/* Dashboard polish: dark-only contrast and hover parity. Light theme is unchanged. */
+html[data-akiba-theme="dark"] .ak-brand,
+html[data-akiba-theme="dark"] .ak-mobile-brand {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-dashboard .ak-panel-heading .ak-panel-count {
+  padding:0;
+  border:0;
+  border-radius:0;
+  background:transparent;
+  color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-activity-row {
+  border-color:#34384b;
+  transition:background .15s ease;
+}
+html[data-akiba-theme="dark"] .ak-activity-row:hover {
+  background:#22283a;
+  border-radius:8px;
+}
+html[data-akiba-theme="dark"] .ak-feature-note {
+  border-color:#4a4058;
+  background:#292333;
+  color:#d6deef;
+}
+html[data-akiba-theme="dark"] .ak-note-card {
+  border-color:#4a4058;
+  background:linear-gradient(145deg,#292333,#222638);
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-note-card strong,
+html[data-akiba-theme="dark"] .ak-note-card p {
+  color:#e6eaf2;
+}
+
+html[data-akiba-theme="dark"] .ak-workspace-top-crumb, html[data-akiba-theme="dark"] .ak-workspace-top-crumb a { color:#b9c4dc; }
+html[data-akiba-theme="dark"] .ak-workspace-top-crumb strong { color:#f1f3fa; }
+
+
+/* Dark-only contrast fixes for profile upload, settings feedback, and destructive group actions. */
+html[data-akiba-theme="dark"] .profile-field input[type="file"] {
+  color:#e6eaf2;
+  background-color:#202536;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] .profile-field input[type="file"]::file-selector-button {
+  margin-right:12px;
+  padding:7px 10px;
+  border:1px solid #505971;
+  border-radius:6px;
+  background:#30384c;
+  color:#f1f3fa;
+  font:inherit;
+  cursor:pointer;
+}
+html[data-akiba-theme="dark"] .ak-settings-success {
+  border-color:#315c49;
+  background:#20382d;
+  color:#bce8cb;
+}
+html[data-akiba-theme="dark"] .ak-group-report-privacy {
+  border-color:#41465b;
+  background:#24283a;
+  color:#c1c9dc;
+}
+html[data-akiba-theme="dark"] .ak-group-report-privacy strong {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-group-report-form .ak-member-danger {
+  border-color:#a83b78;
+  background:#b92f7d;
+  color:#fff;
+}
+html[data-akiba-theme="dark"] .ak-group-report-form .ak-member-danger:hover {
+  border-color:#d65b9e;
+  background:#ce438f;
+  color:#fff;
+}
+
+/* File inputs use browser/OS-native rendering for the selected filename and empty-state text. */
+html[data-akiba-theme="dark"] input[type="file"] {
+  color-scheme:dark;
+  color:#f1f3fa !important;
+  background-color:#202536;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] input[type="file"]::file-selector-button {
+  color:#f1f3fa !important;
+  background:#30384c !important;
+  border:1px solid #505971;
+  border-radius:6px;
+}
+
+
+/* Group creation wizard: dark-mode-only contrast improvements. */
+html[data-akiba-theme="dark"] .ak-create-step-labels span {
+  color:#b7c0d5;
+}
+html[data-akiba-theme="dark"] .ak-create-step-labels span.active {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-create-section-heading>span {
+  background:#38283d;
+  color:#ff8bc5;
+}
+html[data-akiba-theme="dark"] .ak-create-form label .ak-field-meta {
+  border-color:#4a4056;
+  background:#302a3a;
+  color:#e0d9e8;
+}
+html[data-akiba-theme="dark"] .ak-create-form label .ak-field-meta.required {
+  border-color:#784264;
+  background:#43283b;
+  color:#ff9acb;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-coming-soon-label {
+  border:1px solid #4b4560;
+  background:#343047;
+  color:#e2dafa;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-private-note {
+  border-color:#42495e;
+  background:#252b3b;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-private-note>span {
+  background:#303d4c;
+  color:#a9e2bf;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-private-note strong {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-create-form .ak-private-note small {
+  color:#c2cbe0;
+}
+
+
+/* Group overview: dark-only readability and surface refinements. */
+html[data-akiba-theme="dark"] .ak-dashboard .ak-workspace-banner-copy>p {
+  color:#ffffff !important;
+}
+html[data-akiba-theme="dark"] .ak-summary-icon.members {
+  background:#3a263b;
+  color:#ff9acb;
+}
+html[data-akiba-theme="dark"] .ak-summary-icon.target {
+  background:#302a4a;
+  color:#c6a8ff;
+}
+html[data-akiba-theme="dark"] .ak-summary-icon.role {
+  background:#203d35;
+  color:#9be0bb;
+}
+html[data-akiba-theme="dark"] .ak-workspace-progress {
+  background:#1a1e2d;
+}
+html[data-akiba-theme="dark"] .ak-workspace-progress .ak-section-eyebrow {
+  color:#e9a8d0;
+}
+html[data-akiba-theme="dark"] .ak-workspace-progress .ak-workspace-card-heading h2 {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-workspace-progress .ak-workspace-card-heading p {
+  color:#c2cbe0;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty {
+  border-color:#42495e;
+  background:#252b3b;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty>span {
+  background:#3a263b;
+  color:#ff9acb;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty strong {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty p {
+  color:#c2cbe0;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty .ak-finance-inline-link {
+  color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-invite-symbol {
+  background:#3a263b;
+  color:#ff9acb;
+}
+html[data-akiba-theme="dark"] .ak-workspace-member {
+  background:transparent;
+  transition:background-color .15s ease;
+}
+html[data-akiba-theme="dark"] .ak-workspace-member:hover {
+  background:#22283a;
+}
+
+/* Finance contribution card: dark-mode-only description and provider badge contrast. */
+html[data-akiba-theme="dark"] .ak-finance-contribute .ak-finance-provider-mark {
+  background:#3a263b;
+  color:#ff9acb;
+}
+
+/* Finance currency label: keep the KES badge legible in dark mode only. */
+html[data-akiba-theme="dark"] .ak-finance-currency {
+  background:#3a263b;
+  color:#ff9acb;
+}
+
+
+/* Membership screen: dark-only text, directory separation, and action alignment. */
+html[data-akiba-theme="dark"] .ak-membership-heading-copy .ak-section-eyebrow {
+  color:#e9a8d0 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-heading-copy h1 {
+  color:#f1f3fa !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-heading-copy>p {
+  color:#e1e6f3 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-page-heading .ak-workspace-back {
+  color:#f0b5d8 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-directory-heading .ak-section-eyebrow,
+html[data-akiba-theme="dark"] .ak-membership-directory-heading h2 {
+  color:#f1f3fa !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-directory-heading>div>p {
+  color:#c2cbe0 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-stat {
+  background:#202536;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] .ak-membership-stat strong {
+  color:#f1f3fa !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-stat small {
+  color:#c2cbe0 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-results-meta,
+html[data-akiba-theme="dark"] .ak-membership-results-meta span:last-child {
+  color:#b8c2d8 !important;
+}
+html[data-akiba-theme="dark"] .ak-membership-person-copy>strong,
+html[data-akiba-theme="dark"] .ak-membership-person-copy>small,
+html[data-akiba-theme="dark"] .ak-membership-person-role>span {
+  color:#e1e6f3;
+}
+html[data-akiba-theme="dark"] .ak-membership-person-role>span.admin {
+  color:#ff9acb;
+  background:#3a263b;
+  border-color:#6c3c5c;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-member-list {
+  gap:8px;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-membership-person {
+  border:1px solid #34384b;
+  border-radius:11px;
+  background:#171b29;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-membership-person:hover {
+  background:#22283a;
+  border-color:#4a4058;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu>summary {
+  display:inline-flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:7px;
+}
+html[data-akiba-theme="dark"] .ak-membership-manage-chevron {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  line-height:1;
+  transform:translateY(-1px);
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu>summary:after {
+  content:none;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu-content {
+  background:#202536;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu-content button {
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu-content .ak-member-danger {
+  color:#ffb7bf;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-danger-card .ak-member-danger,
+html[data-akiba-theme="dark"] .ak-workspace-app button.ak-member-danger {
+  color:#fff;
+}
+
+
+html[data-akiba-theme="dark"] .ak-deactivate-group-form .ak-member-danger {
+  border-color:#a83b78;
+  background:#b92f7d;
+  color:#ffffff !important;
+}
+html[data-akiba-theme="dark"] .ak-deactivate-group-form .ak-member-danger:hover {
+  border-color:#d65b9e;
+  background:#ce438f;
+  color:#ffffff !important;
+}
+
+
+/* Keep the custom chevron dark-theme-only; light mode retains its original marker. */
+.ak-membership-manage-chevron { display:none; }
+
+
+/* Membership header: override inherited pale copy with high-contrast dark-theme text only. */
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-dashboard-content.ak-workspace-content .ak-workspace-page-heading.ak-membership-page-heading .ak-membership-heading-copy .ak-section-eyebrow {
+  color:#f3b9dc !important;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-dashboard-content.ak-workspace-content .ak-workspace-page-heading.ak-membership-page-heading .ak-membership-heading-copy h1 {
+  color:#ffffff !important;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-dashboard-content.ak-workspace-content .ak-workspace-page-heading.ak-membership-page-heading .ak-membership-heading-copy>p {
+  color:#f0f3fa !important;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-dashboard-content.ak-workspace-content .ak-workspace-page-heading.ak-membership-page-heading>a.ak-workspace-back {
+  color:#f3b9dc !important;
+}
+/* Give the Membership Review panel breathing room before the directory/invitations. */
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-membership-requests {
+  margin-bottom:18px;
+}
+/* The Manage control is text-only; remove the decorative arrow in both themes. */
+.ak-membership-action-menu>summary:after {
+  content:none !important;
+}
+.ak-membership-manage-chevron {
+  display:none !important;
+}
+
+/* The membership heading's light gradient washes out its content in dark mode; preserve the existing dark surface. */
+html[data-akiba-theme="dark"] .ak-membership-page-heading {
+  background:none !important;
+}

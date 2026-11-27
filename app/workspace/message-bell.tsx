@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
 export type UnreadGroupSummary = {
@@ -18,8 +18,26 @@ function summaryText(item: UnreadGroupSummary) {
 
 export default function MessageBell() {
   const [open, setOpen] = useState(false);
+  const trayRootRef = useRef<HTMLDivElement>(null);
   const [items, setItems] = useState<UnreadGroupSummary[]>([]);
   const [total, setTotal] = useState(0);
+
+
+  useEffect(() => {
+    if (!open) return;
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!trayRootRef.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   useEffect(() => {
     let active = true;
@@ -43,7 +61,7 @@ export default function MessageBell() {
   }, []);
 
   return (
-    <div className="ak-message-bell">
+    <div className="ak-message-bell" ref={trayRootRef}>
       <button type="button" className="ak-message-bell-trigger" aria-label={total > 0 ? "Messages, " + total + " unread" : "Messages"} aria-expanded={open} aria-haspopup="dialog" onClick={() => setOpen((value) => !value)}>
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11.5a7.5 7.5 0 0 1-7.5 7.5H5l1.7-3.4A7.5 7.5 0 1 1 20 11.5Z" /><path d="M8 10h8M8 13h5" /></svg>
         {total > 0 && <span className="ak-message-bell-count">{total > 99 ? "99+" : total}</span>}

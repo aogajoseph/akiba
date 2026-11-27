@@ -23,7 +23,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
       .maybeSingle(),
     supabase
       .from("akiba_user_contacts")
-      .select("phone_number")
+      .select("phone_number, location")
       .eq("user_id", user.id)
       .maybeSingle(),
   ]);
@@ -62,6 +62,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
             avatarPath: profile?.avatar_path ?? null,
             bio: profile?.bio ?? "",
             phoneNumber: contact?.phone_number ?? "",
+            location: contact?.location ?? "",
           }} />
         </section>
       </section>

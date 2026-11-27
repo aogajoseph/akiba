@@ -16,6 +16,7 @@ type Group = {
   description: string | null;
   currency_code: string;
   created_at: string;
+  group_image_path: string | null;
 };
 
 function initials(name: string) {
@@ -33,7 +34,7 @@ export default async function MyGroupsPage() {
 
   const [{ data: profile }, initialGroups, unreadResult, notificationCountResult, notificationPreviewResult] = await Promise.all([
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
-    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at")
+    supabase.from("akiba_groups").select("id,name,purpose,group_type,description,currency_code,created_at,group_image_path")
       .order("created_at", { ascending: false }).range(0, 499),
     supabase.rpc("akiba_list_my_group_chat_unread_counts"),
     supabase.rpc("akiba_count_my_unread_group_notifications"),
@@ -53,7 +54,7 @@ export default async function MyGroupsPage() {
   // five-item preview or the API's per-request row cap.
   for (let offset = 500; !groupsError && groups.length >= offset; offset += 500) {
     const { data, error } = await supabase.from("akiba_groups")
-      .select("id,name,purpose,group_type,description,currency_code,created_at")
+      .select("id,name,purpose,group_type,description,currency_code,created_at,group_image_path")
       .order("created_at", { ascending: false }).range(offset, offset + 499);
     if (error) {
       groupsError = true;
@@ -64,6 +65,7 @@ export default async function MyGroupsPage() {
     if (page.length < 500) break;
   }
 
+  const groupImageUrls = new Map(groups.filter((group) => group.group_image_path).map((group) => [group.id, supabase.storage.from("group-images").getPublicUrl(group.group_image_path!).data.publicUrl]));
   const avatarUrl = profile.avatar_path
     ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl
     : null;
@@ -82,8 +84,8 @@ export default async function MyGroupsPage() {
           <NotificationSidebarLink />
           <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
+          <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>Edit Profile</Link>
+          <Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
         </nav>
         <div className="ak-sidebar-bottom">
           <div className="ak-sidebar-promo"><span className="ak-promo-mark">✳</span><strong>Do more, together</strong><p>Bring people together around the things that matter.</p><Link href="/workspace/new">Create a group <span>→</span></Link></div>
@@ -117,7 +119,7 @@ export default async function MyGroupsPage() {
               : groups.length === 0 ? <div className="ak-workspace-empty"><strong>You haven’t joined a group yet</strong><p>Create a group for a celebration, a family goal, a trip or anything you want to organise together.</p><Link href="/workspace/new" className="ak-primary">＋ Create your first Group</Link></div>
                 : <div className="ak-group-list">{groups.map((group) => (
                   <Link href={"/workspace/groups/" + group.id} className="ak-group-row" key={group.id}>
-                    <span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span>
+                    {groupImageUrls.get(group.id) ? <img className="ak-group-icon ak-group-image" src={groupImageUrls.get(group.id)} alt="" /> : <span className={"ak-group-icon " + (group.purpose === "event" ? "event" : "goal")}>{group.purpose === "event" ? "▦" : "◎"}</span>}
                     <span className="ak-group-copy"><strong>{group.name}</strong><small>{group.purpose === "event" ? "Event" : group.purpose === "chama" ? "Chama" : "Goal"} · {group.group_type.replaceAll("_", " ")} · {group.currency_code}{group.description ? " · " + group.description : ""}</small></span>
                     {(unreadByGroup.get(group.id) ?? 0) > 0 && <span className="ak-group-unread-badge" aria-label={(unreadByGroup.get(group.id) ?? 0) + " unread messages"}>{(unreadByGroup.get(group.id) ?? 0) > 99 ? "99+" : unreadByGroup.get(group.id)}</span>}
                     <span className="ak-group-date">{shortDate(group.created_at)}</span><span className="ak-chevron">›</span>

@@ -143,8 +143,8 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
           <NotificationSidebarLink />
           <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
+          <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>Edit Profile</Link>
+          <Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
         </nav>
         <div className="ak-sidebar-bottom">
           <div className="ak-sidebar-promo"><span className="ak-promo-mark">✳</span><strong>Do more, together</strong><p>Bring people together around the things that matter.</p><Link href="/workspace/new">Create a group <span>→</span></Link></div>
@@ -196,7 +196,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
             <Link href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
             <Link href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat{chatUnreadCount > 0 && <span className="ak-group-tab-unread-badge">{chatUnreadCount > 99 ? "99+" : chatUnreadCount}</span>}</Link>
-            <Link href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link>
+            {isGroupCreator ?             <Link href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link> :             <span aria-disabled="true" title="Only the Group Creator can access group settings"><SettingsOutlinedIcon />Settings</span>}
           </nav>
           {group.status !== "active" && <div className="ak-workspace-card ak-group-deactivated-banner">
             <strong>This group has been deactivated.</strong>
@@ -231,8 +231,10 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
                     const name = member.profile?.display_name?.trim() || (member.user_id === user.id ? "You" : "Akiba member");
                     const photo = member.profile?.avatar_path ? supabase.storage.from("avatars").getPublicUrl(member.profile.avatar_path).data.publicUrl : null;
                     return <div className="ak-workspace-member" key={member.user_id}>
-                      {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
-                      <div><strong>{name}{member.user_id === user.id ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></div>
+                      <Link className="ak-profile-member-link" href={member.profile?.username ? "/workspace/people/" + encodeURIComponent(member.profile.username) : "/workspace"}>
+                        {photo ? <img src={photo} alt="" /> : <span className="ak-workspace-member-fallback">{initials(name)}</span>}
+                        <span><strong>{name}{member.user_id === user.id ? <em>You</em> : null}</strong><small>{member.profile?.username ? "@" + member.profile.username : "Akiba member"}</small></span>
+                      </Link>
                       <div className="ak-workspace-member-role"><span className={member.role !== "member" ? "admin" : ""}>{member.role === "group_creator" ? "Group Creator" : member.role === "group_admin" ? "Group Admin" : "Member"}</span>
                       {isGroupCreator && member.role !== "group_creator" && <form action={setGroupAdmin}>
                         <input type="hidden" name="group_id" value={group.id} />

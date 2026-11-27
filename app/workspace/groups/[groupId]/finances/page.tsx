@@ -45,18 +45,19 @@ export default async function GroupFinancesPage({ params }: Props) {
   if (!user) redirect("/login");
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name,currency_code,target_amount,group_image_path,group_plan_code,status,scheduled_delete_at").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,currency_code,target_amount,group_image_path,group_plan_code,status,scheduled_delete_at,created_by").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
   if (!profile?.display_name?.trim()) redirect("/onboarding");
 
   const [{ data: membership }, { data: leadershipMembers }, { data: groupPlan }] = await Promise.all([
-    supabase.from("akiba_group_memberships").select("status").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("akiba_group_memberships").select("status,role").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_group_memberships").select("role").eq("group_id", group.id).eq("status", "active"),
     supabase.from("akiba_group_plan_entitlements").select("required_group_admins").eq("plan_code", group.group_plan_code).maybeSingle(),
   ]);
   if (!membership || membership.status !== "active") notFound();
+  const isCreator = group.created_by === user.id && membership.role === "group_creator";
   const activeGroupAdminCount = (leadershipMembers ?? []).filter((member) => member.role === "group_admin").length;
   const requiredGroupAdmins = groupPlan?.required_group_admins ?? 3;
   const leadershipReady = activeGroupAdminCount >= requiredGroupAdmins;
@@ -104,8 +105,8 @@ export default async function GroupFinancesPage({ params }: Props) {
           <NotificationSidebarLink />
           <MessagesSidebarLink />
           <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>♙</span>My Profile</span>
-          <span className="ak-nav-link ak-nav-muted" aria-disabled="true"><span>⚙</span>Settings</span>
+          <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>Edit Profile</Link>
+          <Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
         </nav>
         <div className="ak-sidebar-bottom">
           <div className="ak-sidebar-promo"><span className="ak-promo-mark">✳</span><strong>Do more, together</strong><p>Bring people together around the things that matter.</p><Link href="/workspace/new">Create a group <span>→</span></Link></div>
@@ -140,7 +141,7 @@ export default async function GroupFinancesPage({ params }: Props) {
             <Link className="active" aria-current="page" href={`/workspace/groups/${group.id}/finances`}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={`/workspace/groups/${group.id}/membership`}><GroupsOutlinedIcon />Membership</Link>
             <Link className="" href={`/workspace/groups/${group.id}/chat`}><ChatBubbleOutlineOutlinedIcon />Chat</Link>
-            <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
+            {isCreator ?             <Link href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link> :             <span aria-disabled="true" title="Only the Group Creator can access group settings"><SettingsOutlinedIcon />Settings</span>}
           </nav>
 
           {group.status !== "active" && <div className="ak-workspace-card ak-group-deactivated-banner">

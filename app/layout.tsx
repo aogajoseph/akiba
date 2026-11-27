@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import InitColorSchemeScript from "@mui/material/InitColorSchemeScript";
+import { createClient } from "@/lib/supabase/server";
 import "./globals.css";
 import "./group-creation-category.css";
 
@@ -38,11 +39,18 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+export default async function RootLayout({ children }: Readonly<{ children: ReactNode }>) {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  let akibaTheme: "light" | "dark" | "system" = "dark";
+  if (user) {
+    const { data: settings } = await supabase.from("akiba_user_settings").select("theme").eq("user_id", user.id).maybeSingle();
+    if (settings?.theme === "light" || settings?.theme === "dark" || settings?.theme === "system") akibaTheme = settings.theme;
+  }
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en" data-akiba-theme={akibaTheme === "light" ? "light" : "dark"} suppressHydrationWarning>
       <body>
-        <InitColorSchemeScript attribute="data-mui-color-scheme" defaultMode="light" />
+        <InitColorSchemeScript attribute="data-mui-color-scheme" defaultMode="dark" />
         {children}
       </body>
     </html>
