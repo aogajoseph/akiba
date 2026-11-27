@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState } from "react";
 import { saveThemePreference, type AkibaTheme } from "./actions";
 
 export default function ThemePreference({ initialTheme }: { initialTheme: AkibaTheme }) {
   const [theme, setTheme] = useState<AkibaTheme>(initialTheme);
   const [message, setMessage] = useState("");
-  const [isPending, startTransition] = useTransition();
+  const [isPending, setIsPending] = useState(false);
 
   function chooseTheme(nextTheme: AkibaTheme) {
     const previous = theme;
@@ -14,8 +14,8 @@ export default function ThemePreference({ initialTheme }: { initialTheme: AkibaT
     setMessage("");
     document.documentElement.dataset.akibaTheme = nextTheme;
     document.documentElement.style.colorScheme = nextTheme === "system" ? "" : nextTheme;
-    startTransition(() => {
-      void saveThemePreference(nextTheme).then((result) => {
+    setIsPending(true);
+    void saveThemePreference(nextTheme).then((result) => {
       if (!result.success) {
         setTheme(previous);
         document.documentElement.dataset.akibaTheme = previous;
@@ -24,8 +24,7 @@ export default function ThemePreference({ initialTheme }: { initialTheme: AkibaT
       } else {
         setMessage("Appearance preference saved.");
       }
-      });
-    });
+      }).finally(() => setIsPending(false));
   }
 
   return (
