@@ -2259,3 +2259,29 @@ html[data-akiba-theme="dark"] .ak-deactivate-group-form .ak-member-danger:hover 
 
 /* Keep the custom chevron dark-theme-only; light mode retains its original marker. */
 .ak-membership-manage-chevron { display:none; }
+
+
+/* Membership header: override inherited pale copy with high-contrast dark-theme text only. */
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-dashboard-content.ak-workspace-content .ak-workspace-page-heading.ak-membership-page-heading .ak-membership-heading-copy .ak-section-eyebrow {
+  color:#f3b9dc !important;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-dashboard-content.ak-workspace-content .ak-workspace-page-heading.ak-membership-page-heading .ak-membership-heading-copy h1 {
+  color:#ffffff !important;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-dashboard-content.ak-workspace-content .ak-workspace-page-heading.ak-membership-page-heading .ak-membership-heading-copy>p {
+  color:#f0f3fa !important;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-dashboard-content.ak-workspace-content .ak-workspace-page-heading.ak-membership-page-heading>a.ak-workspace-back {
+  color:#f3b9dc !important;
+}
+/* Give the Membership Review panel breathing room before the directory/invitations. */
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-membership-requests {
+  margin-bottom:18px;
+}
+/* The Manage control is text-only; remove the decorative arrow in both themes. */
+.ak-membership-action-menu>summary:after {
+  content:none !important;
+}
+.ak-membership-manage-chevron {
+  display:none !important;
+}
