@@ -23,7 +23,7 @@ export default function MembershipManageMenu({ className, children }: { classNam
   }, []);
 
   return <details ref={detailsRef} className={className}>
-    <summary>Manage <span aria-hidden="true" className="ak-membership-manage-chevron">⌄</span></summary>
+    <summary>Manage</summary>
     {children}
   </details>;
 }
