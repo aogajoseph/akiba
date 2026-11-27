@@ -8,15 +8,24 @@ values
   ('00000000-0000-0000-0000-000000000912', 'authenticated', 'authenticated', 'account-delete-admin@akiba.test', '', now(), now(), now())
 on conflict (id) do nothing;
 
-select set_config('request.jwt.claim.role', 'service_role', true);
-select set_config('request.jwt.claims', '{"role":"service_role"}', true);
-set local role service_role;
-
--- Creator ownership is an authoritative deletion gate.
+-- Create a group through the authenticated Creator path so its immutable
+-- Creator membership is installed by the normal database trigger.
+insert into public.akiba_profiles (user_id, username, display_name)
+values ('00000000-0000-0000-0000-000000000910', 'delete_owner_910', 'Deletion Owner')
+on conflict (user_id) do nothing;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000910', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-0000-0000-000000000910"}', true);
+set local role authenticated;
 insert into public.akiba_groups (id, name, purpose, group_type, currency_code, created_by)
 values ('00000000-0000-0000-0000-000000000920', 'Account deletion gate group', 'goal', 'shared_savings', 'KES', '00000000-0000-0000-0000-000000000910')
 on conflict (id) do nothing;
+reset role;
 
+-- Creator ownership is an authoritative deletion gate.
+select set_config('request.jwt.claim.role', 'service_role', true);
+select set_config('request.jwt.claims', '{"role":"service_role"}', true);
+set local role service_role;
 do $test$
 begin
   begin
@@ -27,6 +36,7 @@ begin
   end;
 end;
 $test$;
+reset role;
 
 -- An ordinary member may delete their account. Chat authorship is anonymised,
 -- while the message and group financial history remain intact.
@@ -44,6 +54,7 @@ values
   ('00000000-0000-0000-0000-000000000922', '00000000-0000-0000-0000-000000000920', '00000000-0000-0000-0000-000000000911', '00000000-0000-0000-0000-000000000912', 'group_admin_demoted', 'group_admin', 'member')
 on conflict (id) do nothing;
 
+set local role service_role;
 select public.akiba_prepare_account_deletion('00000000-0000-0000-0000-000000000911');
 
 do $test$
