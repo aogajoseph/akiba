@@ -2085,3 +2085,61 @@ html[data-akiba-theme="dark"] .ak-create-form .ak-private-note strong {
 html[data-akiba-theme="dark"] .ak-create-form .ak-private-note small {
   color:#c2cbe0;
 }
+
+
+/* Group overview: dark-only readability and surface refinements. */
+html[data-akiba-theme="dark"] .ak-workspace-banner-copy>p {
+  color:#f0f3fa;
+}
+html[data-akiba-theme="dark"] .ak-summary-icon.members {
+  background:#3a263b;
+  color:#ff9acb;
+}
+html[data-akiba-theme="dark"] .ak-summary-icon.target {
+  background:#302a4a;
+  color:#c6a8ff;
+}
+html[data-akiba-theme="dark"] .ak-summary-icon.role {
+  background:#203d35;
+  color:#9be0bb;
+}
+html[data-akiba-theme="dark"] .ak-workspace-progress {
+  background:#1a1e2d;
+}
+html[data-akiba-theme="dark"] .ak-workspace-progress .ak-section-eyebrow {
+  color:#e9a8d0;
+}
+html[data-akiba-theme="dark"] .ak-workspace-progress .ak-workspace-card-heading h2 {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-workspace-progress .ak-workspace-card-heading p {
+  color:#c2cbe0;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty {
+  border-color:#42495e;
+  background:#252b3b;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty>span {
+  background:#3a263b;
+  color:#ff9acb;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty strong {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty p {
+  color:#c2cbe0;
+}
+html[data-akiba-theme="dark"] .ak-progress-empty .ak-finance-inline-link {
+  color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-invite-symbol {
+  background:#3a263b;
+  color:#ff9acb;
+}
+html[data-akiba-theme="dark"] .ak-workspace-member {
+  background:transparent;
+  transition:background-color .15s ease;
+}
+html[data-akiba-theme="dark"] .ak-workspace-member:hover {
+  background:#22283a;
+}
