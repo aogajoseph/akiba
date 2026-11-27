@@ -2149,3 +2149,9 @@ html[data-akiba-theme="dark"] .ak-finance-contribute .ak-finance-provider-mark {
   background:#3a263b;
   color:#ff9acb;
 }
+
+/* Finance currency label: keep the KES badge legible in dark mode only. */
+html[data-akiba-theme="dark"] .ak-finance-currency {
+  background:#3a263b;
+  color:#ff9acb;
+}
