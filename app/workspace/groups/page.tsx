@@ -54,7 +54,7 @@ export default async function MyGroupsPage() {
   // five-item preview or the API's per-request row cap.
   for (let offset = 500; !groupsError && groups.length >= offset; offset += 500) {
     const { data, error } = await supabase.from("akiba_groups")
-      .select("id,name,purpose,group_type,description,currency_code,created_at")
+      .select("id,name,purpose,group_type,description,currency_code,created_at,group_image_path")
       .order("created_at", { ascending: false }).range(offset, offset + 499);
     if (error) {
       groupsError = true;
