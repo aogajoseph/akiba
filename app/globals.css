@@ -1359,6 +1359,9 @@
 .ak-settings-back-link:hover{color:#c52a78}
 .ak-group-settings-form{display:grid;gap:14px}
 .ak-settings-section{display:grid;gap:16px}
+/* Give profile and account settings panels clear, consistent separation. */
+.ak-dashboard-content > .ak-settings-section{margin-bottom:18px}
+.ak-dashboard-content > .ak-settings-section:last-child{margin-bottom:0}
 .ak-settings-section .ak-workspace-card-heading{margin-bottom:0}
 .ak-settings-fields{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
 .ak-settings-field{display:grid;align-content:start;gap:7px;min-width:0}
