@@ -1431,3 +1431,104 @@
 .ak-group-report-form input[type="text"]{width:100%;padding:12px;border:1px solid #e3e6ef;border-radius:9px;background:#fff;color:#343750;font:inherit;font-size:12px}
 .ak-group-report-form input[type="text"]:focus{outline:2px solid #b52c76;outline-offset:1px}
 .ak-group-report-form .ak-member-danger{justify-self:start;margin-top:8px}
+
+
+/* Finance overview, withdrawal workflow and activity statement */
+.ak-finance-alert{margin:0 0 14px;padding:12px 15px;border:1px solid #e5e8ef;border-radius:10px;font-size:12px;line-height:1.5}
+.ak-finance-alert-error{border-color:#f0cfd5;background:#fff8f8;color:#a52d49}
+.ak-finance-alert-success{border-color:#d8e9df;background:#f7fcf8;color:#28583a}
+.ak-finance-progress{margin:0 0 18px;padding:20px 22px}
+.ak-finance-progress .ak-workspace-card-heading{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:14px}
+.ak-finance-progress .ak-workspace-card-heading h2{margin:4px 0 0;font-size:16px}
+.ak-finance-progress .ak-workspace-card-heading>strong{font-size:18px;color:#33364f}
+.ak-finance-progress-track{height:10px;overflow:hidden;border-radius:99px;background:#f0edf3}
+.ak-finance-progress-track span{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#bd2b78,#e07b9d);transition:width .25s ease}
+.ak-finance-progress-meta{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:11px;color:#777c91;font-size:10px}
+.ak-finance-progress-meta strong{color:#35384f;font-size:11px}
+.ak-finance-progress>small{display:block;margin-top:8px;color:#7d7180;font-size:10px}
+.ak-withdrawal-panel{margin:0 0 18px}
+.ak-withdrawal-panel .ak-workspace-card-heading{align-items:flex-start}
+.ak-withdrawal-panel .ak-workspace-card-heading p{max-width:660px}
+.ak-withdrawal-panel .ak-finance-disabled{margin:12px 0 0;padding:11px 13px;border:1px solid #e9e4eb;border-radius:9px;background:#faf9fb;color:#77768a;font-size:11px;line-height:1.55}
+.ak-withdrawal-list{display:grid;gap:0;margin-top:12px}
+.ak-withdrawal-request{padding:18px 0;border-top:1px solid #eeedf2}
+.ak-withdrawal-request-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:16px}
+.ak-withdrawal-request-heading>div{display:grid;gap:5px;min-width:0}
+.ak-withdrawal-request-heading strong{color:#33364f;font-size:13px;line-height:1.45}
+.ak-withdrawal-request-heading small,.ak-withdrawal-staging small{color:#88899b;font-size:10px;line-height:1.5}
+.ak-withdrawal-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:14px 0}
+.ak-withdrawal-metrics span{display:grid;gap:5px;padding:10px;border:1px solid #efedf2;border-radius:9px;background:#fcfbfd}
+.ak-withdrawal-metrics small{color:#88899b;font-size:9px}
+.ak-withdrawal-metrics strong{color:#343750;font-size:12px}
+.ak-withdrawal-actions{display:flex;align-items:flex-start;flex-wrap:wrap;gap:10px;margin-top:12px}
+.ak-withdrawal-actions form{margin:0}
+.ak-withdrawal-actions .ak-finance-secondary-button,.ak-withdrawal-actions .ak-finance-primary-button{margin-top:0}
+.ak-withdrawal-reject-form,.ak-withdrawal-flag-form{display:flex;align-items:flex-end;flex-wrap:wrap;gap:9px}
+.ak-withdrawal-reject-form label,.ak-withdrawal-flag-form label{display:grid;gap:5px;color:#777c91;font-size:10px}
+.ak-withdrawal-reject-form input,.ak-withdrawal-flag-form input{width:min(340px,70vw);min-height:38px;padding:8px 10px;border:1px solid #e4e3eb;border-radius:8px;background:#fff;color:#343750;font:inherit;font-size:11px}
+.ak-withdrawal-disabled-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.ak-withdrawal-disabled-actions button{min-height:38px;padding:0 13px;border:1px solid #e5e3eb;border-radius:8px;background:#f7f6f8;color:#9a98a5;font-size:10px;font-weight:750;cursor:not-allowed}
+.ak-withdrawal-disabled-actions small{flex-basis:100%;color:#858597;font-size:10px}
+.ak-withdrawal-staging{display:grid;gap:8px;margin-top:12px}
+.ak-withdrawal-staging p{margin:0;color:#666b80;font-size:11px;line-height:1.55}
+.ak-withdrawal-staging>form{justify-self:start}
+.ak-withdrawal-staging .ak-finance-secondary-button{margin-top:0}
+.ak-withdrawal-flags{display:grid;gap:7px;margin:3px 0;padding:0;list-style:none}
+.ak-withdrawal-flags li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:9px 11px;border:1px solid #f0e5e7;border-radius:8px;background:#fffafb;color:#755a67;font-size:10px}
+.ak-withdrawal-flags li form{flex-shrink:0}
+.ak-withdrawal-flags .ak-finance-secondary-button{margin:0;min-height:32px;padding:0 10px;font-size:9px}
+.ak-withdrawal-terminal-note{margin:12px 0 0;padding:10px 12px;border-radius:8px;background:#f8f7f9;color:#77778a;font-size:10px;line-height:1.5}
+.ak-finance-event-kind{color:#858397;font-size:10px;white-space:nowrap}
+@media(max-width:640px){
+ .ak-finance-progress{padding:17px}
+ .ak-finance-progress-meta{align-items:flex-start;flex-direction:column}
+ .ak-withdrawal-request-heading{flex-direction:column}
+ .ak-withdrawal-metrics{grid-template-columns:1fr 1fr}
+ .ak-withdrawal-metrics span:last-child{grid-column:1/-1}
+ .ak-withdrawal-actions{align-items:stretch;flex-direction:column}
+ .ak-withdrawal-reject-form,.ak-withdrawal-flag-form{align-items:stretch;flex-direction:column}
+ .ak-withdrawal-reject-form input,.ak-withdrawal-flag-form input{width:100%}
+ .ak-withdrawal-flags li{align-items:flex-start;flex-direction:column}
+}
+
+
+/* Finance contribution provider selection */
+.ak-finance-provider-choice{display:grid;gap:10px}
+.ak-finance-provider-choice>p{margin:0;color:#858ba0;font-size:10px;line-height:1.55}
+.ak-finance-selected-provider{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px;padding:10px 12px;border:1px solid #eceaf1;border-radius:9px;background:#fbfafc;color:#68657d;font-size:10px}
+.ak-finance-selected-provider .ak-finance-secondary-button{margin:0}
+.ak-finance-modal-backdrop{position:fixed;inset:0;z-index:1000;display:grid;place-items:center;padding:20px;background:rgba(23,20,37,.56)}
+.ak-finance-provider-modal{width:min(100%,460px);max-height:min(90vh,620px);overflow:auto;padding:22px;border:1px solid #eceaf1;border-radius:14px;background:#fff;box-shadow:0 24px 80px rgba(20,16,35,.24)}
+.ak-finance-provider-modal .ak-workspace-card-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:18px}
+.ak-finance-provider-modal .ak-workspace-card-heading h2{margin:5px 0;color:#302d48;font-size:19px}
+.ak-finance-provider-modal .ak-workspace-card-heading p{margin:0;color:#858ba0;font-size:10px;line-height:1.55}
+.ak-finance-provider-modal .ak-finance-secondary-button{flex:0 0 auto;margin:0}
+.ak-finance-provider-options{display:grid;gap:9px;margin-bottom:14px}
+.ak-finance-provider-option{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;width:100%;padding:13px;border:1px solid #e9e7ef;border-radius:10px;background:#fff;color:#37344f;text-align:left;cursor:pointer}
+.ak-finance-provider-option:hover,.ak-finance-provider-option:focus-visible,.ak-finance-provider-option.selected{border-color:#c52a78;background:#fff9fc;outline:none}
+.ak-finance-provider-option>span:nth-child(2){display:grid;gap:4px}
+.ak-finance-provider-option strong{font-size:11px}
+.ak-finance-provider-option small{color:#858ba0;font-size:9px;line-height:1.5}
+.ak-finance-provider-option>span:last-child{color:#b91f68;font-size:17px}
+@media(max-width:480px){
+ .ak-finance-modal-backdrop{padding:12px}
+ .ak-finance-provider-modal{padding:17px}
+ .ak-finance-provider-modal .ak-workspace-card-heading h2{font-size:17px}
+}
+
+
+/* Sandbox-only Creator withdrawal request form */
+.ak-withdrawal-create{display:grid;gap:10px;margin:12px 0 4px}
+.ak-withdrawal-create>summary{display:inline-flex;align-items:center;justify-self:start;min-height:40px;padding:0 15px;border-radius:8px;background:#bd2b78;color:#fff;font-size:11px;font-weight:750;cursor:pointer;list-style:none}
+.ak-withdrawal-create>summary::-webkit-details-marker{display:none}
+.ak-withdrawal-create[open]>summary{background:#8f225c}
+.ak-withdrawal-create-form{display:grid;gap:10px;max-width:520px;padding:15px;border:1px solid #eceaf1;border-radius:10px;background:#fcfbfd}
+.ak-withdrawal-create-form label{display:grid;gap:5px;color:#777c91;font-size:10px;font-weight:650}
+.ak-withdrawal-create-form input,.ak-withdrawal-create-form textarea{width:100%;min-height:39px;padding:9px 10px;border:1px solid #e4e3eb;border-radius:8px;background:#fff;color:#343750;font:inherit;font-size:11px}
+.ak-withdrawal-create-form textarea{resize:vertical}
+.ak-withdrawal-create-form .ak-finance-helper{margin:0;color:#858ba0;font-size:10px;line-height:1.55}
+
+.ak-withdrawal-countdown{display:flex;align-items:center;flex-wrap:wrap;gap:10px;padding:12px 14px;border:1px solid #eadde6;border-radius:10px;background:#fffafd;color:#6f5265}
+.ak-withdrawal-countdown>span{font-size:11px;font-weight:650}
+.ak-withdrawal-countdown>strong{color:#a32669;font-size:22px;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.ak-withdrawal-countdown>small{flex-basis:100%;color:#8a8190;font-size:10px}

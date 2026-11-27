@@ -17,15 +17,17 @@ export type PaymentErrorCode =
 export class PaymentError extends Error {
   readonly code: PaymentErrorCode;
   readonly retryable: boolean;
+  readonly submissionOutcome: "not_submitted" | "rejected" | "unknown" | null;
 
   constructor(
     code: PaymentErrorCode,
     message: string,
-    options: { retryable?: boolean; cause?: unknown } = {},
+    options: { retryable?: boolean; cause?: unknown; submissionOutcome?: "not_submitted" | "rejected" | "unknown" } = {},
   ) {
     super(message, { cause: options.cause });
     this.name = "PaymentError";
     this.code = code;
     this.retryable = options.retryable ?? false;
+    this.submissionOutcome = options.submissionOutcome ?? null;
   }
 }

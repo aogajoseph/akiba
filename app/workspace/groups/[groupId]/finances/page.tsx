@@ -1,20 +1,26 @@
 import Link from "next/link";
+import { randomUUID } from "node:crypto";
 import { notFound, redirect } from "next/navigation";
 import { signOut } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
+import { createServiceClient } from "@/lib/supabase/service";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
 import NotificationBell from "@/app/workspace/notification-bell";
 import MessageBell from "@/app/workspace/message-bell";
 import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
 import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
 import FinancePanel from "./finance-panel";
+import WithdrawalPanel from "./withdrawal-panel";
 import DashboardOutlinedIcon from "@mui/icons-material/DashboardOutlined";
 import AccountBalanceWalletOutlinedIcon from "@mui/icons-material/AccountBalanceWalletOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 
-type Props = { params: Promise<{ groupId: string }> };
+type Props = {
+  params: Promise<{ groupId: string }>;
+  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+};
 type PostedContribution = {
   id: string;
   reference: string;
@@ -38,8 +44,11 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("en", { day: "numeric", month: "short", year: "numeric", hour: "numeric", minute: "2-digit" }).format(new Date(value));
 }
 
-export default async function GroupFinancesPage({ params }: Props) {
+export default async function GroupFinancesPage({ params, searchParams }: Props) {
   const { groupId } = await params;
+  const query = searchParams ? await searchParams : {};
+  const financeError = typeof query.financeError === "string" ? query.financeError : "";
+  const financeUpdated = typeof query.financeUpdated === "string" ? query.financeUpdated : "";
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -52,16 +61,30 @@ export default async function GroupFinancesPage({ params }: Props) {
   if (!profile?.display_name?.trim()) redirect("/onboarding");
 
   const [{ data: membership }, { data: leadershipMembers }, { data: groupPlan }] = await Promise.all([
-    supabase.from("akiba_group_memberships").select("status").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
+    supabase.from("akiba_group_memberships").select("status,role").eq("group_id", group.id).eq("user_id", user.id).maybeSingle(),
     supabase.from("akiba_group_memberships").select("role").eq("group_id", group.id).eq("status", "active"),
     supabase.from("akiba_group_plan_entitlements").select("required_group_admins").eq("plan_code", group.group_plan_code).maybeSingle(),
   ]);
   if (!membership || membership.status !== "active") notFound();
   const activeGroupAdminCount = (leadershipMembers ?? []).filter((member) => member.role === "group_admin").length;
-  const requiredGroupAdmins = groupPlan?.required_group_admins ?? 3;
-  const leadershipReady = activeGroupAdminCount >= requiredGroupAdmins;
+  const activeGroupCreatorCount = (leadershipMembers ?? []).filter((member) => member.role === "group_creator").length;
+  const requiredGroupAdmins = Math.max(3, groupPlan?.required_group_admins ?? 3);
+  const leadershipReady = activeGroupCreatorCount === 1 && activeGroupAdminCount >= requiredGroupAdmins;
 
-  const [{ data: transactions, error: transactionError, count: transactionCount }, { data: ledgerLines, error: ledgerError }] = await Promise.all([
+  const [
+    { data: transactions, error: transactionError, count: transactionCount },
+    { data: ledgerLines, error: ledgerError },
+    { data: balanceLines, error: balanceError },
+    { data: withdrawalTransactions, error: withdrawalTransactionError },
+    { data: allTransactions, error: allTransactionError },
+    { data: withdrawalRequests, error: withdrawalRequestError },
+    { data: unresolvedWithdrawalRows, error: unresolvedWithdrawalError },
+    { data: withdrawalApprovals, error: withdrawalApprovalError },
+    { data: approvalRoster, error: approvalRosterError },
+    { data: withdrawalFlags, error: withdrawalFlagError },
+    { data: reservations, error: reservationError },
+    { data: financeEvents, error: financeEventError },
+  ] = await Promise.all([
     supabase.from("akiba_financial_transactions")
       .select("id,reference,description,currency_code,effective_at", { count: "exact" })
       .eq("group_id", group.id)
@@ -72,6 +95,49 @@ export default async function GroupFinancesPage({ params }: Props) {
       .eq("group_id", group.id)
       .eq("account_code", "group_funds")
       .eq("direction", "credit"),
+    supabase.from("akiba_financial_ledger_entries")
+      .select("transaction_id,amount_minor,direction")
+      .eq("group_id", group.id)
+      .eq("account_code", "group_funds"),
+    supabase.from("akiba_financial_transactions")
+      .select("id,reference,description,currency_code,effective_at,created_by,transaction_type")
+      .eq("group_id", group.id)
+      .eq("transaction_type", "withdrawal")
+      .order("effective_at", { ascending: false }),
+    supabase.from("akiba_financial_transactions")
+      .select("id,reference,description,currency_code,effective_at,created_by,transaction_type")
+      .eq("group_id", group.id)
+      .order("effective_at", { ascending: false })
+      .limit(50),
+    supabase.from("akiba_withdrawal_requests")
+      .select("id,group_id,initiator_id,currency_code,recipient_amount_minor,total_debit_minor,recipient_name,reason,status,created_at,staging_started_at,staging_deadline_at")
+      .eq("group_id", group.id)
+      .order("created_at", { ascending: false })
+      .limit(30),
+    supabase.from("akiba_withdrawal_requests")
+      .select("id")
+      .eq("group_id", group.id)
+      .in("status", ["pending_approval", "approved", "staging", "payout_queued", "payout_submitted", "payout_processing", "reconciliation_required", "processing", "failed_pending_reconciliation"])
+      .limit(1),
+    supabase.from("akiba_withdrawal_approvals")
+      .select("withdrawal_request_id,approver_id,decision")
+      .eq("group_id", group.id),
+    supabase.from("akiba_withdrawal_approval_roster")
+      .select("withdrawal_request_id,admin_user_id")
+      .eq("group_id", group.id),
+    supabase.from("akiba_withdrawal_flags")
+      .select("id,withdrawal_request_id,member_id,reason,status,created_at")
+      .eq("group_id", group.id)
+      .order("created_at", { ascending: false }),
+    supabase.from("akiba_financial_reservations")
+      .select("withdrawal_request_id,amount_minor,status")
+      .eq("group_id", group.id)
+      .eq("status", "active"),
+    supabase.from("akiba_finance_activity_events")
+      .select("id,event_type,actor_id,source_type,source_id,event_payload,created_at")
+      .eq("group_id", group.id)
+      .order("created_at", { ascending: false })
+      .limit(30),
   ]);
 
   const linesByTransaction = new Map<string, number>();
@@ -85,6 +151,127 @@ export default async function GroupFinancesPage({ params }: Props) {
       amount_minor: linesByTransaction.get(transaction.id) ?? 0,
     }));
   const totalMinor = history.reduce((sum, item) => sum + item.amount_minor, 0);
+  const withdrawalIds = new Set((withdrawalTransactions ?? []).map((item) => item.id));
+  const completedWithdrawalMinor = (balanceLines ?? [])
+    .filter((line) => withdrawalIds.has(line.transaction_id) && line.direction === "debit")
+    .reduce((sum, line) => sum + Number(line.amount_minor), 0);
+  const groupLedgerBalanceMinor = (balanceLines ?? []).reduce((sum, line) =>
+    sum + (line.direction === "credit" ? Number(line.amount_minor) : -Number(line.amount_minor)), 0);
+  const activeReservationMinor = (reservations ?? [])
+    .reduce((sum, item) => sum + Number(item.amount_minor), 0);
+  const stagedRequestIds = new Set((withdrawalRequests ?? [])
+    .filter((item) => ["staging", "payout_queued", "payout_submitted", "payout_processing", "reconciliation_required"].includes(item.status))
+    .map((item) => item.id));
+  const stagedFundsMinor = (reservations ?? [])
+    .filter((item) => stagedRequestIds.has(item.withdrawal_request_id))
+    .reduce((sum, item) => sum + Number(item.amount_minor), 0);
+  const requestStatusById = new Map((withdrawalRequests ?? []).map((item) => [item.id, item.status]));
+  const pendingApprovals = (approvalRoster ?? []).filter((item) =>
+    requestStatusById.get(item.withdrawal_request_id) === "pending_approval" &&
+    !(withdrawalApprovals ?? []).some((approval) =>
+      approval.withdrawal_request_id === item.withdrawal_request_id &&
+      approval.approver_id === item.admin_user_id
+    )
+  ).length;
+  const availableBalanceMinor = groupLedgerBalanceMinor - activeReservationMinor;
+  const targetMinor = group.target_amount === null ? 0 : Number(group.target_amount) * 100;
+  const progressPercent = targetMinor > 0 ? Math.round((Math.max(0, availableBalanceMinor) / targetMinor) * 100) : 0;
+  const progressWidth = Math.max(0, Math.min(100, progressPercent));
+  const withdrawalReadError = Boolean(
+    balanceError || withdrawalTransactionError || allTransactionError || withdrawalRequestError ||
+    withdrawalApprovalError || unresolvedWithdrawalError || approvalRosterError || withdrawalFlagError ||
+    reservationError || financeEventError
+  );
+  const statementActorIds = Array.from(new Set([
+    ...(allTransactions ?? []).map((item) => item.created_by),
+    ...(financeEvents ?? []).map((event) => event.actor_id),
+  ].filter((id): id is string => typeof id === "string")));
+  let statementProfiles: Array<{ user_id: string; display_name: string | null }> = [];
+  if (statementActorIds.length > 0) {
+    const { data } = await supabase.from("akiba_profiles")
+      .select("user_id,display_name")
+      .in("user_id", statementActorIds);
+    statementProfiles = data ?? [];
+  }
+  const actorNameById = new Map(statementProfiles.map((profile) => [
+    profile.user_id,
+    profile.display_name?.trim() || "Group member",
+  ]));
+
+  const ledgerStatementRows = (allTransactions ?? []).map((item) => {
+    const deltaMinor = (balanceLines ?? [])
+      .filter((line) => line.transaction_id === item.id)
+      .reduce((sum, line) => sum + (line.direction === "credit"
+        ? Number(line.amount_minor)
+        : -Number(line.amount_minor)), 0);
+    const amountMinor = Math.abs(deltaMinor);
+    return {
+      id: "ledger:" + item.id,
+      transactionId: item.id,
+      occurredAt: item.effective_at,
+      description: item.description || String(item.transaction_type).replace(/_/g, " "),
+      reference: item.reference,
+      amountMinor,
+      kind: "Ledger posting",
+      currency: item.currency_code,
+      actorName: item.created_by ? actorNameById.get(item.created_by) ?? "Group member" : "Akiba system",
+      balanceImpact: deltaMinor === 0
+        ? "No group-funds movement"
+        : "Group funds " + (deltaMinor > 0 ? "+" : "−") + money(amountMinor, item.currency_code),
+    };
+  });
+  const workflowStatementRows = (financeEvents ?? []).map((event) => {
+    const payload = event.event_payload && typeof event.event_payload === "object" && !Array.isArray(event.event_payload)
+      ? event.event_payload as Record<string, unknown>
+      : {};
+    const rawAmount = payload.amount_minor ?? payload.total_debit_minor ?? payload.recipient_amount_minor;
+    const parsedAmount = rawAmount === undefined || rawAmount === null ? null : Number(rawAmount);
+    return {
+      id: "event:" + event.id,
+      transactionId: event.source_id,
+      occurredAt: event.created_at,
+      description: String(event.event_type).replace(/_/g, " "),
+      reference: event.source_type.replace(/_/g, " "),
+      amountMinor: parsedAmount !== null && Number.isFinite(parsedAmount) && parsedAmount > 0 ? parsedAmount : null,
+      kind: "Workflow event · no ledger posting",
+      currency: payload.currency_code ? String(payload.currency_code) : group.currency_code,
+      actorName: event.actor_id ? actorNameById.get(event.actor_id) ?? "Group member" : "Akiba system",
+      balanceImpact: parsedAmount !== null && Number.isFinite(parsedAmount) && parsedAmount > 0
+        ? "Workflow amount " + money(parsedAmount, payload.currency_code ? String(payload.currency_code) : group.currency_code) + " · no ledger movement"
+        : "No ledger movement",
+    };
+  });
+  const statementRows = [...ledgerStatementRows, ...workflowStatementRows]
+    .sort((a, b) => new Date(b.occurredAt).getTime() - new Date(a.occurredAt).getTime())
+    .slice(0, 50);
+  let sandboxWorkflowEnabled = false;
+  try {
+    const service = createServiceClient();
+    const { data: workflowProvider } = await service.from("akiba_payment_providers")
+      .select("is_enabled,capabilities")
+      .eq("provider_code", "sandbox_workflow_simulator")
+      .maybeSingle();
+    const workflowCapabilities =
+      workflowProvider?.capabilities &&
+      typeof workflowProvider.capabilities === "object" &&
+      !Array.isArray(workflowProvider.capabilities)
+        ? workflowProvider.capabilities as Record<string, unknown>
+        : {};
+    sandboxWorkflowEnabled = Boolean(
+      group.status === "active" &&
+      workflowProvider?.is_enabled &&
+      workflowCapabilities.workflow_simulation === true &&
+      workflowCapabilities.fee_quotes === true &&
+      workflowCapabilities.payout === false &&
+      workflowCapabilities.environment === "sandbox"
+    );
+  } catch {
+    // Fail closed: only the dedicated sandbox workflow simulator can enable
+    // the Creator request form. Safaricom B2C remains a separate exercise.
+    sandboxWorkflowEnabled = false;
+  }
+  const requestIdempotencyKey = randomUUID();
+  const financeServerNow = new Date().toISOString();
   const avatarUrl = profile.avatar_path ? supabase.storage.from("avatars").getPublicUrl(profile.avatar_path).data.publicUrl : null;
   const sandboxEnabled = process.env.MPESA_ENVIRONMENT === "sandbox" &&
     process.env.MPESA_SANDBOX_COLLECTION_ENABLED === "true" &&
@@ -130,7 +317,7 @@ export default async function GroupFinancesPage({ params }: Props) {
               <Link className="ak-workspace-back" href={`/workspace/groups/${group.id}`}>← Back to {group.name}</Link>
               <span className="ak-section-eyebrow">GROUP WORKSPACE</span>
               <h1>Group finances</h1>
-              <p>Track confirmed contributions and make a contribution to this group.</p>
+              <p>Track contributions, withdrawals, reservations and the financial activity of this group.</p>
             </div>
             <span className="ak-finance-currency">{group.currency_code}</span>
           </section>
@@ -149,10 +336,30 @@ export default async function GroupFinancesPage({ params }: Props) {
             {group.scheduled_delete_at && <small>Scheduled deletion: {formatDate(group.scheduled_delete_at)}</small>}
           </div>}
 
+          {financeError && <div className="ak-finance-alert ak-finance-alert-error" role="alert">{financeError}</div>}
+          {financeUpdated && <div className="ak-finance-alert ak-finance-alert-success" role="status">{financeUpdated}</div>}
+
           <section className="ak-finance-summary" aria-label="Group finance summary">
-            <article className="ak-workspace-summary-card"><span className="ak-summary-icon target">◎</span><div><small>Confirmed contributions</small><strong>{readError ? "—" : money(totalMinor, group.currency_code)}</strong><span>Only provider-confirmed funds are counted</span></div></article>
-            <article className="ak-workspace-summary-card"><span className="ak-summary-icon members">↗</span><div><small>Posted contributions</small><strong>{readError ? "—" : transactionCount ?? 0}</strong><span>Immutable ledger transactions</span></div></article>
-            <article className="ak-workspace-summary-card"><span className="ak-summary-icon role">◎</span><div><small>Group target</small><strong>{group.target_amount === null ? "Not set" : money(Number(group.target_amount) * 100, group.currency_code)}</strong><span>Shared group goal</span></div></article>
+            <article className="ak-workspace-summary-card"><span className="ak-summary-icon target">◎</span><div><small>Total contributions</small><strong>{readError ? "—" : money(totalMinor, group.currency_code)}</strong><span>Confirmed and posted since group creation</span></div></article>
+            <article className="ak-workspace-summary-card"><span className="ak-summary-icon role">↘</span><div><small>Completed withdrawals</small><strong>{withdrawalReadError ? "—" : money(completedWithdrawalMinor, group.currency_code)}</strong><span>Provider-confirmed and posted</span></div></article>
+            <article className="ak-workspace-summary-card"><span className="ak-summary-icon members">◷</span><div><small>Staged funds</small><strong>{withdrawalReadError ? "—" : money(stagedFundsMinor, group.currency_code)}</strong><span>Reserved after final Admin approval</span></div></article>
+            <article className="ak-workspace-summary-card"><span className="ak-summary-icon target">✓</span><div><small>Pending Admin approvals</small><strong>{withdrawalReadError ? "—" : pendingApprovals}</strong><span>Decisions still required</span></div></article>
+          </section>
+
+          <section className="ak-workspace-card ak-finance-progress">
+            <div className="ak-workspace-card-heading">
+              <div><span className="ak-section-eyebrow">GROUP TARGET</span><h2>Funding progress</h2></div>
+              <strong>{withdrawalReadError ? "—" : targetMinor > 0 ? progressPercent + "%" : "No target set"}</strong>
+            </div>
+            <div className="ak-finance-progress-track" role="progressbar" aria-valuemin={0} aria-valuemax={100} aria-valuenow={withdrawalReadError ? 0 : progressWidth} aria-valuetext={withdrawalReadError ? "Unavailable" : targetMinor > 0 ? progressPercent + "% of target" : "No target set"}>
+              <span style={{ width: (withdrawalReadError ? 0 : progressWidth) + "%" }} />
+            </div>
+            <div className="ak-finance-progress-meta">
+              <strong>{withdrawalReadError ? "—" : money(availableBalanceMinor, group.currency_code)} available</strong>
+              <span>{targetMinor > 0 ? "Target " + money(targetMinor, group.currency_code) : "Set a group target to track progress"}</span>
+            </div>
+            {withdrawalReadError && <small>Progress is unavailable because the financial balance could not be verified.</small>}
+            {!withdrawalReadError && progressPercent > 100 && <small>The group has exceeded its target. The progress indicator is capped at 100%.</small>}
           </section>
 
           <div className="ak-finance-grid">
@@ -179,6 +386,45 @@ export default async function GroupFinancesPage({ params }: Props) {
               )}
             </section>
           </div>
+
+          <WithdrawalPanel
+            groupId={group.id}
+            currentUserId={user.id}
+            currentUserRole={membership.role}
+            leadershipReady={leadershipReady}
+            sandboxWorkflowEnabled={sandboxWorkflowEnabled}
+            hasUnresolvedRequest={Boolean(unresolvedWithdrawalRows?.length)}
+            serverNow={financeServerNow}
+            requestIdempotencyKey={requestIdempotencyKey}
+            readError={withdrawalReadError}
+            requests={withdrawalRequests ?? []}
+            approvals={withdrawalApprovals ?? []}
+            roster={approvalRoster ?? []}
+            flags={withdrawalFlags ?? []}
+          />
+
+          <section className="ak-workspace-card ak-finance-history ak-finance-activity-statement">
+            <div className="ak-workspace-card-heading">
+              <div><span className="ak-section-eyebrow">FINANCIAL RECORD</span><h2>Activity statement</h2><p>Money postings and workflow actions are shown separately; approvals and flags do not create ledger entries.</p></div>
+              <span className="ak-count-pill">{withdrawalReadError ? "Unavailable" : statementRows.length + " entries"}</span>
+            </div>
+            {withdrawalReadError ? (
+              <div className="ak-workspace-empty"><strong>Financial activity could not be loaded</strong><p>Refresh the page to try again.</p></div>
+            ) : statementRows.length === 0 ? (
+              <div className="ak-workspace-empty"><strong>No financial activity yet</strong><p>Contributions, withdrawals, approvals, flags and other financial actions will appear here.</p></div>
+            ) : (
+              <div className="ak-finance-history-list">
+                {statementRows.map((item) => (
+                  <article className="ak-finance-history-row" key={item.id}>
+                    <span className="ak-finance-history-icon">{item.kind === "Ledger posting" ? "✓" : "•"}</span>
+                    <div><strong>{item.description}</strong><small>{formatDate(item.occurredAt)} · {item.kind} · {item.reference} · ID {String(item.transactionId).slice(0, 8)} · {item.actorName}</small></div>
+                    <strong>{item.amountMinor === null ? item.balanceImpact : item.balanceImpact}</strong>
+                  </article>
+                ))}
+              </div>
+            )}
+          </section>
+
           <p className="ak-finance-disclaimer">Akiba does not hold or store group funds or M-Pesa PINs. Payments are processed by the payment provider. Pending, failed, cancelled or unverified payments are not included in the confirmed total.</p>
           <footer className="ak-footer"><span>Akiba · A Globe Software product</span><span>Do more, together.</span></footer>
         </div>

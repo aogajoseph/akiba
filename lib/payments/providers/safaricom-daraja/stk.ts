@@ -1,6 +1,8 @@
+import { createHash } from "node:crypto";
 import { PaymentError } from "../../errors";
 import type { ProviderConnectionConfig } from "../../types";
 import { getDarajaAccessToken } from "./oauth";
+import { isRetryableDarajaHttpStatus } from "./reconciliation";
 
 interface DarajaResponse {
   ResponseCode?: unknown;
@@ -116,7 +118,7 @@ async function darajaPost(
     throw new PaymentError(
       "PROVIDER_UNAVAILABLE",
       "Safaricom returned an unsuccessful response.",
-      { retryable: response.status >= 500 },
+      { retryable: isRetryableDarajaHttpStatus(response.status) },
     );
   }
   return result;
@@ -182,10 +184,12 @@ export async function createStkPush(
 }
 
 export interface StkQueryResult {
-  checkoutRequestId: string;
+  checkoutRequestId: string | null;
   merchantRequestId: string | null;
   resultCode: string | null;
   resultDescription: string | null;
+  responseDigest: string;
+  verifiedAt: string;
 }
 
 export async function queryStkPush(
@@ -210,7 +214,7 @@ export async function queryStkPush(
     checkoutRequestId:
       typeof response.CheckoutRequestID === "string"
         ? response.CheckoutRequestID
-        : checkoutRequestId,
+        : null,
     merchantRequestId:
       typeof response.MerchantRequestID === "string"
         ? response.MerchantRequestID
@@ -221,5 +225,7 @@ export async function queryStkPush(
         : String(response.ResultCode),
     resultDescription:
       typeof response.ResultDesc === "string" ? response.ResultDesc : null,
+    responseDigest: createHash("sha256").update(JSON.stringify(response)).digest("hex"),
+    verifiedAt: new Date().toISOString(),
   };
 }

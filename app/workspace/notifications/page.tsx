@@ -14,6 +14,15 @@ function initials(value: string) {
   return value.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "A";
 }
 
+function relativeTime(value: string, now: Date) {
+  const seconds = Math.round((now.getTime() - new Date(value).getTime()) / 1000);
+  const formatter = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+  if (Math.abs(seconds) < 60) return formatter.format(-seconds, "second");
+  if (Math.abs(seconds) < 3600) return formatter.format(-Math.round(seconds / 60), "minute");
+  if (Math.abs(seconds) < 86400) return formatter.format(-Math.round(seconds / 3600), "hour");
+  return formatter.format(-Math.round(seconds / 86400), "day");
+}
+
 function dateHeading(value: string, now: Date) {
   const date = new Date(value);
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -114,7 +123,7 @@ export default async function NotificationsPage({ searchParams }: Props) {
                         <div className="ak-notification-copy">
                           <Link href={item.href}><strong>{item.title}</strong></Link>
                           <p>{item.body}</p>
-                          <small>{new Intl.DateTimeFormat("en", { hour: "numeric", minute: "2-digit" }).format(new Date(item.created_at))}</small>
+                          <small>{relativeTime(item.created_at, now)}</small>
                         </div>
                         {item.read_at ? <span className="ak-notification-read">Read</span> : <span className="ak-notification-unread-label">New</span>}
                       </article>

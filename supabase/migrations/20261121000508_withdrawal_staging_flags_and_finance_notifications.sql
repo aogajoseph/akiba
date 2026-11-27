@@ -1,0 +1,1586 @@
+-- Creator/Admin withdrawal approval snapshot, two-hour staging, member flags,
+-- durable finance notifications, and server-side staging processing.
+-- Feature-branch migration only. Do not apply to production without separate approval.
+
+begin;
+
+alter table public.akiba_withdrawal_requests
+  add column if not exists staging_started_at timestamptz,
+  add column if not exists staging_deadline_at timestamptz,
+  add column if not exists terms_fingerprint text,
+  add column if not exists approval_roster_frozen_at timestamptz;
+
+alter table public.akiba_withdrawal_requests
+  drop constraint if exists akiba_withdrawal_total_debit_matches_components_check;
+alter table public.akiba_withdrawal_requests
+  add constraint akiba_withdrawal_total_debit_matches_components_check
+  check (
+    total_debit_minor is not null
+    and total_debit_minor = recipient_amount_minor + akiba_fee_minor + provider_fee_minor
+  );
+
+alter table public.akiba_withdrawal_requests
+  drop constraint if exists akiba_withdrawal_requests_status_check;
+alter table public.akiba_withdrawal_requests
+  add constraint akiba_withdrawal_requests_status_check
+  check (status = any (array[
+    'pending_approval','approved','staging','payout_queued','payout_submitted',
+    'payout_processing','reconciliation_required','processing','completed',
+    'rejected','cancelled','cancelled_flagged','failed_pending_reconciliation','failed'
+  ]::text[]));
+
+alter table public.akiba_withdrawal_requests
+  drop constraint if exists akiba_withdrawal_requests_check1;
+alter table public.akiba_withdrawal_requests
+  add constraint akiba_withdrawal_requests_check1
+  check (
+    (status = any (array[
+      'rejected','cancelled','cancelled_flagged','completed','failed'
+    ]::text[])) = (resolved_at is not null)
+  );
+
+alter table public.akiba_withdrawal_requests
+  drop constraint if exists akiba_withdrawal_staging_clock_check;
+alter table public.akiba_withdrawal_requests
+  add constraint akiba_withdrawal_staging_clock_check
+  check (
+    (staging_started_at is null) = (staging_deadline_at is null)
+    and (
+      staging_started_at is null
+      or staging_deadline_at = staging_started_at + interval '2 hours'
+    )
+  );
+
+drop index if exists public.akiba_one_unresolved_withdrawal_per_group;
+create unique index akiba_one_unresolved_withdrawal_per_group
+  on public.akiba_withdrawal_requests(group_id)
+  where status = any (array[
+    'pending_approval','approved','staging','payout_queued','payout_submitted',
+    'payout_processing','reconciliation_required','processing','failed_pending_reconciliation'
+  ]::text[]);
+
+create table public.akiba_withdrawal_approval_roster (
+  id uuid primary key default gen_random_uuid(),
+  withdrawal_request_id uuid not null references public.akiba_withdrawal_requests(id) on delete restrict,
+  group_id uuid not null references public.akiba_groups(id) on delete restrict,
+  admin_user_id uuid not null references auth.users(id) on delete restrict,
+  membership_id uuid references public.akiba_group_memberships(id) on delete set null,
+  snapshotted_at timestamptz not null default clock_timestamp(),
+  unique (withdrawal_request_id, admin_user_id),
+  unique (withdrawal_request_id, membership_id)
+);
+
+create index akiba_withdrawal_approval_roster_group_idx
+  on public.akiba_withdrawal_approval_roster(group_id, withdrawal_request_id);
+
+alter table public.akiba_withdrawal_approval_roster enable row level security;
+revoke all on public.akiba_withdrawal_approval_roster from public, anon, authenticated, service_role;
+grant select on public.akiba_withdrawal_approval_roster to authenticated;
+create policy akiba_withdrawal_approval_roster_active_members_read
+  on public.akiba_withdrawal_approval_roster
+  for select to authenticated
+  using (akiba_private.is_active_group_member(group_id));
+
+create table public.akiba_withdrawal_flags (
+  id uuid primary key default gen_random_uuid(),
+  withdrawal_request_id uuid not null references public.akiba_withdrawal_requests(id) on delete restrict,
+  group_id uuid not null references public.akiba_groups(id) on delete restrict,
+  member_id uuid not null references auth.users(id) on delete restrict,
+  reason text not null check (char_length(btrim(reason)) between 1 and 500),
+  status text not null default 'active'
+    check (status in ('active','removed_by_member','closed_by_system')),
+  created_at timestamptz not null default clock_timestamp(),
+  removed_at timestamptz,
+  closed_at timestamptz,
+  closure_reason text,
+  check (
+    (status = 'active' and removed_at is null and closed_at is null and closure_reason is null)
+    or (status = 'removed_by_member' and removed_at is not null and closed_at is null)
+    or (status = 'closed_by_system' and removed_at is null and closed_at is not null
+        and closure_reason is not null)
+  )
+);
+
+create unique index akiba_one_active_withdrawal_flag_per_member
+  on public.akiba_withdrawal_flags(withdrawal_request_id, member_id)
+  where status = 'active';
+create index akiba_withdrawal_flags_due_idx
+  on public.akiba_withdrawal_flags(withdrawal_request_id, status);
+
+alter table public.akiba_withdrawal_flags enable row level security;
+revoke all on public.akiba_withdrawal_flags from public, anon, authenticated, service_role;
+grant select on public.akiba_withdrawal_flags to authenticated;
+create policy akiba_withdrawal_flags_active_members_read
+  on public.akiba_withdrawal_flags
+  for select to authenticated
+  using (akiba_private.is_active_group_member(group_id));
+
+-- Enforce at least three active Group Admins, even if a legacy plan row
+-- contains a lower required_group_admins value.
+create or replace function akiba_private.assert_group_leadership_ready(p_group_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  required_count integer;
+  active_admin_count integer;
+  active_creator_count integer;
+begin
+  perform 1 from public.akiba_groups where id = p_group_id for update;
+  if not found then raise exception 'Group was not found'; end if;
+
+  select greatest(e.required_group_admins, 3) into required_count
+  from public.akiba_groups g
+  join public.akiba_group_plan_entitlements e on e.plan_code = g.group_plan_code
+  where g.id = p_group_id;
+  if required_count is null then
+    raise exception 'Group or group plan was not found';
+  end if;
+
+  select count(*) into active_creator_count
+  from public.akiba_group_memberships
+  where group_id = p_group_id
+    and role = 'group_creator'
+    and status = 'active';
+  if active_creator_count <> 1 then
+    raise exception 'Exactly one active Group Creator is required before contributions or withdrawals';
+  end if;
+
+  select count(*) into active_admin_count
+  from public.akiba_group_memberships
+  where group_id = p_group_id
+    and role = 'group_admin'
+    and status = 'active';
+
+  if active_admin_count < required_count then
+    raise exception 'Group leadership is incomplete: appoint at least % active Group Admins before contributions or withdrawals',
+      required_count;
+  end if;
+end;
+$fn$;
+
+-- Freeze the request terms and approval roster at creation.
+create or replace function akiba_private.set_withdrawal_terms_fingerprint()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+begin
+  -- Freeze the roster timestamp on the request row itself. The AFTER INSERT
+  -- roster snapshot is in the same transaction, so a failed snapshot rolls
+  -- back the request without requiring a nested UPDATE that would trip the
+  -- immutable-terms guard.
+  new.approval_roster_frozen_at := coalesce(new.approval_roster_frozen_at, clock_timestamp());
+  new.terms_fingerprint := encode(extensions.digest(convert_to(concat_ws('|',
+    new.id::text, new.approval_version::text, new.group_id::text, new.currency_code,
+    new.recipient_amount_minor::text, new.akiba_fee_minor::text,
+    new.provider_fee_minor::text, new.recipient_name,
+    new.fee_rate_bps::text, new.fee_schedule_version,
+    new.provider_id::text, coalesce(new.provider_quote_ref, ''),
+    coalesce(new.quote_expires_at::text, ''),
+    coalesce(new.destination_token, ''),
+    coalesce(new.destination_fingerprint, ''),
+    coalesce(new.destination_snapshot::text, '{}')
+  ), 'UTF8'), 'sha256'), 'hex');
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_withdrawal_terms_fingerprint on public.akiba_withdrawal_requests;
+create trigger akiba_withdrawal_terms_fingerprint
+before insert on public.akiba_withdrawal_requests
+for each row execute function akiba_private.set_withdrawal_terms_fingerprint();
+
+-- Preserve a deterministic fingerprint for any legacy request already present.
+update public.akiba_withdrawal_requests r
+set terms_fingerprint = encode(extensions.digest(convert_to(concat_ws('|',
+  r.id::text, r.approval_version::text, r.group_id::text, r.currency_code,
+  r.recipient_amount_minor::text, r.akiba_fee_minor::text,
+  r.provider_fee_minor::text, r.recipient_name,
+  r.fee_rate_bps::text, r.fee_schedule_version,
+  r.provider_id::text, coalesce(r.provider_quote_ref, ''),
+  coalesce(r.quote_expires_at::text, ''),
+  coalesce(r.destination_token, ''),
+  coalesce(r.destination_fingerprint, ''),
+  coalesce(r.destination_snapshot::text, '{}')
+), 'UTF8'), 'sha256'), 'hex')
+where r.terms_fingerprint is null;
+
+create or replace function akiba_private.guard_withdrawal_terms_immutable()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+begin
+  if row(
+    new.approval_version, new.group_id, new.initiator_id, new.currency_code,
+    new.recipient_amount_minor, new.akiba_fee_minor, new.provider_fee_minor,
+    new.fee_rate_bps, new.fee_schedule_version, new.provider_id,
+    new.provider_quote_ref, new.quote_expires_at, new.recipient_name,
+    new.destination_token, new.destination_fingerprint,
+    new.destination_snapshot, new.reason, new.terms_fingerprint
+  ) is distinct from row(
+    old.approval_version, old.group_id, old.initiator_id, old.currency_code,
+    old.recipient_amount_minor, old.akiba_fee_minor, old.provider_fee_minor,
+    old.fee_rate_bps, old.fee_schedule_version, old.provider_id,
+    old.provider_quote_ref, old.quote_expires_at, old.recipient_name,
+    old.destination_token, old.destination_fingerprint,
+    old.destination_snapshot, old.reason, old.terms_fingerprint
+  ) then
+    raise exception 'Withdrawal terms are immutable; create a new request for changed terms';
+  end if;
+
+  if old.staging_started_at is not null
+     and (
+       new.staging_started_at is distinct from old.staging_started_at
+       or new.staging_deadline_at is distinct from old.staging_deadline_at
+     ) then
+    raise exception 'The two-hour withdrawal staging deadline cannot be changed or restarted';
+  end if;
+
+  if old.approval_roster_frozen_at is not null
+     and new.approval_roster_frozen_at is distinct from old.approval_roster_frozen_at then
+    raise exception 'The withdrawal approval roster cannot be changed';
+  end if;
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_withdrawal_terms_immutable on public.akiba_withdrawal_requests;
+create trigger akiba_withdrawal_terms_immutable
+before update on public.akiba_withdrawal_requests
+for each row execute function akiba_private.guard_withdrawal_terms_immutable();
+
+-- New withdrawal requests are refused unless the selected provider is enabled
+-- and explicitly supports both payout execution and trusted fee quotes.
+create or replace function akiba_private.guard_withdrawal_provider_capability()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  provider_enabled boolean;
+  provider_capabilities jsonb;
+begin
+  -- Serialize leadership readiness and request creation with membership
+  -- role changes so the approval roster cannot race an Admin demotion.
+  perform 1 from public.akiba_groups where id = new.group_id for update;
+
+  select is_enabled, capabilities
+    into provider_enabled, provider_capabilities
+  from public.akiba_payment_providers
+  where id = new.provider_id;
+
+  if not found
+     or provider_enabled is distinct from true
+     or provider_capabilities ->> 'payout' is distinct from 'true'
+     or provider_capabilities ->> 'fee_quotes' is distinct from 'true'
+     or provider_capabilities ->> 'environment' is distinct from 'sandbox' then
+    raise exception 'This payment provider is not enabled for verified payout and fee-quote processing';
+  end if;
+
+  if nullif(btrim(new.provider_quote_ref), '') is null
+     or new.quote_expires_at is null
+     or new.quote_expires_at <= clock_timestamp() + interval '2 hours' then
+    raise exception 'A provider fee quote must remain valid through the full two-hour staging period';
+  end if;
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_withdrawal_provider_capability_guard on public.akiba_withdrawal_requests;
+create trigger akiba_withdrawal_provider_capability_guard
+before insert on public.akiba_withdrawal_requests
+for each row execute function akiba_private.guard_withdrawal_provider_capability();
+
+create or replace function akiba_private.snapshot_withdrawal_approval_roster()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  roster_count integer;
+begin
+  insert into public.akiba_withdrawal_approval_roster
+    (withdrawal_request_id, group_id, admin_user_id, membership_id)
+  select new.id, new.group_id, m.user_id, m.id
+  from public.akiba_group_memberships m
+  where m.group_id = new.group_id
+    and m.role = 'group_admin'
+    and m.status = 'active'
+  order by m.user_id;
+
+  get diagnostics roster_count = row_count;
+  if roster_count < 3 then
+    raise exception 'At least three active Group Admins must be snapshotted for a withdrawal';
+  end if;
+
+  -- approval_roster_frozen_at was set by the BEFORE INSERT fingerprint
+  -- trigger; the roster and request therefore commit or roll back together.
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_withdrawal_snapshot_admin_roster on public.akiba_withdrawal_requests;
+create trigger akiba_withdrawal_snapshot_admin_roster
+after insert on public.akiba_withdrawal_requests
+for each row execute function akiba_private.snapshot_withdrawal_approval_roster();
+
+-- Backfill the immutable roster for any request still awaiting decisions.
+insert into public.akiba_withdrawal_approval_roster
+  (withdrawal_request_id, group_id, admin_user_id, membership_id)
+select r.id, r.group_id, m.user_id, m.id
+from public.akiba_withdrawal_requests r
+join public.akiba_group_memberships m
+  on m.group_id = r.group_id
+ and m.role = 'group_admin'
+ and m.status = 'active'
+where r.status in ('pending_approval','approved')
+  and not exists (
+    select 1 from public.akiba_withdrawal_approval_roster roster
+    where roster.withdrawal_request_id = r.id
+  )
+on conflict do nothing;
+
+update public.akiba_withdrawal_requests r
+set approval_roster_frozen_at = coalesce(r.approval_roster_frozen_at, clock_timestamp())
+where r.status in ('pending_approval','approved')
+  and r.approval_roster_frozen_at is null
+  and exists (
+    select 1 from public.akiba_withdrawal_approval_roster roster
+    where roster.withdrawal_request_id = r.id
+  );
+
+-- Legacy "approved" requests were approved under the previous rules and
+-- cannot be assumed to satisfy the new all-Admin approval requirement. Keep
+-- their reservations held and require manual reconciliation; never auto-stage.
+update public.akiba_withdrawal_requests
+set status = 'reconciliation_required',
+    resolution_note = 'Legacy approval state requires review under the request-time all-Admin approval policy.',
+    updated_at = clock_timestamp()
+where status = 'approved'
+  and staging_started_at is null;
+
+-- The approver must be both currently active and part of the immutable roster.
+create or replace function akiba_private.guard_withdrawal_approval_insert()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  request_row public.akiba_withdrawal_requests%rowtype;
+begin
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = new.withdrawal_request_id
+  for update;
+  if not found then raise exception 'Withdrawal request not found'; end if;
+  if new.group_id <> request_row.group_id then
+    raise exception 'Approval group does not match the withdrawal request';
+  end if;
+  if request_row.status <> 'pending_approval'
+     or new.approval_version <> request_row.approval_version then
+    raise exception 'Withdrawal request is not accepting approvals for this version';
+  end if;
+  if new.approver_id = request_row.initiator_id then
+    raise exception 'The Group Creator cannot approve their own withdrawal request';
+  end if;
+  if not exists (
+    select 1
+    from public.akiba_group_memberships m
+    join public.akiba_withdrawal_approval_roster roster
+      on roster.membership_id = m.id
+     and roster.withdrawal_request_id = request_row.id
+     and roster.admin_user_id = m.user_id
+    where m.group_id = request_row.group_id
+      and m.user_id = new.approver_id
+      and m.role = 'group_admin'
+      and m.status = 'active'
+  ) then
+    raise exception 'Only an active Group Admin in the request-time approval roster may decide this withdrawal';
+  end if;
+  if new.terms_fingerprint is distinct from request_row.terms_fingerprint then
+    raise exception 'Approval terms do not match the immutable withdrawal request';
+  end if;
+  return new;
+end;
+$fn$;
+
+create or replace function public.akiba_decide_withdrawal_request(
+  p_withdrawal_request_id uuid,
+  p_decision text,
+  p_rejection_reason text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  request_row public.akiba_withdrawal_requests%rowtype;
+  approval_id uuid;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  if p_withdrawal_request_id is null
+     or p_decision is null
+     or p_decision not in ('approved','rejected')
+     or (p_decision = 'rejected' and char_length(btrim(coalesce(p_rejection_reason,''))) not between 1 and 500)
+     or (p_decision = 'approved' and nullif(btrim(coalesce(p_rejection_reason,'')), '') is not null) then
+    raise exception 'Invalid withdrawal decision';
+  end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = p_withdrawal_request_id
+  for update;
+  if not found then raise exception 'Withdrawal request not found'; end if;
+  if request_row.status <> 'pending_approval' then
+    raise exception 'This withdrawal request is no longer accepting decisions';
+  end if;
+  if actor_id = request_row.initiator_id then
+    raise exception 'The Group Creator cannot approve their own withdrawal request';
+  end if;
+  if not exists (
+    select 1
+    from public.akiba_group_memberships m
+    join public.akiba_withdrawal_approval_roster roster
+      on roster.withdrawal_request_id = request_row.id
+     and roster.admin_user_id = actor_id
+     and roster.membership_id = m.id
+    where m.group_id = request_row.group_id
+      and m.user_id = actor_id
+      and m.role = 'group_admin'
+      and m.status = 'active'
+  ) then
+    raise exception 'Only an active Group Admin in the request-time approval roster may decide this withdrawal';
+  end if;
+
+  insert into public.akiba_withdrawal_approvals (
+    withdrawal_request_id, group_id, approver_id, decision,
+    approval_version, terms_fingerprint, rejection_reason
+  ) values (
+    request_row.id, request_row.group_id, actor_id, p_decision,
+    request_row.approval_version, request_row.terms_fingerprint,
+    case when p_decision = 'rejected' then btrim(p_rejection_reason) else null end
+  ) returning id into approval_id;
+  return approval_id;
+end;
+$fn$;
+
+revoke all on function public.akiba_decide_withdrawal_request(uuid,text,text) from public, anon;
+grant execute on function public.akiba_decide_withdrawal_request(uuid,text,text) to authenticated;
+
+-- Final approval starts the fixed two-hour staging clock. The roster, not
+-- the current membership count, determines the complete approval set.
+create or replace function akiba_private.apply_withdrawal_approval_decision()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  roster_count integer;
+  approved_count integer;
+  v_started_at timestamptz;
+  changed_rows integer;
+  reservation_rows integer;
+begin
+  if new.decision = 'rejected' then
+    update public.akiba_withdrawal_requests
+    set status = 'rejected',
+        resolved_at = new.decided_at,
+        resolution_note = new.rejection_reason,
+        updated_at = clock_timestamp()
+    where id = new.withdrawal_request_id
+      and status = 'pending_approval';
+    get diagnostics changed_rows = row_count;
+    if changed_rows <> 1 then
+      raise exception 'Withdrawal request is no longer awaiting approval';
+    end if;
+
+    update public.akiba_financial_reservations
+    set status = 'released',
+        resolved_at = new.decided_at
+    where withdrawal_request_id = new.withdrawal_request_id
+      and status = 'active';
+    get diagnostics reservation_rows = row_count;
+    if reservation_rows <> 1 then
+      raise exception 'Withdrawal rejection requires exactly one active reservation';
+    end if;
+
+    insert into public.akiba_finance_activity_events
+      (group_id, actor_id, event_type, source_type, source_id, event_payload)
+    select r.group_id, new.approver_id, 'withdrawal_rejected',
+      'withdrawal_request', r.id,
+      jsonb_build_object('approval_id', new.id, 'rejection_reason', new.rejection_reason)
+    from public.akiba_withdrawal_requests r
+    where r.id = new.withdrawal_request_id;
+  else
+    select count(*) into roster_count
+    from public.akiba_withdrawal_approval_roster
+    where withdrawal_request_id = new.withdrawal_request_id;
+
+    select count(distinct a.approver_id) into approved_count
+    from public.akiba_withdrawal_approvals a
+    join public.akiba_withdrawal_approval_roster roster
+      on roster.withdrawal_request_id = a.withdrawal_request_id
+     and roster.admin_user_id = a.approver_id
+    where a.withdrawal_request_id = new.withdrawal_request_id
+      and a.approval_version = new.approval_version
+      and a.decision = 'approved';
+
+    if roster_count < 3 then
+      raise exception 'Withdrawal approval roster is incomplete';
+    end if;
+
+    if approved_count = roster_count then
+      v_started_at := clock_timestamp();
+      update public.akiba_withdrawal_requests
+      set status = 'staging',
+          approved_at = v_started_at,
+          staging_started_at = v_started_at,
+          staging_deadline_at = v_started_at + interval '2 hours',
+          updated_at = v_started_at
+      where id = new.withdrawal_request_id
+        and status = 'pending_approval';
+      get diagnostics changed_rows = row_count;
+      if changed_rows <> 1 then
+        raise exception 'Withdrawal request could not enter staging after final approval';
+      end if;
+
+      insert into public.akiba_finance_activity_events
+        (group_id, actor_id, event_type, source_type, source_id, event_payload)
+      select r.group_id, new.approver_id, 'withdrawal_staging_started',
+        'withdrawal_request', r.id,
+        jsonb_build_object(
+          'staging_started_at', v_started_at,
+          'staging_deadline_at', v_started_at + interval '2 hours',
+          'approval_count', approved_count
+        )
+      from public.akiba_withdrawal_requests r
+      where r.id = new.withdrawal_request_id;
+    end if;
+  end if;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  select r.group_id, new.approver_id,
+    case when new.decision = 'approved' then 'withdrawal_approved' else 'withdrawal_rejected' end,
+    'withdrawal_approval', new.id,
+    jsonb_build_object(
+      'withdrawal_request_id', new.withdrawal_request_id,
+      'decision', new.decision,
+      'approval_version', new.approval_version,
+      'rejection_reason', new.rejection_reason
+    )
+  from public.akiba_withdrawal_requests r
+  where r.id = new.withdrawal_request_id;
+
+  return new;
+end;
+$fn$;
+
+-- Only unresolved requests lock the Admin roster. A Creator cannot demote or
+-- remove an Admin until the request reaches a terminal state.
+create or replace function akiba_private.guard_group_admin_unresolved_withdrawal()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  membership_role text;
+  target_group_id uuid;
+begin
+  if tg_op = 'DELETE' then
+    membership_role := old.role;
+    target_group_id := old.group_id;
+  else
+    membership_role := old.role;
+    target_group_id := old.group_id;
+    if old.role <> 'group_admin'
+       or (new.role is not distinct from old.role and new.status is not distinct from old.status) then
+      return new;
+    end if;
+  end if;
+
+  if membership_role = 'group_admin' then
+    perform 1 from public.akiba_groups where id = target_group_id for update;
+  end if;
+
+  if membership_role = 'group_admin' and exists (
+    select 1 from public.akiba_withdrawal_requests r
+    where r.group_id = target_group_id
+      and r.status = any (array[
+        'pending_approval','approved','staging','payout_queued','payout_submitted',
+        'payout_processing','reconciliation_required','processing','failed_pending_reconciliation'
+      ]::text[])
+  ) then
+    raise exception 'Group Admin memberships cannot be demoted or removed while a withdrawal is unresolved';
+  end if;
+
+  if tg_op = 'DELETE' then return old; end if;
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_group_admin_unresolved_withdrawal on public.akiba_group_memberships;
+create trigger akiba_group_admin_unresolved_withdrawal
+before update of role, status or delete on public.akiba_group_memberships
+for each row execute function akiba_private.guard_group_admin_unresolved_withdrawal();
+
+-- Keep the existing payout-attempt table guard aligned with the new state
+-- machine and request-time approval snapshot. This does not enable payouts.
+create or replace function akiba_private.guard_payout_attempt_insert()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  request_row public.akiba_withdrawal_requests%rowtype;
+  roster_count integer;
+  approved_count integer;
+  provider_capabilities jsonb;
+begin
+  if new.status is distinct from 'queued' then
+    raise exception 'A payout attempt must be created in queued state before provider submission';
+  end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = new.withdrawal_request_id
+  for update;
+  if not found or request_row.status <> 'payout_queued' then
+    raise exception 'Payout execution requires a withdrawal that completed staging without active flags';
+  end if;
+  if new.provider_id <> request_row.provider_id then
+    raise exception 'Payout provider must match the approved withdrawal provider';
+  end if;
+
+  perform 1 from public.akiba_financial_reservations
+  where withdrawal_request_id = request_row.id
+    and group_id = request_row.group_id
+    and currency_code = request_row.currency_code
+    and amount_minor = request_row.total_debit_minor
+    and status = 'active'
+  for update;
+  if not found then
+    raise exception 'Payout execution requires the exact active withdrawal reservation';
+  end if;
+
+  select capabilities into provider_capabilities
+  from public.akiba_payment_providers
+  where id = request_row.provider_id
+    and is_enabled = true;
+  if not found
+     or provider_capabilities ->> 'payout' is distinct from 'true'
+     or provider_capabilities ->> 'fee_quotes' is distinct from 'true'
+     or provider_capabilities ->> 'environment' is distinct from 'sandbox' then
+    raise exception 'The selected provider does not currently support sandbox payout execution';
+  end if;
+  if exists (
+    select 1 from public.akiba_withdrawal_flags
+    where withdrawal_request_id = request_row.id
+      and status = 'active'
+  ) then
+    raise exception 'An active member flag blocks payout submission';
+  end if;
+
+  if request_row.quote_expires_at is null
+     or request_row.quote_expires_at <= clock_timestamp() then
+    raise exception 'The approved provider fee quote has expired; obtain a new quote and a fresh approval cycle';
+  end if;
+
+  select count(*) into roster_count
+  from public.akiba_withdrawal_approval_roster
+  where withdrawal_request_id = request_row.id;
+  select count(distinct a.approver_id) into approved_count
+  from public.akiba_withdrawal_approvals a
+  join public.akiba_withdrawal_approval_roster roster
+    on roster.withdrawal_request_id = a.withdrawal_request_id
+   and roster.admin_user_id = a.approver_id
+  where a.withdrawal_request_id = request_row.id
+    and a.approval_version = request_row.approval_version
+    and a.decision = 'approved';
+
+  if roster_count < 3 or approved_count <> roster_count then
+    raise exception 'Every Group Admin in the request-time approval roster must approve';
+  end if;
+  return new;
+end;
+$fn$;
+
+-- A flag is a durable member-owned record. No direct client writes are granted.
+create or replace function public.akiba_flag_withdrawal(
+  p_withdrawal_request_id uuid,
+  p_reason text
+)
+returns uuid
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  request_row public.akiba_withdrawal_requests%rowtype;
+  flag_id uuid;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  if p_withdrawal_request_id is null
+     or char_length(btrim(coalesce(p_reason,''))) not between 1 and 500 then
+    raise exception 'A withdrawal and a reason for flagging are required';
+  end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = p_withdrawal_request_id
+  for update;
+  if not found then raise exception 'Withdrawal request not found'; end if;
+  if request_row.status <> 'staging'
+     or request_row.staging_deadline_at <= clock_timestamp() then
+    raise exception 'This withdrawal is no longer in its flagging period';
+  end if;
+  if not exists (
+    select 1 from public.akiba_group_memberships m
+    where m.group_id = request_row.group_id
+      and m.user_id = actor_id
+      and m.status = 'active'
+  ) then
+    raise exception 'Only active group members may flag a withdrawal';
+  end if;
+
+  insert into public.akiba_withdrawal_flags
+    (withdrawal_request_id, group_id, member_id, reason)
+  values
+    (request_row.id, request_row.group_id, actor_id, btrim(p_reason))
+  returning id into flag_id;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (request_row.group_id, actor_id, 'withdrawal_flagged',
+     'withdrawal_flag', flag_id,
+     jsonb_build_object('withdrawal_request_id', request_row.id, 'reason', btrim(p_reason)));
+  return flag_id;
+exception
+  when unique_violation then
+    raise exception 'You already have an active flag on this withdrawal';
+end;
+$fn$;
+
+create or replace function public.akiba_remove_withdrawal_flag(p_flag_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  flag_request_id uuid;
+  flag_row public.akiba_withdrawal_flags%rowtype;
+  request_row public.akiba_withdrawal_requests%rowtype;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  if p_flag_id is null then raise exception 'A withdrawal flag is required'; end if;
+
+  -- Lock order is always withdrawal request first, then its flags. The staging
+  -- worker uses the same order, preventing flag-removal/deadline deadlocks.
+  select withdrawal_request_id into flag_request_id
+  from public.akiba_withdrawal_flags
+  where id = p_flag_id;
+  if not found then raise exception 'Withdrawal flag not found'; end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = flag_request_id
+  for update;
+  if not found
+     or request_row.status <> 'staging'
+     or request_row.staging_deadline_at <= clock_timestamp() then
+    raise exception 'The withdrawal flagging period has ended';
+  end if;
+
+  select * into flag_row
+  from public.akiba_withdrawal_flags
+  where id = p_flag_id
+  for update;
+  if not found then raise exception 'Withdrawal flag not found'; end if;
+  if flag_row.member_id <> actor_id then
+    raise exception 'You can remove only a flag that you created';
+  end if;
+  if flag_row.status <> 'active' then
+    raise exception 'This withdrawal flag is no longer active';
+  end if;
+  if not exists (
+    select 1 from public.akiba_group_memberships m
+    where m.group_id = request_row.group_id
+      and m.user_id = actor_id
+      and m.status = 'active'
+  ) then
+    raise exception 'Only active group members may remove their own flag';
+  end if;
+
+  update public.akiba_withdrawal_flags
+  set status = 'removed_by_member',
+      removed_at = clock_timestamp()
+  where id = flag_row.id;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (request_row.group_id, actor_id, 'withdrawal_flag_removed',
+     'withdrawal_flag', flag_row.id,
+     jsonb_build_object('withdrawal_request_id', request_row.id));
+end;
+$fn$;
+
+revoke all on function public.akiba_flag_withdrawal(uuid,text) from public, anon;
+grant execute on function public.akiba_flag_withdrawal(uuid,text) to authenticated;
+revoke all on function public.akiba_remove_withdrawal_flag(uuid) from public, anon;
+grant execute on function public.akiba_remove_withdrawal_flag(uuid) to authenticated;
+
+create or replace function public.akiba_cancel_withdrawal_request(p_withdrawal_request_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  actor_id uuid := auth.uid();
+  request_row public.akiba_withdrawal_requests%rowtype;
+  flag_row public.akiba_withdrawal_flags%rowtype;
+  payout_attempt_exists boolean;
+  reservation_rows integer;
+  payout_row record;
+begin
+  if actor_id is null then raise exception 'Authentication is required'; end if;
+  if p_withdrawal_request_id is null then raise exception 'A withdrawal request is required'; end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = p_withdrawal_request_id
+  for update;
+  if not found then raise exception 'Withdrawal request not found'; end if;
+  if request_row.initiator_id <> actor_id
+     or not exists (
+       select 1 from public.akiba_group_memberships m
+       where m.group_id = request_row.group_id
+         and m.user_id = actor_id
+         and m.role = 'group_creator'
+         and m.status = 'active'
+     ) then
+    raise exception 'Only the active Group Creator who requested this withdrawal may cancel it';
+  end if;
+  if request_row.status not in ('pending_approval','staging','payout_queued') then
+    raise exception 'This withdrawal can no longer be cancelled';
+  end if;
+
+  select exists (
+    select 1 from public.akiba_payout_attempts p
+    where p.withdrawal_request_id = request_row.id
+      and p.status in ('submitted','processing','unknown','succeeded')
+  ) into payout_attempt_exists;
+  if payout_attempt_exists then
+    raise exception 'A payout has already been submitted or has an uncertain outcome; reconciliation is required';
+  end if;
+
+  update public.akiba_withdrawal_requests
+  set status = 'cancelled',
+      resolved_at = clock_timestamp(),
+      resolution_note = 'Cancelled by the Group Creator before payout submission.',
+      updated_at = clock_timestamp()
+  where id = request_row.id;
+
+  update public.akiba_financial_reservations
+  set status = 'released',
+      resolved_at = clock_timestamp()
+  where withdrawal_request_id = request_row.id
+    and status = 'active';
+  get diagnostics reservation_rows = row_count;
+  if reservation_rows <> 1 then
+    raise exception 'The active withdrawal reservation is missing; cancellation was rolled back';
+  end if;
+
+  for payout_row in
+    select id from public.akiba_payout_attempts
+    where withdrawal_request_id = request_row.id
+      and status = 'queued'
+    for update
+  loop
+    update public.akiba_payout_attempts
+    set status = 'cancelled',
+        updated_at = clock_timestamp()
+    where id = payout_row.id;
+
+  end loop;
+
+  for flag_row in
+    select * from public.akiba_withdrawal_flags
+    where withdrawal_request_id = request_row.id
+      and status = 'active'
+    for update
+  loop
+    update public.akiba_withdrawal_flags
+    set status = 'closed_by_system',
+        closed_at = clock_timestamp(),
+        closure_reason = 'Automatically closed because the Group Creator cancelled the withdrawal.'
+    where id = flag_row.id;
+
+    insert into public.akiba_finance_activity_events
+      (group_id, actor_id, event_type, source_type, source_id, event_payload)
+    values
+      (request_row.group_id, actor_id, 'withdrawal_flag_closed',
+       'withdrawal_flag', flag_row.id,
+       jsonb_build_object('withdrawal_request_id', request_row.id, 'closure_reason', 'creator_cancelled'));
+  end loop;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (request_row.group_id, actor_id, 'withdrawal_cancelled_by_creator',
+     'withdrawal_request', request_row.id,
+     jsonb_build_object('currency_code', request_row.currency_code,
+       'amount_minor', request_row.total_debit_minor));
+end;
+$fn$;
+
+revoke all on function public.akiba_cancel_withdrawal_request(uuid) from public, anon;
+grant execute on function public.akiba_cancel_withdrawal_request(uuid) to authenticated;
+
+-- Process staging deadlines atomically. A flag still active at the deadline
+-- cancels the withdrawal and releases the reservation. No flag queues payout,
+-- but the reservation remains until a payout-capable provider is available.
+create or replace function public.akiba_process_due_withdrawal_staging(
+  p_batch_size integer default 25,
+  p_now timestamptz default clock_timestamp()
+)
+returns table(processed_count integer, cancelled_count integer, payout_queued_count integer)
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  request_row public.akiba_withdrawal_requests%rowtype;
+  flag_row public.akiba_withdrawal_flags%rowtype;
+  released_rows integer;
+  active_reservation_count integer;
+begin
+  processed_count := 0;
+  cancelled_count := 0;
+  payout_queued_count := 0;
+
+  if p_now is null then raise exception 'A staging processing time is required'; end if;
+
+  for request_row in
+    select * from public.akiba_withdrawal_requests
+    where status = 'staging'
+      and staging_deadline_at <= p_now
+    order by staging_deadline_at, id
+    limit least(greatest(coalesce(p_batch_size,25),1),100)
+    for update skip locked
+  loop
+    select count(*) into active_reservation_count
+    from public.akiba_financial_reservations
+    where withdrawal_request_id = request_row.id
+      and status = 'active';
+    if active_reservation_count <> 1 then
+      raise exception 'The active withdrawal reservation is missing or duplicated; staging transition was rolled back';
+    end if;
+
+    if exists (
+      select 1 from public.akiba_withdrawal_flags f
+      where f.withdrawal_request_id = request_row.id
+        and f.status = 'active'
+    ) then
+      update public.akiba_withdrawal_requests
+      set status = 'cancelled_flagged',
+          resolved_at = p_now,
+          resolution_note = 'An active member flag remained at the end of the two-hour staging period.',
+          updated_at = p_now
+      where id = request_row.id
+        and status = 'staging';
+
+      update public.akiba_financial_reservations
+      set status = 'released',
+          resolved_at = p_now
+      where withdrawal_request_id = request_row.id
+        and status = 'active';
+      get diagnostics released_rows = row_count;
+      if released_rows <> 1 then
+        raise exception 'The active withdrawal reservation is missing; staging cancellation was rolled back';
+      end if;
+
+      for flag_row in
+        select * from public.akiba_withdrawal_flags
+        where withdrawal_request_id = request_row.id
+          and status = 'active'
+        for update
+      loop
+        update public.akiba_withdrawal_flags
+        set status = 'closed_by_system',
+            closed_at = p_now,
+            closure_reason = 'Automatically closed because an active flag blocked payout at the staging deadline.'
+        where id = flag_row.id;
+
+        insert into public.akiba_finance_activity_events
+          (group_id, actor_id, event_type, source_type, source_id, event_payload)
+        values
+          (request_row.group_id, null, 'withdrawal_flag_closed',
+           'withdrawal_flag', flag_row.id,
+           jsonb_build_object('withdrawal_request_id', request_row.id, 'closure_reason', 'staging_deadline_flagged'));
+      end loop;
+
+      insert into public.akiba_finance_activity_events
+        (group_id, actor_id, event_type, source_type, source_id, event_payload)
+      values
+        (request_row.group_id, null, 'withdrawal_cancelled_flagged',
+         'withdrawal_request', request_row.id,
+         jsonb_build_object('currency_code', request_row.currency_code,
+           'amount_minor', request_row.total_debit_minor,
+           'reason', 'An active member flag remained at the staging deadline.'));
+      cancelled_count := cancelled_count + 1;
+    else
+      update public.akiba_withdrawal_requests
+      set status = 'payout_queued',
+          updated_at = p_now
+      where id = request_row.id
+        and status = 'staging';
+
+      insert into public.akiba_finance_activity_events
+        (group_id, actor_id, event_type, source_type, source_id, event_payload)
+      values
+        (request_row.group_id, null, 'withdrawal_payout_queued',
+         'withdrawal_request', request_row.id,
+         jsonb_build_object('currency_code', request_row.currency_code,
+           'amount_minor', request_row.total_debit_minor,
+           'staging_deadline_at', request_row.staging_deadline_at,
+           'note', 'No active flags remained; payout awaits a verified payout-capable provider.'));
+      payout_queued_count := payout_queued_count + 1;
+    end if;
+
+    processed_count := processed_count + 1;
+  end loop;
+
+  return next;
+end;
+$fn$;
+
+revoke all on function public.akiba_process_due_withdrawal_staging(integer,timestamptz)
+  from public, anon, authenticated;
+grant execute on function public.akiba_process_due_withdrawal_staging(integer,timestamptz)
+  to service_role;
+
+-- Emit durable activity events for contribution initiation and every
+-- non-success intent state transition. Successful posting already emits the
+-- single contribution_received event from the atomic ledger RPC.
+create or replace function akiba_private.emit_contribution_finance_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  v_event_type text;
+begin
+  if tg_op = 'INSERT' then
+    v_event_type := 'contribution_initiated';
+  elsif old.status is distinct from new.status and new.status <> 'succeeded' then
+    v_event_type := 'contribution_' || new.status;
+  else
+    return new;
+  end if;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (new.group_id, new.contributor_id, v_event_type,
+     'contribution_intent', new.id,
+     jsonb_build_object(
+       'amount_minor', new.amount_minor,
+       'currency_code', new.currency_code,
+       'provider_id', new.provider_id,
+       'status', new.status
+     ))
+  on conflict (group_id, event_type, source_type, source_id) do nothing;
+
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_contribution_finance_activity on public.akiba_contribution_intents;
+create trigger akiba_contribution_finance_activity
+after insert or update of status on public.akiba_contribution_intents
+for each row execute function akiba_private.emit_contribution_finance_activity();
+
+-- Payment-attempt state transitions are separate financial workflow events
+-- from the contribution intent and the eventual ledger posting.
+create or replace function akiba_private.emit_payment_attempt_finance_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  intent_row public.akiba_contribution_intents%rowtype;
+  v_event_type text;
+begin
+  if tg_op = 'INSERT' then
+    v_event_type := 'payment_attempt_initiated';
+  elsif old.status is distinct from new.status then
+    v_event_type := 'payment_attempt_' || new.status;
+  else
+    return new;
+  end if;
+
+  select * into intent_row
+  from public.akiba_contribution_intents
+  where id = new.contribution_intent_id;
+  if not found then raise exception 'Payment attempt contribution intent was not found'; end if;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (intent_row.group_id, intent_row.contributor_id, v_event_type,
+     'payment_attempt', new.id,
+     jsonb_build_object(
+       'contribution_intent_id', intent_row.id,
+       'amount_minor', new.amount_minor,
+       'currency_code', new.currency_code,
+       'provider_id', new.provider_id,
+       'provider_attempt_ref', new.provider_attempt_ref,
+       'request_reference', new.request_reference,
+       'status', new.status
+     ))
+  on conflict (group_id, event_type, source_type, source_id) do nothing;
+
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_payment_attempt_finance_activity on public.akiba_payment_attempts;
+create trigger akiba_payment_attempt_finance_activity
+after insert or update of status on public.akiba_payment_attempts
+for each row execute function akiba_private.emit_payment_attempt_finance_activity();
+
+-- Payout-attempt status changes are auditable workflow events. The provider
+-- payout executor is intentionally not enabled until sandbox capability exists.
+create or replace function akiba_private.emit_payout_attempt_finance_activity()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  request_row public.akiba_withdrawal_requests%rowtype;
+  v_event_type text;
+begin
+  if tg_op = 'INSERT' then
+    v_event_type := 'withdrawal_payout_attempt_queued';
+  elsif old.status is distinct from new.status then
+    v_event_type := 'withdrawal_payout_attempt_' || new.status;
+  else
+    return new;
+  end if;
+
+  select * into request_row
+  from public.akiba_withdrawal_requests
+  where id = new.withdrawal_request_id;
+  if not found then raise exception 'Payout attempt withdrawal request was not found'; end if;
+
+  insert into public.akiba_finance_activity_events
+    (group_id, actor_id, event_type, source_type, source_id, event_payload)
+  values
+    (request_row.group_id, request_row.initiator_id, v_event_type,
+     'payout_attempt', new.id,
+     jsonb_build_object(
+       'withdrawal_request_id', request_row.id,
+       'amount_minor', request_row.total_debit_minor,
+       'currency_code', request_row.currency_code,
+       'provider_id', new.provider_id,
+       'provider_payout_ref', new.provider_payout_ref,
+       'provider_fee_minor', new.provider_fee_minor,
+       'status', new.status,
+       'reconciliation_status', new.reconciliation_status
+     ))
+  on conflict (group_id, event_type, source_type, source_id) do nothing;
+
+  return new;
+end;
+$fn$;
+
+drop trigger if exists akiba_payout_attempt_finance_activity on public.akiba_payout_attempts;
+create trigger akiba_payout_attempt_finance_activity
+after insert or update of status on public.akiba_payout_attempts
+for each row execute function akiba_private.emit_payout_attempt_finance_activity();
+
+-- Finance activity is the durable outbox. Attempt immediate fan-out, but
+-- catch notification failures so they cannot roll back a committed money event.
+alter table public.akiba_finance_activity_events
+  add column if not exists notification_published_at timestamptz,
+  add column if not exists notification_attempt_count integer not null default 0,
+  add column if not exists notification_next_attempt_at timestamptz not null default clock_timestamp(),
+  add column if not exists notification_last_error text,
+  add column if not exists notification_recipients_snapshotted_at timestamptz;
+
+-- Do not replay historical activity into every member's inbox during rollout.
+update public.akiba_finance_activity_events
+set notification_published_at = created_at,
+    notification_next_attempt_at = created_at
+where notification_published_at is null;
+
+create table public.akiba_finance_notification_recipients (
+  event_id uuid not null references public.akiba_finance_activity_events(id) on delete cascade,
+  recipient_user_id uuid not null references auth.users(id) on delete cascade,
+  snapshotted_at timestamptz not null default clock_timestamp(),
+  primary key (event_id, recipient_user_id)
+);
+
+alter table public.akiba_finance_notification_recipients enable row level security;
+revoke all on public.akiba_finance_notification_recipients from public, anon, authenticated, service_role;
+
+create or replace function akiba_private.fanout_finance_activity_event(p_event_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  event_row public.akiba_finance_activity_events%rowtype;
+  actor_label text;
+  notification_title text;
+  notification_body text;
+  amount_text text;
+  currency_text text;
+  notification_type text;
+begin
+  select * into event_row
+  from public.akiba_finance_activity_events
+  where id = p_event_id
+  for update;
+  if not found then raise exception 'Finance activity event not found'; end if;
+  if event_row.notification_published_at is not null then return; end if;
+
+  select nullif(btrim(p.display_name), '') into actor_label
+  from public.akiba_profiles p
+  where p.user_id = event_row.actor_id;
+  actor_label := coalesce(actor_label, 'A group member');
+
+  notification_type := 'financial_' ||
+    regexp_replace(lower(event_row.event_type), '[^a-z0-9_]+', '_', 'g');
+
+  notification_title := case event_row.event_type
+    when 'contribution_initiated' then 'Contribution started'
+    when 'contribution_received' then 'Contribution received'
+    when 'contribution_failed' then 'Contribution failed'
+    when 'contribution_cancelled' then 'Contribution cancelled'
+    when 'contribution_expired' then 'Contribution expired'
+    when 'contribution_manual_review' then 'Contribution needs review'
+    when 'payment_attempt_initiated' then 'Payment attempt started'
+    when 'payment_attempt_submitted' then 'Payment request sent'
+    when 'payment_attempt_succeeded' then 'Payment confirmed'
+    when 'payment_attempt_failed' then 'Payment attempt failed'
+    when 'payment_attempt_cancelled' then 'Payment attempt cancelled'
+    when 'payment_attempt_expired' then 'Payment attempt expired'
+    when 'withdrawal_requested' then 'Withdrawal requested'
+    when 'withdrawal_approved' then 'Withdrawal approval received'
+    when 'withdrawal_rejected' then 'Withdrawal rejected'
+    when 'withdrawal_staging_started' then 'Withdrawal entered the review period'
+    when 'withdrawal_flagged' then 'A withdrawal was flagged'
+    when 'withdrawal_flag_removed' then 'A withdrawal flag was removed'
+    when 'withdrawal_flag_closed' then 'Withdrawal flag automatically closed'
+    when 'withdrawal_cancelled_flagged' then 'Withdrawal cancelled'
+    when 'withdrawal_cancelled_by_creator' then 'Withdrawal cancelled by Creator'
+    when 'withdrawal_payout_queued' then 'Withdrawal cleared for payout'
+    when 'withdrawal_payout_attempt_queued' then 'Payout attempt queued'
+    when 'withdrawal_payout_attempt_submitted' then 'Payout submitted'
+    when 'withdrawal_payout_attempt_processing' then 'Payout processing'
+    when 'withdrawal_payout_attempt_succeeded' then 'Payout confirmed'
+    when 'withdrawal_payout_attempt_failed' then 'Payout failed'
+    when 'withdrawal_payout_attempt_cancelled' then 'Queued payout cancelled'
+    when 'withdrawal_payout_attempt_unknown' then 'Payout outcome uncertain'
+    else 'Group financial activity'
+  end;
+
+  amount_text := coalesce(event_row.event_payload ->> 'amount_minor',
+                          event_row.event_payload ->> 'total_debit_minor',
+                          event_row.event_payload ->> 'recipient_amount_minor');
+  currency_text := event_row.event_payload ->> 'currency_code';
+
+  notification_body := actor_label || ' · ' || replace(event_row.event_type, '_', ' ');
+  if amount_text ~ '^[0-9]+$' and currency_text ~ '^[A-Z]{3}$' then
+    notification_body := notification_body || ' · ' || amount_text || ' ' || currency_text || ' minor units';
+  end if;
+
+  if event_row.notification_recipients_snapshotted_at is null then
+    raise exception 'Finance notification recipients were not snapshotted at event time';
+  end if;
+
+  insert into public.akiba_group_notifications
+    (user_id, group_id, actor_id, source_event_id, event_type, title, body, href)
+  select r.recipient_user_id, event_row.group_id, event_row.actor_id, event_row.id,
+    notification_type, notification_title, notification_body,
+    '/workspace/groups/' || event_row.group_id::text || '/finances'
+  from public.akiba_finance_notification_recipients r
+  where r.event_id = event_row.id
+  on conflict (user_id, source_event_id) do nothing;
+
+  update public.akiba_finance_activity_events
+  set notification_published_at = clock_timestamp(),
+      notification_attempt_count = notification_attempt_count + 1,
+      notification_next_attempt_at = clock_timestamp(),
+      notification_last_error = null
+  where id = event_row.id;
+end;
+$fn$;
+
+create or replace function akiba_private.notify_finance_activity_event()
+returns trigger
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+begin
+  insert into public.akiba_finance_notification_recipients(event_id, recipient_user_id)
+  select new.id, m.user_id
+  from public.akiba_group_memberships m
+  where m.group_id = new.group_id
+    and m.status = 'active'
+  on conflict (event_id, recipient_user_id) do nothing;
+
+  update public.akiba_finance_activity_events
+  set notification_recipients_snapshotted_at = clock_timestamp()
+  where id = new.id;
+
+  begin
+    perform akiba_private.fanout_finance_activity_event(new.id);
+  exception when others then
+    update public.akiba_finance_activity_events
+    set notification_attempt_count = notification_attempt_count + 1,
+        notification_next_attempt_at = clock_timestamp()
+          + make_interval(mins => least(60, power(2, least(6, notification_attempt_count))::integer)),
+        notification_last_error = left(sqlerrm, 500)
+    where id = new.id
+      and notification_published_at is null;
+    raise warning 'Finance notification fan-out deferred for event %: %', new.id, sqlerrm;
+  end;
+  return new;
+end;
+$fn$;
+
+create or replace function public.akiba_process_due_finance_notifications(
+  p_batch_size integer default 50,
+  p_now timestamptz default clock_timestamp()
+)
+returns table(processed_count integer, delivered_count integer, failed_count integer)
+language plpgsql
+security definer
+set search_path to ''
+as $fn$
+declare
+  event_row public.akiba_finance_activity_events%rowtype;
+begin
+  processed_count := 0;
+  delivered_count := 0;
+  failed_count := 0;
+
+  for event_row in
+    select * from public.akiba_finance_activity_events
+    where notification_published_at is null
+      and notification_next_attempt_at <= p_now
+    order by created_at, id
+    limit least(greatest(coalesce(p_batch_size,50),1),200)
+    for update skip locked
+  loop
+    processed_count := processed_count + 1;
+    begin
+      perform akiba_private.fanout_finance_activity_event(event_row.id);
+      delivered_count := delivered_count + 1;
+    exception when others then
+      update public.akiba_finance_activity_events
+      set notification_attempt_count = notification_attempt_count + 1,
+          notification_next_attempt_at = p_now
+            + make_interval(mins => least(60, power(2, least(6, notification_attempt_count))::integer)),
+          notification_last_error = left(sqlerrm, 500)
+      where id = event_row.id
+        and notification_published_at is null;
+      failed_count := failed_count + 1;
+      raise warning 'Finance notification retry scheduled for event %: %', event_row.id, sqlerrm;
+    end;
+  end loop;
+
+  return next;
+end;
+$fn$;
+
+revoke all on function public.akiba_process_due_finance_notifications(integer,timestamptz)
+  from public, anon, authenticated;
+grant execute on function public.akiba_process_due_finance_notifications(integer,timestamptz)
+  to service_role;
+
+drop trigger if exists akiba_finance_activity_notify_members on public.akiba_finance_activity_events;
+create trigger akiba_finance_activity_notify_members
+after insert on public.akiba_finance_activity_events
+for each row execute function akiba_private.notify_finance_activity_event();
+
+-- Keep group deactivation and six-month retention aware of every new
+-- unresolved withdrawal state, not only the legacy workflow statuses.
+create or replace function akiba_private.group_financial_safety(p_group_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path to ''
+as $fn$
+declare
+  has_history boolean := false;
+  has_unresolved boolean := false;
+  balance_minor numeric := 0;
+  held_minor numeric := 0;
+begin
+  select coalesce(sum(case when e.direction = 'credit' then e.amount_minor else -e.amount_minor end), 0)
+    into balance_minor
+  from public.akiba_financial_ledger_entries e
+  where e.group_id = p_group_id and e.account_code = 'group_funds';
+
+  select coalesce(sum(r.amount_minor), 0)
+    into held_minor
+  from public.akiba_financial_reservations r
+  where r.group_id = p_group_id and r.status = 'active';
+
+  has_history :=
+    exists (select 1 from public.akiba_financial_transactions where group_id = p_group_id)
+    or exists (select 1 from public.akiba_financial_ledger_entries where group_id = p_group_id)
+    or exists (select 1 from public.akiba_contribution_intents where group_id = p_group_id)
+    or exists (
+      select 1 from public.akiba_payment_attempts p
+      join public.akiba_contribution_intents i on i.id = p.contribution_intent_id
+      where i.group_id = p_group_id
+    )
+    or exists (select 1 from public.akiba_withdrawal_requests where group_id = p_group_id)
+    or exists (select 1 from public.akiba_withdrawal_approvals where group_id = p_group_id)
+    or exists (
+      select 1 from public.akiba_payout_attempts p
+      join public.akiba_withdrawal_requests w on w.id = p.withdrawal_request_id
+      where w.group_id = p_group_id
+    )
+    or exists (select 1 from public.akiba_financial_reservations where group_id = p_group_id)
+    or exists (select 1 from public.akiba_finance_activity_events where group_id = p_group_id)
+    or exists (select 1 from public.akiba_group_payment_accounts where group_id = p_group_id);
+
+  has_unresolved :=
+    exists (
+      select 1 from public.akiba_contribution_intents i
+      where i.group_id = p_group_id
+        and i.status not in ('succeeded','failed','cancelled','expired')
+    )
+    or exists (
+      select 1 from public.akiba_payment_attempts p
+      join public.akiba_contribution_intents i on i.id = p.contribution_intent_id
+      where i.group_id = p_group_id and p.status in ('initiated','pending','unknown')
+    )
+    or exists (
+      select 1
+      from public.akiba_provider_events e
+      join public.akiba_payment_attempts p
+        on e.provider_id = p.provider_id
+       and e.source_reference in (p.provider_merchant_ref, p.provider_attempt_ref, p.request_reference)
+      join public.akiba_contribution_intents i on i.id = p.contribution_intent_id
+      where i.group_id = p_group_id
+        and (
+          e.processing_status in ('received','processing')
+          or (e.processing_status = 'failed' and e.retryable)
+        )
+    )
+    or exists (
+      select 1 from public.akiba_withdrawal_requests w
+      where w.group_id = p_group_id
+        and w.status in (
+          'pending_approval','approved','staging','payout_queued',
+          'payout_submitted','payout_processing','reconciliation_required',
+          'processing','failed_pending_reconciliation'
+        )
+    )
+    or exists (
+      select 1 from public.akiba_payout_attempts p
+      join public.akiba_withdrawal_requests w on w.id = p.withdrawal_request_id
+      where w.group_id = p_group_id
+        and (
+          p.status in ('queued','submitted','processing','unknown')
+          or p.reconciliation_status in ('pending','unmatched')
+        )
+    )
+    or exists (
+      select 1 from public.akiba_financial_reservations r
+      where r.group_id = p_group_id and r.status = 'active'
+    );
+
+  return jsonb_build_object(
+    'has_financial_history', has_history,
+    'has_unresolved_financial_activity', has_unresolved,
+    'balance_minor', balance_minor,
+    'held_minor', held_minor
+  );
+end;
+$fn$;
+
+revoke all on function akiba_private.set_withdrawal_terms_fingerprint() from public, anon, authenticated;
+revoke all on function akiba_private.guard_withdrawal_terms_immutable() from public, anon, authenticated;
+revoke all on function akiba_private.guard_withdrawal_provider_capability() from public, anon, authenticated;
+revoke all on function akiba_private.snapshot_withdrawal_approval_roster() from public, anon, authenticated;
+revoke all on function akiba_private.guard_withdrawal_approval_insert() from public, anon, authenticated;
+revoke all on function akiba_private.apply_withdrawal_approval_decision() from public, anon, authenticated;
+revoke all on function akiba_private.guard_group_admin_unresolved_withdrawal() from public, anon, authenticated;
+revoke all on function akiba_private.guard_payout_attempt_insert() from public, anon, authenticated;
+revoke all on function akiba_private.emit_contribution_finance_activity() from public, anon, authenticated;
+revoke all on function akiba_private.emit_payment_attempt_finance_activity() from public, anon, authenticated;
+revoke all on function akiba_private.emit_payout_attempt_finance_activity() from public, anon, authenticated;
+revoke all on function akiba_private.fanout_finance_activity_event(uuid) from public, anon, authenticated;
+revoke all on function akiba_private.notify_finance_activity_event() from public, anon, authenticated;
+
+-- Run the staging processor every minute inside Postgres. It never submits
+-- payouts; it only resolves flags and moves unflagged requests to payout_queued.
+do $cron$
+declare
+  existing_job_id bigint;
+begin
+  select jobid into existing_job_id
+  from cron.job
+  where jobname = 'akiba-withdrawal-staging-every-minute'
+  limit 1;
+
+  if existing_job_id is not null then
+    perform cron.unschedule(existing_job_id);
+  end if;
+
+  perform cron.schedule(
+    'akiba-withdrawal-staging-every-minute',
+    '* * * * *',
+    'select * from public.akiba_process_due_withdrawal_staging(25, clock_timestamp());'
+  );
+
+  select jobid into existing_job_id
+  from cron.job
+  where jobname = 'akiba-finance-notifications-every-minute'
+  limit 1;
+  if existing_job_id is not null then
+    perform cron.unschedule(existing_job_id);
+  end if;
+
+  perform cron.schedule(
+    'akiba-finance-notifications-every-minute',
+    '* * * * *',
+    'select * from public.akiba_process_due_finance_notifications(50, clock_timestamp());'
+  );
+end;
+$cron$;
+
+commit;

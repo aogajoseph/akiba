@@ -805,3 +805,245 @@ export async function submitGroupReport(formData: FormData) {
   revalidatePath("/workspace/groups/" + groupId);
   redirect(returnPath + "?submitted=1");
 }
+
+
+function financeActionRedirect(groupId: string, key: "financeError" | "financeUpdated", message: string): never {
+  redirect("/workspace/groups/" + groupId + "/finances?" + key + "=" + encodeURIComponent(message));
+}
+
+function validFinanceIds(groupId: string, requestId: string): boolean {
+  return /^[0-9a-f-]{36}$/i.test(groupId) && /^[0-9a-f-]{36}$/i.test(requestId);
+}
+
+export async function createWithdrawalRequest(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const amountKes = Number(String(formData.get("amount_kes") ?? ""));
+  const recipientName = String(formData.get("recipient_name") ?? "").trim();
+  const destinationLabel = String(formData.get("destination_label") ?? "").trim().toUpperCase();
+  const reason = String(formData.get("reason") ?? "").trim();
+  const idempotencyKey = String(formData.get("idempotency_key") ?? "").trim();
+
+  if (!/^[0-9a-f-]{36}$/i.test(groupId)) redirect("/workspace/groups");
+  if (!Number.isSafeInteger(amountKes) || amountKes < 1 || amountKes > 250000 ||
+      recipientName.length < 1 || recipientName.length > 160 ||
+      !/^[A-Z0-9][A-Z0-9 _.-]{2,47}$/.test(destinationLabel) ||
+      reason.length < 1 || reason.length > 500 ||
+      !/^[A-Za-z0-9_-]{8,160}$/.test(idempotencyKey)) {
+    financeActionRedirect(groupId, "financeError", "Enter a valid whole-KES amount, recipient, sandbox destination label and purpose.");
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_create_sandbox_withdrawal_request", {
+    p_group_id: groupId,
+    p_recipient_amount_minor: String(amountKes * 100),
+    p_recipient_name: recipientName,
+    p_destination_label: destinationLabel,
+    p_reason: reason,
+    p_idempotency_key: idempotencyKey,
+  });
+
+  if (error) {
+    const message = error.message.includes("Only the active Group Creator")
+      ? "Only the active Group Creator can request a withdrawal."
+      : error.message.includes("leadership is incomplete") || error.message.includes("Exactly one active Group Creator")
+        ? "The group needs one active Creator and at least three active Group Admins."
+        : error.message.includes("Insufficient available group funds")
+          ? "The group does not have enough available funds after existing reservations."
+          : error.message.includes("already has an unresolved withdrawal") || error.message.includes("akiba_one_unresolved_withdrawal_per_group") || error.code === "23505"
+            ? "This group already has an unresolved withdrawal. Resolve it before creating another."
+            : error.message.includes("idempotency key")
+              ? "This request reference was already used with different details. Refresh and submit again."
+              : error.message.includes("deactivated")
+                ? "Withdrawals are unavailable for a deactivated group."
+                : "The sandbox withdrawal request could not be created. Refresh and try again.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  revalidatePath("/workspace/groups/" + groupId);
+  financeActionRedirect(groupId, "financeUpdated", "Sandbox withdrawal request created. The full group deduction is reserved while Admin approvals are collected. No payment was sent.");
+}
+
+export async function decideWithdrawalRequest(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const requestId = String(formData.get("request_id") ?? "");
+  const decision = String(formData.get("decision") ?? "");
+  const rejectionReason = String(formData.get("rejection_reason") ?? "").trim();
+
+  if (!validFinanceIds(groupId, requestId) ||
+      (decision !== "approved" && decision !== "rejected") ||
+      (decision === "rejected" && (rejectionReason.length < 1 || rejectionReason.length > 500))) {
+    if (/^[0-9a-f-]{36}$/i.test(groupId)) {
+      financeActionRedirect(groupId, "financeError", "Provide a valid withdrawal decision and, if rejecting, a reason.");
+    }
+    redirect("/workspace/groups");
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_decide_withdrawal_request", {
+    p_withdrawal_request_id: requestId,
+    p_decision: decision,
+    p_rejection_reason: decision === "rejected" ? rejectionReason : null,
+  });
+  if (error) {
+    const message = error.message.includes("request-time approval roster")
+      ? "Only an active Group Admin included in the original approval roster can decide this withdrawal."
+      : error.message.includes("no longer accepting decisions")
+        ? "This withdrawal is no longer accepting approvals."
+        : error.message.includes("initiator")
+          ? "The Group Creator cannot approve their own withdrawal."
+          : "Your withdrawal decision could not be saved. Refresh and try again.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  revalidatePath("/workspace/groups/" + groupId);
+  financeActionRedirect(groupId, "financeUpdated", decision === "approved"
+    ? "Your approval was recorded."
+    : "The withdrawal was rejected and its reservation released.");
+}
+
+export async function flagWithdrawal(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const requestId = String(formData.get("request_id") ?? "");
+  const reason = String(formData.get("reason") ?? "").trim();
+
+  if (!validFinanceIds(groupId, requestId) || reason.length < 1 || reason.length > 500) {
+    if (/^[0-9a-f-]{36}$/i.test(groupId)) {
+      financeActionRedirect(groupId, "financeError", "Provide a short reason for flagging this withdrawal.");
+    }
+    redirect("/workspace/groups");
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_flag_withdrawal", {
+    p_withdrawal_request_id: requestId,
+    p_reason: reason,
+  });
+  if (error) {
+    const message = error.message.includes("already have an active flag") ||
+      error.message.includes("akiba_one_active_withdrawal_flag_per_member") ||
+      error.message.includes("duplicate key")
+      ? "You already have an active flag on this withdrawal."
+      : error.message.includes("flagging period")
+        ? "The two-hour flagging period has ended."
+        : "Your withdrawal flag could not be recorded. Refresh and try again.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  financeActionRedirect(groupId, "financeUpdated", "Your flag was recorded. This withdrawal cannot proceed while it remains active.");
+}
+
+export async function removeWithdrawalFlag(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const flagId = String(formData.get("flag_id") ?? "");
+  if (!/^[0-9a-f-]{36}$/i.test(groupId) || !/^[0-9a-f-]{36}$/i.test(flagId)) {
+    redirect("/workspace/groups");
+  }
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_remove_withdrawal_flag", {
+    p_flag_id: flagId,
+  });
+  if (error) {
+    const message = error.message.includes("only a flag that you created")
+      ? "You can remove only a flag that you created."
+      : error.message.includes("flagging period")
+        ? "The two-hour flagging period has ended."
+        : "This flag could not be removed. It may already be closed.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  financeActionRedirect(groupId, "financeUpdated", "Your flag was removed. The original staging deadline has not changed.");
+}
+
+export async function processDueWithdrawalStaging(groupId: string, requestId: string): Promise<boolean> {
+  if (!validFinanceIds(groupId, requestId)) return false;
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) return false;
+
+  const { data: membership, error: membershipError } = await supabase
+    .from("akiba_group_memberships")
+    .select("status")
+    .eq("group_id", groupId)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (membershipError || membership?.status !== "active") return false;
+
+  const { data: request, error: requestError } = await supabase
+    .from("akiba_withdrawal_requests")
+    .select("id,status,staging_deadline_at")
+    .eq("id", requestId)
+    .eq("group_id", groupId)
+    .maybeSingle();
+  if (requestError) return false;
+  if (!request || request.status !== "staging") return true;
+  if (!request.staging_deadline_at || Date.parse(request.staging_deadline_at) > Date.now()) return false;
+
+  const service = createServiceClient();
+  const { error: processError } = await service.rpc("akiba_process_due_withdrawal_staging", {
+    p_batch_size: 25,
+  });
+  if (processError) {
+    console.error("Akiba due withdrawal staging processing failed", {
+      groupId,
+      requestId,
+      message: processError.message,
+    });
+    return false;
+  }
+
+  const { data: refreshedRequest, error: refreshError } = await supabase
+    .from("akiba_withdrawal_requests")
+    .select("status")
+    .eq("id", requestId)
+    .eq("group_id", groupId)
+    .maybeSingle();
+  if (refreshError || refreshedRequest?.status === "staging") return false;
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  revalidatePath("/workspace/groups/" + groupId);
+  return true;
+}
+
+export async function cancelWithdrawalRequest(formData: FormData) {
+  const groupId = String(formData.get("group_id") ?? "");
+  const requestId = String(formData.get("request_id") ?? "");
+  if (!validFinanceIds(groupId, requestId)) redirect("/workspace/groups");
+
+  const supabase = await createClient();
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  if (authError || !user) redirect("/login");
+
+  const { error } = await supabase.rpc("akiba_cancel_withdrawal_request", {
+    p_withdrawal_request_id: requestId,
+  });
+  if (error) {
+    const message = error.message.includes("Only the active Group Creator")
+      ? "Only the Group Creator who requested this withdrawal may cancel it."
+      : error.message.includes("uncertain outcome")
+        ? "A payout may already be in progress. The reservation will remain until provider reconciliation."
+        : "This withdrawal can no longer be cancelled.";
+    financeActionRedirect(groupId, "financeError", message);
+  }
+
+  revalidatePath("/workspace/groups/" + groupId + "/finances");
+  revalidatePath("/workspace/groups/" + groupId);
+  financeActionRedirect(groupId, "financeUpdated", "The withdrawal was cancelled and its reservation released.");
+}
