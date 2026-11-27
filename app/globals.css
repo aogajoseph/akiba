@@ -1988,3 +1988,44 @@ html[data-akiba-theme="dark"] .ak-note-card p {
 
 html[data-akiba-theme="dark"] .ak-workspace-top-crumb, html[data-akiba-theme="dark"] .ak-workspace-top-crumb a { color:#b9c4dc; }
 html[data-akiba-theme="dark"] .ak-workspace-top-crumb strong { color:#f1f3fa; }
+
+
+/* Dark-only contrast fixes for profile upload, settings feedback, and destructive group actions. */
+html[data-akiba-theme="dark"] .profile-field input[type="file"] {
+  color:#e6eaf2;
+  background-color:#202536;
+  border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] .profile-field input[type="file"]::file-selector-button {
+  margin-right:12px;
+  padding:7px 10px;
+  border:1px solid #505971;
+  border-radius:6px;
+  background:#30384c;
+  color:#f1f3fa;
+  font:inherit;
+  cursor:pointer;
+}
+html[data-akiba-theme="dark"] .ak-settings-success {
+  border-color:#315c49;
+  background:#20382d;
+  color:#bce8cb;
+}
+html[data-akiba-theme="dark"] .ak-group-report-privacy {
+  border-color:#41465b;
+  background:#24283a;
+  color:#c1c9dc;
+}
+html[data-akiba-theme="dark"] .ak-group-report-privacy strong {
+  color:#f1f3fa;
+}
+html[data-akiba-theme="dark"] .ak-group-report-form .ak-member-danger {
+  border-color:#a83b78;
+  background:#b92f7d;
+  color:#fff;
+}
+html[data-akiba-theme="dark"] .ak-group-report-form .ak-member-danger:hover {
+  border-color:#d65b9e;
+  background:#ce438f;
+  color:#fff;
+}
