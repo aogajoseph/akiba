@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { deleteAkibaAccount } from "./actions";
 
@@ -8,7 +9,11 @@ function DeleteButton({ enabled }: { enabled: boolean }) {
   return <button className="ak-member-danger" type="submit" disabled={pending || !enabled} aria-busy={pending}>{pending ? "Deleting account..." : "Permanently delete my account"}</button>;
 }
 
-export default function AccountDeletionForm({ enabled, recentSignIn }: { enabled: boolean; recentSignIn: boolean }) {
+export default function AccountDeletionForm({ enabled, lastSignInAt }: { enabled: boolean; lastSignInAt: string | null }) {
+  const [recentSignIn, setRecentSignIn] = useState(false);
+  useEffect(() => {
+    setRecentSignIn(Boolean(lastSignInAt && Date.now() - new Date(lastSignInAt).getTime() <= 15 * 60 * 1000));
+  }, [lastSignInAt]);
   return (
     <form className="ak-account-delete-form" action={deleteAkibaAccount}>
       <label className="ak-settings-field">
