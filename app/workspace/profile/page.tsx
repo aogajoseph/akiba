@@ -1,10 +1,9 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { changePassword, saveUserProfile, signOutOtherSessions } from "./actions";
+import { saveUserProfile } from "./actions";
 import { ProfileSubmitButton } from "./profile-submit-button";
 import { ProfileImagePicker } from "./profile-image-picker";
-import { EmailChangeForm } from "./email-change-form";
 import { ProfilePreviewButton } from "./profile-preview-button";
 
 type Props = { searchParams: Promise<{ error?: string; success?: string }> };
@@ -42,7 +41,7 @@ export default async function UserProfilePage({ searchParams }: Props) {
         <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
         <nav className="ak-nav" aria-label="Main navigation">
           <span className="ak-nav-label">WORKSPACE</span><Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link><Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups</Link>
-          <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span><Link href="/workspace/profile" className="ak-nav-link active"><span>♙</span>Edit Profile</Link><Link href="/workspace/profile#account" className="ak-nav-link"><span>⚙</span>Settings</Link>
+          <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span><Link href="/workspace/profile" className="ak-nav-link active"><span>♙</span>Edit Profile</Link><Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
         </nav>
         <div className="ak-sidebar-bottom"><div className="ak-sidebar-user">{avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ak-avatar-fallback">{displayName.slice(0,1).toUpperCase()}</span>}<span className="ak-sidebar-user-copy"><strong>{displayName}</strong><small>@{profile.username}</small></span></div></div>
       </aside>
@@ -71,31 +70,13 @@ export default async function UserProfilePage({ searchParams }: Props) {
             <div className="ak-panel-heading"><div><h2>Contact &amp; privacy</h2><p>Keep your contact details up to date and choose who can see each detail on your Akiba profile.</p></div></div>
             {privateSettingsUnavailable ? <p className="ak-settings-inline-note" role="alert">Your private contact settings could not be loaded. Refresh the page to try again. No changes have been made.</p> : <form action={saveUserProfile} className="ak-group-settings-form">
               <div className="ak-settings-fields">
-                <label className="ak-settings-field"><span>Email address <em>Required · Sign-in</em></span><input value={user.email ?? ""} readOnly /><small>Change your sign-in email in Account settings below.</small></label>
+                <label className="ak-settings-field"><span>Email address <em>Required · Sign-in</em></span><input value={user.email ?? ""} readOnly /><small>Manage your sign-in email in Account Settings.</small></label>
                 <label className="ak-settings-field"><span>Phone number <small>Optional</small></span><input name="phone_number" type="tel" defaultValue={contact?.phone_number ?? ""} placeholder="+2547XXXXXXXX" /></label>
                 <label className="ak-settings-field"><span>General location <small>Optional · City or region only</small></span><input name="location" defaultValue={contact?.location ?? ""} maxLength={120} placeholder="e.g. Nairobi, Kenya" /></label>
               </div>
               <div className="ak-settings-fields">{select("Phone", defaults.phone)}{select("Location", defaults.location)}{select("Email", defaults.email)}</div>
               <div className="ak-settings-save-row"><p>Only you can edit these details. Other users see each field only when its visibility setting allows it.</p><ProfileSubmitButton idle="Save contact & privacy" pending="Saving contact details..." /></div>
             </form>}
-          </section>
-          <section className="ak-panel ak-settings-section" id="account">
-            <div className="ak-panel-heading"><div><h2>Account</h2><p>Your sign-in email is managed by Supabase Authentication.</p></div></div>
-            <EmailChangeForm />
-            <div className="ak-settings-divider" />
-            <div className="ak-panel-heading"><div><h2>Password</h2><p>Choose a strong password you do not use elsewhere.</p></div></div>
-            <form action={changePassword} className="ak-group-settings-form">
-              <div className="ak-settings-fields">
-                <label className="ak-settings-field"><span>New password</span><input name="new_password" type="password" autoComplete="new-password" minLength={10} maxLength={72} required /><small>Use at least 10 characters.</small></label>
-                <label className="ak-settings-field"><span>Confirm new password</span><input name="confirm_password" type="password" autoComplete="new-password" minLength={10} maxLength={72} required /></label>
-              </div>
-              <div className="ak-settings-save-row"><p>Your password is updated through Akiba Authentication.</p><ProfileSubmitButton idle="Update password" pending="Updating password..." /></div>
-            </form>
-            <div className="ak-settings-divider" />
-            <div className="ak-panel-heading"><div><h2>Active sessions</h2><p>Sign out of other devices while keeping this session open.</p></div></div>
-            <form action={signOutOtherSessions} className="ak-group-settings-form">
-              <div className="ak-settings-save-row"><p>Other sessions may remain active until their current access tokens expire or they attempt to refresh.</p><ProfileSubmitButton className="ak-settings-secondary-button ak-settings-signout-button" idle="Sign out other sessions" pending="Signing out other sessions..." /></div>
-            </form>
           </section>
         </div>
       </section>
