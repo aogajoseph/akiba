@@ -4,7 +4,7 @@ import { useState } from "react";
 import { saveThemePreference, type AkibaTheme } from "./actions";
 
 function applyTheme(theme: AkibaTheme) {
-  // Akiba's "system" setting intentionally resolves to the light palette.
+  // Akiba's system/default appearance uses the dark palette.
   const resolved = theme === "light" ? "light" : "dark";
   document.documentElement.dataset.akibaTheme = resolved;
   document.documentElement.style.colorScheme = resolved;
