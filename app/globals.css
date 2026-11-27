@@ -2243,3 +2243,15 @@ html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-danger-card .ak-me
 html[data-akiba-theme="dark"] .ak-workspace-app button.ak-member-danger {
   color:#fff;
 }
+
+
+html[data-akiba-theme="dark"] .ak-deactivate-group-form .ak-member-danger {
+  border-color:#a83b78;
+  background:#b92f7d;
+  color:#ffffff !important;
+}
+html[data-akiba-theme="dark"] .ak-deactivate-group-form .ak-member-danger:hover {
+  border-color:#d65b9e;
+  background:#ce438f;
+  color:#ffffff !important;
+}
