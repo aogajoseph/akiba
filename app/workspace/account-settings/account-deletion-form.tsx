@@ -8,8 +8,7 @@ function DeleteButton({ enabled }: { enabled: boolean }) {
   return <button className="ak-member-danger" type="submit" disabled={pending || !enabled} aria-busy={pending}>{pending ? "Deleting account..." : "Permanently delete my account"}</button>;
 }
 
-export default function AccountDeletionForm({ enabled, lastSignInAt }: { enabled: boolean; lastSignInAt: string | null }) {
-  const recentSignIn = Boolean(lastSignInAt && Date.now() - new Date(lastSignInAt).getTime() <= 15 * 60 * 1000);
+export default function AccountDeletionForm({ enabled, recentSignIn }: { enabled: boolean; recentSignIn: boolean }) {
   return (
     <form className="ak-account-delete-form" action={deleteAkibaAccount}>
       <label className="ak-settings-field">
