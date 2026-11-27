@@ -1875,7 +1875,7 @@ html[data-akiba-theme="dark"] .ak-group-image { background:#293247;border:1px so
 html[data-akiba-theme="dark"] :is(.ak-group-stat,.ak-group-panel,.ak-group-tabs,
   .ak-workspace-progress,.ak-workspace-member,.ak-workspace-summary-card,
   .ak-workspace-action-message,.ak-workspace-more-menu,.ak-workspace-share,
-  .ak-workspace-more,.ak-group-state,.ak-category-option,.ak-create-navigation,
+  .ak-workspace-more,.ak-group-state,.ak-category-option,
   .ak-create-back,.ak-membership-action-menu-content,.ak-membership-share-link,
   .ak-membership-open-link,.ak-membership-status,.ak-membership-your-role,
   .ak-workspace-member-role button,.ak-member-actions button,
