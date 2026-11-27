@@ -141,7 +141,7 @@ security definer
 set search_path = ''
 as $fn$
 begin
-  if coalesce(auth.jwt()->>'role', '') <> 'service_role' then
+  if coalesce(auth.role(), '') <> 'service_role' then
     raise exception 'Service role is required for account deletion';
   end if;
   if p_user_id is null or not exists (select 1 from auth.users u where u.id = p_user_id) then
