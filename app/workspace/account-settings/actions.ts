@@ -15,15 +15,19 @@ export async function saveThemePreference(theme: AkibaTheme): Promise<{ success:
   const { data: { user }, error: authError } = await supabase.auth.getUser();
   if (authError || !user) return { success: false, message: "Please sign in to save your preference." };
 
-  const { error } = await supabase.from("akiba_user_settings").upsert({
+  const { data: savedSettings, error } = await supabase.from("akiba_user_settings").upsert({
     user_id: user.id,
     theme,
     updated_at: new Date().toISOString(),
-  }, { onConflict: "user_id" });
-  if (error) {
-    console.error("Account theme preference update failed", { code: error.code });
+  }, { onConflict: "user_id" }).select("theme").single();
+  if (error || savedSettings?.theme !== theme) {
+    console.error("Account theme preference update failed", { code: error?.code ?? "theme_not_persisted" });
     return { success: false, message: "Your appearance preference could not be saved. Please try again." };
   }
+  // The root layout reads this account row on every authenticated request.
+  // Revalidate the layout as well as the settings route so the saved theme
+  // is reflected immediately after navigation and on subsequent server renders.
+  revalidatePath("/", "layout");
   revalidatePath("/workspace/account-settings");
   return { success: true, message: "Appearance preference saved." };
 }
