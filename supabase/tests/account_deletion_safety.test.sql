@@ -20,6 +20,38 @@ set local role authenticated;
 insert into public.akiba_groups (id, name, purpose, group_type, currency_code, created_by)
 values ('00000000-0000-0000-0000-000000000920', 'Account deletion gate group', 'goal', 'shared_savings', 'KES', '00000000-0000-0000-0000-000000000910')
 on conflict (id) do nothing;
+insert into public.akiba_groups (id, name, purpose, group_type, currency_code, created_by)
+values ('00000000-0000-0000-0000-000000000930', 'Deactivated admin stepdown test', 'goal', 'shared_savings', 'KES', '00000000-0000-0000-0000-000000000910')
+on conflict (id) do nothing;
+reset role;
+
+-- An Admin must be able to step down even after the Creator deactivates a
+-- group, otherwise account deletion would be blocked for the full retention.
+insert into public.akiba_group_memberships (group_id, user_id, role, status)
+values ('00000000-0000-0000-0000-000000000930', '00000000-0000-0000-0000-000000000912', 'member', 'active')
+on conflict (group_id, user_id) do nothing;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000910', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-0000-0000-000000000910"}', true);
+set local role authenticated;
+select public.akiba_set_group_admin('00000000-0000-0000-0000-000000000930', '00000000-0000-0000-0000-000000000912', 'appoint');
+select public.akiba_deactivate_group('00000000-0000-0000-0000-000000000930');
+reset role;
+select set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-000000000912', true);
+select set_config('request.jwt.claim.role', 'authenticated', true);
+select set_config('request.jwt.claims', '{"role":"authenticated","sub":"00000000-0000-0000-0000-000000000912"}', true);
+set local role authenticated;
+select public.akiba_step_down_group_admin('00000000-0000-0000-0000-000000000930');
+do $test$
+begin
+  if not exists (
+    select 1 from public.akiba_group_memberships
+    where group_id = '00000000-0000-0000-0000-000000000930'
+      and user_id = '00000000-0000-0000-0000-000000000912'
+      and role = 'member' and status = 'active'
+  ) then raise exception 'Group Admin could not step down during retention'; end if;
+end;
+$test$;
 reset role;
 
 -- Creator ownership is an authoritative deletion gate.
@@ -55,7 +87,8 @@ values
 on conflict (id) do nothing;
 
 set local role service_role;
-select public.akiba_prepare_account_deletion('00000000-0000-0000-0000-000000000911');
+select public.akiba_prepare_account_deletion('00000000-0000-0000-000000000911');
+select public.akiba_prepare_account_deletion('00000000-0000-0000-000000000912');
 
 do $test$
 begin
@@ -72,6 +105,10 @@ begin
     where id = '00000000-0000-0000-0000-000000000922'
       and (actor_id is not null or subject_user_id is not null)
   ) then raise exception 'Historical leadership-event identities were not anonymised'; end if;
+  if exists (
+    select 1 from public.akiba_group_memberships
+    where user_id = '00000000-0000-0000-0000-000000000912'
+  ) then raise exception 'Account deletion did not remove a deactivated-group membership'; end if;
   if not exists (
     select 1 from public.akiba_group_messages
     where id = '00000000-0000-0000-0000-000000000921'
