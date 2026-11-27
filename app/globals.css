@@ -1870,3 +1870,82 @@ html[data-akiba-theme="dark"] .ak-group-member-copy strong em { background:#3036
 html[data-akiba-theme="dark"] .ak-group-member-count { background:#3a263b;color:#f0b5d8; }
 .ak-group-image { display:block;object-fit:cover; }
 html[data-akiba-theme="dark"] .ak-group-image { background:#293247;border:1px solid #3a4055; }
+
+/* Additional white surfaces used by the group detail and group creation flows. */
+html[data-akiba-theme="dark"] :is(.ak-group-stat,.ak-group-panel,.ak-group-tabs,
+  .ak-workspace-progress,.ak-workspace-member,.ak-workspace-summary-card,
+  .ak-workspace-action-message,.ak-workspace-more-menu,.ak-workspace-share,
+  .ak-workspace-more,.ak-group-state,.ak-category-option,.ak-create-navigation,
+  .ak-create-back,.ak-membership-action-menu-content,.ak-membership-share-link,
+  .ak-membership-open-link,.ak-membership-status,.ak-membership-your-role,
+  .ak-workspace-member-role button,.ak-member-actions button,
+  .ak-workspace-member>form button,.ak-membership-invite-form input,
+  .ak-membership-search-form input,.ak-membership-copy input,
+  .ak-finance-form input,.ak-finance-input-wrap,.ak-finance-secondary-button,
+  .ak-settings-field>input:not([type=file]),.ak-settings-field>select,
+  .ak-settings-field>textarea,.ak-notification-row form button,
+  .ak-notification-bell-trigger,.ak-message-bell-trigger,
+  .ak-notification-tray,.ak-message-tray,.ak-profile-preview-trigger,
+  .ak-profile-preview-close,.ak-invite-modal-close,.ak-invite-modal-secondary,
+  .profile-secondary-button,.profile-field input,.profile-field textarea,
+  .ak-account-group-row,.ak-account-delete-form,.ak-account-blockers) {
+  background-color:#202536;
+  border-color:#3a4055;
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-group-stat small,
+html[data-akiba-theme="dark"] .ak-group-panel-heading p,
+html[data-akiba-theme="dark"] .ak-group-state>p,
+html[data-akiba-theme="dark"] .ak-workspace-member>div small,
+html[data-akiba-theme="dark"] .ak-workspace-member>span:last-child,
+html[data-akiba-theme="dark"] .ak-workspace-summary-card small,
+html[data-akiba-theme="dark"] .ak-workspace-summary-card>div>span {
+  color:#aab4ca;
+}
+html[data-akiba-theme="dark"] .ak-group-stat strong,
+html[data-akiba-theme="dark"] .ak-group-panel-heading h2,
+html[data-akiba-theme="dark"] .ak-workspace-member>div strong,
+html[data-akiba-theme="dark"] .ak-workspace-summary-card strong {
+  color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-group-stat-icon.pink,
+html[data-akiba-theme="dark"] .ak-group-stat-icon.violet,
+html[data-akiba-theme="dark"] .ak-group-stat-icon.green,
+html[data-akiba-theme="dark"] .ak-group-state>span,
+html[data-akiba-theme="dark"] .ak-group-member-fallback {
+  background:#293247;color:#c7d5f4;
+}
+html[data-akiba-theme="dark"] .ak-category-option,
+html[data-akiba-theme="dark"] .ak-category-option:visited {
+  background:#202536;border-color:#3a4055;color:#e6eaf2;
+}
+html[data-akiba-theme="dark"] .ak-category-option strong,
+html[data-akiba-theme="dark"] .ak-category-option.selected strong { color:#f1f3fa; }
+html[data-akiba-theme="dark"] .ak-category-option small,
+html[data-akiba-theme="dark"] .ak-category-option.selected small { color:#aab4ca; }
+html[data-akiba-theme="dark"] .ak-category-option .ak-category-symbol,
+html[data-akiba-theme="dark"] .ak-category-option.selected .ak-category-symbol {
+  background:#3a263b;color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-category-option.selected,
+html[data-akiba-theme="dark"] .ak-category-option:hover { background:#2a2436;border-color:#9b4f7a; }
+html[data-akiba-theme="dark"] .ak-create-navigation { background:#111421;border-color:#34384b; }
+html[data-akiba-theme="dark"] .ak-create-back { background:#202536;color:#d6deef; }
+html[data-akiba-theme="dark"] .ak-workspace-group-image,
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-group-image {
+  background:#293247;border-color:#3a4055;
+}
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-progress { background:#202536; }
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-group-tabs>span.active,
+html[data-akiba-theme="dark"] .ak-workspace-app .ak-group-tabs>a.active {
+  background:#3a263b;color:#f0b5d8;
+}
+html[data-akiba-theme="dark"] .ak-membership-action-menu>summary[open],
+html[data-akiba-theme="dark"] .ak-membership-action-menu>summary { background:#202536;border-color:#3a4055;color:#d6deef; }
+html[data-akiba-theme="dark"] .ak-notification-row form button,
+html[data-akiba-theme="dark"] .ak-membership-copy .ak-membership-share-button,
+html[data-akiba-theme="dark"] .ak-membership-open-link,
+html[data-akiba-theme="dark"] .ak-profile-preview-trigger,
+html[data-akiba-theme="dark"] .ak-invite-modal-secondary {
+  background:#202536;color:#e9a8d0;border-color:#4a3548;
+}
