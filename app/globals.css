@@ -1929,7 +1929,7 @@ html[data-akiba-theme="dark"] .ak-category-option.selected .ak-category-symbol {
 }
 html[data-akiba-theme="dark"] .ak-category-option.selected,
 html[data-akiba-theme="dark"] .ak-category-option:hover { background:#2a2436;border-color:#9b4f7a; }
-html[data-akiba-theme="dark"] .ak-create-navigation { background:transparent;border-color:#34384b; }
+html[data-akiba-theme="dark"] .ak-create-navigation { background:transparent !important;background-color:transparent !important;border-color:#34384b; }
 html[data-akiba-theme="dark"] .ak-create-back { background:#202536;color:#d6deef; }
 html[data-akiba-theme="dark"] .ak-workspace-group-image,
 html[data-akiba-theme="dark"] .ak-workspace-app .ak-workspace-group-image {
