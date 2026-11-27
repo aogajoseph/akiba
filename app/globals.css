@@ -2143,3 +2143,12 @@ html[data-akiba-theme="dark"] .ak-workspace-member {
 html[data-akiba-theme="dark"] .ak-workspace-member:hover {
   background:#22283a;
 }
+
+/* Finance contribution card: dark-mode-only description and provider badge contrast. */
+html[data-akiba-theme="dark"] .ak-finance-contribute .ak-workspace-card-heading p {
+  color:#ffffff;
+}
+html[data-akiba-theme="dark"] .ak-finance-contribute .ak-finance-provider-mark {
+  background:#3a263b;
+  color:#ff9acb;
+}
