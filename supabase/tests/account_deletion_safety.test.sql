@@ -88,8 +88,8 @@ values
 on conflict (id) do nothing;
 
 set local role service_role;
-select public.akiba_prepare_account_deletion('00000000-0000-0000-000000000911');
-select public.akiba_prepare_account_deletion('00000000-0000-0000-000000000912');
+select public.akiba_prepare_account_deletion('00000000-0000-0000-0000-000000000911');
+select public.akiba_prepare_account_deletion('00000000-0000-0000-0000-000000000912');
 
 do $test$
 begin
