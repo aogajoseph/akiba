@@ -1,9 +1,12 @@
 begin;
 
+-- New account appearance preferences default to Akiba's light system theme.
+alter table public.akiba_user_settings alter column theme set default 'light';
+
 -- Account-level preferences are separate from profile identity and group settings.
 create table if not exists public.akiba_user_settings (
   user_id uuid primary key references auth.users(id) on delete cascade,
-  theme text not null default 'system'
+  theme text not null default 'light'
     check (theme in ('light', 'dark', 'system')),
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
