@@ -27,15 +27,16 @@ export default async function GroupChatPage({ params }: Props) {
   if (!user) redirect("/login");
 
   const [{ data: group, error: groupError }, { data: profile }] = await Promise.all([
-    supabase.from("akiba_groups").select("id,name").eq("id", groupId).maybeSingle(),
+    supabase.from("akiba_groups").select("id,name,created_by").eq("id", groupId).maybeSingle(),
     supabase.from("akiba_profiles").select("username,display_name,avatar_path").eq("user_id", user.id).maybeSingle(),
   ]);
   if (groupError || !group) notFound();
   if (!profile?.display_name?.trim()) redirect("/onboarding");
 
   const { data: membership } = await supabase.from("akiba_group_memberships")
-    .select("status").eq("group_id", group.id).eq("user_id", user.id).maybeSingle();
+    .select("status,role").eq("group_id", group.id).eq("user_id", user.id).maybeSingle();
   if (!membership || membership.status !== "active") notFound();
+  const isCreator = group.created_by === user.id && membership.role === "group_creator";
 
   const { data: unreadRows } = await supabase.rpc("akiba_list_my_group_chat_unread_counts");
   const chatUnreadCount = Number(((unreadRows ?? []) as { group_id: string; unread_count: number | string }[])
@@ -93,7 +94,7 @@ export default async function GroupChatPage({ params }: Props) {
             <Link href={"/workspace/groups/" + group.id + "/finances"}><AccountBalanceWalletOutlinedIcon />Finances</Link>
             <Link href={"/workspace/groups/" + group.id + "/membership"}><GroupsOutlinedIcon />Membership</Link>
             <Link className="active" aria-current="page" href={"/workspace/groups/" + group.id + "/chat"}><ChatBubbleOutlineOutlinedIcon />Chat{chatUnreadCount > 0 && <span className="ak-group-tab-unread-badge">{chatUnreadCount > 99 ? "99+" : chatUnreadCount}</span>}</Link>
-            <span aria-disabled="true" title="Group settings are coming soon"><SettingsOutlinedIcon />Settings</span>
+            {isCreator ?             <Link href={`/workspace/groups/${group.id}/settings`}><SettingsOutlinedIcon />Settings</Link> :             <span aria-disabled="true" title="Only the Group Creator can access group settings"><SettingsOutlinedIcon />Settings</span>}
           </nav>
 
           <GroupChat groupId={group.id} />
