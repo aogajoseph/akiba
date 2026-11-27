@@ -195,7 +195,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
 
           {group.status !== "active" && (
             <section className="ak-workspace-card">
-              <strong>This group has been deactivated.</strong><p>Invitations and membership changes are no longer available.</p>
+              <strong>This group has been deactivated.</strong><p>Invitations and ordinary membership changes are no longer available. Group Admins can still step down during retention to resolve account ownership.</p>
               {group.status === "deactivated" && group.scheduled_delete_at && <p>Scheduled for deletion: {formatDate(group.scheduled_delete_at)}</p>}
               {isCreator && group.status === "deactivated" && (
                 <form action={reactivateGroup}>
@@ -357,7 +357,7 @@ export default async function GroupMembershipPage({ params, searchParams }: Prop
                 </section>
               )}
 
-              {!isCreator && group.status === "active" && (
+              {!isCreator && (group.status === "active" || (isAdmin && group.status === "deactivated")) && (
                 <section className="ak-workspace-card">
                   <span className="ak-section-eyebrow">YOUR MEMBERSHIP</span>
                   <h2>{isAdmin ? "Group Admin" : "Member"}</h2>
