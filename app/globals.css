@@ -2343,7 +2343,7 @@ html[data-akiba-theme="dark"] .ak-membership-page-heading {
 .ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed) .ak-main{width:calc(100% - var(--ak-sidebar-collapsed));margin-left:var(--ak-sidebar-collapsed)}
 .ak-main{transition:width .22s ease,margin-left .22s ease}
 .ak-sidebar-backdrop{display:none}
-@media(max-width:900px){
+@media(max-width:640px){
   .ak-sidebar-mobile-trigger{position:fixed;top:13px;left:12px;z-index:8;display:grid;place-items:center;width:36px;height:36px;border:1px solid #e7ecf7;border-radius:11px;background:#fff;color:#52699f;box-shadow:0 3px 12px #17214f0a;cursor:pointer}
   .ak-sidebar-mobile-trigger svg{font-size:21px}
   .ak-mobile-brand{margin-left:42px}
@@ -2381,20 +2381,20 @@ html[data-akiba-theme="dark"] .ak-workspace-sidebar .ak-sidebar-user-copy strong
 html[data-akiba-theme="dark"] .ak-workspace-sidebar .ak-sidebar-user form button:hover{background:#2b3044;color:#f0b5d8}
 html[data-akiba-theme="dark"] .ak-workspace-sidebar.is-collapsed .ak-sidebar-collapse-button{background:#202536}
 html[data-akiba-theme="dark"] .ak-sidebar-backdrop{background:#050713a6}
-@media(max-width:900px){
+@media(max-width:640px){
   html[data-akiba-theme="dark"] .ak-sidebar.ak-workspace-sidebar{border-right-color:#30364a;box-shadow:18px 0 45px #0005}
 }
 
 /* Compact rail keeps the notification and chat links icon-only as well. */
 .ak-workspace-sidebar.is-collapsed .ak-sidebar-dynamic-link .ak-nav-link{font-size:0}
 .ak-workspace-sidebar.is-collapsed .ak-sidebar-dynamic-link .ak-nav-link>span:first-child{font-size:19px}
-@media(max-width:900px){
+@media(max-width:640px){
   .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link{font-size:12px}
   .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link>span:first-child{font-size:19px}
 }
 .ak-sidebar-mobile-trigger:focus-visible,.ak-sidebar-collapse-button:focus-visible,.ak-sidebar-close-button:focus-visible,.ak-sidebar-create-link:focus-visible,.ak-workspace-nav .ak-nav-link:focus-visible{outline:3px solid #ed168388;outline-offset:2px}
 
-@media(max-width:900px){
+@media(max-width:640px){
   .ak-workspace-sidebar.is-mobile-open .ak-brand span{display:inline}
   .ak-workspace-sidebar.is-mobile-open .ak-nav-label{display:block}
   .ak-workspace-sidebar.is-mobile-open .ak-nav-text{display:inline}
@@ -2410,7 +2410,7 @@ html[data-akiba-theme="dark"] .ak-sidebar-backdrop{background:#050713a6}
 
 .ak-workspace-layout>.ak-create-shell{width:calc(100% - var(--ak-sidebar-expanded));margin-left:var(--ak-sidebar-expanded)}
 .ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed)>.ak-create-shell{width:calc(100% - var(--ak-sidebar-collapsed));margin-left:var(--ak-sidebar-collapsed)}
-@media(max-width:900px){
+@media(max-width:640px){
   .ak-workspace-layout .ak-main{width:100%;margin-left:0}
   .ak-workspace-layout>.ak-create-shell{width:100%;margin-left:0}
 }
@@ -2425,7 +2425,6 @@ html[data-akiba-theme="dark"] .ak-workspace-loading{background:#111522;color:#c2
 html[data-akiba-theme="dark"] .ak-workspace-loader{border-color:#34384b;border-top-color:#f0b5d8;border-right-color:#f0b5d866}
 html[data-akiba-theme="dark"] .ak-workspace-loading-label{color:#c2cbe0}
 @media(prefers-reduced-motion:reduce){.ak-workspace-loader{animation-duration:1.8s}}
-
 
 /* Responsive workspace shell: compact tablet rail and accessible small-screen drawer. */
 @media (min-width:901px) and (max-width:1100px) {
