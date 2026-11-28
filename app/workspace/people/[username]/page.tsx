@@ -41,17 +41,6 @@ export default async function AkibaPublicProfilePage({ params }: Props) {
 
   return (
     <main className="ak-dashboard">
-      <aside className="ak-sidebar">
-        <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
-        <nav className="ak-nav" aria-label="Main navigation">
-          <span className="ak-nav-label">WORKSPACE</span>
-          <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
-          <Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups</Link>
-          <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
-          <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>My Profile</Link>
-          <Link href="/workspace/profile#account" className="ak-nav-link"><span>⚙</span>Settings</Link>
-        </nav>
-      </aside>
       <section className="ak-main">
         <header className="ak-topbar"><Link href="/workspace" className="ak-settings-back-link">← Back to workspace</Link></header>
         <div className="ak-dashboard-content ak-public-profile-page">
