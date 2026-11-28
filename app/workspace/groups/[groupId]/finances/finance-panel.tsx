@@ -122,7 +122,7 @@ export default function FinancePanel({ groupId, currencyCode, enabled, groupActi
   return (
     <section className="ak-workspace-card ak-finance-contribute">
       <div className="ak-workspace-card-heading">
-        <div><span className="ak-section-eyebrow">CONTRIBUTE TO THIS GROUP</span><h2>M-Pesa contribution</h2><p>Enter the amount and phone number that should receive the STK prompt.</p></div>
+        <div><span className="ak-section-eyebrow">CONTRIBUTE TO THIS GROUP</span><h2>M-Pesa contribution</h2><p>Enter the amount and M-Pesa number. Approve the STK prompt on your phone; Akiba records a contribution only after provider confirmation.</p></div>
         <span className="ak-finance-provider-mark">M-Pesa</span>
       </div>
 
@@ -153,7 +153,7 @@ export default function FinancePanel({ groupId, currencyCode, enabled, groupActi
           <div className="ak-finance-input-wrap"><span>{currencyCode}</span><input id="ak-finance-amount" inputMode="numeric" type="number" min="1" max="250000" step="1" value={amount} onChange={(event) => setAmount(event.target.value)} required /></div>
           <label htmlFor="ak-finance-phone">M-Pesa phone number</label>
           <input id="ak-finance-phone" type="tel" inputMode="tel" autoComplete="tel" placeholder="0712 345 678" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} required />
-          <p className="ak-finance-helper">A Safaricom STK prompt will be sent to this number. You authorize any payment only on your phone.</p>
+          <p className="ak-finance-helper">Check your phone for the STK prompt. Confirm the group and amount before approving it in M-Pesa.</p>
           <button className="ak-finance-primary-button" type="submit" disabled={submitting}>{submitting ? "Requesting prompt…" : "Contribute via M-Pesa"}</button>
         </form>
       )}
