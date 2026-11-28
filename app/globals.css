@@ -2576,3 +2576,54 @@ html[data-akiba-theme="dark"] .ak-workspace-loading-label{color:#c2cbe0}
   }
   .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-user form {display:block;}
 }
+
+
+/* Compact landscape phones and portrait small tablets use the same drawer as mobile. */
+@media (max-width:900px) {
+  .ak-sidebar-mobile-trigger { display:grid; }
+}
+@media (orientation:landscape) and (max-height:500px) and (min-width:901px) and (max-width:1100px) {
+  .ak-sidebar-mobile-trigger {
+    display:grid;
+    top:calc(env(safe-area-inset-top, 0px) + 8px);
+    left:calc(env(safe-area-inset-left, 0px) + 10px);
+    width:38px;height:38px;
+  }
+  .ak-sidebar.ak-workspace-sidebar {
+    position:fixed;inset:0 auto 0 0;z-index:10;display:flex;
+    width:min(320px, calc(100vw - 24px));max-width:calc(100vw - 24px);
+    height:100vh;height:100dvh;
+    padding:calc(env(safe-area-inset-top, 0px) + 8px) 14px calc(env(safe-area-inset-bottom, 0px) + 8px);
+    border-right:1px solid #e8edf8;border-radius:0 18px 18px 0;
+    box-shadow:18px 0 45px #10173524;
+    transform:translateX(-105%);visibility:hidden;
+    transition:transform .22s ease,visibility .22s ease;
+    overscroll-behavior:contain;
+  }
+  .ak-sidebar.ak-workspace-sidebar.is-mobile-open {transform:translateX(0);visibility:visible;}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-close-button {display:grid;}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-collapse-button {display:none;}
+  .ak-workspace-sidebar.is-mobile-open .ak-brand span,
+  .ak-workspace-sidebar.is-mobile-open .ak-nav-label,
+  .ak-workspace-sidebar.is-mobile-open .ak-nav-text,
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-create-text,
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-user-copy {display:initial;}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-brand-row {justify-content:space-between;margin-bottom:8px;}
+  .ak-workspace-sidebar.is-mobile-open .ak-brand {flex:1;justify-content:flex-start;padding:0 6px;}
+  .ak-workspace-sidebar.is-mobile-open .ak-workspace-nav {padding-top:0;}
+  .ak-workspace-sidebar.is-mobile-open .ak-workspace-nav .ak-nav-link,
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link {justify-content:flex-start;padding:7px 12px;font-size:12px;min-height:36px;}
+  .ak-workspace-sidebar.is-mobile-open .ak-workspace-nav .ak-nav-link small {position:static;min-width:19px;padding:3px 6px;font-size:10px;}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link>span:first-child {width:22px;margin:0;font-size:19px;}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-create-link {justify-content:flex-start;padding:7px 12px;min-height:36px;}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-user {justify-content:flex-start;padding:8px 3px 2px;}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-user form {display:block;}
+  .ak-sidebar-backdrop {position:fixed;inset:0;z-index:9;display:block;width:100%;height:100%;border:0;background:#10173566;backdrop-filter:blur(2px);}
+  .ak-workspace-layout .ak-main,
+  .ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed) .ak-main,
+  .ak-workspace-layout>.ak-create-shell,
+  .ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed)>.ak-create-shell {width:100%;margin-left:0;}
+  .ak-workspace-layout .ak-topbar {padding-left:58px;padding-right:14px;}
+  .ak-workspace-layout .ak-workspace-topbar,
+  .ak-workspace-layout .ak-group-topbar {padding-left:58px;}
+}
