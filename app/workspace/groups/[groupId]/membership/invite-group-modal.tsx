@@ -48,6 +48,7 @@ export default function InviteGroupModal({
             <button type="button" className="ak-invite-modal-close" aria-label="Close invitation dialog" onClick={() => setOpen(false)}>×</button>
             <span className="ak-section-eyebrow">GROW THE GROUP</span>
             <h2 id="ak-invite-modal-title">Invite someone</h2>
+            <p>Email invitations go to the address you enter. A shared group link lets someone request to join; the Group Creator approves those requests.</p>
             <form ref={formRef} action={formAction} className="ak-membership-invite-form">
               <input type="hidden" name="group_id" value={groupId} />
               <label htmlFor="ak-invite-recipient-email">Email address
