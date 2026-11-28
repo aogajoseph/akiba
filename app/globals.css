@@ -2290,3 +2290,97 @@ html[data-akiba-theme="dark"] .ak-workspace-app .ak-membership-requests {
 html[data-akiba-theme="dark"] .ak-membership-page-heading {
   background:none !important;
 }
+
+/* Workspace sidebar refresh: navigation-only UI layer */
+.ak-dashboard{--ak-sidebar-expanded:264px;--ak-sidebar-collapsed:78px}
+.ak-sidebar.ak-workspace-sidebar{width:var(--ak-sidebar-expanded);padding:18px 14px 14px;gap:0;overflow:hidden;transition:width .22s ease,transform .22s ease;box-sizing:border-box}
+.ak-sidebar-brand-row{display:flex;align-items:center;gap:8px;min-height:48px;margin-bottom:20px}
+.ak-workspace-sidebar .ak-brand{display:flex;align-items:center;gap:10px;min-width:0;flex:1;padding:0 6px;color:#17214f;text-decoration:none;font-size:21px;font-weight:800;letter-spacing:-.7px}
+.ak-workspace-sidebar .ak-brand img{width:34px;height:34px;object-fit:contain;flex:0 0 34px}
+.ak-sidebar-collapse-button,.ak-sidebar-close-button{display:grid;place-items:center;width:34px;height:34px;flex:0 0 34px;border:1px solid #e8edf8;border-radius:10px;background:#fff;color:#6c7da9;cursor:pointer;transition:background .16s ease,color .16s ease,border-color .16s ease}
+.ak-sidebar-collapse-button:hover,.ak-sidebar-close-button:hover{background:#f5f7fc;color:#263b79;border-color:#dce4f5}
+.ak-sidebar-close-button,.ak-sidebar-mobile-trigger{display:none}
+.ak-workspace-nav{gap:4px;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#dbe2f1 transparent;padding:0 1px 12px}
+.ak-workspace-nav .ak-nav-label{padding:10px 12px 7px;font-size:9px;letter-spacing:1.45px}
+.ak-workspace-nav .ak-nav-label-spaced{margin-top:14px}
+.ak-workspace-nav .ak-nav-link{position:relative;min-height:44px;gap:12px;padding:10px 12px;border-radius:11px;color:#66769f;font-size:12px;font-weight:600;transition:background .16s ease,color .16s ease}
+.ak-workspace-nav .ak-nav-link:hover{background:#f6f8fd;color:#273c79}
+.ak-workspace-nav .ak-nav-link.active{background:#fff0f7;color:#d91478;font-weight:700}
+.ak-workspace-nav .ak-nav-link.active::before{position:absolute;left:0;top:10px;bottom:10px;width:3px;border-radius:0 4px 4px 0;background:#ed1683;content:""}
+.ak-workspace-nav .ak-nav-link .ak-nav-icon{display:grid;place-items:center;width:22px;height:22px;flex:0 0 22px;color:#8795b8}
+.ak-workspace-nav .ak-nav-link .ak-nav-icon svg{font-size:20px}
+.ak-workspace-nav .ak-nav-link.active .ak-nav-icon{color:#ed1683}
+.ak-workspace-nav .ak-nav-text{min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ak-workspace-nav .ak-nav-link small{margin-left:auto;min-width:19px;text-align:center;padding:3px 6px;border-radius:20px;background:#fce5f1;color:#d91478;font-size:10px;font-weight:700}
+.ak-sidebar-dynamic-link{min-width:0}
+.ak-sidebar-dynamic-link .ak-nav-link{width:100%}
+.ak-sidebar-bottom{display:grid;gap:12px;margin-top:auto;padding-top:12px}
+.ak-sidebar-create-link{display:flex;align-items:center;gap:11px;min-height:44px;padding:10px 12px;border-radius:11px;background:#ed1683;color:#fff;text-decoration:none;font-size:12px;font-weight:750;box-shadow:0 6px 14px #ed168326;transition:background .16s ease,transform .16s ease}
+.ak-sidebar-create-link:hover{background:#d91073;transform:translateY(-1px)}
+.ak-sidebar-create-icon{display:grid;place-items:center;width:22px;height:22px;flex:0 0 22px;border:1px solid #ffffff55;border-radius:7px;font-size:20px;line-height:1}
+.ak-sidebar-create-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ak-workspace-sidebar .ak-sidebar-user{gap:9px;margin-top:0;padding:12px 3px 2px;border-top:1px solid #edf0f8}
+.ak-workspace-sidebar .ak-sidebar-user>img,.ak-workspace-sidebar .ak-avatar-fallback{width:36px;height:36px;flex-basis:36px}
+.ak-workspace-sidebar .ak-sidebar-user-copy strong{max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:#283665;font-size:11px}
+.ak-workspace-sidebar .ak-sidebar-user-copy small{max-width:132px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ak-workspace-sidebar .ak-sidebar-user form button{display:grid;place-items:center;width:32px;height:32px;border-radius:9px;color:#8794b6;transition:background .16s ease,color .16s ease}
+.ak-workspace-sidebar .ak-sidebar-user form button:hover{background:#f5f7fc;color:#d91478}
+.ak-workspace-sidebar .ak-sidebar-user form button svg{font-size:19px}
+.ak-sidebar.ak-workspace-sidebar.is-collapsed{width:var(--ak-sidebar-collapsed);padding:18px 10px 12px}
+.ak-workspace-sidebar.is-collapsed .ak-sidebar-brand-row{justify-content:center;margin-bottom:20px}
+.ak-workspace-sidebar.is-collapsed .ak-brand{flex:0 0 auto;justify-content:center;padding:0}
+.ak-workspace-sidebar.is-collapsed .ak-brand span,.ak-workspace-sidebar.is-collapsed .ak-nav-label,.ak-workspace-sidebar.is-collapsed .ak-nav-text,.ak-workspace-sidebar.is-collapsed .ak-sidebar-create-text,.ak-workspace-sidebar.is-collapsed .ak-sidebar-user-copy{display:none}
+.ak-workspace-sidebar.is-collapsed .ak-sidebar-collapse-button{position:absolute;right:8px;top:56px;width:25px;height:25px;border-radius:8px;background:#fff;box-shadow:0 2px 8px #17214f10}
+.ak-workspace-sidebar.is-collapsed .ak-workspace-nav{padding-top:18px}
+.ak-workspace-sidebar.is-collapsed .ak-workspace-nav .ak-nav-link{justify-content:center;padding:10px 7px}
+.ak-workspace-sidebar.is-collapsed .ak-workspace-nav .ak-nav-link.active::before{left:-1px}
+.ak-workspace-sidebar.is-collapsed .ak-workspace-nav .ak-nav-link small{position:absolute;right:0;top:3px;min-width:15px;padding:2px 3px;font-size:8px}
+.ak-workspace-sidebar.is-collapsed .ak-sidebar-dynamic-link .ak-nav-link{justify-content:center;padding:10px 7px}
+.ak-workspace-sidebar.is-collapsed .ak-sidebar-dynamic-link .ak-nav-link>span:first-child{width:22px;margin:0}
+.ak-workspace-sidebar.is-collapsed .ak-sidebar-create-link{justify-content:center;padding:10px 7px}
+.ak-workspace-sidebar.is-collapsed .ak-sidebar-user{justify-content:center;padding:12px 0 2px}
+.ak-workspace-sidebar.is-collapsed .ak-sidebar-user form{display:none}
+.ak-dashboard:has(.ak-workspace-sidebar.is-collapsed) .ak-main{width:calc(100% - var(--ak-sidebar-collapsed));margin-left:var(--ak-sidebar-collapsed)}
+.ak-main{transition:width .22s ease,margin-left .22s ease}
+.ak-sidebar-backdrop{display:none}
+@media(max-width:640px){
+  .ak-sidebar-mobile-trigger{position:fixed;top:13px;left:12px;z-index:8;display:grid;place-items:center;width:36px;height:36px;border:1px solid #e7ecf7;border-radius:11px;background:#fff;color:#52699f;box-shadow:0 3px 12px #17214f0a;cursor:pointer}
+  .ak-sidebar-mobile-trigger svg{font-size:21px}
+  .ak-mobile-brand{margin-left:42px}
+  .ak-sidebar-backdrop{position:fixed;inset:0;z-index:9;display:block;width:100%;height:100%;border:0;background:#10173566;backdrop-filter:blur(2px)}
+  .ak-sidebar.ak-workspace-sidebar{position:fixed;inset:0 auto 0 0;z-index:10;display:flex;width:min(290px,86vw);max-width:86vw;padding:18px 14px 14px;border-right:1px solid #e8edf8;border-radius:0 18px 18px 0;box-shadow:18px 0 45px #10173524;transform:translateX(-105%);visibility:hidden;transition:transform .22s ease,visibility .22s ease}
+  .ak-sidebar.ak-workspace-sidebar.is-mobile-open{display:flex;transform:translateX(0);visibility:visible}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-close-button{display:grid}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-collapse-button{display:none}
+  .ak-workspace-sidebar.is-mobile-open .ak-brand span,.ak-workspace-sidebar.is-mobile-open .ak-nav-label,.ak-workspace-sidebar.is-mobile-open .ak-nav-text,.ak-workspace-sidebar.is-mobile-open .ak-sidebar-create-text,.ak-workspace-sidebar.is-mobile-open .ak-sidebar-user-copy{display:initial}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-brand-row{justify-content:space-between;margin-bottom:20px}
+  .ak-workspace-sidebar.is-mobile-open .ak-brand{flex:1;justify-content:flex-start;padding:0 6px}
+  .ak-workspace-sidebar.is-mobile-open .ak-workspace-nav{padding-top:0}
+  .ak-workspace-sidebar.is-mobile-open .ak-workspace-nav .ak-nav-link{justify-content:flex-start;padding:10px 12px}
+  .ak-workspace-sidebar.is-mobile-open .ak-workspace-nav .ak-nav-link small{position:static;min-width:19px;padding:3px 6px;font-size:10px}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link{justify-content:flex-start;padding:10px 12px}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-create-link{justify-content:flex-start;padding:10px 12px}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-user{justify-content:flex-start;padding:12px 3px 2px}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-user form{display:block}
+  .ak-dashboard:has(.ak-workspace-sidebar) .ak-main{width:100%;margin-left:0}
+}
+@media(prefers-reduced-motion:reduce){
+  .ak-sidebar.ak-workspace-sidebar,.ak-main,.ak-workspace-nav .ak-nav-link,.ak-sidebar-create-link,.ak-sidebar-mobile-trigger{transition:none}
+}
+html[data-akiba-theme="dark"] .ak-sidebar.ak-workspace-sidebar{background:#171b29;border-right-color:#30364a}
+html[data-akiba-theme="dark"] .ak-workspace-sidebar .ak-brand{color:#edf0fa}
+html[data-akiba-theme="dark"] .ak-sidebar-collapse-button,html[data-akiba-theme="dark"] .ak-sidebar-close-button,html[data-akiba-theme="dark"] .ak-sidebar-mobile-trigger{background:#202536;border-color:#343b50;color:#b9c5df}
+html[data-akiba-theme="dark"] .ak-sidebar-collapse-button:hover,html[data-akiba-theme="dark"] .ak-sidebar-close-button:hover{background:#2b3044;color:#fff}
+html[data-akiba-theme="dark"] .ak-workspace-nav .ak-nav-link{color:#aeb9d4}
+html[data-akiba-theme="dark"] .ak-workspace-nav .ak-nav-link:hover{background:#22283a;color:#e9edf8}
+html[data-akiba-theme="dark"] .ak-workspace-nav .ak-nav-link.active{background:#332338;color:#f0b5d8}
+html[data-akiba-theme="dark"] .ak-workspace-nav .ak-nav-link.active .ak-nav-icon{color:#f0b5d8}
+html[data-akiba-theme="dark"] .ak-workspace-nav .ak-nav-link small{background:#42283c;color:#f0b5d8}
+html[data-akiba-theme="dark"] .ak-workspace-sidebar .ak-sidebar-user{border-top-color:#30364a}
+html[data-akiba-theme="dark"] .ak-workspace-sidebar .ak-sidebar-user-copy strong{color:#e5e9f5}
+html[data-akiba-theme="dark"] .ak-workspace-sidebar .ak-sidebar-user form button:hover{background:#2b3044;color:#f0b5d8}
+html[data-akiba-theme="dark"] .ak-workspace-sidebar.is-collapsed .ak-sidebar-collapse-button{background:#202536}
+html[data-akiba-theme="dark"] .ak-sidebar-backdrop{background:#050713a6}
+@media(max-width:640px){
+  html[data-akiba-theme="dark"] .ak-sidebar.ak-workspace-sidebar{border-right-color:#30364a;box-shadow:18px 0 45px #0005}
+}
