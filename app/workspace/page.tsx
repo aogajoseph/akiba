@@ -6,7 +6,6 @@ import NotificationRealtime from "@/app/workspace/notification-realtime";
 import NotificationBell, { type NotificationBellItem } from "@/app/workspace/notification-bell";
 import MessageBell from "@/app/workspace/message-bell";
 import NotificationActivityLink from "@/app/workspace/notification-activity-link";
-import WorkspaceSidebar from "@/app/workspace/workspace-sidebar";
 
 type Group = {
   id: string;
@@ -75,16 +74,7 @@ export default async function WorkspacePage() {
    const firstName = displayName.trim().split(/\s+/)[0];
 
   return (
-    <main className="ak-dashboard">
-      <WorkspaceSidebar
-        displayName={displayName}
-        username={profile.username}
-        avatarUrl={avatarUrl}
-        groupCount={groupRows.length}
-        invitationCount={invitationRows.length}
-      />
-
-      <NotificationRealtime />
+    <main className="ak-dashboard"><NotificationRealtime />
       <section className="ak-main">
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
