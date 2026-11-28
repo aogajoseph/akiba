@@ -36,6 +36,8 @@ The first workspace-dashboard pass identified several trust and usability issues
 - An "Upcoming & Pending" panel described schedules and approvals as future features but offered no actionable information. Replace it with direct profile/account shortcuts.
 - The desktop metric grid assumed four cards. Rebalance it for the three meaningful metrics and retain a deliberate mobile layout.
 
+- The group overview called a static informational card “Contribution progress” despite not showing a calculated progress value. Rename it to a financial overview and direct users to the Finance section for posted contributions, balances, and payment status.
+
 The first implementation slice focuses on these dashboard improvements. Next, audit group overview, contribution/finance status, and invitation/join journeys before expanding the shared design system.
 
 ## Suggested delivery sequence
