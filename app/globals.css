@@ -2343,7 +2343,7 @@ html[data-akiba-theme="dark"] .ak-membership-page-heading {
 .ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed) .ak-main{width:calc(100% - var(--ak-sidebar-collapsed));margin-left:var(--ak-sidebar-collapsed)}
 .ak-main{transition:width .22s ease,margin-left .22s ease}
 .ak-sidebar-backdrop{display:none}
-@media(max-width:640px){
+@media(max-width:900px){
   .ak-sidebar-mobile-trigger{position:fixed;top:13px;left:12px;z-index:8;display:grid;place-items:center;width:36px;height:36px;border:1px solid #e7ecf7;border-radius:11px;background:#fff;color:#52699f;box-shadow:0 3px 12px #17214f0a;cursor:pointer}
   .ak-sidebar-mobile-trigger svg{font-size:21px}
   .ak-mobile-brand{margin-left:42px}
@@ -2381,20 +2381,20 @@ html[data-akiba-theme="dark"] .ak-workspace-sidebar .ak-sidebar-user-copy strong
 html[data-akiba-theme="dark"] .ak-workspace-sidebar .ak-sidebar-user form button:hover{background:#2b3044;color:#f0b5d8}
 html[data-akiba-theme="dark"] .ak-workspace-sidebar.is-collapsed .ak-sidebar-collapse-button{background:#202536}
 html[data-akiba-theme="dark"] .ak-sidebar-backdrop{background:#050713a6}
-@media(max-width:640px){
+@media(max-width:900px){
   html[data-akiba-theme="dark"] .ak-sidebar.ak-workspace-sidebar{border-right-color:#30364a;box-shadow:18px 0 45px #0005}
 }
 
 /* Compact rail keeps the notification and chat links icon-only as well. */
 .ak-workspace-sidebar.is-collapsed .ak-sidebar-dynamic-link .ak-nav-link{font-size:0}
 .ak-workspace-sidebar.is-collapsed .ak-sidebar-dynamic-link .ak-nav-link>span:first-child{font-size:19px}
-@media(max-width:640px){
+@media(max-width:900px){
   .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link{font-size:12px}
   .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link>span:first-child{font-size:19px}
 }
 .ak-sidebar-mobile-trigger:focus-visible,.ak-sidebar-collapse-button:focus-visible,.ak-sidebar-close-button:focus-visible,.ak-sidebar-create-link:focus-visible,.ak-workspace-nav .ak-nav-link:focus-visible{outline:3px solid #ed168388;outline-offset:2px}
 
-@media(max-width:640px){
+@media(max-width:900px){
   .ak-workspace-sidebar.is-mobile-open .ak-brand span{display:inline}
   .ak-workspace-sidebar.is-mobile-open .ak-nav-label{display:block}
   .ak-workspace-sidebar.is-mobile-open .ak-nav-text{display:inline}
@@ -2410,7 +2410,7 @@ html[data-akiba-theme="dark"] .ak-sidebar-backdrop{background:#050713a6}
 
 .ak-workspace-layout>.ak-create-shell{width:calc(100% - var(--ak-sidebar-expanded));margin-left:var(--ak-sidebar-expanded)}
 .ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed)>.ak-create-shell{width:calc(100% - var(--ak-sidebar-collapsed));margin-left:var(--ak-sidebar-collapsed)}
-@media(max-width:640px){
+@media(max-width:900px){
   .ak-workspace-layout .ak-main{width:100%;margin-left:0}
   .ak-workspace-layout>.ak-create-shell{width:100%;margin-left:0}
 }
@@ -2425,3 +2425,99 @@ html[data-akiba-theme="dark"] .ak-workspace-loading{background:#111522;color:#c2
 html[data-akiba-theme="dark"] .ak-workspace-loader{border-color:#34384b;border-top-color:#f0b5d8;border-right-color:#f0b5d866}
 html[data-akiba-theme="dark"] .ak-workspace-loading-label{color:#c2cbe0}
 @media(prefers-reduced-motion:reduce){.ak-workspace-loader{animation-duration:1.8s}}
+
+
+/* Responsive workspace shell: compact tablet rail and accessible small-screen drawer. */
+@media (min-width:901px) and (max-width:1100px) {
+  .ak-workspace-layout .ak-main { width:calc(100% - var(--ak-sidebar-collapsed)); margin-left:var(--ak-sidebar-collapsed); }
+  .ak-workspace-layout>.ak-create-shell { width:calc(100% - var(--ak-sidebar-collapsed)); margin-left:var(--ak-sidebar-collapsed); }
+  .ak-workspace-layout .ak-topbar { padding-inline:22px; gap:14px; }
+  .ak-workspace-layout .ak-search-placeholder { width:min(500px,55%); }
+  .ak-workspace-layout .ak-topbar-right { gap:12px; }
+  .ak-workspace-layout .ak-dashboard-content { padding:24px; }
+}
+@media (max-width:900px) {
+  .ak-sidebar-mobile-trigger {
+    top:calc(env(safe-area-inset-top, 0px) + 12px);
+    left:calc(env(safe-area-inset-left, 0px) + 12px);
+    width:40px;height:40px;border-radius:12px;
+    touch-action:manipulation;
+  }
+  .ak-sidebar-backdrop {
+    inset:0;
+    -webkit-backdrop-filter:blur(3px);
+    backdrop-filter:blur(3px);
+    touch-action:manipulation;
+  }
+  .ak-sidebar.ak-workspace-sidebar {
+    width:min(320px, calc(100vw - 48px));
+    max-width:calc(100vw - 48px);
+    height:100vh;
+    height:100dvh;
+    padding-top:calc(env(safe-area-inset-top, 0px) + 14px);
+    padding-bottom:calc(env(safe-area-inset-bottom, 0px) + 14px);
+    overscroll-behavior:contain;
+    -webkit-overflow-scrolling:touch;
+  }
+  .ak-workspace-sidebar .ak-workspace-nav {
+    overscroll-behavior:contain;
+    padding-bottom:16px;
+  }
+  .ak-workspace-layout .ak-main,
+  .ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed) .ak-main {
+    width:100%;margin-left:0;
+  }
+  .ak-workspace-layout>.ak-create-shell,
+  .ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed)>.ak-create-shell {
+    width:100%;margin-left:0;
+  }
+  .ak-workspace-layout .ak-topbar {
+    height:64px;
+    padding:calc(env(safe-area-inset-top, 0px) + 8px) 16px 8px 60px;
+    gap:10px;
+  }
+  .ak-workspace-layout .ak-mobile-brand { display:flex; margin-left:0; white-space:nowrap; }
+  .ak-workspace-layout .ak-mobile-brand img { width:28px;height:28px; }
+  .ak-workspace-layout .ak-search-placeholder { display:none; }
+  .ak-workspace-layout .ak-topbar-right { margin-left:auto;gap:10px;flex:0 0 auto; }
+  .ak-workspace-layout .ak-topbar-avatar { width:34px;height:34px;flex:0 0 34px; }
+  .ak-workspace-layout .ak-dashboard-content { padding:22px 20px 18px; }
+  .ak-workspace-layout .ak-welcome { gap:14px; }
+  .ak-workspace-layout .ak-welcome h1 { overflow-wrap:anywhere; }
+  .ak-workspace-layout .ak-dashboard-grid { grid-template-columns:minmax(0,1fr); }
+  .ak-workspace-layout .ak-dashboard-aside { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .ak-workspace-layout .ak-note-card { grid-column:1/-1; }
+  .ak-workspace-layout .ak-group-row { min-width:0; }
+  .ak-workspace-layout .ak-group-copy { min-width:0; }
+  .ak-workspace-layout .ak-workspace-topbar { min-height:64px;height:auto;padding:12px 16px 12px 60px;gap:10px; }
+  .ak-workspace-layout .ak-workspace-topbar .ak-workspace-top-crumb { min-width:0;overflow-wrap:anywhere; }
+  .ak-workspace-layout .ak-group-topbar { padding:10px 16px 10px 60px;min-height:64px;height:auto;gap:12px; }
+}
+@media (max-width:640px) {
+  .ak-workspace-layout .ak-dashboard-content { padding:20px 15px 16px; }
+  .ak-workspace-layout .ak-welcome { align-items:stretch;flex-direction:column; }
+  .ak-workspace-layout .ak-welcome>.ak-primary { width:100%; }
+  .ak-workspace-layout .ak-dashboard-aside { grid-template-columns:minmax(0,1fr); }
+  .ak-workspace-layout .ak-note-card { grid-column:auto; }
+  .ak-workspace-layout .ak-topbar { padding-left:58px;padding-right:12px; }
+  .ak-workspace-layout .ak-topbar-right { gap:8px; }
+  .ak-workspace-layout .ak-workspace-topbar { padding-left:58px;padding-right:14px; }
+  .ak-workspace-layout .ak-group-topbar { padding-left:58px;padding-right:12px; }
+}
+@media (max-width:380px) {
+  .ak-workspace-layout .ak-mobile-brand { font-size:17px;gap:5px; }
+  .ak-workspace-layout .ak-mobile-brand img { width:25px;height:25px; }
+  .ak-workspace-layout .ak-topbar-right { gap:6px; }
+  .ak-workspace-layout .ak-dashboard-content { padding-inline:12px; }
+}
+@media (orientation:landscape) and (max-height:500px) and (max-width:900px) {
+  .ak-sidebar.ak-workspace-sidebar { padding-top:calc(env(safe-area-inset-top, 0px) + 8px); }
+  .ak-sidebar-brand-row { min-height:40px;margin-bottom:8px; }
+  .ak-workspace-sidebar .ak-workspace-nav .ak-nav-link { min-height:40px;padding-block:8px; }
+  .ak-workspace-sidebar .ak-nav-label { padding-block:6px 4px; }
+  .ak-sidebar-bottom { gap:8px;padding-top:8px; }
+  .ak-workspace-sidebar .ak-sidebar-user { padding-top:8px; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .ak-sidebar.ak-workspace-sidebar,.ak-sidebar-backdrop { transition:none !important; }
+}
