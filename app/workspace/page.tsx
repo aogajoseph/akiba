@@ -148,7 +148,7 @@ export default async function WorkspacePage() {
           <div className="ak-metrics">
             <article className="ak-metric"><span className="ak-metric-icon pink">♧</span><span className="ak-metric-label">My Groups</span><strong>{groupsError ? "—" : groupRows.length}</strong><small>{groupRows.length === 1 ? "1 group to organise" : "Your shared spaces"}</small></article>
             <article className="ak-metric"><span className="ak-metric-icon violet">▤</span><span className="ak-metric-label">Group Messages</span><strong>{messageError ? "—" : messageCount ?? 0}</strong><small>{messageError ? "Couldn't load messages" : "Messages across your groups"}</small></article>
-            <article className="ak-metric"><span className="ak-metric-icon green">↗</span><span className="ak-metric-label">Recent updates</span><strong>{notificationsError ? "—" : notificationRows.length}</strong><small>{notificationsError ? "Couldn&apos;t load updates" : "Latest 5 updates shown below"}</small></article>
+            <article className="ak-metric"><span className="ak-metric-icon green">↗</span><span className="ak-metric-label">Recent updates</span><strong>{notificationsError ? "—" : notificationRows.length}</strong><small>{notificationsError ? "Couldn't load updates" : "Latest 5 updates shown below"}</small></article>
           </div>
 
           <div className="ak-dashboard-grid">
