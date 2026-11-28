@@ -2384,3 +2384,12 @@ html[data-akiba-theme="dark"] .ak-sidebar-backdrop{background:#050713a6}
 @media(max-width:640px){
   html[data-akiba-theme="dark"] .ak-sidebar.ak-workspace-sidebar{border-right-color:#30364a;box-shadow:18px 0 45px #0005}
 }
+
+/* Compact rail keeps the notification and chat links icon-only as well. */
+.ak-workspace-sidebar.is-collapsed .ak-sidebar-dynamic-link .ak-nav-link{font-size:0}
+.ak-workspace-sidebar.is-collapsed .ak-sidebar-dynamic-link .ak-nav-link>span:first-child{font-size:19px}
+@media(max-width:640px){
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link{font-size:12px}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link>span:first-child{font-size:19px}
+}
+.ak-sidebar-mobile-trigger:focus-visible,.ak-sidebar-collapse-button:focus-visible,.ak-sidebar-close-button:focus-visible,.ak-sidebar-create-link:focus-visible,.ak-workspace-nav .ak-nav-link:focus-visible{outline:3px solid #ed168388;outline-offset:2px}
