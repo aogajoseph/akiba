@@ -215,6 +215,7 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
           <section className="ak-workspace-card ak-leadership-status" aria-label="Group leadership readiness">
             <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">GROUP GOVERNANCE</span><h2>Leadership readiness</h2><p>Contributions stay disabled until the Group Creator has appointed the required Group Admins.</p></div><span className="ak-count-pill">{activeGroupAdminCount} / {requiredGroupAdmins} Group Admins</span></div>
             <p>{leadershipReady ? "Leadership is established. Contributions may be enabled subject to payment availability." : "Leadership is not yet established. Add members, then appoint the required Group Admins to unlock contributions."}</p>
+            {isGroupCreator && !leadershipReady && <Link className="ak-finance-inline-link" href={`/workspace/groups/${group.id}/membership`}>Invite members and appoint Admins →</Link>}
           </section>
           <div className="ak-workspace-overview-grid">
             <div className="ak-workspace-primary-column">
