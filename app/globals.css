@@ -2520,3 +2520,59 @@ html[data-akiba-theme="dark"] .ak-workspace-loading-label{color:#c2cbe0}
 @media(prefers-reduced-motion:reduce) {
   .ak-sidebar.ak-workspace-sidebar,.ak-sidebar-backdrop { transition:none !important; }
 }
+
+
+/* When the compact rail is opened as a drawer, explicitly override the rail sizing and hidden-label rules. */
+@media (max-width:900px) {
+  .ak-sidebar.ak-workspace-sidebar.is-collapsed.is-mobile-open {
+    width:min(320px, calc(100vw - 24px));
+    max-width:calc(100vw - 24px);
+    padding:calc(env(safe-area-inset-top, 0px) + 14px) 14px calc(env(safe-area-inset-bottom, 0px) + 14px);
+    overflow:hidden;
+  }
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-brand-row {
+    justify-content:space-between;
+    margin-bottom:20px;
+  }
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-brand {
+    flex:1;
+    justify-content:flex-start;
+    padding:0 6px;
+  }
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-brand span,
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-nav-label,
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-nav-text,
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-create-text,
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-user-copy {
+    display:initial;
+  }
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-collapse-button {display:none;}
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-close-button {display:grid;}
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-workspace-nav {padding-top:0;}
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-workspace-nav .ak-nav-link,
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link {
+    justify-content:flex-start;
+    padding:10px 12px;
+    font-size:12px;
+  }
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-workspace-nav .ak-nav-link small {
+    position:static;
+    min-width:19px;
+    padding:3px 6px;
+    font-size:10px;
+  }
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link>span:first-child {
+    width:22px;
+    margin:0;
+    font-size:19px;
+  }
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-create-link {
+    justify-content:flex-start;
+    padding:10px 12px;
+  }
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-user {
+    justify-content:flex-start;
+    padding:12px 3px 2px;
+  }
+  .ak-workspace-sidebar.is-collapsed.is-mobile-open .ak-sidebar-user form {display:block;}
+}
