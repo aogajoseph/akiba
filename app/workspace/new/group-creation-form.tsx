@@ -165,9 +165,10 @@ export function GroupCreationForm({ error }: { error?: string }) {
           <div><small>CURRENCY</small><strong>{currency || "KES"}</strong></div>
           {targetAmount && <div><small>TARGET AMOUNT</small><strong>{currency} {Number(targetAmount).toLocaleString()}</strong></div>}
           {eventDate && <div><small>EVENT DATE</small><strong>{eventDate}</strong></div>}
+          {eventLocation.trim() && <div><small>EVENT LOCATION</small><strong>{eventLocation.trim()}</strong></div>}
           {deadline && <div><small>CONTRIBUTION DEADLINE</small><strong>{deadline}</strong></div>}
         </div>
-        <div className="ak-private-note"><span>♙</span><div><strong>Private group</strong><small>Only the people invited to this group will have access.</small></div></div>
+        <div className="ak-private-note"><span>♙</span><div><strong>Controlled membership</strong><small>Invited people can join. Anyone with a shared group link can request to join, and the Group Creator must approve the request.</small></div></div>
         <p className="ak-create-footnote">As the Group Creator, you must appoint three Group Admins before the group can start receiving contributions.</p>
       </section>
 

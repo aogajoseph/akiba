@@ -105,7 +105,7 @@ export default async function WorkspacePage() {
       <section className="ak-main">
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>
-          <div className="ak-search-placeholder"><span>⌕</span><span>Search groups, chats, or people...</span></div>
+          <div className="ak-topbar-context"><strong>Your workspace</strong><span>Groups, conversations, and shared plans</span></div>
           <div className="ak-topbar-right"><NotificationBell unreadCount={unreadNotificationCount} notifications={notificationRows.slice(0, 5)} /><MessageBell /><div className="ak-topbar-avatar">{avatarUrl ? <img src={avatarUrl} alt="" /> : initials(displayName)}</div></div>
         </header>
 
@@ -148,8 +148,7 @@ export default async function WorkspacePage() {
           <div className="ak-metrics">
             <article className="ak-metric"><span className="ak-metric-icon pink">♧</span><span className="ak-metric-label">My Groups</span><strong>{groupsError ? "—" : groupRows.length}</strong><small>{groupRows.length === 1 ? "1 group to organise" : "Your shared spaces"}</small></article>
             <article className="ak-metric"><span className="ak-metric-icon violet">▤</span><span className="ak-metric-label">Group Messages</span><strong>{messageError ? "—" : messageCount ?? 0}</strong><small>{messageError ? "Couldn't load messages" : "Messages across your groups"}</small></article>
-            <article className="ak-metric"><span className="ak-metric-icon green">↗</span><span className="ak-metric-label">Group Updates</span><strong>{notificationsError ? "—" : notificationRows.length}</strong><small>{notificationsError ? "Couldn't load updates" : "Latest notifications"}</small></article>
-            <article className="ak-metric"><span className="ak-metric-icon amber">✓</span><span className="ak-metric-label">Profile</span><strong className="ak-metric-status">Complete</strong><small>Your account is ready</small></article>
+            <article className="ak-metric"><span className="ak-metric-icon green">↗</span><span className="ak-metric-label">Recent updates</span><strong>{notificationsError ? "—" : notificationRows.length}</strong><small>{notificationsError ? "Couldn't load updates" : "Latest 5 updates shown below"}</small></article>
           </div>
 
           <div className="ak-dashboard-grid">
@@ -164,7 +163,7 @@ export default async function WorkspacePage() {
                 {groupRows.length > 5 && <Link className="ak-panel-footer" href="/workspace/groups">See all your groups</Link>}
               </section>
 
-              <section className="ak-purpose-banner"><div className="ak-banner-logo"><img src="/akiba-logo.png" alt="" /></div><div><h2>Do more, together</h2><p>Create a group, bring people together, and turn your plans into reality.</p></div><Link href="/workspace/new" className="ak-primary">＋ Create Group</Link></section>
+              
 
               <section className="ak-panel ak-activity-panel">
                 <div className="ak-panel-heading"><div><h2>Recent Activity</h2><p>Your five latest notifications across all groups.</p></div></div>
@@ -175,8 +174,7 @@ export default async function WorkspacePage() {
 
             <aside className="ak-dashboard-aside">
               <section className="ak-panel ak-quick-panel"><div className="ak-panel-heading"><h2>Quick Actions</h2></div><Link href="/workspace/new" className="ak-quick-action"><span className="ak-quick-icon pink">♧</span><span><strong>Create New Group</strong><small>Start organising together</small></span><b>›</b></Link><Link href="/workspace/groups" className="ak-quick-action"><span className="ak-quick-icon violet">▤</span><span><strong>Explore My Groups</strong><small>View all your shared spaces</small></span><b>›</b></Link></section>
-              <section className="ak-panel ak-upcoming-panel"><div className="ak-panel-heading"><h2>Upcoming &amp; Pending</h2></div><div className="ak-empty ak-empty-compact"><span className="ak-empty-icon">▦</span><h3>Nothing scheduled yet</h3><p>Events, contribution schedules and approvals will appear here as those features become available.</p></div><div className="ak-feature-note">Scheduling and approvals aren&apos;t enabled in this release.</div></section>
-              <section className="ak-note-card"><span>✳</span><strong>Do more, together</strong><p>Akiba helps people organise shared plans and purposes in one place.</p></section>
+              <section className="ak-panel ak-account-shortcuts"><div className="ak-panel-heading"><h2>Account &amp; profile</h2></div><Link href="/workspace/profile" className="ak-quick-action"><span className="ak-quick-icon pink">♙</span><span><strong>Your profile</strong><small>Manage how group members see you</small></span><b>›</b></Link><Link href="/workspace/account-settings" className="ak-quick-action"><span className="ak-quick-icon violet">⚙</span><span><strong>Account settings</strong><small>Security and preferences</small></span><b>›</b></Link></section>
             </aside>
           </div>
           <footer className="ak-footer"><span>Akiba · A Globe Software product</span><span>Do more, together.</span></footer>

@@ -55,6 +55,7 @@ export default async function OnboardingPage({ searchParams }: Props) {
             : invitationInboxOnboarding
               ? "Finish setting up your profile, then open your invitation inbox to review invitations addressed to your email. You decide whether to accept or decline."
               : "This is how people will know you on Akiba"}</p>
+          <p className="profile-setup-description">Display name and username are required. Photo, bio, phone and location are optional—you can add them later.</p>
           {error && <p className="profile-form-error" role="alert">{error}</p>}
           <ProfileForm next={next} initial={{
             username: profile?.username ?? "",

@@ -34,6 +34,7 @@ export default function ProfileForm({ initial, next }: { initial: ProfileValues;
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [removeAvatar, setRemoveAvatar] = useState(false);
   const [availability, setAvailability] = useState<Availability | null>(null);
+  const [availabilityRetry, setAvailabilityRetry] = useState(0);
   const [error, setError] = useState("");
   const [uploading, setUploading] = useState(false);
   const [pending, startTransition] = useTransition();
@@ -81,7 +82,7 @@ export default function ProfileForm({ initial, next }: { initial: ProfileValues;
       controller.abort();
       window.clearTimeout(timer);
     };
-  }, [username, usernameValid]);
+  }, [username, usernameValid, availabilityRetry]);
 
   function chooseAvatar(file: File | undefined) {
     setError("");
@@ -199,6 +200,12 @@ export default function ProfileForm({ initial, next }: { initial: ProfileValues;
         <small className={usernameValid && currentAvailability ? (currentAvailability.available ? "profile-field-success" : "profile-field-error") : ""} role="status" aria-live="polite">
           {!usernameValid ? "3–20 characters. Start with a letter; use letters, numbers or underscores." : currentAvailability?.message ?? "Checking username availability…"}
         </small>
+        {usernameValid && currentAvailability && !currentAvailability.available && currentAvailability.message.toLowerCase().includes("could not check") && (
+          <button type="button" className="profile-secondary-button" onClick={() => {
+            setAvailability(null);
+            setAvailabilityRetry((value) => value + 1);
+          }}>Retry username check</button>
+        )}
       </div>
 
       <div className="profile-field">
