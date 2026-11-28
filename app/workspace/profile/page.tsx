@@ -37,14 +37,6 @@ export default async function UserProfilePage({ searchParams }: Props) {
   const select = (name: string, value: string) => <label className="ak-settings-field"><span>{name} visibility</span><select name={name.toLowerCase() + "_visibility"} defaultValue={value}><option value="only_me">Only me</option><option value="group_members">Group participants</option><option value="all_akiba_users">All Akiba users</option></select></label>;
   return (
     <main className="ak-dashboard">
-      <aside className="ak-sidebar">
-        <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
-        <nav className="ak-nav" aria-label="Main navigation">
-          <span className="ak-nav-label">WORKSPACE</span><Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link><Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups</Link>
-          <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span><Link href="/workspace/profile" className="ak-nav-link active"><span>♙</span>Edit Profile</Link><Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
-        </nav>
-        <div className="ak-sidebar-bottom"><div className="ak-sidebar-user">{avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ak-avatar-fallback">{displayName.slice(0,1).toUpperCase()}</span>}<span className="ak-sidebar-user-copy"><strong>{displayName}</strong><small>@{profile.username}</small></span></div></div>
-      </aside>
       <section className="ak-main">
         <header className="ak-topbar"><Link href="/workspace" className="ak-settings-back-link">← Back to workspace</Link><div className="ak-topbar-right">{avatarUrl ? <img className="ak-topbar-avatar" src={avatarUrl} alt="" /> : <span className="ak-topbar-avatar">{profile.display_name.slice(0,1).toUpperCase()}</span>}</div></header>
         <div className="ak-dashboard-content">
