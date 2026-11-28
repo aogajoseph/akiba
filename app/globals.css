@@ -2627,3 +2627,17 @@ html[data-akiba-theme="dark"] .ak-workspace-loading-label{color:#c2cbe0}
   .ak-workspace-layout .ak-workspace-topbar,
   .ak-workspace-layout .ak-group-topbar {padding-left:58px;}
 }
+
+
+/* Ensure the menu control is fixed and layered above the header at every drawer breakpoint. */
+@media (max-width:900px), (orientation:landscape) and (max-height:500px) and (min-width:901px) and (max-width:1100px) {
+  .ak-sidebar-mobile-trigger {
+    position:fixed;z-index:8;display:grid;place-items:center;
+    border:1px solid #e7ecf7;border-radius:11px;background:#fff;
+    color:#52699f;box-shadow:0 3px 12px #17214f0a;cursor:pointer;
+  }
+  .ak-sidebar-mobile-trigger svg {font-size:21px;}
+  .ak-workspace-layout .ak-topbar,
+  .ak-workspace-layout .ak-workspace-topbar,
+  .ak-workspace-layout .ak-group-topbar {position:relative;}
+}
