@@ -30,7 +30,7 @@ const COLLAPSED_STORAGE_KEY = "akiba-workspace-sidebar-collapsed";
 function subscribeToCollapsedPreference(onChange: () => void) {
   window.addEventListener("storage", onChange);
   window.addEventListener("akiba-sidebar-preference", onChange);
-  const mediaQuery = window.matchMedia("(min-width: 641px) and (max-width: 1024px)");
+  const mediaQuery = window.matchMedia("(min-width: 901px) and (max-width: 1100px)");
   mediaQuery.addEventListener("change", onChange);
   return () => {
     window.removeEventListener("storage", onChange);
@@ -40,13 +40,14 @@ function subscribeToCollapsedPreference(onChange: () => void) {
 }
 
 function getCollapsedPreference() {
+  if (window.matchMedia("(min-width: 901px) and (max-width: 1100px)").matches) return true;
   try {
     const saved = window.localStorage.getItem(COLLAPSED_STORAGE_KEY);
     if (saved === "true" || saved === "false") return saved === "true";
   } catch {
     // Fall back to the responsive default when storage is unavailable.
   }
-  return window.matchMedia("(min-width: 641px) and (max-width: 1024px)").matches;
+  return false;
 }
 
 function saveCollapsedPreference(value: boolean) {
