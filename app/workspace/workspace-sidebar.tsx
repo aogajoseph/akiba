@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import MailOutlineOutlinedIcon from "@mui/icons-material/MailOutlineOutlined";
@@ -47,6 +47,9 @@ export default function WorkspaceSidebar({
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement>(null);
+  const sidebarRef = useRef<HTMLElement>(null);
+  const closeRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("akiba-workspace-sidebar-collapsed");
@@ -67,11 +70,30 @@ export default function WorkspaceSidebar({
   }, [pathname]);
 
   useEffect(() => {
-    if (!mobileOpen) return;
+    if (!mobileOpen) {
+      triggerRef.current?.focus();
+      return;
+    }
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
+    closeRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setMobileOpen(false);
+      if (event.key === "Escape") {
+        setMobileOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = sidebarRef.current?.querySelectorAll<HTMLElement>('a[href],button:not([disabled])');
+      if (!focusable?.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
@@ -92,6 +114,7 @@ export default function WorkspaceSidebar({
     <>
       <button
         type="button"
+        ref={triggerRef}
         className="ak-sidebar-mobile-trigger"
         aria-label="Open workspace navigation"
         aria-controls="ak-workspace-sidebar"
@@ -109,6 +132,7 @@ export default function WorkspaceSidebar({
         />
       )}
       <aside
+        ref={sidebarRef}
         id="ak-workspace-sidebar"
         className={"ak-sidebar ak-workspace-sidebar" + (collapsed ? " is-collapsed" : "") + (mobileOpen ? " is-mobile-open" : "")}
         aria-label="Workspace sidebar"
@@ -130,6 +154,7 @@ export default function WorkspaceSidebar({
           </button>
           <button
             type="button"
+            ref={closeRef}
             className="ak-sidebar-close-button"
             aria-label="Close workspace navigation"
             onClick={() => setMobileOpen(false)}
