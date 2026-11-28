@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import NotificationsNoneOutlinedIcon from "@mui/icons-material/NotificationsNoneOutlined";
 import { createClient } from "@/lib/supabase/client";
 
 export default function NotificationSidebarLink({ active = false }: { active?: boolean }) {
@@ -29,5 +30,5 @@ export default function NotificationSidebarLink({ active = false }: { active?: b
     };
   }, []);
 
-  return <Link href="/workspace/notifications" className={"ak-nav-link" + (active ? " active" : "")} aria-current={active ? "page" : undefined}><span>♢</span>Notifications{count > 0 ? <small>{count > 99 ? "99+" : count}</small> : null}</Link>;
+  return <Link href="/workspace/notifications" className={"ak-nav-link" + (active ? " active" : "")} aria-current={active ? "page" : undefined}><span className="ak-nav-icon"><NotificationsNoneOutlinedIcon /></span><span className="ak-nav-text">Notifications</span>{count > 0 ? <small>{count > 99 ? "99+" : count}</small> : null}</Link>;
 }
