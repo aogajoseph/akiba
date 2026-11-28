@@ -81,22 +81,6 @@ export default async function AccountSettingsPage({ searchParams }: Props) {
 
   return (
     <main className="ak-dashboard ak-workspace-app">
-      <aside className="ak-sidebar">
-        <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
-        <nav className="ak-nav" aria-label="Main navigation">
-          <span className="ak-nav-label">WORKSPACE</span>
-          <Link href="/workspace" className="ak-nav-link"><span>⌂</span>Home</Link>
-          <Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups</Link>
-          <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations</Link>
-          <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
-          <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>Edit Profile</Link>
-          <Link href="/workspace/account-settings" className="ak-nav-link active" aria-current="page"><span>⚙</span>Account Settings</Link>
-        </nav>
-        <div className="ak-sidebar-bottom"><div className="ak-sidebar-user">
-          {avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ak-avatar-fallback">{initials(displayName)}</span>}
-          <span className="ak-sidebar-user-copy"><strong>{displayName}</strong><small>@{profile.username}</small></span>
-        </div></div>
-      </aside>
       <section className="ak-main">
         <header className="ak-topbar"><Link href="/workspace" className="ak-settings-back-link">← Back to workspace</Link><div className="ak-topbar-right">{avatarUrl ? <img className="ak-topbar-avatar" src={avatarUrl} alt="" /> : <span className="ak-topbar-avatar">{initials(displayName)}</span>}</div></header>
         <div className="ak-dashboard-content">

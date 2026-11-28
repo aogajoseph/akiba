@@ -1,13 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { signOut } from "@/app/auth-actions";
 import { acceptGroupInvitationById, declineGroupInvitationById } from "@/app/workspace/actions";
 import { createClient } from "@/lib/supabase/server";
 import NotificationRealtime from "@/app/workspace/notification-realtime";
 import NotificationBell, { type NotificationBellItem } from "@/app/workspace/notification-bell";
 import MessageBell from "@/app/workspace/message-bell";
-import NotificationSidebarLink from "@/app/workspace/notification-sidebar-link";
-import MessagesSidebarLink from "@/app/workspace/messages-sidebar-link";
 import NotificationActivityLink from "@/app/workspace/notification-activity-link";
 
 type Group = {
@@ -77,31 +74,7 @@ export default async function WorkspacePage() {
    const firstName = displayName.trim().split(/\s+/)[0];
 
   return (
-    <main className="ak-dashboard">
-      <aside className="ak-sidebar">
-        <Link href="/workspace" className="ak-brand"><img src="/akiba-logo.png" alt="" /><span>Akiba</span></Link>
-        <nav className="ak-nav" aria-label="Main navigation">
-          <span className="ak-nav-label">WORKSPACE</span>
-          <Link href="/workspace" className="ak-nav-link active"><span>⌂</span>Home</Link>
-          <Link href="/workspace/groups" className="ak-nav-link"><span>♧</span>My Groups{groupRows.length > 0 && <small>{groupRows.length}</small>}</Link>
-          <Link href="/workspace/invitations" className="ak-nav-link"><span>✉</span>Invitations{(invitations ?? []).length > 0 && <small>{(invitations ?? []).length}</small>}</Link>
-          <NotificationSidebarLink />
-          <MessagesSidebarLink />
-          <span className="ak-nav-label ak-nav-label-spaced">ACCOUNT</span>
-          <Link href="/workspace/profile" className="ak-nav-link"><span>♙</span>My Profile</Link>
-          <Link href="/workspace/account-settings" className="ak-nav-link"><span>⚙</span>Account Settings</Link>
-        </nav>
-        <div className="ak-sidebar-bottom">
-          <div className="ak-sidebar-promo"><span className="ak-promo-mark">✳</span><strong>Do more, together</strong><p>Bring people together around the things that matter.</p><Link href="/workspace/new">Create a group <span>→</span></Link></div>
-          <div className="ak-sidebar-user">
-            {avatarUrl ? <img src={avatarUrl} alt="" /> : <span className="ak-avatar-fallback">{initials(displayName)}</span>}
-            <span className="ak-sidebar-user-copy"><strong>{displayName}</strong><small>@{profile.username}</small></span>
-            <form action={signOut}><button type="submit" aria-label="Sign out" title="Sign out">↗</button></form>
-          </div>
-        </div>
-      </aside>
-
-      <NotificationRealtime />
+    <main className="ak-dashboard"><NotificationRealtime />
       <section className="ak-main">
         <header className="ak-topbar">
           <div className="ak-mobile-brand"><img src="/akiba-logo.png" alt="" />Akiba</div>

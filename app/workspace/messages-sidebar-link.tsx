@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import InboxOutlinedIcon from "@mui/icons-material/InboxOutlined";
 import { createClient } from "@/lib/supabase/client";
 
 export default function MessagesSidebarLink({ active = false }: { active?: boolean }) {
@@ -22,5 +23,5 @@ export default function MessagesSidebarLink({ active = false }: { active?: boole
     });
     return () => { mounted = false; if (channel) void client.removeChannel(channel); };
   }, []);
-  return <Link href="/workspace/chat" className={"ak-nav-link" + (active ? " active" : "")} aria-current={active ? "page" : undefined}><span>◷</span>Chat{count > 0 ? <small>{count > 99 ? "99+" : count}</small> : null}</Link>;
+  return <Link href="/workspace/chat" className={"ak-nav-link" + (active ? " active" : "")} aria-current={active ? "page" : undefined}><span className="ak-nav-icon"><InboxOutlinedIcon /></span><span className="ak-nav-text">Inbox</span>{count > 0 ? <small>{count > 99 ? "99+" : count}</small> : null}</Link>;
 }
