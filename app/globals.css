@@ -2404,10 +2404,10 @@ html[data-akiba-theme="dark"] .ak-sidebar-backdrop{background:#050713a6}
 
 
 /* Keep the workspace navigation mounted at the route-layout level. */
-.ak-workspace-layout{min-height:100vh}
+.ak-workspace-layout{--ak-sidebar-expanded:264px;--ak-sidebar-collapsed:78px;min-height:100vh}
 .ak-workspace-layout>.ak-dashboard{width:100%;min-width:0}
 .ak-workspace-layout .ak-main{width:calc(100% - var(--ak-sidebar-expanded));margin-left:var(--ak-sidebar-expanded)}
-.ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed) .ak-main{width:calc(100% - var(--ak-sidebar-collapsed));margin-left:var(--ak-sidebar-collapsed)}
+
 .ak-workspace-layout>.ak-create-shell{width:calc(100% - var(--ak-sidebar-expanded));margin-left:var(--ak-sidebar-expanded)}
 .ak-workspace-layout:has(.ak-workspace-sidebar.is-collapsed)>.ak-create-shell{width:calc(100% - var(--ak-sidebar-collapsed));margin-left:var(--ak-sidebar-collapsed)}
 @media(max-width:640px){
