@@ -219,8 +219,8 @@ export default async function GroupDetailPage({ params, searchParams }: Props) {
           <div className="ak-workspace-overview-grid">
             <div className="ak-workspace-primary-column">
               <section className="ak-workspace-card ak-workspace-progress">
-                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">THE SHARED GOAL</span><h2>Contribution progress</h2><p>Keep everyone connected to what the group is working towards.</p></div><Link className="ak-count-pill" href={`/workspace/groups/${group.id}/finances`}>View finances</Link></div>
-                <div className="ak-progress-empty"><span>↗</span><div><strong>{target === null ? "Set a shared target when you are ready" : "Your group target is " + money(target, group.currency_code)}</strong><p>View confirmed contributions and make a contribution from the group finances area. Akiba does not hold group funds; payments are processed by the provider.</p><Link href={`/workspace/groups/${group.id}/finances`} className="ak-finance-inline-link">Open group finances →</Link></div></div>
+                <div className="ak-workspace-card-heading"><div><span className="ak-section-eyebrow">FINANCIAL OVERVIEW</span><h2>Contributions &amp; balances</h2><p>Review confirmed contributions and the group’s financial activity.</p></div><Link className="ak-count-pill" href={`/workspace/groups/${group.id}/finances`}>View finances</Link></div>
+                <div className="ak-progress-empty"><span>↗</span><div><strong>{target === null ? "No shared target has been set" : "Group target: " + money(target, group.currency_code)}</strong><p>See posted contributions, balances, and payment status in the group finances area. Akiba does not hold group funds; payments are processed by the provider.</p><Link href={`/workspace/groups/${group.id}/finances`} className="ak-finance-inline-link">Review finances →</Link></div></div>
               </section>
 
               <section className="ak-workspace-card" id="members">
