@@ -50,6 +50,7 @@ export default function WorkspaceSidebar({
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const drawerWasOpen = useRef(false);
 
   useEffect(() => {
     const saved = window.localStorage.getItem("akiba-workspace-sidebar-collapsed");
@@ -71,9 +72,11 @@ export default function WorkspaceSidebar({
 
   useEffect(() => {
     if (!mobileOpen) {
-      triggerRef.current?.focus();
+      if (drawerWasOpen.current) triggerRef.current?.focus();
+      drawerWasOpen.current = false;
       return;
     }
+    drawerWasOpen.current = true;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     closeRef.current?.focus();
