@@ -38,7 +38,18 @@ The first workspace-dashboard pass identified several trust and usability issues
 
 - The group overview called a static informational card “Contribution progress” despite not showing a calculated progress value. Rename it to a financial overview and direct users to the Finance section for posted contributions, balances, and payment status.
 
-The first implementation slice focuses on these dashboard improvements. Next, audit group overview, contribution/finance status, and invitation/join journeys before expanding the shared design system.
+The first implementation slice focuses on these dashboard improvements. The next journey pass clarified onboarding requirements, group review details, membership behavior for shared links, and the M-Pesa approval/status steps. The group overview also needs a clear first-time creator action when leadership is incomplete.
+
+## Journey audit findings
+
+- Onboarding fields were presented without a clear summary of which details are required. State that display name and username are required; photo, bio, phone, and location are optional.
+- Group creation review omitted the event location even though it was collected. Include it in the review before creation.
+- Group creation described the group as accessible only to invited people, but reusable links allow anyone with the link to request membership. Explain that the Group Creator approves link-based join requests.
+- The invitation modal did not explain the difference between email invitations and shared links. Clarify that email invitations are addressed to the recipient and shared links create an approval-based join request.
+- The M-Pesa form needed a simpler action sequence: enter amount and number, verify and approve the prompt on the phone, then wait for provider-confirmed status. Preserve all payment and ledger behavior.
+- A new Group Creator needs an obvious next action when leadership is incomplete: invite members and appoint the required Group Admins from Membership.
+
+The next implementation keeps these improvements in the current initiative branch and remains limited to UX copy and navigation; financial and membership rules are unchanged.
 
 ## Suggested delivery sequence
 
