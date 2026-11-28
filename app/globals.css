@@ -2393,3 +2393,11 @@ html[data-akiba-theme="dark"] .ak-sidebar-backdrop{background:#050713a6}
   .ak-workspace-sidebar.is-mobile-open .ak-sidebar-dynamic-link .ak-nav-link>span:first-child{font-size:19px}
 }
 .ak-sidebar-mobile-trigger:focus-visible,.ak-sidebar-collapse-button:focus-visible,.ak-sidebar-close-button:focus-visible,.ak-sidebar-create-link:focus-visible,.ak-workspace-nav .ak-nav-link:focus-visible{outline:3px solid #ed168388;outline-offset:2px}
+
+@media(max-width:640px){
+  .ak-workspace-sidebar.is-mobile-open .ak-brand span{display:inline}
+  .ak-workspace-sidebar.is-mobile-open .ak-nav-label{display:block}
+  .ak-workspace-sidebar.is-mobile-open .ak-nav-text{display:inline}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-create-text{display:inline}
+  .ak-workspace-sidebar.is-mobile-open .ak-sidebar-user-copy{display:grid}
+}
