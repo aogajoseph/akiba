@@ -43,6 +43,7 @@ The first implementation slice focuses on these dashboard improvements. The next
 ## Journey audit findings
 
 - Onboarding fields were presented without a clear summary of which details are required. State that display name and username are required; photo, bio, phone, and location are optional.
+- If username availability could not be checked due to a temporary request failure, the Continue button stayed disabled with no retry action. Provide an explicit retry so a transient error does not block onboarding.
 - Group creation review omitted the event location even though it was collected. Include it in the review before creation.
 - Group creation described the group as accessible only to invited people, but reusable links allow anyone with the link to request membership. Explain that the Group Creator approves link-based join requests.
 - The invitation modal did not explain the difference between email invitations and shared links. Clarify that email invitations are addressed to the recipient and shared links create an approval-based join request.
