@@ -6,7 +6,6 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import MailOutlineOutlinedIcon from "@mui/icons-material/MailOutlineOutlined";
-import ChatBubbleOutlineOutlinedIcon from "@mui/icons-material/ChatBubbleOutlineOutlined";
 import PersonOutlineOutlinedIcon from "@mui/icons-material/PersonOutlineOutlined";
 import SettingsOutlinedIcon from "@mui/icons-material/SettingsOutlined";
 import MenuOutlinedIcon from "@mui/icons-material/MenuOutlined";
@@ -79,20 +78,16 @@ export default function WorkspaceSidebar({
   const pathname = usePathname();
   const collapsed = useSyncExternalStore(subscribeToCollapsedPreference, getCollapsedPreference, () => false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const [drawerPathname, setDrawerPathname] = useState(pathname);
+  const isMobileOpen = mobileOpen && drawerPathname === pathname;
   const triggerRef = useRef<HTMLButtonElement>(null);
   const sidebarRef = useRef<HTMLElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
   const drawerWasOpen = useRef(false);
 
 
-
   useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
-  useEffect(() => {
-    if (!mobileOpen) {
+    if (!isMobileOpen) {
       if (drawerWasOpen.current) triggerRef.current?.focus();
       drawerWasOpen.current = false;
       return;
@@ -124,7 +119,7 @@ export default function WorkspaceSidebar({
       document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
-  }, [mobileOpen]);
+  }, [isMobileOpen]);
 
   const homeActive = isActive(pathname, "/workspace");
   const groupsActive = isActive(pathname, "/workspace/groups");
@@ -142,12 +137,12 @@ export default function WorkspaceSidebar({
         className="ak-sidebar-mobile-trigger"
         aria-label="Open workspace navigation"
         aria-controls="ak-workspace-sidebar"
-        aria-expanded={mobileOpen}
-        onClick={() => setMobileOpen(true)}
+        aria-expanded={isMobileOpen}
+        onClick={() => { setDrawerPathname(pathname); setMobileOpen(true); }}
       >
         <MenuOutlinedIcon />
       </button>
-      {mobileOpen && (
+      {isMobileOpen && (
         <button
           type="button"
           className="ak-sidebar-backdrop"
@@ -158,7 +153,7 @@ export default function WorkspaceSidebar({
       <aside
         ref={sidebarRef}
         id="ak-workspace-sidebar"
-        className={"ak-sidebar ak-workspace-sidebar" + (collapsed ? " is-collapsed" : "") + (mobileOpen ? " is-mobile-open" : "")}
+        className={"ak-sidebar ak-workspace-sidebar" + (collapsed ? " is-collapsed" : "") + (isMobileOpen ? " is-mobile-open" : "")}
         aria-label="Workspace sidebar"
       >
         <div className="ak-sidebar-brand-row">
