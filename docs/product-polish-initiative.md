@@ -25,6 +25,19 @@ This is a product-quality initiative, not a visual redesign for its own sake. Ea
 - **Settings and account:** make settings discoverable, explain sensitive controls, and provide clear save/error feedback.
 - **Shared UI states:** standardize loading, empty, error, success, disabled, confirmation, and retry patterns.
 
+## Initial audit findings
+
+The first workspace-dashboard pass identified several trust and usability issues:
+
+- The top bar presented a search field visually, but it was a non-interactive placeholder. Replace it with clear workspace context until real search is available.
+- The dashboard reported a hard-coded "Profile Complete" status that was not backed by a full profile-readiness check. Remove the unsupported status.
+- The updates metric counted only the five notifications fetched for the dashboard. Label it as a recent, limited list instead of implying it is a total.
+- The dashboard repeated the brand slogan and group-creation CTA in several places, creating noise. Keep the primary group CTA where it is most useful.
+- An "Upcoming & Pending" panel described schedules and approvals as future features but offered no actionable information. Replace it with direct profile/account shortcuts.
+- The desktop metric grid assumed four cards. Rebalance it for the three meaningful metrics and retain a deliberate mobile layout.
+
+The first implementation slice focuses on these dashboard improvements. Next, audit group overview, contribution/finance status, and invitation/join journeys before expanding the shared design system.
+
 ## Suggested delivery sequence
 
 ### Phase 1 — Product audit and journey map
