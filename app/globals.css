@@ -2414,3 +2414,14 @@ html[data-akiba-theme="dark"] .ak-sidebar-backdrop{background:#050713a6}
   .ak-workspace-layout .ak-main{width:100%;margin-left:0}
   .ak-workspace-layout>.ak-create-shell{width:100%;margin-left:0}
 }
+
+
+/* Minimal workspace route preloader. */
+.ak-workspace-loading{position:fixed;inset:0;z-index:7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:var(--canvas,#f7f8fc);color:#7a86a5}
+.ak-workspace-loader{width:38px;height:38px;border:3px solid #e7eaf2;border-top-color:#ed1683;border-right-color:#ed168366;border-radius:50%;animation:ak-workspace-spin .8s linear infinite}
+.ak-workspace-loading-label{font-size:12px;font-weight:500;letter-spacing:.02em;color:#77829b}
+@keyframes ak-workspace-spin{to{transform:rotate(360deg)}}
+html[data-akiba-theme="dark"] .ak-workspace-loading{background:#111522;color:#c2cbe0}
+html[data-akiba-theme="dark"] .ak-workspace-loader{border-color:#34384b;border-top-color:#f0b5d8;border-right-color:#f0b5d866}
+html[data-akiba-theme="dark"] .ak-workspace-loading-label{color:#c2cbe0}
+@media(prefers-reduced-motion:reduce){.ak-workspace-loader{animation-duration:1.8s}}
