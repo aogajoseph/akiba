@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import HomeOutlinedIcon from "@mui/icons-material/HomeOutlined";
 import GroupsOutlinedIcon from "@mui/icons-material/GroupsOutlined";
 import MailOutlineOutlinedIcon from "@mui/icons-material/MailOutlineOutlined";
@@ -26,6 +26,39 @@ type WorkspaceSidebarProps = {
   invitationCount: number;
 };
 
+const COLLAPSED_STORAGE_KEY = "akiba-workspace-sidebar-collapsed";
+
+function subscribeToCollapsedPreference(onChange: () => void) {
+  window.addEventListener("storage", onChange);
+  window.addEventListener("akiba-sidebar-preference", onChange);
+  const mediaQuery = window.matchMedia("(min-width: 641px) and (max-width: 1024px)");
+  mediaQuery.addEventListener("change", onChange);
+  return () => {
+    window.removeEventListener("storage", onChange);
+    window.removeEventListener("akiba-sidebar-preference", onChange);
+    mediaQuery.removeEventListener("change", onChange);
+  };
+}
+
+function getCollapsedPreference() {
+  try {
+    const saved = window.localStorage.getItem(COLLAPSED_STORAGE_KEY);
+    if (saved === "true" || saved === "false") return saved === "true";
+  } catch {
+    // Fall back to the responsive default when storage is unavailable.
+  }
+  return window.matchMedia("(min-width: 641px) and (max-width: 1024px)").matches;
+}
+
+function saveCollapsedPreference(value: boolean) {
+  try {
+    window.localStorage.setItem(COLLAPSED_STORAGE_KEY, String(value));
+  } catch {
+    // The sidebar remains usable even when browser storage is unavailable.
+  }
+  window.dispatchEvent(new Event("akiba-sidebar-preference"));
+}
+
 function initials(name: string) {
   return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
 }
@@ -44,7 +77,7 @@ export default function WorkspaceSidebar({
   invitationCount,
 }: WorkspaceSidebarProps) {
   const pathname = usePathname();
-  const [collapsed, setCollapsed] = useState(false);
+  const collapsed = useSyncExternalStore(subscribeToCollapsedPreference, getCollapsedPreference, () => false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [hydrated, setHydrated] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -52,19 +85,7 @@ export default function WorkspaceSidebar({
   const closeRef = useRef<HTMLButtonElement>(null);
   const drawerWasOpen = useRef(false);
 
-  useEffect(() => {
-    const saved = window.localStorage.getItem("akiba-workspace-sidebar-collapsed");
-    if (saved === "true" || saved === "false") {
-      setCollapsed(saved === "true");
-    } else {
-      setCollapsed(window.matchMedia("(min-width: 641px) and (max-width: 1024px)").matches);
-    }
-    setHydrated(true);
-  }, []);
 
-  useEffect(() => {
-    if (hydrated) window.localStorage.setItem("akiba-workspace-sidebar-collapsed", String(collapsed));
-  }, [collapsed, hydrated]);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -151,7 +172,7 @@ export default function WorkspaceSidebar({
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             aria-pressed={collapsed}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            onClick={() => setCollapsed((value) => !value)}
+            onClick={() => saveCollapsedPreference(!collapsed)}
           >
             {collapsed ? <ChevronRightOutlinedIcon /> : <ChevronLeftOutlinedIcon />}
           </button>
